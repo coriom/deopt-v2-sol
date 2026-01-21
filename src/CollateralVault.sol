@@ -10,7 +10,17 @@ import "./yield/IYieldAdapter.sol";
 
 /// @title CollateralVault
 /// @notice Coffre-fort central de collatéral (multi-token, cross-margin, yield optionnel)
-/// @dev Source de vérité des soldes de collatéral. Ne connaît ni positions ni PnL.
+/// @dev
+///  - Source de vérité du "principal" : balances[user][token]
+///  - Idle = principal réellement détenu par le vault (liquide)
+///  - StrategyShares = parts détenues dans une stratégie (AaveAdapter, etc.)
+///  - IMPORTANT:
+///      * Les intérêts (yield) ne sont PAS reflétés dans balances[]. Ils sont visibles via balanceWithYield().
+///      * Les retraits / transferts internes ne peuvent JAMAIS consommer le yield "gratuitement" si le principal
+///        est insuffisant (protection anti-dette fantôme).
+///      * Toute conversion shares<->assets suit les previews canonique de l’adapter:
+///          - previewWithdraw(assets) = ceil  (pour brûler assez de shares)
+///          - previewDeposit(assets)  = floor
 contract CollateralVault is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -21,7 +31,7 @@ contract CollateralVault is ReentrancyGuard {
     struct CollateralTokenConfig {
         bool isSupported;
         uint8 decimals;
-        uint16 collateralFactorBps;
+        uint16 collateralFactorBps; // (legacy / hook futur)
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -42,6 +52,10 @@ contract CollateralVault is ReentrancyGuard {
     error NotEnoughIdle();
     error StrategyMismatch();
     error YieldNotAllowedForProtocolAccount();
+    error StrategyChangeNotAllowedWithActiveShares();
+    error TokenNotConfigured();
+    error InsufficientStrategyShares();
+    error AdapterReturnedUnexpectedShares();
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
@@ -101,7 +115,7 @@ contract CollateralVault is ReentrancyGuard {
     /// @notice shares détenues dans l’adapter (comptabilité interne)
     mapping(address => mapping(address => uint256)) public strategyShares;
 
-    /// @notice part idle conservée dans le Vault
+    /// @notice part idle conservée dans le Vault (principal liquide)
     mapping(address => mapping(address => uint256)) public idleBalances;
 
     /*//////////////////////////////////////////////////////////////
@@ -208,11 +222,25 @@ contract CollateralVault is ReentrancyGuard {
     }
 
     /// @notice Configure un adapter de rendement pour un token
+    /// @dev Robuste: interdit de changer d’adapter si des shares existent (migration explicite sinon).
     function setTokenStrategy(address token, address adapter) external onlyOwner {
         if (token == address(0)) revert ZeroAddress();
+
+        CollateralTokenConfig memory cfg = collateralConfigs[token];
+        if (!cfg.isSupported) revert TokenNotSupported();
+
+        address old = tokenStrategy[token];
+        if (old != address(0) && old != adapter) {
+            // On interdit tout switch tant que l'ancien adapter a une supply non nulle
+            // (sinon les shares users deviennent orphelines).
+            uint256 ts = IYieldAdapter(old).totalShares();
+            if (ts != 0) revert StrategyChangeNotAllowedWithActiveShares();
+        }
+
         if (adapter != address(0)) {
             if (IYieldAdapter(adapter).asset() != token) revert StrategyMismatch();
         }
+
         tokenStrategy[token] = adapter;
         emit TokenStrategySet(token, adapter);
     }
@@ -222,8 +250,12 @@ contract CollateralVault is ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     function setYieldOptIn(address token, bool optedIn) external {
-        // comptes protocolaires (insurance fund, etc.) ne doivent PAS utiliser yield
+        // comptes protocolaires (insurance fund, engine, etc.) ne doivent PAS utiliser yield
         if (msg.sender == marginEngine) revert YieldNotAllowedForProtocolAccount();
+
+        CollateralTokenConfig memory cfg = collateralConfigs[token];
+        if (!cfg.isSupported) revert TokenNotSupported();
+
         yieldOptIn[msg.sender][token] = optedIn;
         emit YieldOptInSet(msg.sender, token, optedIn);
     }
@@ -233,6 +265,8 @@ contract CollateralVault is ReentrancyGuard {
         uint256 shares = strategyShares[user][token];
         address adapter = tokenStrategy[token];
         if (shares == 0 || adapter == address(0)) return idle;
+        // convertToAssets (floor) est ok pour une vue conservatrice; si tu veux la vue exacte,
+        // tu peux exposer previewRedeem.
         return idle + IYieldAdapter(adapter).convertToAssets(shares);
     }
 
@@ -248,6 +282,7 @@ contract CollateralVault is ReentrancyGuard {
 
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
+        // principal augmente
         balances[msg.sender][token] += amount;
         idleBalances[msg.sender][token] += amount;
 
@@ -277,19 +312,30 @@ contract CollateralVault is ReentrancyGuard {
 
     function moveToIdle(address token, uint256 amount) external nonReentrant {
         if (amount == 0) revert AmountZero();
+
+        CollateralTokenConfig memory cfg = collateralConfigs[token];
+        if (!cfg.isSupported) revert TokenNotSupported();
+
         address adapter = tokenStrategy[token];
         if (adapter == address(0)) revert StrategyNotSet();
 
-        uint256 sharesNeeded = IYieldAdapter(adapter).convertToShares(amount);
-        uint256 userShares = strategyShares[msg.sender][token];
-        require(userShares >= sharesNeeded, "INSUFFICIENT_SHARES");
+        // IMPORTANT: pour retirer `amount` d'assets depuis la stratégie, on doit brûler des shares en CEIL.
+        uint256 sharesNeeded = IYieldAdapter(adapter).previewWithdraw(amount);
 
+        uint256 userShares = strategyShares[msg.sender][token];
+        if (userShares < sharesNeeded) revert InsufficientStrategyShares();
+
+        // On burn les shares côté user en même temps que l'adapter.
         strategyShares[msg.sender][token] = userShares - sharesNeeded;
-        IYieldAdapter(adapter).withdraw(amount, address(this));
+
+        uint256 sharesBurned = IYieldAdapter(adapter).withdraw(amount, address(this));
+        // Invariant canonique: sharesBurned doit être >= sharesNeeded (et idéalement ==)
+        // On exige == pour éviter toute divergence silencieuse.
+        if (sharesBurned != sharesNeeded) revert AdapterReturnedUnexpectedShares();
 
         idleBalances[msg.sender][token] += amount;
 
-        emit MovedToIdle(msg.sender, token, amount, sharesNeeded);
+        emit MovedToIdle(msg.sender, token, amount, sharesBurned);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -311,9 +357,11 @@ contract CollateralVault is ReentrancyGuard {
         uint256 fromBal = balances[from][token];
         if (fromBal < amount) revert InsufficientBalance();
 
+        // transfert de principal (source de vérité)
         balances[from][token] = fromBal - amount;
         balances[to][token] += amount;
 
+        // déplacer d'abord l'idle (exact)
         uint256 idleFrom = idleBalances[from][token];
         uint256 idleMove = idleFrom >= amount ? amount : idleFrom;
 
@@ -322,14 +370,18 @@ contract CollateralVault is ReentrancyGuard {
             idleBalances[to][token] += idleMove;
         }
 
+        // le reste est servi en shares (ceil sur withdraw d'assets équivalents)
         uint256 remaining = amount - idleMove;
         if (remaining > 0) {
             address adapter = tokenStrategy[token];
             if (adapter == address(0)) revert NotEnoughIdle();
 
-            uint256 sharesMove = IYieldAdapter(adapter).convertToShares(remaining);
+            // On veut transférer une valeur d'assets `remaining` depuis la poche stratégie de from vers to.
+            // Robuste: on transfère les shares nécessaires en CEIL (previewWithdraw).
+            uint256 sharesMove = IYieldAdapter(adapter).previewWithdraw(remaining);
+
             uint256 sharesFrom = strategyShares[from][token];
-            require(sharesFrom >= sharesMove, "INSUFFICIENT_STRATEGY_SHARES");
+            if (sharesFrom < sharesMove) revert InsufficientStrategyShares();
 
             strategyShares[from][token] = sharesFrom - sharesMove;
             strategyShares[to][token] += sharesMove;
@@ -344,35 +396,49 @@ contract CollateralVault is ReentrancyGuard {
 
     function _moveToStrategy(address user, address token, uint256 amount) internal {
         if (amount == 0) revert AmountZero();
+
+        CollateralTokenConfig memory cfg = collateralConfigs[token];
+        if (!cfg.isSupported) revert TokenNotSupported();
+
         address adapter = tokenStrategy[token];
         if (adapter == address(0)) revert StrategyNotSet();
 
         uint256 idle = idleBalances[user][token];
         if (idle < amount) revert NotEnoughIdle();
 
+        // déplacer de idle -> stratégie
         idleBalances[user][token] = idle - amount;
 
+        // IMPORTANT: previewDeposit = floor; si 0 => revert dans l'adapter (anti-dust / anti-dilution)
         IERC20(token).forceApprove(adapter, amount);
-        uint256 shares = IYieldAdapter(adapter).deposit(amount);
+        uint256 sharesMinted = IYieldAdapter(adapter).deposit(amount);
 
-        strategyShares[user][token] += shares;
+        // compta shares user
+        strategyShares[user][token] += sharesMinted;
 
-        emit MovedToStrategy(user, token, amount, shares);
+        emit MovedToStrategy(user, token, amount, sharesMinted);
     }
 
     function _withdrawInternal(address user, address to, address token, uint256 amount) internal {
         if (amount == 0) revert AmountZero();
+        if (to == address(0)) revert ZeroAddress();
+
+        CollateralTokenConfig memory cfg = collateralConfigs[token];
+        if (!cfg.isSupported) revert TokenNotSupported();
 
         uint256 bal = balances[user][token];
         if (bal < amount) revert InsufficientBalance();
 
+        // Risk gate (basé sur principal / configs de risk module)
         if (address(riskModule) != address(0)) {
             uint256 maxAllowed = riskModule.getWithdrawableAmount(user, token);
             if (amount > maxAllowed) revert WithdrawExceedsRiskLimits();
         }
 
+        // décrémenter principal
         balances[user][token] = bal - amount;
 
+        // servir d'abord l'idle
         uint256 idle = idleBalances[user][token];
         if (idle >= amount) {
             idleBalances[user][token] = idle - amount;
@@ -382,20 +448,26 @@ contract CollateralVault is ReentrancyGuard {
         }
 
         uint256 remaining = amount - idle;
+
+        // transfer idle partielle
         if (idle > 0) {
             idleBalances[user][token] = 0;
             IERC20(token).safeTransfer(to, idle);
         }
 
+        // compléter via stratégie (retrait exact d'assets)
         address adapter = tokenStrategy[token];
         if (adapter == address(0)) revert StrategyNotSet();
 
-        uint256 sharesNeeded = IYieldAdapter(adapter).convertToShares(remaining);
+        uint256 sharesNeeded = IYieldAdapter(adapter).previewWithdraw(remaining);
+
         uint256 userShares = strategyShares[user][token];
-        require(userShares >= sharesNeeded, "INSUFFICIENT_SHARES");
+        if (userShares < sharesNeeded) revert InsufficientStrategyShares();
 
         strategyShares[user][token] = userShares - sharesNeeded;
-        IYieldAdapter(adapter).withdraw(remaining, to);
+
+        uint256 sharesBurned = IYieldAdapter(adapter).withdraw(remaining, to);
+        if (sharesBurned != sharesNeeded) revert AdapterReturnedUnexpectedShares();
 
         emit Withdrawn(user, token, amount);
     }
