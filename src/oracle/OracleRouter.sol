@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import "./IOracle.sol";
 import "./IPriceSource.sol";
 
@@ -18,6 +19,8 @@ import "./IPriceSource.sol";
 ///      * comportement clair quand maxDeviationBps == 0 (secondary -> strict equality)
 ///      * permet un fallback "si primary fail" vers secondary (si configured)
 contract OracleRouter is IOracle {
+    using Math for uint256;
+
     /*//////////////////////////////////////////////////////////////
                                 TYPES
     //////////////////////////////////////////////////////////////*/
@@ -53,7 +56,11 @@ contract OracleRouter is IOracle {
     //////////////////////////////////////////////////////////////*/
 
     address public owner;
+
+    /// @notice Garde de fraîcheur globale (0 = off).
+    /// @dev Bornée via setter. Par défaut 600s.
     uint32 public maxOracleDelay;
+
     mapping(bytes32 => FeedConfig) public feeds;
 
     /*//////////////////////////////////////////////////////////////
@@ -67,6 +74,7 @@ contract OracleRouter is IOracle {
     error FutureTimestamp();
     error DeviationTooHigh();
     error ZeroAddress();
+    error DeviationOutOfRange();
 
     /*//////////////////////////////////////////////////////////////
                                 MODIFIERS
@@ -124,11 +132,12 @@ contract OracleRouter is IOracle {
         bool isActive
     ) external onlyOwner {
         if (underlying == address(0) || settlementAsset == address(0)) revert ZeroAddress();
+
         if (address(primarySource) == address(0) && address(secondarySource) == address(0)) {
             revert NoSource();
         }
-        // maxDeviationBps est borné par uint16 (<= 65535). On force une borne logique.
-        require(maxDeviationBps <= 10_000, "DEVIATION_OOB");
+
+        if (maxDeviationBps > 10_000) revert DeviationOutOfRange();
 
         bytes32 key = _pairKey(underlying, settlementAsset);
         feeds[key] = FeedConfig({
@@ -151,7 +160,7 @@ contract OracleRouter is IOracle {
     }
 
     function setMaxOracleDelay(uint32 _delay) external onlyOwner {
-        require(_delay <= 3600, "DELAY_OUT_OF_RANGE");
+        if (_delay > 3600) revert StalePrice(); // garde simple: hors borne = erreur
         uint32 old = maxOracleDelay;
         maxOracleDelay = _delay;
         emit MaxOracleDelaySet(old, _delay);
@@ -188,15 +197,14 @@ contract OracleRouter is IOracle {
 
     function _effectiveDelay(uint32 feedMaxDelay) internal view returns (uint32 d) {
         // min non-nul entre feedMaxDelay et maxOracleDelay
-        if (feedMaxDelay != 0 && maxOracleDelay != 0) {
-            return feedMaxDelay < maxOracleDelay ? feedMaxDelay : maxOracleDelay;
-        } else if (feedMaxDelay != 0) {
-            return feedMaxDelay;
-        } else if (maxOracleDelay != 0) {
-            return maxOracleDelay;
-        } else {
-            return 0;
+        uint32 g = maxOracleDelay;
+
+        if (feedMaxDelay != 0 && g != 0) {
+            return feedMaxDelay < g ? feedMaxDelay : g;
         }
+        if (feedMaxDelay != 0) return feedMaxDelay;
+        if (g != 0) return g;
+        return 0;
     }
 
     function _checkStaleness(uint256 updatedAt, uint32 feedMaxDelay) internal view {
@@ -204,6 +212,7 @@ contract OracleRouter is IOracle {
         if (d == 0) return;
 
         if (updatedAt == 0) revert StalePrice();
+
         // Défensif: si updatedAt est dans le futur, on refuse (oracle bug / manipulation)
         if (updatedAt > block.timestamp) revert FutureTimestamp();
 
@@ -212,6 +221,7 @@ contract OracleRouter is IOracle {
 
     function _readSource(IPriceSource src) internal view returns (uint256 p, uint256 t, bool ok) {
         if (address(src) == address(0)) return (0, 0, false);
+
         try src.getLatestPrice() returns (uint256 price, uint256 updatedAt) {
             if (price == 0) return (0, 0, false);
             return (price, updatedAt, true);
@@ -243,15 +253,12 @@ contract OracleRouter is IOracle {
 
         if (!cfg.isActive) revert FeedNotActive();
 
-        // On essaie de lire les deux sources sans faire revert si l’une d’elles revert
         (uint256 p1, uint256 t1, bool ok1) = _readSource(cfg.primarySource);
         (uint256 p2, uint256 t2, bool ok2) = _readSource(cfg.secondarySource);
 
-        // Cas: aucune source exploitable
         if (!ok1 && !ok2) revert NoSource();
 
-        // Si une seule source exploitable -> on l'utilise (avec staleness)
-        // (plus robuste en prod que "secondary configurée => exige les deux")
+        // Single-source fallback
         if (ok1 && !ok2) {
             _checkStaleness(t1, cfg.maxDelay);
             return (p1, t1);
@@ -261,22 +268,23 @@ contract OracleRouter is IOracle {
             return (p2, t2);
         }
 
-        // Ici: ok1 && ok2
+        // Both ok => enforce staleness + deviation check
         _checkStaleness(t1, cfg.maxDelay);
         _checkStaleness(t2, cfg.maxDelay);
 
         uint16 maxDev = cfg.maxDeviationBps;
 
-        // Si maxDev == 0 => on exige une égalité stricte (rare en prod, mais comportement clair)
+        // maxDev == 0 => strict equality if secondary exists and is readable
         if (maxDev == 0) {
             if (p1 != p2) revert DeviationTooHigh();
-            return (p1, t1);
+            // choose fresher timestamp (defensive)
+            return (p1, t1 >= t2 ? t1 : t2);
         }
 
         uint256 dev = _deviationBps(p1, p2);
         if (dev > maxDev) revert DeviationTooHigh();
 
-        // stratégie simple: renvoyer la primaire
-        return (p1, t1);
+        // Return primary price, fresher updatedAt to maximize downstream freshness info
+        return (p1, t1 >= t2 ? t1 : t2);
     }
 }
