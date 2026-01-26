@@ -31,6 +31,11 @@ contract AaveAdapter is IYieldAdapter {
     error ZeroSharesMinted();
     error InsufficientShares();
     error WithdrawSlippage();
+    error RescueNotAllowed();
+    error EmergencyOnlyWhenNoShares();
+
+    event EmergencyWithdrawAll(address indexed to, uint256 assetsWithdrawn);
+    event Rescue(address indexed token, address indexed to, uint256 amount);
 
     address public immutable vault;
     address public immutable override asset;
@@ -85,7 +90,6 @@ contract AaveAdapter is IYieldAdapter {
         uint256 ts = totalShares;
         uint256 ta = totalAssets();
 
-        // Si ts>0 alors ta doit être >0, sinon l'adapter est dans un état incohérent.
         if (ts == 0) return 0;
         if (ta == 0) revert ZeroAssetsUnderManagement();
 
@@ -124,12 +128,10 @@ contract AaveAdapter is IYieldAdapter {
     //////////////////////////////////////////////////////////////*/
 
     function convertToShares(uint256 assets) public view override returns (uint256 shares) {
-        // floor conversion, coherent with previewDeposit
         return previewDeposit(assets);
     }
 
     function convertToAssets(uint256 shares) public view override returns (uint256 assetsOut) {
-        // floor conversion, coherent with previewRedeem
         return previewRedeem(shares);
     }
 
@@ -141,7 +143,6 @@ contract AaveAdapter is IYieldAdapter {
         if (assets == 0) revert AmountZero();
 
         sharesMinted = previewDeposit(assets);
-        // IMPORTANT: refuse dust that would mint 0 shares (would otherwise donate value to existing holders)
         if (sharesMinted == 0) revert ZeroSharesMinted();
 
         // pull l’asset depuis le vault (vault doit avoir approuvé)
@@ -167,5 +168,28 @@ contract AaveAdapter is IYieldAdapter {
 
         uint256 got = pool.withdraw(asset, assets, to);
         if (got != assets) revert WithdrawSlippage();
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                EMERGENCY
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Retire TOUT d'Aave (type(uint256).max) vers `to`.
+    /// @dev Safety: uniquement si totalShares == 0 (pas de comptes utilisateurs).
+    function emergencyWithdrawAll(address to) external onlyVault returns (uint256 assetsWithdrawn) {
+        if (to == address(0)) revert ZeroAddress();
+        if (totalShares != 0) revert EmergencyOnlyWhenNoShares();
+
+        assetsWithdrawn = pool.withdraw(asset, type(uint256).max, to);
+        emit EmergencyWithdrawAll(to, assetsWithdrawn);
+    }
+
+    /// @notice Rescue tokens envoyés par erreur.
+    /// @dev Interdit de sortir `asset` et `aToken`.
+    function rescue(address token, address to, uint256 amount) external onlyVault {
+        if (to == address(0)) revert ZeroAddress();
+        if (token == asset || token == aToken) revert RescueNotAllowed();
+        IERC20(token).safeTransfer(to, amount);
+        emit Rescue(token, to, amount);
     }
 }
