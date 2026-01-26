@@ -7,11 +7,12 @@ import "./OptionProductRegistry.sol";
 import "./CollateralVault.sol";
 import "./oracle/IOracle.sol";
 import "./risk/IRiskModule.sol";
+import "./risk/IMarginEngineState.sol";
 
 /// @title MarginEngine
 /// @notice Gère les positions, la marge, les liquidations et le settlement à l'expiration.
 /// @dev Toute la logique de risque (equity / IM / MM) est déléguée au RiskModule (IRiskModule).
-contract MarginEngine is ReentrancyGuard {
+contract MarginEngine is ReentrancyGuard, IMarginEngineState {
     /*//////////////////////////////////////////////////////////////
                                 CONSTANTS
     //////////////////////////////////////////////////////////////*/
@@ -22,10 +23,6 @@ contract MarginEngine is ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////
                                 TYPES
     //////////////////////////////////////////////////////////////*/
-
-    struct Position {
-        int128 quantity; // >0 = long, <0 = short
-    }
 
     struct Trade {
         address buyer;
@@ -49,6 +46,11 @@ contract MarginEngine is ReentrancyGuard {
     error RiskModuleNotSet();
     error AmountZero();
 
+    // Series / trading
+    error SeriesExpired();
+    error BadSettlementAsset();
+    error SeriesNotActiveCloseOnly();
+
     // Expiration / payoff
     error NotExpired();
     error SettlementNotSet();
@@ -63,7 +65,6 @@ contract MarginEngine is ReentrancyGuard {
 
     // Liquidation hardening
     error LiquidationNotImproving();
-    error SeriesExpired();
     error InvalidLiquidationParams();
     error LiquidationNothingToDo();
     error LiquidationCloseFactorZero();
@@ -178,7 +179,7 @@ contract MarginEngine is ReentrancyGuard {
     IOracle public oracle;
     IRiskModule public riskModule;
 
-    mapping(address => mapping(uint256 => Position)) private _positions;
+    mapping(address => mapping(uint256 => IMarginEngineState.Position)) private _positions;
 
     /// @notice Nombre total de contrats shorts (toutes séries confondues) par trader
     mapping(address => uint256) public totalShortContracts;
@@ -369,7 +370,10 @@ contract MarginEngine is ReentrancyGuard {
         liquidationPriceSpreadBps = _liquidationPriceSpreadBps;
         minLiquidationPriceBpsOfIntrinsic = _minLiquidationPriceBpsOfIntrinsic;
 
-        emit LiquidationPricingParamsSet(_liquidationPriceSpreadBps, _minLiquidationPriceBpsOfIntrinsic);
+        emit LiquidationPricingParamsSet(
+            _liquidationPriceSpreadBps,
+            _minLiquidationPriceBpsOfIntrinsic
+        );
     }
 
     function setLiquidationOracleMaxDelay(uint32 _delay) external onlyOwner {
@@ -380,13 +384,14 @@ contract MarginEngine is ReentrancyGuard {
     }
 
     /*//////////////////////////////////////////////////////////////
-                              VIEW HELPERS
+                              IMarginEngineState
     //////////////////////////////////////////////////////////////*/
 
     function positions(address trader, uint256 optionId)
         external
         view
-        returns (Position memory)
+        override
+        returns (IMarginEngineState.Position memory)
     {
         return _positions[trader][optionId];
     }
@@ -395,10 +400,15 @@ contract MarginEngine is ReentrancyGuard {
     function getTraderSeries(address trader)
         external
         view
+        override
         returns (uint256[] memory)
     {
         return traderSeries[trader];
     }
+
+    /*//////////////////////////////////////////////////////////////
+                              VIEW HELPERS
+    //////////////////////////////////////////////////////////////*/
 
     /// @notice Longueur de la liste OPEN (utile pagination)
     function getTraderSeriesLength(address trader) external view returns (uint256) {
@@ -487,6 +497,26 @@ contract MarginEngine is ReentrancyGuard {
         return int128(int256(uint256(x)));
     }
 
+    function _absInt128(int128 x) internal pure returns (uint256) {
+        int256 y = int256(x);
+        return uint256(y >= 0 ? y : -y);
+    }
+
+    /// @dev Close-only strict:
+    ///  - old == 0  => new must be 0 (no opening)
+    ///  - new == 0  => ok (closing)
+    ///  - sign must stay identical AND abs must not increase (no flip)
+    function _isCloseOnlyTransition(int128 oldQty, int128 newQty) internal pure returns (bool) {
+        if (oldQty == 0) return newQty == 0;
+        if (newQty == 0) return true;
+
+        bool oldPos = oldQty > 0;
+        bool newPos = newQty > 0;
+        if (oldPos != newPos) return false;
+
+        return _absInt128(newQty) <= _absInt128(oldQty);
+    }
+
     function _enforceInitialMargin(address trader) internal view {
         IRiskModule.AccountRisk memory r = riskModule.computeAccountRisk(trader);
         if (r.equity < int256(r.initialMargin)) revert MarginRequirementBreached(trader);
@@ -546,7 +576,8 @@ contract MarginEngine is ReentrancyGuard {
         returns (uint256 valueNative)
     {
         (bool isSupported, uint8 decimals, ) = collateralVault.collateralConfigs(settlementAsset);
-        if (!isSupported) revert SettlementAssetNotConfigured();
+        // align RiskModule strictness: decimals==0 => not configured for pricing
+        if (!isSupported || decimals == 0) revert SettlementAssetNotConfigured();
 
         uint256 scale = 10 ** uint256(decimals);
         valueNative = (value1e8 * scale) / PRICE_1E8;
@@ -582,7 +613,6 @@ contract MarginEngine is ReentrancyGuard {
         }
 
         uint256 intrinsic = _intrinsic1e8(s, spot);
-
         uint256 liqIntrinsic = intrinsic;
 
         if (intrinsic > 0 && minLiquidationPriceBpsOfIntrinsic > 0) {
@@ -595,6 +625,12 @@ contract MarginEngine is ReentrancyGuard {
         }
 
         pricePerContract = _price1e8ToSettlementUnits(s.settlementAsset, liqIntrinsic);
+    }
+
+    function _marginRatioBpsFromRisk(IRiskModule.AccountRisk memory risk) internal pure returns (uint256) {
+        if (risk.maintenanceMargin == 0) return type(uint256).max;
+        if (risk.equity <= 0) return 0;
+        return (uint256(risk.equity) * BPS) / risk.maintenanceMargin;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -613,26 +649,35 @@ contract MarginEngine is ReentrancyGuard {
         if (address(riskModule) == address(0)) revert RiskModuleNotSet();
 
         OptionProductRegistry.OptionSeries memory series = optionRegistry.getSeries(t.optionId);
-        require(series.isActive, "SERIES_NOT_ACTIVE");
-        require(block.timestamp < series.expiry, "SERIES_EXPIRED");
 
-        if (baseCollateralToken != address(0)) {
-            require(series.settlementAsset == baseCollateralToken, "BAD_SETTLEMENT_ASSET");
+        if (block.timestamp >= series.expiry) revert SeriesExpired();
+
+        if (baseCollateralToken != address(0) && series.settlementAsset != baseCollateralToken) {
+            revert BadSettlementAsset();
         }
 
-        Position storage buyerPos = _positions[t.buyer][t.optionId];
-        Position storage sellerPos = _positions[t.seller][t.optionId];
+        IMarginEngineState.Position storage buyerPos = _positions[t.buyer][t.optionId];
+        IMarginEngineState.Position storage sellerPos = _positions[t.seller][t.optionId];
 
         int128 oldBuyerQty = buyerPos.quantity;
         int128 oldSellerQty = sellerPos.quantity;
 
         int128 delta = _toInt128(t.quantity);
 
-        buyerPos.quantity = oldBuyerQty + delta;
-        sellerPos.quantity = oldSellerQty - delta;
+        // compute new quantities first (needed for close-only checks)
+        int128 newBuyerQty = oldBuyerQty + delta;
+        int128 newSellerQty = oldSellerQty - delta;
 
-        int128 newBuyerQty = buyerPos.quantity;
-        int128 newSellerQty = sellerPos.quantity;
+        // close-only if series inactive
+        if (!series.isActive) {
+            bool okBuyer = _isCloseOnlyTransition(oldBuyerQty, newBuyerQty);
+            bool okSeller = _isCloseOnlyTransition(oldSellerQty, newSellerQty);
+            if (!okBuyer || !okSeller) revert SeriesNotActiveCloseOnly();
+        }
+
+        // write storage
+        buyerPos.quantity = newBuyerQty;
+        sellerPos.quantity = newSellerQty;
 
         _updateTotalShortContracts(t.buyer, oldBuyerQty, newBuyerQty);
         _updateTotalShortContracts(t.seller, oldSellerQty, newSellerQty);
@@ -681,7 +726,7 @@ contract MarginEngine is ReentrancyGuard {
         if (intrinsic == 0) return 0;
 
         (bool isSupported, uint8 decimals, ) = collateralVault.collateralConfigs(series.settlementAsset);
-        if (!isSupported) revert SettlementAssetNotConfigured();
+        if (!isSupported || decimals == 0) revert SettlementAssetNotConfigured();
 
         uint256 scale = 10 ** uint256(decimals);
         payoffPerContract = (intrinsic * scale) / PRICE_1E8;
@@ -700,7 +745,7 @@ contract MarginEngine is ReentrancyGuard {
         if (isAccountSettled[optionId][trader]) revert SettlementAlreadyProcessed();
         isAccountSettled[optionId][trader] = true;
 
-        Position storage pos = _positions[trader][optionId];
+        IMarginEngineState.Position storage pos = _positions[trader][optionId];
         int128 oldQty = pos.quantity;
 
         if (oldQty == 0) {
@@ -749,7 +794,12 @@ contract MarginEngine is ReentrancyGuard {
             uint256 amountToCollect = traderBal >= amountOwed ? amountOwed : traderBal;
 
             if (amountToCollect > 0) {
-                collateralVault.transferBetweenAccounts(series.settlementAsset, trader, insuranceFund, amountToCollect);
+                collateralVault.transferBetweenAccounts(
+                    series.settlementAsset,
+                    trader,
+                    insuranceFund,
+                    amountToCollect
+                );
                 collectedFromTrader = amountToCollect;
                 seriesCollected[optionId] += amountToCollect;
             }
@@ -774,7 +824,11 @@ contract MarginEngine is ReentrancyGuard {
         _settleAccount(optionId, trader);
     }
 
-    function settleAccounts(uint256 optionId, address[] calldata traders) external whenNotPaused nonReentrant {
+    function settleAccounts(uint256 optionId, address[] calldata traders)
+        external
+        whenNotPaused
+        nonReentrant
+    {
         uint256 len = traders.length;
         for (uint256 i = 0; i < len; i++) {
             _settleAccount(optionId, traders[i]);
@@ -787,20 +841,14 @@ contract MarginEngine is ReentrancyGuard {
 
     function getMarginRatioBps(address trader) public view returns (uint256) {
         if (address(riskModule) == address(0)) return type(uint256).max;
-
         IRiskModule.AccountRisk memory risk = riskModule.computeAccountRisk(trader);
-
-        if (risk.maintenanceMargin == 0) return type(uint256).max;
-        if (risk.equity <= 0) return 0;
-
-        return (uint256(risk.equity) * BPS) / risk.maintenanceMargin;
+        return _marginRatioBpsFromRisk(risk);
     }
 
     function isLiquidatable(address trader) public view returns (bool) {
         if (address(riskModule) == address(0)) return false;
 
         IRiskModule.AccountRisk memory risk = riskModule.computeAccountRisk(trader);
-
         if (risk.maintenanceMargin == 0) return false;
         if (risk.equity <= 0) return true;
 
@@ -820,7 +868,9 @@ contract MarginEngine is ReentrancyGuard {
         if (address(riskModule) == address(0)) revert RiskModuleNotSet();
         if (liquidationCloseFactorBps == 0) revert LiquidationCloseFactorZero();
 
-        uint256 ratioBeforeBps = getMarginRatioBps(trader);
+        IRiskModule.AccountRisk memory riskBefore = riskModule.computeAccountRisk(trader);
+        uint256 ratioBeforeBps = _marginRatioBpsFromRisk(riskBefore);
+
         if (!isLiquidatable(trader)) revert NotLiquidatable();
 
         uint256 traderTotalShort = totalShortContracts[trader];
@@ -847,10 +897,10 @@ contract MarginEngine is ReentrancyGuard {
             if (block.timestamp >= s.expiry) continue;
             if (s.settlementAsset != baseCollateralToken) continue;
 
-            Position storage traderPos = _positions[trader][optionId];
+            IMarginEngineState.Position storage traderPos = _positions[trader][optionId];
             if (traderPos.quantity >= 0) continue;
 
-            Position storage liqPos = _positions[liquidator][optionId];
+            IMarginEngineState.Position storage liqPos = _positions[liquidator][optionId];
 
             int128 oldTraderQty = traderPos.quantity;
             int128 oldLiqQty = liqPos.quantity;
@@ -906,8 +956,18 @@ contract MarginEngine is ReentrancyGuard {
             collateralVault.transferBetweenAccounts(baseCollateralToken, trader, liquidator, seized);
         }
 
-        uint256 ratioAfterBps = getMarginRatioBps(trader);
-        if (ratioAfterBps < ratioBeforeBps + minLiquidationImprovementBps) revert LiquidationNotImproving();
+        IRiskModule.AccountRisk memory riskAfter = riskModule.computeAccountRisk(trader);
+        uint256 ratioAfterBps = _marginRatioBpsFromRisk(riskAfter);
+
+        // Improvement rule (handles equity<=0 cases safely):
+        //  - if equity was >0, enforce ratio improvement (prevents making trader insolvent)
+        //  - else allow if exposure decreased OR equity improved (less negative / more positive)
+        if (riskBefore.equity > 0) {
+            if (ratioAfterBps < ratioBeforeBps + minLiquidationImprovementBps) revert LiquidationNotImproving();
+        } else {
+            bool improved = (riskAfter.maintenanceMargin < riskBefore.maintenanceMargin) || (riskAfter.equity > riskBefore.equity);
+            if (!improved) revert LiquidationNotImproving();
+        }
 
         emit Liquidation(liquidator, trader, optionIds, quantities, seized);
 
