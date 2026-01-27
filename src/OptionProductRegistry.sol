@@ -91,6 +91,12 @@ contract OptionProductRegistry {
     uint64 public constant MAX_SPOT_SHOCK_BPS = 10_000; // 100%
     uint64 public constant MAX_VOL_SHOCK_BPS  = 5_000;  // 50%
 
+    // ============ Hardening: bornes contractSize / strike (anti overflow & dust) ============
+    // contractSize1e8 est multiplié par des prix (1e8) puis re-mis à l'échelle.
+    // On borne à quelque chose de très large mais fini pour éviter des tailles absurdes.
+    uint128 public constant MAX_CONTRACT_SIZE_1E8 = 1_000_000 * uint128(PRICE_SCALE); // 1e6 underlying / contrat
+    uint64 public constant MAX_STRIKE_1E8 = type(uint64).max; // déjà borné par uint64
+
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
     //////////////////////////////////////////////////////////////*/
@@ -355,6 +361,7 @@ contract OptionProductRegistry {
 
         if (strike == 0) revert StrikeZero();
         if (contractSize1e8 == 0) revert ContractSizeZero();
+        if (contractSize1e8 > MAX_CONTRACT_SIZE_1E8) revert InvalidUnderlyingConfig(); // reuse error
 
         OptionSeries memory s = OptionSeries({
             underlying: underlying,
