@@ -3,11 +3,15 @@ pragma solidity ^0.8.20;
 
 /// @notice Interface minimale en lecture pour le MarginEngine,
 ///         utilisée par le RiskModule pour lire les positions.
-/// @dev Spécification: getTraderSeries() DOIT retourner uniquement les séries OPEN (quantity != 0),
-///      sinon risque DoS (boucles de risk computation non bornées).
+/// @dev Spécification:
+///  - getTraderSeries() DOIT retourner uniquement les séries OPEN (quantity != 0),
+///    sinon risque DoS (boucles de risk computation non bornées).
+///  - Quantity hardening: l'implémentation DOIT garantir que `quantity` ne peut jamais
+///    valoir type(int128).min (sinon abs(quantity) overflow côté RiskModule).
 interface IMarginEngineState {
     /// @notice Représente la position nette sur une série d'options.
     /// @dev quantity > 0 : net long, quantity < 0 : net short, quantity == 0 : fermé.
+    ///      WARNING: quantity MUST NOT be type(int128).min.
     struct Position {
         int128 quantity;
     }
@@ -24,6 +28,7 @@ interface IMarginEngineState {
 
     /// @notice Liste des séries OPEN (positions non nulles) pour un trader.
     /// @dev DOIT être cohérente avec positions(): pour tout id retourné, positions().quantity != 0.
+    ///      WARNING: for any id returned, positions().quantity MUST NOT be type(int128).min.
     function getTraderSeries(address trader)
         external
         view

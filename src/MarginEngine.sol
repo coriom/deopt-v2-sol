@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 import "./OptionProductRegistry.sol";
 import "./CollateralVault.sol";
@@ -19,6 +20,9 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
 
     uint256 private constant BPS = 10_000;
     uint256 private constant PRICE_1E8 = 1e8;
+
+    int256 private constant INT128_MAX = int256(type(int128).max);
+    int256 private constant INT128_MIN = int256(type(int128).min);
 
     /*//////////////////////////////////////////////////////////////
                                 TYPES
@@ -76,7 +80,9 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
 
     // Safety / casting
     error QuantityTooLarge();
+    error QuantityMinNotAllowed(); // forbid int128.min (DoS/negation edge-case)
     error PnlOverflow();
+    error MathOverflow();
     error MarginRequirementBreached(address trader);
 
     /*//////////////////////////////////////////////////////////////
@@ -406,21 +412,20 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
         return traderSeries[trader];
     }
 
-    /*//////////////////////////////////////////////////////////////
-                              VIEW HELPERS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Longueur de la liste OPEN (utile pagination)
-    function getTraderSeriesLength(address trader) external view returns (uint256) {
+    function getTraderSeriesLength(address trader)
+        external
+        view
+        override
+        returns (uint256)
+    {
         return traderSeries[trader].length;
     }
 
-    /// @notice Slice paginée [start, end) sur la liste OPEN.
     function getTraderSeriesSlice(
         address trader,
         uint256 start,
         uint256 end
-    ) external view returns (uint256[] memory slice) {
+    ) external view override returns (uint256[] memory slice) {
         uint256 len = traderSeries[trader].length;
         if (start > len) start = len;
         if (end > len) end = len;
@@ -432,6 +437,10 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
             slice[i] = traderSeries[trader][start + i];
         }
     }
+
+    /*//////////////////////////////////////////////////////////////
+                              VIEW HELPERS
+    //////////////////////////////////////////////////////////////*/
 
     function getAccountRisk(address trader)
         external
@@ -492,12 +501,45 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
                           INTERNAL HELPERS
     //////////////////////////////////////////////////////////////*/
 
+    function _mulChecked(uint256 a, uint256 b) internal pure returns (uint256 c) {
+        if (a == 0 || b == 0) return 0;
+        c = a * b;
+        if (c / a != b) revert MathOverflow();
+    }
+
+    function _addChecked(uint256 a, uint256 b) internal pure returns (uint256 c) {
+        c = a + b;
+        if (c < a) revert MathOverflow();
+    }
+
+    function _ensureQtyAllowed(int128 q) internal pure {
+        if (q == type(int128).min) revert QuantityMinNotAllowed();
+    }
+
     function _toInt128(uint128 x) internal pure returns (int128) {
         if (x > uint128(type(int128).max)) revert QuantityTooLarge();
+        // x in [0, int128.max], safe.
         return int128(int256(uint256(x)));
     }
 
+    function _checkedAddInt128(int128 a, int128 b) internal pure returns (int128 r) {
+        int256 rr = int256(a) + int256(b);
+        // forbid int128.min explicitly (even though it's in range)
+        if (rr > INT128_MAX || rr < INT128_MIN || rr == INT128_MIN) revert QuantityTooLarge();
+        r = int128(rr);
+        _ensureQtyAllowed(r);
+    }
+
+    function _checkedSubInt128(int128 a, int128 b) internal pure returns (int128 r) {
+        int256 rr = int256(a) - int256(b);
+        if (rr > INT128_MAX || rr < INT128_MIN || rr == INT128_MIN) revert QuantityTooLarge();
+        r = int128(rr);
+        _ensureQtyAllowed(r);
+    }
+
     function _absInt128(int128 x) internal pure returns (uint256) {
+        // If someone ever tries to feed min here, we fail fast (protocol invariant).
+        if (x == type(int128).min) revert QuantityMinNotAllowed();
         int256 y = int256(x);
         return uint256(y >= 0 ? y : -y);
     }
@@ -507,6 +549,9 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
     ///  - new == 0  => ok (closing)
     ///  - sign must stay identical AND abs must not increase (no flip)
     function _isCloseOnlyTransition(int128 oldQty, int128 newQty) internal pure returns (bool) {
+        _ensureQtyAllowed(oldQty);
+        _ensureQtyAllowed(newQty);
+
         if (oldQty == 0) return newQty == 0;
         if (newQty == 0) return true;
 
@@ -551,6 +596,9 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
         int128 oldQty,
         int128 newQty
     ) internal {
+        _ensureQtyAllowed(oldQty);
+        _ensureQtyAllowed(newQty);
+
         if (oldQty == 0 && newQty != 0) {
             _addOpenSeries(trader, optionId);
         } else if (oldQty != 0 && newQty == 0) {
@@ -563,8 +611,11 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
         int128 oldQty,
         int128 newQty
     ) internal {
-        uint256 oldShort = oldQty < 0 ? uint256(int256(-int256(oldQty))) : 0;
-        uint256 newShort = newQty < 0 ? uint256(int256(-int256(newQty))) : 0;
+        _ensureQtyAllowed(oldQty);
+        _ensureQtyAllowed(newQty);
+
+        uint256 oldShort = oldQty < 0 ? uint256(-int256(oldQty)) : 0;
+        uint256 newShort = newQty < 0 ? uint256(-int256(newQty)) : 0;
 
         if (newShort >= oldShort) totalShortContracts[trader] += (newShort - oldShort);
         else totalShortContracts[trader] -= (oldShort - newShort);
@@ -580,7 +631,8 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
         if (!isSupported || decimals == 0) revert SettlementAssetNotConfigured();
 
         uint256 scale = 10 ** uint256(decimals);
-        valueNative = (value1e8 * scale) / PRICE_1E8;
+        // valueNative = value1e8 * scale / 1e8
+        valueNative = Math.mulDiv(value1e8, scale, PRICE_1E8, Math.Rounding.Down);
     }
 
     function _intrinsic1e8(
@@ -598,6 +650,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
         }
     }
 
+    /// @dev Returns settlement units per contract (includes contractSize1e8 scaling).
     function _computeLiquidationPricePerContract(
         OptionProductRegistry.OptionSeries memory s
     ) internal view returns (uint256 pricePerContract) {
@@ -612,19 +665,27 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
             }
         }
 
-        uint256 intrinsic = _intrinsic1e8(s, spot);
-        uint256 liqIntrinsic = intrinsic;
+        uint256 intrinsicPrice1e8 = _intrinsic1e8(s, spot);
+        uint256 liqPrice1e8 = intrinsicPrice1e8;
 
-        if (intrinsic > 0 && minLiquidationPriceBpsOfIntrinsic > 0) {
-            uint256 floorIntrinsic = (intrinsic * minLiquidationPriceBpsOfIntrinsic) / BPS;
-            if (liqIntrinsic < floorIntrinsic) liqIntrinsic = floorIntrinsic;
+        if (intrinsicPrice1e8 > 0 && minLiquidationPriceBpsOfIntrinsic > 0) {
+            uint256 floorPx = (intrinsicPrice1e8 * minLiquidationPriceBpsOfIntrinsic) / BPS;
+            if (liqPrice1e8 < floorPx) liqPrice1e8 = floorPx;
         }
 
         if (liquidationPriceSpreadBps > 0) {
-            liqIntrinsic = (liqIntrinsic * (BPS + liquidationPriceSpreadBps)) / BPS;
+            liqPrice1e8 = (liqPrice1e8 * (BPS + liquidationPriceSpreadBps)) / BPS;
         }
 
-        pricePerContract = _price1e8ToSettlementUnits(s.settlementAsset, liqIntrinsic);
+        // scale price by contractSize => amount1e8 per contract
+        uint256 amount1e8 = Math.mulDiv(
+            liqPrice1e8,
+            uint256(s.contractSize1e8),
+            PRICE_1E8,
+            Math.Rounding.Ceil
+        );
+
+        pricePerContract = _price1e8ToSettlementUnits(s.settlementAsset, amount1e8);
     }
 
     function _marginRatioBpsFromRisk(IRiskModule.AccountRisk memory risk) internal pure returns (uint256) {
@@ -662,11 +723,14 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
         int128 oldBuyerQty = buyerPos.quantity;
         int128 oldSellerQty = sellerPos.quantity;
 
+        _ensureQtyAllowed(oldBuyerQty);
+        _ensureQtyAllowed(oldSellerQty);
+
         int128 delta = _toInt128(t.quantity);
 
-        // compute new quantities first (needed for close-only checks)
-        int128 newBuyerQty = oldBuyerQty + delta;
-        int128 newSellerQty = oldSellerQty - delta;
+        // explicit bounded arithmetic (int128 overflow / min => revert)
+        int128 newBuyerQty = _checkedAddInt128(oldBuyerQty, delta);
+        int128 newSellerQty = _checkedSubInt128(oldSellerQty, delta);
 
         // close-only if series inactive
         if (!series.isActive) {
@@ -685,7 +749,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
         _updateOpenSeriesOnChange(t.buyer, t.optionId, oldBuyerQty, newBuyerQty);
         _updateOpenSeriesOnChange(t.seller, t.optionId, oldSellerQty, newSellerQty);
 
-        uint256 cashAmount = uint256(t.quantity) * uint256(t.price);
+        uint256 cashAmount = _mulChecked(uint256(t.quantity), uint256(t.price));
 
         collateralVault.transferBetweenAccounts(
             series.settlementAsset,
@@ -705,31 +769,38 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
                       PAYOFF & PnL HELPERS (SETTLEMENT)
     //////////////////////////////////////////////////////////////*/
 
+    /// @dev Returns settlement units per contract (includes contractSize1e8 scaling).
     function _computePerContractPayoff(
         OptionProductRegistry.OptionSeries memory series,
         uint256 settlementPrice
     ) internal view returns (uint256 payoffPerContract) {
         if (settlementPrice == 0) return 0;
 
-        uint256 intrinsic;
+        uint256 intrinsicPrice1e8;
 
         if (series.isCall) {
-            intrinsic = settlementPrice > uint256(series.strike)
+            intrinsicPrice1e8 = settlementPrice > uint256(series.strike)
                 ? (settlementPrice - uint256(series.strike))
                 : 0;
         } else {
-            intrinsic = uint256(series.strike) > settlementPrice
+            intrinsicPrice1e8 = uint256(series.strike) > settlementPrice
                 ? (uint256(series.strike) - settlementPrice)
                 : 0;
         }
 
-        if (intrinsic == 0) return 0;
+        if (intrinsicPrice1e8 == 0) return 0;
 
-        (bool isSupported, uint8 decimals, ) = collateralVault.collateralConfigs(series.settlementAsset);
-        if (!isSupported || decimals == 0) revert SettlementAssetNotConfigured();
+        // amount1e8 per contract = intrinsicPrice1e8 * contractSize1e8 / 1e8
+        uint256 amount1e8 = Math.mulDiv(
+            intrinsicPrice1e8,
+            uint256(series.contractSize1e8),
+            PRICE_1E8,
+            Math.Rounding.Down
+        );
 
-        uint256 scale = 10 ** uint256(decimals);
-        payoffPerContract = (intrinsic * scale) / PRICE_1E8;
+        if (amount1e8 == 0) return 0;
+
+        payoffPerContract = _price1e8ToSettlementUnits(series.settlementAsset, amount1e8);
     }
 
     function _settleAccount(uint256 optionId, address trader) internal {
@@ -748,6 +819,8 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
         IMarginEngineState.Position storage pos = _positions[trader][optionId];
         int128 oldQty = pos.quantity;
 
+        _ensureQtyAllowed(oldQty);
+
         if (oldQty == 0) {
             emit AccountSettled(trader, optionId, 0, 0, 0, 0);
             return;
@@ -762,7 +835,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
             int256 q = int256(oldQty);
             uint256 absQty = q >= 0 ? uint256(q) : uint256(-q);
 
-            uint256 amount = absQty * payoffPerContract; // reverts on overflow
+            uint256 amount = _mulChecked(absQty, payoffPerContract);
             if (amount > uint256(type(int256).max)) revert PnlOverflow();
 
             pnl = q >= 0 ? int256(amount) : -int256(amount);
@@ -905,7 +978,11 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
             int128 oldTraderQty = traderPos.quantity;
             int128 oldLiqQty = liqPos.quantity;
 
-            uint256 traderShortAbs = uint256(int256(-int256(oldTraderQty)));
+            _ensureQtyAllowed(oldTraderQty);
+            _ensureQtyAllowed(oldLiqQty);
+
+            // oldTraderQty < 0 ensured by condition above
+            uint256 traderShortAbs = uint256(-int256(oldTraderQty));
             uint256 remainingAllowance = maxCloseOverall - totalContractsClosed;
 
             uint256 liqQtyU = uint256(requestedQty);
@@ -918,10 +995,11 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
             int128 delta = _toInt128(liqQty);
 
             uint256 liqPricePerContract = _computeLiquidationPricePerContract(s);
-            totalCashRequested += liqPricePerContract * uint256(liqQty);
+            totalCashRequested = _addChecked(totalCashRequested, _mulChecked(liqPricePerContract, uint256(liqQty)));
 
-            traderPos.quantity = oldTraderQty + delta;  // réduit le short (vers 0)
-            liqPos.quantity = oldLiqQty - delta;        // liquidator reprend du short
+            // explicit bounded arithmetic (int128 overflow / min => revert)
+            traderPos.quantity = _checkedAddInt128(oldTraderQty, delta); // réduit le short (vers 0)
+            liqPos.quantity = _checkedSubInt128(oldLiqQty, delta);       // liquidator reprend du short
 
             int128 newTraderQty = traderPos.quantity;
             int128 newLiqQty = liqPos.quantity;
@@ -946,8 +1024,9 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
 
         emit LiquidationCashflow(liquidator, trader, settlementAsset, cashPaid, totalCashRequested);
 
-        uint256 mmBase = baseMaintenanceMarginPerContract * totalContractsClosed;
-        uint256 penalty = (mmBase * liquidationPenaltyBps) / BPS;
+        // penalty = (baseMMPerContract * closed) * penaltyBps / 10_000
+        uint256 mmBase = _mulChecked(baseMaintenanceMarginPerContract, totalContractsClosed);
+        uint256 penalty = Math.mulDiv(mmBase, liquidationPenaltyBps, BPS, Math.Rounding.Down);
 
         uint256 traderBal = collateralVault.balances(trader, baseCollateralToken);
         uint256 seized = penalty <= traderBal ? penalty : traderBal;
@@ -965,7 +1044,9 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
         if (riskBefore.equity > 0) {
             if (ratioAfterBps < ratioBeforeBps + minLiquidationImprovementBps) revert LiquidationNotImproving();
         } else {
-            bool improved = (riskAfter.maintenanceMargin < riskBefore.maintenanceMargin) || (riskAfter.equity > riskBefore.equity);
+            bool improved =
+                (riskAfter.maintenanceMargin < riskBefore.maintenanceMargin) ||
+                (riskAfter.equity > riskBefore.equity);
             if (!improved) revert LiquidationNotImproving();
         }
 

@@ -18,6 +18,8 @@ import "./IMarginEngineState.sol";
 ///  - Strict decimals: no silent fallback.
 ///  - Oracle-down conversion: apply configurable multiplier (bps).
 ///  - Optional local staleness guard (maxOracleDelay), bounded.
+///  - Quantity hardening: explicit int128 bounds on abs(quantity) before casting to uint256,
+///    and on all multiplications where quantity is involved.
 contract RiskModule is IRiskModule {
     using Math for uint256;
 
@@ -62,6 +64,10 @@ contract RiskModule is IRiskModule {
     error TokenNotConfigured(address token);
     error TokenDecimalsNotConfigured(address token);
     error TokenNotSupportedInVault(address token);
+
+    // quantity hardening
+    error QuantityInt128Min();      // quantity == type(int128).min (abs overflow)
+    error QuantityAbsOverflow();    // should never happen, defensive
 
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
@@ -305,6 +311,21 @@ contract RiskModule is IRiskModule {
     }
 
     /*//////////////////////////////////////////////////////////////
+                        INTERNAL: QUANTITY HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @dev Safe absolute value for int128 stored quantity.
+    /// Rejects type(int128).min because abs(min) cannot be represented in int128 and
+    /// naive -x overflows in int128 space.
+    function _absQuantityU(int128 q) internal pure returns (uint256) {
+        if (q >= 0) return uint256(int256(q));
+        if (q == type(int128).min) revert QuantityInt128Min();
+        int256 a = -int256(q); // safe now
+        if (a < 0) revert QuantityAbsOverflow();
+        return uint256(a);
+    }
+
+    /*//////////////////////////////////////////////////////////////
               INTERNAL: PRICE(1e8) * SIZE(1e8) -> AMOUNT(1e8)
     //////////////////////////////////////////////////////////////*/
 
@@ -526,7 +547,7 @@ contract RiskModule is IRiskModule {
             IMarginEngineState.Position memory pos = marginEngine.positions(trader, optionId);
             if (pos.quantity >= 0) continue;
 
-            uint256 shortAbs = uint256(int256(-pos.quantity));
+            uint256 shortAbs = _absQuantityU(pos.quantity);
 
             OptionProductRegistry.OptionSeries memory s = optionRegistry.getSeries(optionId);
 
@@ -545,7 +566,7 @@ contract RiskModule is IRiskModule {
                 intrinsicBase = floor;
             }
 
-            // liability += shortAbs * intrinsicBase (use mulDiv to avoid overflow)
+            // liability += shortAbs * intrinsicBase (mulDiv to avoid overflow)
             liabilityBase += Math.mulDiv(shortAbs, intrinsicBase, 1);
         }
 
@@ -582,7 +603,7 @@ contract RiskModule is IRiskModule {
             IMarginEngineState.Position memory pos = marginEngine.positions(trader, optionId);
             if (pos.quantity >= 0) continue;
 
-            uint256 shortAbs = uint256(int256(-pos.quantity));
+            uint256 shortAbs = _absQuantityU(pos.quantity);
 
             OptionProductRegistry.OptionSeries memory s = optionRegistry.getSeries(optionId);
             OptionProductRegistry.UnderlyingConfig memory ucfg =

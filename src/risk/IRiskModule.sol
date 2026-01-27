@@ -43,6 +43,13 @@ interface IRiskModule {
         view
         returns (int256 freeCollateral);
 
+    /// @notice Ratio de marge en bps: equity / maintenanceMargin * 1e4.
+    /// @dev Retourne type(uint256).max si maintenanceMargin == 0. Retourne 0 si equity <= 0.
+    function computeMarginRatioBps(address trader)
+        external
+        view
+        returns (uint256);
+
     /*//////////////////////////////////////////////////////////////
                        WITHDRAW LIMITS (LEGACY V1)
     //////////////////////////////////////////////////////////////*/
