@@ -9,8 +9,5 @@ pragma solidity ^0.8.20;
 interface IPriceSource {
     /// @return price Prix en 1e8 (ex: 2500$ => 2500 * 1e8)
     /// @return updatedAt Timestamp de dernière mise à jour du prix
-    function getLatestPrice()
-        external
-        view
-        returns (uint256 price, uint256 updatedAt);
+    function getLatestPrice() external view returns (uint256 price, uint256 updatedAt);
 }

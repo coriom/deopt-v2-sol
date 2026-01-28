@@ -75,6 +75,7 @@ contract OracleRouter is IOracle {
     error DeviationTooHigh();
     error ZeroAddress();
     error DeviationOutOfRange();
+    error DelayOutOfRange();
 
     /*//////////////////////////////////////////////////////////////
                                 MODIFIERS
@@ -114,11 +115,7 @@ contract OracleRouter is IOracle {
                             ADMIN CONFIG
     //////////////////////////////////////////////////////////////*/
 
-    function _pairKey(address underlying, address settlementAsset)
-        internal
-        pure
-        returns (bytes32)
-    {
+    function _pairKey(address underlying, address settlementAsset) internal pure returns (bytes32) {
         return keccak256(abi.encode(underlying, settlementAsset));
     }
 
@@ -137,6 +134,7 @@ contract OracleRouter is IOracle {
             revert NoSource();
         }
 
+        if (maxDelay > 3600) revert DelayOutOfRange();
         if (maxDeviationBps > 10_000) revert DeviationOutOfRange();
 
         bytes32 key = _pairKey(underlying, settlementAsset);
@@ -160,7 +158,7 @@ contract OracleRouter is IOracle {
     }
 
     function setMaxOracleDelay(uint32 _delay) external onlyOwner {
-        if (_delay > 3600) revert StalePrice(); // garde simple: hors borne = erreur
+        if (_delay > 3600) revert DelayOutOfRange();
         uint32 old = maxOracleDelay;
         maxOracleDelay = _delay;
         emit MaxOracleDelaySet(old, _delay);
@@ -179,11 +177,7 @@ contract OracleRouter is IOracle {
         return feeds[key];
     }
 
-    function hasActiveFeed(address underlying, address settlementAsset)
-        external
-        view
-        returns (bool)
-    {
+    function hasActiveFeed(address underlying, address settlementAsset) external view returns (bool) {
         bytes32 key = _pairKey(underlying, settlementAsset);
         FeedConfig memory cfg = feeds[key];
         return
@@ -235,7 +229,7 @@ contract OracleRouter is IOracle {
         uint256 minP = p1 < p2 ? p1 : p2;
         if (minP == 0) return type(uint256).max; // ultra défensif
         uint256 diff = p1 > p2 ? (p1 - p2) : (p2 - p1);
-        return (diff * 10_000) / minP;
+        return Math.mulDiv(diff, 10_000, minP);
     }
 
     /*//////////////////////////////////////////////////////////////

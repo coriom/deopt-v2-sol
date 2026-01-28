@@ -241,6 +241,11 @@ contract CollateralVault is ReentrancyGuard {
         return collateralTokens;
     }
 
+    /// @notice Helper: retourne la config sous forme de struct (utile pour éviter les tuple-getters).
+    function getCollateralConfig(address token) external view returns (CollateralTokenConfig memory cfg) {
+        cfg = collateralConfigs[token];
+    }
+
     /// @notice Configure un adapter de rendement pour un token
     /// @dev Robuste: interdit de changer d’adapter si totalShares != 0.
     function setTokenStrategy(address token, address adapter) external onlyOwner {

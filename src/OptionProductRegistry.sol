@@ -61,6 +61,7 @@ contract OptionProductRegistry {
                                 ERRORS
     //////////////////////////////////////////////////////////////*/
 
+    error ZeroAddress();
     error UnderlyingZero();
     error SettlementZero();
     error ExpiryInPast();
@@ -195,7 +196,7 @@ contract OptionProductRegistry {
     //////////////////////////////////////////////////////////////*/
 
     constructor(address _owner) {
-        if (_owner == address(0)) revert NotAuthorized();
+        if (_owner == address(0)) revert ZeroAddress();
         owner = _owner;
         isSeriesCreator[_owner] = true;
 
@@ -212,7 +213,7 @@ contract OptionProductRegistry {
     //////////////////////////////////////////////////////////////*/
 
     function transferOwnership(address newOwner) external onlyOwner {
-        if (newOwner == address(0)) revert NotAuthorized();
+        if (newOwner == address(0)) revert ZeroAddress();
         pendingOwner = newOwner;
         emit OwnershipTransferStarted(owner, newOwner);
     }
@@ -243,10 +244,12 @@ contract OptionProductRegistry {
     //////////////////////////////////////////////////////////////*/
 
     function setSeriesCreator(address account, bool allowed) external onlyOwner {
+        if (account == address(0)) revert ZeroAddress();
         isSeriesCreator[account] = allowed;
         emit SeriesCreatorSet(account, allowed);
     }
 
+    /// @dev address(0) autorisé pour désactiver l’operator.
     function setSettlementOperator(address account) external onlyOwner {
         settlementOperator = account;
         emit SettlementOperatorSet(account);
@@ -437,7 +440,10 @@ contract OptionProductRegistry {
                         SETTLEMENT (2-phase)
     //////////////////////////////////////////////////////////////*/
 
-    function setSettlementPrice(uint256 optionId, uint256 settlementPrice) external onlyOwnerOrSettlementOperator {
+    function setSettlementPrice(uint256 optionId, uint256 settlementPrice)
+        external
+        onlyOwnerOrSettlementOperator
+    {
         OptionSeries memory s = _series[optionId];
         if (!s.exists) revert UnknownSeries();
         if (settlementPrice == 0) revert SettlementPriceZero();
