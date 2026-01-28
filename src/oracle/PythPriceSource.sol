@@ -7,8 +7,8 @@ import "./IPriceSource.sol";
 /// @notice On utilise getPriceUnsafe et on laisse le Router gérer la "staleness".
 interface IPyth {
     struct Price {
-        int64 price;        // prix brut (mantissa)
-        uint64 conf;        // intervalle de confiance (ignoré ici)
+        int64 price;        // mantissa
+        uint64 conf;        // ignoré
         int32 expo;         // exponent (ex: -8 => 1e-8)
         uint256 publishTime;
     }
@@ -22,13 +22,16 @@ contract PythPriceSource is IPriceSource {
     IPyth public immutable pyth;
     bytes32 public immutable priceId;
 
+    error ZeroPyth();
+    error ZeroId();
     error InvalidPrice();
     error ExpoOutOfRange();
     error ScaleOverflow();
+    error InvalidTimestamp();
 
     constructor(address _pyth, bytes32 _priceId) {
-        require(_pyth != address(0), "ZERO_PYTH");
-        require(_priceId != bytes32(0), "ZERO_ID");
+        if (_pyth == address(0)) revert ZeroPyth();
+        if (_priceId == bytes32(0)) revert ZeroId();
         pyth = IPyth(_pyth);
         priceId = _priceId;
     }
@@ -42,39 +45,34 @@ contract PythPriceSource is IPriceSource {
     {
         IPyth.Price memory p = pyth.getPriceUnsafe(priceId);
 
+        if (p.publishTime == 0) revert InvalidTimestamp();
+
         // Mantissa doit être positive pour un prix valide
         if (p.price <= 0) revert InvalidPrice();
 
-        // On veut normaliser en 1e8 :
-        // valeur réelle = p.price * 10^expo
-        // target = valeur réelle * 1e8 = p.price * 10^(expo + 8)
-        //
-        // Si (expo + 8) < 0 => division
-        // Si (expo + 8) > 0 => multiplication
+        // Normalisation en 1e8 :
+        // valeur réelle = mantissa * 10^expo
+        // target = valeur réelle * 1e8 = mantissa * 10^(expo + 8)
         int32 expo = p.expo;
 
-        // Borne défensive (tu peux élargir si tu veux, mais ça protège des cas extrêmes)
+        // Borne défensive
         if (expo < -30 || expo > 30) revert ExpoOutOfRange();
 
         int32 expTo1e8 = expo + 8;
 
-        uint256 mantissa = uint64(p.price); // safe car p.price > 0 et int64 -> uint64 ok
+        // p.price est int64 > 0, conversion safe vers uint256
+        uint256 mantissa = uint256(uint64(p.price));
 
         if (expTo1e8 == 0) {
             price = mantissa;
         } else if (expTo1e8 < 0) {
-            uint256 diff = uint32(-expTo1e8);
-            // 10**diff doit rester raisonnable, diff borné par ExpoOutOfRange
+            uint256 diff = uint256(uint32(-expTo1e8));
             uint256 factor = 10 ** diff;
             price = mantissa / factor;
         } else {
-            uint256 diff = uint32(expTo1e8);
-
-            // Check overflow très simple (facultatif mais solide)
-            // Si mantissa * 10**diff overflow => revert
+            uint256 diff = uint256(uint32(expTo1e8));
             uint256 factor = 10 ** diff;
             if (mantissa != 0 && factor > type(uint256).max / mantissa) revert ScaleOverflow();
-
             price = mantissa * factor;
         }
 

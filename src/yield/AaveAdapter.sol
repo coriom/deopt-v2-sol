@@ -19,8 +19,8 @@ interface IAaveV3Pool {
 ///  - Shares internes suivent une logique type ERC4626:
 ///      * deposit: shares = floor(assets * totalShares / totalAssets)
 ///      * withdraw: shares = ceil(assets * totalShares / totalAssets)
-///  - IMPORTANT: jamais de "mint 1 share" sur dust -> sinon dilution / vol de valeur.
-///    Si previewDeposit retourne 0 shares, on revert (assets trop faibles).
+///  - Hardening:
+///      * refuse l’état “assets>0 && totalShares==0” (donation aToken) pour éviter captation.
 contract AaveAdapter is IYieldAdapter {
     using SafeERC20 for IERC20;
 
@@ -33,6 +33,7 @@ contract AaveAdapter is IYieldAdapter {
     error WithdrawSlippage();
     error RescueNotAllowed();
     error EmergencyOnlyWhenNoShares();
+    error UnexpectedAssetsWithoutShares();
 
     event EmergencyWithdrawAll(address indexed to, uint256 assetsWithdrawn);
     event Rescue(address indexed token, address indexed to, uint256 amount);
@@ -63,7 +64,6 @@ contract AaveAdapter is IYieldAdapter {
     }
 
     function totalAssets() public view override returns (uint256) {
-        // Pour Aave v3, aToken balance représente (principal + intérêts) en unités de l’asset.
         return IERC20(aToken).balanceOf(address(this));
     }
 
@@ -77,10 +77,15 @@ contract AaveAdapter is IYieldAdapter {
         uint256 ts = totalShares;
         uint256 ta = totalAssets();
 
-        // Bootstrap: 1 share = 1 asset
-        if (ts == 0 || ta == 0) return assets;
+        // Etat anormal: assets déjà là sans shares => refuse (évite captation de donation)
+        if (ts == 0 && ta > 0) revert UnexpectedAssetsWithoutShares();
 
-        // floor
+        // Bootstrap: 1 share = 1 asset
+        if (ts == 0 && ta == 0) return assets;
+
+        // Si shares existent, assets doit exister
+        if (ta == 0) revert ZeroAssetsUnderManagement();
+
         sharesMinted = Math.mulDiv(assets, ts, ta, Math.Rounding.Floor);
     }
 
@@ -93,7 +98,6 @@ contract AaveAdapter is IYieldAdapter {
         if (ts == 0) return 0;
         if (ta == 0) revert ZeroAssetsUnderManagement();
 
-        // ceil
         sharesBurned = Math.mulDiv(assets, ts, ta, Math.Rounding.Ceil);
     }
 
@@ -106,7 +110,6 @@ contract AaveAdapter is IYieldAdapter {
         if (ts == 0) return 0;
         if (ta == 0) revert ZeroAssetsUnderManagement();
 
-        // floor
         assetsOut = Math.mulDiv(shares, ta, ts, Math.Rounding.Floor);
     }
 
@@ -116,10 +119,13 @@ contract AaveAdapter is IYieldAdapter {
         uint256 ts = totalShares;
         uint256 ta = totalAssets();
 
-        // Bootstrap: 1 share = 1 asset
-        if (ts == 0 || ta == 0) return shares;
+        if (ts == 0 && ta > 0) revert UnexpectedAssetsWithoutShares();
 
-        // ceil
+        // Bootstrap: 1 share = 1 asset
+        if (ts == 0 && ta == 0) return shares;
+
+        if (ta == 0) revert ZeroAssetsUnderManagement();
+
         assetsIn = Math.mulDiv(shares, ta, ts, Math.Rounding.Ceil);
     }
 
@@ -145,12 +151,10 @@ contract AaveAdapter is IYieldAdapter {
         sharesMinted = previewDeposit(assets);
         if (sharesMinted == 0) revert ZeroSharesMinted();
 
-        // pull l’asset depuis le vault (vault doit avoir approuvé)
         IERC20(asset).safeTransferFrom(msg.sender, address(this), assets);
 
         totalShares = totalShares + sharesMinted;
 
-        // supply Aave
         pool.supply(asset, assets, address(this), 0);
     }
 

@@ -22,14 +22,20 @@ interface AggregatorV3Interface {
 /// @title ChainlinkPriceSource
 /// @notice Adapte un agrégateur Chainlink vers IPriceSource (prix normalisé en 1e8).
 contract ChainlinkPriceSource is IPriceSource {
-    AggregatorV3Interface public immutable aggregator;
-    uint8 public immutable aggregatorDecimals; // décimales natives de Chainlink
+    uint8 internal constant TARGET_DECIMALS = 8;
 
-    error InvalidAnswer();
+    AggregatorV3Interface public immutable aggregator;
+    uint8 public immutable aggregatorDecimals;
+
+    error ZeroAggregator();
     error InvalidDecimals();
+    error InvalidAnswer();
+    error InvalidRound();
+    error InvalidTimestamp();
+    error ScaleOverflow();
 
     constructor(address _aggregator) {
-        require(_aggregator != address(0), "ZERO_AGGREGATOR");
+        if (_aggregator == address(0)) revert ZeroAggregator();
         aggregator = AggregatorV3Interface(_aggregator);
 
         uint8 dec = aggregator.decimals();
@@ -45,27 +51,32 @@ contract ChainlinkPriceSource is IPriceSource {
         override
         returns (uint256 price, uint256 updatedAt)
     {
-        // latestRoundData retourne 5 valeurs : (roundId, answer, startedAt, updatedAt, answeredInRound)
-        (, int256 answer, , uint256 updatedAt_, ) = aggregator.latestRoundData();
+        (uint80 roundId, int256 answer, , uint256 updatedAt_, uint80 answeredInRound) =
+            aggregator.latestRoundData();
+
+        // Round sanity (Chainlink best practice)
+        if (answeredInRound < roundId) revert InvalidRound();
+
+        // Timestamp must be set (Router gère ensuite la staleness)
+        if (updatedAt_ == 0) revert InvalidTimestamp();
 
         if (answer <= 0) revert InvalidAnswer();
 
         uint256 raw = uint256(answer);
         uint8 dec = aggregatorDecimals;
 
-        // Normalisation en 1e8
-        if (dec == 8) {
-            // déjà en 1e8
+        if (dec == TARGET_DECIMALS) {
             price = raw;
-        } else if (dec > 8) {
-            // ex: 1e18 -> / 1e10
-            uint256 factor = 10 ** uint256(dec - 8);
+        } else if (dec > TARGET_DECIMALS) {
+            uint256 factor = 10 ** uint256(dec - TARGET_DECIMALS);
             price = raw / factor;
         } else {
-            // ex: 1e6 -> * 1e2
-            uint256 factor = 10 ** uint256(8 - dec);
+            uint256 factor = 10 ** uint256(TARGET_DECIMALS - dec);
+            if (raw != 0 && factor > type(uint256).max / raw) revert ScaleOverflow();
             price = raw * factor;
         }
+
+        if (price == 0) revert InvalidAnswer();
 
         updatedAt = updatedAt_;
     }
