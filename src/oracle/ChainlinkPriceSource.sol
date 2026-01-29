@@ -57,9 +57,7 @@ contract ChainlinkPriceSource is IPriceSource {
         // Round sanity (Chainlink best practice)
         if (answeredInRound < roundId) revert InvalidRound();
 
-        // Timestamp must be set (Router gère ensuite la staleness)
         if (updatedAt_ == 0) revert InvalidTimestamp();
-
         if (answer <= 0) revert InvalidAnswer();
 
         uint256 raw = uint256(answer);

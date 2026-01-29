@@ -5,6 +5,7 @@ import "./IPriceSource.sol";
 
 /// @title PeggedStablePriceSource
 /// @notice Retourne toujours un prix fixe (ex: 1e8 pour 1.0), pour des stablecoins peggés.
+/// @dev updatedAt = block.timestamp (timestamp "vivant" pour la staleness du Router).
 contract PeggedStablePriceSource is IPriceSource {
     uint256 public immutable price; // ex: 1e8
 
@@ -21,7 +22,6 @@ contract PeggedStablePriceSource is IPriceSource {
         override
         returns (uint256, uint256)
     {
-        // Timestamp "vivant" pour éviter la staleness si un delay est activé.
         return (price, block.timestamp);
     }
 }

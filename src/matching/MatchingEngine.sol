@@ -9,15 +9,12 @@ import {IMarginEngineTrade} from "./IMarginEngineTrade.sol";
 
 /// @title MatchingEngine (onchain gatekeeper)
 /// @notice Vérifie signatures EIP-712 + anti-replay, puis appelle MarginEngine.applyTrade().
-/// @dev Modèle:
-///  - backend (executor) soumet un trade matché + sig buyer + sig seller.
-///  - nonces séquentiels par trader: nonce doit matcher nonces[trader], puis ++.
-///  - deadline anti-replay temporel (0 = no deadline).
-///  - permissioned execution (isExecutor), signatures restent le fondement de confiance.
-///  - hardening ECDSA: refuse malleability / mauvais v,s via ECDSA.recover OZ.
+/// @dev
+///  - Executor permissioned (isExecutor) MAIS l'autorité vient des signatures.
+///  - Nonces séquentiels par trader (anti-replay), consommés atomiquement.
+///  - deadline: 0 = no deadline.
+///  - Hardening signatures: utilise ECDSA.tryRecover => erreurs uniformisées (InvalidSignature).
 contract MatchingEngine is ReentrancyGuard, EIP712 {
-    using ECDSA for bytes32;
-
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
     //////////////////////////////////////////////////////////////*/
@@ -62,10 +59,10 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
     mapping(address => bool) public isExecutor;
     bool public paused;
 
-    /// @notice nonces séquentiels par trader (anti-replay)
+    /// @notice Nonces séquentiels par trader (anti-replay)
     mapping(address => uint256) public nonces;
 
-    // EIP-712 typehash
+    /// @dev EIP-712 typehash
     bytes32 public constant MATCHED_TRADE_TYPEHASH =
         keccak256(
             "MatchedTrade(address buyer,address seller,uint256 optionId,uint128 quantity,uint128 price,uint256 buyerNonce,uint256 sellerNonce,uint256 deadline)"
@@ -76,10 +73,10 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
         address seller;
         uint256 optionId;
         uint128 quantity;
-        uint128 price;
+        uint128 price;       // unités natives du settlementAsset (ex: 1e6 USDC)
         uint256 buyerNonce;
         uint256 sellerNonce;
-        uint256 deadline; // 0 = no deadline
+        uint256 deadline;    // 0 = no deadline
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -114,7 +111,7 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
         emit OwnershipTransferred(address(0), _owner);
         emit MarginEngineSet(address(0), _marginEngine);
 
-        // Par défaut: owner executor (tu pourras ajouter ton backend ensuite)
+        // default: owner executor
         isExecutor[_owner] = true;
         emit ExecutorSet(_owner, true);
     }
@@ -158,7 +155,6 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Invalide le nonce courant d’un trader en le bumpant.
-    /// @dev Le backend doit resigner avec le nouveau nonce.
     function cancelNextNonce() external {
         uint256 newNonce = nonces[msg.sender] + 1;
         nonces[msg.sender] = newNonce;
@@ -175,6 +171,10 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
     /*//////////////////////////////////////////////////////////////
                             EIP-712 HELPERS
     //////////////////////////////////////////////////////////////*/
+
+    function domainSeparatorV4() external view returns (bytes32) {
+        return _domainSeparatorV4();
+    }
 
     function hashMatchedTrade(MatchedTrade calldata t) public view returns (bytes32 digest) {
         bytes32 structHash = keccak256(
@@ -194,8 +194,8 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
     }
 
     function _verify(address signer, bytes32 digest, bytes calldata sig) internal pure returns (bool) {
-        // OZ ECDSA.recover: protège contre la malleability (s) + v invalid.
-        return digest.recover(sig) == signer;
+        (address recovered, ECDSA.RecoverError err) = ECDSA.tryRecover(digest, sig);
+        return (err == ECDSA.RecoverError.NoError) && (recovered == signer);
     }
 
     function _validateAndConsumeNonces(MatchedTrade calldata t) internal {
@@ -234,7 +234,6 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
 
         _validateAndConsumeNonces(t);
 
-        // forward to MarginEngine
         IMarginEngineTrade.Trade memory mt = IMarginEngineTrade.Trade({
             buyer: t.buyer,
             seller: t.seller,

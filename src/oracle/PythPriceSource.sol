@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "./IPriceSource.sol";
 
 /// @dev Interface minimale de Pyth sur EVM.
-/// @notice On utilise getPriceUnsafe et on laisse le Router gérer la "staleness".
+/// @notice On utilise getPriceUnsafe et on laisse le Router gérer la staleness.
 interface IPyth {
     struct Price {
         int64 price;        // mantissa
@@ -46,21 +46,19 @@ contract PythPriceSource is IPriceSource {
         IPyth.Price memory p = pyth.getPriceUnsafe(priceId);
 
         if (p.publishTime == 0) revert InvalidTimestamp();
-
-        // Mantissa doit être positive pour un prix valide
         if (p.price <= 0) revert InvalidPrice();
 
         // Normalisation en 1e8 :
         // valeur réelle = mantissa * 10^expo
-        // target = valeur réelle * 1e8 = mantissa * 10^(expo + 8)
+        // target(1e8) = valeur réelle * 1e8 = mantissa * 10^(expo + 8)
         int32 expo = p.expo;
 
-        // Borne défensive
+        // Borne défensive (évite 10**k trop grand même si uint256 le supporterait largement ici)
         if (expo < -30 || expo > 30) revert ExpoOutOfRange();
 
         int32 expTo1e8 = expo + 8;
 
-        // p.price est int64 > 0, conversion safe vers uint256
+        // p.price est int64 > 0 => cast safe vers uint256
         uint256 mantissa = uint256(uint64(p.price));
 
         if (expTo1e8 == 0) {

@@ -6,20 +6,25 @@ import "./IOracle.sol";
 import "./IPriceSource.sol";
 
 /// @title OracleRouter
-/// @notice Oracle central de DeOpt v2: route vers différentes sources + règles de sécurité.
+/// @notice Oracle central: route vers différentes sources + règles de sécurité.
 /// @dev
-///  - Toutes les sources retournent des prix normalisés en 1e8 (cf. IPriceSource).
-///  - Le router applique:
-///      * un contrôle de fraîcheur (staleness) combinant `maxOracleDelay` global
-///        et un `maxDelay` spécifique par feed,
-///      * un contrôle de déviation entre source primaire et secondaire (si présente).
+///  - Tous les prix sont en 1e8.
+///  - Staleness: combine `maxOracleDelay` global (0=off) et `maxDelay` par feed (0=off) via min(non-zero).
+///  - Deviation: si secondaire configurée et lisible:
+///      * maxDeviationBps == 0 => égalité stricte
+///      * sinon |p1-p2| / min(p1,p2) <= maxDeviationBps
 ///  - Hardening:
-///      * protège les divisions par zéro (minP==0)
-///      * refuse updatedAt dans le futur si une règle de staleness est active
-///      * comportement clair quand maxDeviationBps == 0 (secondary -> strict equality)
-///      * permet un fallback "si primary fail" vers secondary (si configured)
+///      * refuse updatedAt == 0
+///      * refuse updatedAt dans le futur (même si staleness off)
+///      * fallback si primary fail vers secondary (si configured)
 contract OracleRouter is IOracle {
     using Math for uint256;
+
+    /*//////////////////////////////////////////////////////////////
+                                CONSTANTS
+    //////////////////////////////////////////////////////////////*/
+
+    uint256 internal constant BPS = 10_000;
 
     /*//////////////////////////////////////////////////////////////
                                 TYPES
@@ -40,8 +45,8 @@ contract OracleRouter is IOracle {
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     event FeedConfigured(
-        address indexed underlying,
-        address indexed settlementAsset,
+        address indexed baseAsset,
+        address indexed quoteAsset,
         address primarySource,
         address secondarySource,
         uint32 maxDelay,
@@ -57,8 +62,7 @@ contract OracleRouter is IOracle {
 
     address public owner;
 
-    /// @notice Garde de fraîcheur globale (0 = off).
-    /// @dev Bornée via setter. Par défaut 600s.
+    /// @notice Garde de fraîcheur globale (0 = off). Défaut: 600s.
     uint32 public maxOracleDelay;
 
     mapping(bytes32 => FeedConfig) public feeds;
@@ -115,29 +119,29 @@ contract OracleRouter is IOracle {
                             ADMIN CONFIG
     //////////////////////////////////////////////////////////////*/
 
-    function _pairKey(address underlying, address settlementAsset) internal pure returns (bytes32) {
-        return keccak256(abi.encode(underlying, settlementAsset));
+    function _pairKey(address baseAsset, address quoteAsset) internal pure returns (bytes32) {
+        return keccak256(abi.encode(baseAsset, quoteAsset));
     }
 
     function setFeed(
-        address underlying,
-        address settlementAsset,
+        address baseAsset,
+        address quoteAsset,
         IPriceSource primarySource,
         IPriceSource secondarySource,
         uint32 maxDelay,
         uint16 maxDeviationBps,
         bool isActive
     ) external onlyOwner {
-        if (underlying == address(0) || settlementAsset == address(0)) revert ZeroAddress();
+        if (baseAsset == address(0) || quoteAsset == address(0)) revert ZeroAddress();
 
         if (address(primarySource) == address(0) && address(secondarySource) == address(0)) {
             revert NoSource();
         }
 
         if (maxDelay > 3600) revert DelayOutOfRange();
-        if (maxDeviationBps > 10_000) revert DeviationOutOfRange();
+        if (maxDeviationBps > uint16(BPS)) revert DeviationOutOfRange();
 
-        bytes32 key = _pairKey(underlying, settlementAsset);
+        bytes32 key = _pairKey(baseAsset, quoteAsset);
         feeds[key] = FeedConfig({
             primarySource: primarySource,
             secondarySource: secondarySource,
@@ -147,8 +151,8 @@ contract OracleRouter is IOracle {
         });
 
         emit FeedConfigured(
-            underlying,
-            settlementAsset,
+            baseAsset,
+            quoteAsset,
             address(primarySource),
             address(secondarySource),
             maxDelay,
@@ -168,17 +172,17 @@ contract OracleRouter is IOracle {
                             VIEW HELPERS
     //////////////////////////////////////////////////////////////*/
 
-    function getFeed(address underlying, address settlementAsset)
+    function getFeed(address baseAsset, address quoteAsset)
         external
         view
         returns (FeedConfig memory cfg)
     {
-        bytes32 key = _pairKey(underlying, settlementAsset);
+        bytes32 key = _pairKey(baseAsset, quoteAsset);
         return feeds[key];
     }
 
-    function hasActiveFeed(address underlying, address settlementAsset) external view returns (bool) {
-        bytes32 key = _pairKey(underlying, settlementAsset);
+    function hasActiveFeed(address baseAsset, address quoteAsset) external view returns (bool) {
+        bytes32 key = _pairKey(baseAsset, quoteAsset);
         FeedConfig memory cfg = feeds[key];
         return
             cfg.isActive &&
@@ -193,22 +197,21 @@ contract OracleRouter is IOracle {
         // min non-nul entre feedMaxDelay et maxOracleDelay
         uint32 g = maxOracleDelay;
 
-        if (feedMaxDelay != 0 && g != 0) {
-            return feedMaxDelay < g ? feedMaxDelay : g;
-        }
+        if (feedMaxDelay != 0 && g != 0) return feedMaxDelay < g ? feedMaxDelay : g;
         if (feedMaxDelay != 0) return feedMaxDelay;
         if (g != 0) return g;
         return 0;
     }
 
-    function _checkStaleness(uint256 updatedAt, uint32 feedMaxDelay) internal view {
-        uint32 d = _effectiveDelay(feedMaxDelay);
-        if (d == 0) return;
-
+    function _checkTimestampAndStaleness(uint256 updatedAt, uint32 feedMaxDelay) internal view {
+        // Toujours exiger un timestamp non nul.
         if (updatedAt == 0) revert StalePrice();
 
-        // Défensif: si updatedAt est dans le futur, on refuse (oracle bug / manipulation)
+        // Toujours refuser les timestamps futurs (même si delay off).
         if (updatedAt > block.timestamp) revert FutureTimestamp();
+
+        uint32 d = _effectiveDelay(feedMaxDelay);
+        if (d == 0) return;
 
         if (block.timestamp - updatedAt > d) revert StalePrice();
     }
@@ -224,25 +227,24 @@ contract OracleRouter is IOracle {
         }
     }
 
-    function _deviationBps(uint256 p1, uint256 p2) internal pure returns (uint256 bps) {
-        // p1 et p2 > 0 garantis par l'appelant
+    function _deviationBps(uint256 p1, uint256 p2) internal pure returns (uint256 bps_) {
         uint256 minP = p1 < p2 ? p1 : p2;
-        if (minP == 0) return type(uint256).max; // ultra défensif
+        if (minP == 0) return type(uint256).max;
         uint256 diff = p1 > p2 ? (p1 - p2) : (p2 - p1);
-        return Math.mulDiv(diff, 10_000, minP);
+        return Math.mulDiv(diff, BPS, minP);
     }
 
     /*//////////////////////////////////////////////////////////////
                             ORACLE LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    function getPrice(address underlying, address settlementAsset)
+    function getPrice(address baseAsset, address quoteAsset)
         external
         view
         override
         returns (uint256 price, uint256 updatedAt)
     {
-        bytes32 key = _pairKey(underlying, settlementAsset);
+        bytes32 key = _pairKey(baseAsset, quoteAsset);
         FeedConfig memory cfg = feeds[key];
 
         if (!cfg.isActive) revert FeedNotActive();
@@ -254,31 +256,31 @@ contract OracleRouter is IOracle {
 
         // Single-source fallback
         if (ok1 && !ok2) {
-            _checkStaleness(t1, cfg.maxDelay);
+            _checkTimestampAndStaleness(t1, cfg.maxDelay);
             return (p1, t1);
         }
         if (!ok1 && ok2) {
-            _checkStaleness(t2, cfg.maxDelay);
+            _checkTimestampAndStaleness(t2, cfg.maxDelay);
             return (p2, t2);
         }
 
-        // Both ok => enforce staleness + deviation check
-        _checkStaleness(t1, cfg.maxDelay);
-        _checkStaleness(t2, cfg.maxDelay);
+        // Both ok => enforce timestamp + staleness + deviation check
+        _checkTimestampAndStaleness(t1, cfg.maxDelay);
+        _checkTimestampAndStaleness(t2, cfg.maxDelay);
 
         uint16 maxDev = cfg.maxDeviationBps;
 
         // maxDev == 0 => strict equality if secondary exists and is readable
         if (maxDev == 0) {
             if (p1 != p2) revert DeviationTooHigh();
-            // choose fresher timestamp (defensive)
+            // updatedAt = plus frais (info downstream)
             return (p1, t1 >= t2 ? t1 : t2);
         }
 
         uint256 dev = _deviationBps(p1, p2);
-        if (dev > maxDev) revert DeviationTooHigh();
+        if (dev > uint256(maxDev)) revert DeviationTooHigh();
 
-        // Return primary price, fresher updatedAt to maximize downstream freshness info
+        // Return primary price, fresher updatedAt
         return (p1, t1 >= t2 ? t1 : t2);
     }
 }
