@@ -5,10 +5,12 @@ pragma solidity ^0.8.20;
 /// @notice Registre central des séries d'options de DeOpt v2
 /// @dev Ne gère pas les positions ni la marge, seulement la définition des instruments
 ///      + le prix de settlement officiel à l'expiration.
-///      Conventions d'unités (verrouillées ici):
+///
+///      Conventions d'unités (VERROUILLÉES ici):
 ///        - strike et settlementPrice sont en PRICE_SCALE (= 1e8)
-///        - contractSize1e8 = quantité d'underlying par contrat, en 1e8
-///          (1 contrat = 1 underlying => contractSize1e8 = 1e8)
+///        - contractSize1e8 est FIXÉ à PRICE_SCALE (1e8) : 1 contrat = 1 underlying
+///
+///      Rationale: simplifie notional/marge/liquidation et réduit la surface d'erreurs de scaling.
 contract OptionProductRegistry {
     /*//////////////////////////////////////////////////////////////
                                 UNITS
@@ -25,13 +27,13 @@ contract OptionProductRegistry {
     /// @dev
     ///   - `strike` et `settlementPrice` sont en PRICE_SCALE (1e8).
     ///   - `contractSize1e8` : taille d'un contrat en "unités d'underlying" normalisées 1e8.
-    ///        Ex: 1 contrat = 1 underlying => 1e8 ; 0.1 => 1e7.
+    ///        VERROUILLÉ à 1e8 (1 contrat = 1 underlying).
     struct OptionSeries {
         address underlying;       // Sous-jacent (ex: WETH)
         address settlementAsset;  // Asset de règlement (ex: USDC)
         uint64 expiry;            // Timestamp d'expiration
         uint64 strike;            // Strike * 1e8 (PRICE_SCALE)
-        uint128 contractSize1e8;  // Taille contrat (underlying) * 1e8
+        uint128 contractSize1e8;  // Taille contrat (underlying) * 1e8 (DOIT == 1e8)
         bool isCall;              // true = Call, false = Put
         bool isEuropean;          // true = Européenne (pour usage futur / front)
         bool exists;              // Flag pour savoir si la série est enregistrée
@@ -85,6 +87,9 @@ contract OptionProductRegistry {
     error InvalidDelay();
     error OwnershipTransferNotInitiated();
 
+    // NEW: contractSize lock
+    error InvalidContractSize();        // contractSize1e8 must be PRICE_SCALE
+
     /*//////////////////////////////////////////////////////////////
                               DEFENSIVE LIMITS
     //////////////////////////////////////////////////////////////*/
@@ -92,11 +97,9 @@ contract OptionProductRegistry {
     uint64 public constant MAX_SPOT_SHOCK_BPS = 10_000; // 100%
     uint64 public constant MAX_VOL_SHOCK_BPS  = 5_000;  // 50%
 
-    // ============ Hardening: bornes contractSize / strike (anti overflow & dust) ============
-    // contractSize1e8 est multiplié par des prix (1e8) puis re-mis à l'échelle.
-    // On borne à quelque chose de très large mais fini pour éviter des tailles absurdes.
+    // NOTE: Ces bornes restent, mais contractSize est verrouillé à 1e8
     uint128 public constant MAX_CONTRACT_SIZE_1E8 = 1_000_000 * uint128(PRICE_SCALE); // 1e6 underlying / contrat
-    uint64 public constant MAX_STRIKE_1E8 = type(uint64).max; // déjà borné par uint64
+    uint64 public constant MAX_STRIKE_1E8 = type(uint64).max;
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
@@ -301,7 +304,7 @@ contract OptionProductRegistry {
                             SERIES CREATION
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Crée une nouvelle série d'options (default: 1 contrat = 1 underlying, donc contractSize1e8 = 1e8)
+    /// @notice Crée une nouvelle série d'options (1 contrat = 1 underlying, contractSize1e8 = 1e8)
     function createSeries(
         address underlying,
         address settlementAsset,
@@ -322,6 +325,7 @@ contract OptionProductRegistry {
     }
 
     /// @notice Crée une nouvelle série d'options en spécifiant explicitement la taille d'un contrat.
+    /// @dev Hard-lock: contractSize1e8 DOIT être PRICE_SCALE (1e8).
     function createSeries(
         address underlying,
         address settlementAsset,
@@ -364,7 +368,12 @@ contract OptionProductRegistry {
 
         if (strike == 0) revert StrikeZero();
         if (contractSize1e8 == 0) revert ContractSizeZero();
-        if (contractSize1e8 > MAX_CONTRACT_SIZE_1E8) revert InvalidUnderlyingConfig(); // reuse error
+
+        // HARD-LOCK: 1 contrat = 1 underlying
+        if (contractSize1e8 != uint128(PRICE_SCALE)) revert InvalidContractSize();
+
+        // redundant with hard-lock, but kept for defensive continuity
+        if (contractSize1e8 > MAX_CONTRACT_SIZE_1E8) revert InvalidUnderlyingConfig();
 
         OptionSeries memory s = OptionSeries({
             underlying: underlying,
@@ -397,7 +406,7 @@ contract OptionProductRegistry {
         );
     }
 
-    /// @notice Crée un strip (tous les strikes d'une même échéance) en calls + puts (default contractSize1e8 = 1e8)
+    /// @notice Crée un strip (tous les strikes d'une même échéance) en calls + puts (contractSize1e8 = 1e8)
     function createStrip(
         address underlying,
         address settlementAsset,
@@ -413,6 +422,7 @@ contract OptionProductRegistry {
     }
 
     /// @notice Crée un strip avec taille de contrat explicite
+    /// @dev Hard-lock: contractSize1e8 DOIT être PRICE_SCALE (1e8).
     function createStrip(
         address underlying,
         address settlementAsset,

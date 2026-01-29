@@ -9,13 +9,13 @@ import "../oracle/IOracle.sol";
 import "./IRiskModule.sol";
 import "./IMarginEngineState.sol";
 
-/// @notice RiskModule DeOpt v2 (prod-hardened)
+/// @notice RiskModule DeOpt v2 (prod-hardened) — contractSize hard-locked to 1e8
 /// @dev Key points:
 ///  - Strike/spot are in 1e8 (PRICE_SCALE).
-///  - Per-series contract size is OptionSeries.contractSize1e8 (underlying amount * 1e8).
-///  - All per-contract settlement amounts are scaled by contractSize1e8.
-///  - Equity includes conservative short liability; if spot is unavailable, falls back to scaled MM floor * multiplier.
-///  - Strict decimals: no silent fallback.
+///  - Per-series contract size MUST be 1e8 (OptionProductRegistry enforces; RiskModule re-checks defensively).
+///  - All per-contract settlement amounts are therefore NOT scaled by contractSize anymore (scale == 1).
+///  - Equity includes conservative short liability; if spot is unavailable, falls back to base MM floor * multiplier.
+///  - Strict decimals: no silent fallback, no overflow on 10**decimals (bounded).
 ///  - Oracle-down conversion: apply configurable multiplier (bps).
 ///  - Optional local staleness guard (maxOracleDelay), bounded.
 ///  - Quantity hardening: explicit int128 abs handling.
@@ -28,6 +28,9 @@ contract RiskModule is IRiskModule {
 
     uint256 internal constant PRICE_SCALE = 1e8;
     uint256 internal constant BPS = 10_000;
+
+    // 10**77 fits in uint256 (10**78 does not).
+    uint256 internal constant MAX_POW10_EXP = 77;
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
@@ -65,6 +68,13 @@ contract RiskModule is IRiskModule {
     error TokenDecimalsNotConfigured(address token);
     error TokenNotSupportedInVault(address token);
 
+    // decimals hardening
+    error DecimalsOverflow(address token);          // decimals too large for 10**decimals
+    error DecimalsDiffOverflow(address token);      // |decimals(token)-decimals(base)| too large
+
+    // contract size lock
+    error InvalidContractSize();                    // series.contractSize1e8 must be PRICE_SCALE
+
     // quantity hardening
     error QuantityInt128Min();      // quantity == type(int128).min (abs overflow)
     error QuantityAbsOverflow();    // should never happen, defensive
@@ -82,8 +92,7 @@ contract RiskModule is IRiskModule {
 
     address public baseCollateralToken;
 
-    /// @dev Floor per contract (in base token units) for a "standard" contractSize1e8 == 1e8.
-    ///      Actual per-series floor is scaled by OptionSeries.contractSize1e8.
+    /// @dev Floor per contract (in base token units) for 1 contract (contractSize fixed to 1e8).
     uint256 public baseMaintenanceMarginPerContract;
 
     /// @dev initial margin factor in bps, must be >= 10000.
@@ -94,7 +103,7 @@ contract RiskModule is IRiskModule {
     uint256 public maxOracleDelay;
 
     /// @dev When settlement->base conversion fails (oracle down), we apply:
-    /// mmBase = scaledBaseFloorPerContract * oracleDownMmMultiplierBps / 10_000
+    /// mmBase = baseMaintenanceMarginPerContract * oracleDownMmMultiplierBps / 10_000
     /// Default 20000 = 2x.
     uint256 public oracleDownMmMultiplierBps = 20_000;
 
@@ -246,12 +255,18 @@ contract RiskModule is IRiskModule {
         cfg = collateralVault.collateralConfigs(token);
     }
 
+    function _pow10(uint256 exp) internal pure returns (uint256) {
+        if (exp > MAX_POW10_EXP) revert InvalidParams();
+        return 10 ** exp;
+    }
+
     function _requireBaseConfigured() internal view {
         if (baseCollateralToken == address(0)) revert BaseTokenNotConfigured();
 
         CollateralVault.CollateralTokenConfig memory baseCfg = _vaultCfg(baseCollateralToken);
         if (!baseCfg.isSupported) revert TokenNotSupportedInVault(baseCollateralToken);
         if (baseCfg.decimals == 0) revert TokenDecimalsNotConfigured(baseCollateralToken);
+        if (uint256(baseCfg.decimals) > MAX_POW10_EXP) revert DecimalsOverflow(baseCollateralToken);
     }
 
     function _requireTokenConfiguredIfEnabled(address token) internal view {
@@ -261,11 +276,22 @@ contract RiskModule is IRiskModule {
         CollateralVault.CollateralTokenConfig memory vcfg = _vaultCfg(token);
         if (!vcfg.isSupported) revert TokenNotSupportedInVault(token);
         if (vcfg.decimals == 0) revert TokenDecimalsNotConfigured(token);
+        if (uint256(vcfg.decimals) > MAX_POW10_EXP) revert DecimalsOverflow(token);
+
+        // also ensure decimals difference won't overflow 10**diff in conversions
+        uint8 baseDec = _baseDecimals(); // base is already bounded by _requireBaseConfigured in callers
+        uint8 tokenDec = vcfg.decimals;
+        uint256 diff = tokenDec >= baseDec ? uint256(tokenDec - baseDec) : uint256(baseDec - tokenDec);
+        if (diff > MAX_POW10_EXP) revert DecimalsDiffOverflow(token);
     }
 
     function _baseDecimals() internal view returns (uint8) {
         CollateralVault.CollateralTokenConfig memory baseCfg = _vaultCfg(baseCollateralToken);
         return baseCfg.decimals;
+    }
+
+    function _requireStandardContractSize(OptionProductRegistry.OptionSeries memory s) internal pure {
+        if (s.contractSize1e8 != uint128(PRICE_SCALE)) revert InvalidContractSize();
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -292,7 +318,7 @@ contract RiskModule is IRiskModule {
         if (maxOracleDelay == 0) return true;
         if (updatedAt == 0) return false;
 
-        // refuse future timestamps (defensive, aligns with OracleRouter hardening)
+        // refuse future timestamps (defensive)
         if (updatedAt > block.timestamp) return false;
 
         return (block.timestamp - updatedAt) <= maxOracleDelay;
@@ -326,33 +352,6 @@ contract RiskModule is IRiskModule {
     }
 
     /*//////////////////////////////////////////////////////////////
-              INTERNAL: PRICE(1e8) * SIZE(1e8) -> AMOUNT(1e8)
-    //////////////////////////////////////////////////////////////*/
-
-    function _scalePriceByContractSizeToAmount1e8(
-        uint256 price1e8,
-        uint128 contractSize1e8,
-        Math.Rounding rounding
-    ) internal pure returns (uint256 amount1e8) {
-        if (price1e8 == 0 || contractSize1e8 == 0) return 0;
-        return Math.mulDiv(price1e8, uint256(contractSize1e8), PRICE_SCALE, rounding);
-    }
-
-    function _scaledBaseMmFloorPerContract(OptionProductRegistry.OptionSeries memory s)
-        internal
-        view
-        returns (uint256 floorBase)
-    {
-        if (baseMaintenanceMarginPerContract == 0) return 0;
-        return Math.mulDiv(
-            baseMaintenanceMarginPerContract,
-            uint256(s.contractSize1e8),
-            PRICE_SCALE,
-            Math.Rounding.Ceil
-        );
-    }
-
-    /*//////////////////////////////////////////////////////////////
               INTERNAL: 1e8 (settlement AMOUNT) -> base token units
     //////////////////////////////////////////////////////////////*/
 
@@ -365,7 +364,7 @@ contract RiskModule is IRiskModule {
         _requireBaseConfigured();
 
         uint8 baseDec = _baseDecimals();
-        uint256 baseScale = 10 ** uint256(baseDec);
+        uint256 baseScale = _pow10(uint256(baseDec));
 
         if (settlementAsset == baseCollateralToken) {
             return (Math.mulDiv(amount1e8, baseScale, PRICE_SCALE), true);
@@ -380,13 +379,30 @@ contract RiskModule is IRiskModule {
     }
 
     /*//////////////////////////////////////////////////////////////
+              INTERNAL: MM floor per contract (base units)
+    //////////////////////////////////////////////////////////////*/
+
+    function _baseMmFloorPerContract(OptionProductRegistry.OptionSeries memory s)
+        internal
+        view
+        returns (uint256 floorBase)
+    {
+        if (baseMaintenanceMarginPerContract == 0) return 0;
+        _requireStandardContractSize(s);
+        return baseMaintenanceMarginPerContract;
+    }
+
+    /*//////////////////////////////////////////////////////////////
               INTERNAL: conservative short liability (intrinsic)
     //////////////////////////////////////////////////////////////*/
 
+    /// @dev With contractSize fixed to 1e8, per-contract intrinsic settlement amount in 1e8 == intrinsicPrice1e8.
     function _computePerContractIntrinsicAmount1e8(
         OptionProductRegistry.OptionSeries memory s,
         uint256 spot1e8
     ) internal pure returns (uint256 intrinsicAmount1e8) {
+        _requireStandardContractSize(s);
+
         uint256 intrinsicPrice1e8;
         if (s.isCall) {
             intrinsicPrice1e8 = spot1e8 > uint256(s.strike) ? (spot1e8 - uint256(s.strike)) : 0;
@@ -394,11 +410,8 @@ contract RiskModule is IRiskModule {
             intrinsicPrice1e8 = uint256(s.strike) > spot1e8 ? (uint256(s.strike) - spot1e8) : 0;
         }
 
-        intrinsicAmount1e8 = _scalePriceByContractSizeToAmount1e8(
-            intrinsicPrice1e8,
-            s.contractSize1e8,
-            Math.Rounding.Ceil
-        );
+        // scale==1
+        intrinsicAmount1e8 = intrinsicPrice1e8;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -413,7 +426,7 @@ contract RiskModule is IRiskModule {
     ) internal view returns (uint256 mmBase) {
         if (baseCollateralToken == address(0)) return 0;
 
-        uint256 baseFloor = _scaledBaseMmFloorPerContract(s);
+        uint256 baseFloor = _baseMmFloorPerContract(s);
         if (baseFloor == 0) return 0;
 
         if (!cfg.isEnabled) {
@@ -450,13 +463,8 @@ contract RiskModule is IRiskModule {
             mmPrice1e8 = intrinsicShock > floorPrice ? intrinsicShock : floorPrice;
         }
 
-        uint256 mmAmount1e8 = _scalePriceByContractSizeToAmount1e8(
-            mmPrice1e8,
-            s.contractSize1e8,
-            Math.Rounding.Ceil
-        );
-
-        (uint256 converted, bool okConv) = _convert1e8SettlementToBase(s.settlementAsset, mmAmount1e8);
+        // With contractSize fixed, per-contract settlement amount in 1e8 == mmPrice1e8.
+        (uint256 converted, bool okConv) = _convert1e8SettlementToBase(s.settlementAsset, mmPrice1e8);
 
         if (!okConv || converted == 0) {
             uint256 bumped = Math.mulDiv(baseFloor, oracleDownMmMultiplierBps, BPS, Math.Rounding.Ceil);
@@ -480,6 +488,7 @@ contract RiskModule is IRiskModule {
         CollateralConfig memory baseRiskCfg = collateralConfigs[baseCollateralToken];
         if (!baseRiskCfg.isEnabled) revert TokenNotConfigured(baseCollateralToken);
 
+        // strict validation upfront
         for (uint256 i = 0; i < collateralTokens.length; i++) {
             _requireTokenConfiguredIfEnabled(collateralTokens[i]);
         }
@@ -501,15 +510,15 @@ contract RiskModule is IRiskModule {
                 uint8 tokenDec = tCfg.decimals;
 
                 (uint256 price, bool okPx) = _tryGetPrice(token, baseCollateralToken);
-                if (!okPx) continue;
+                if (!okPx) continue; // conservative: ignore this collateral if no price
 
                 if (tokenDec == baseDec) {
                     valueBase = Math.mulDiv(bal, price, PRICE_SCALE);
                 } else if (tokenDec > baseDec) {
-                    uint256 factor = 10 ** (tokenDec - baseDec);
+                    uint256 factor = _pow10(uint256(tokenDec - baseDec));
                     valueBase = Math.mulDiv(bal, price, PRICE_SCALE * factor);
                 } else {
-                    uint256 factor = 10 ** (baseDec - tokenDec);
+                    uint256 factor = _pow10(uint256(baseDec - tokenDec));
                     valueBase = Math.mulDiv(bal * factor, price, PRICE_SCALE);
                 }
             }
@@ -536,12 +545,13 @@ contract RiskModule is IRiskModule {
             uint256 shortAbs = _absQuantityU(pos.quantity);
 
             OptionProductRegistry.OptionSeries memory s = optionRegistry.getSeries(optionId);
+            _requireStandardContractSize(s);
 
             (uint256 spot, bool okSpot) = _tryGetPrice(s.underlying, s.settlementAsset);
 
-            // If we cannot mark spot, be conservative: liability per contract = scaled base floor * multiplier.
+            // If we cannot mark spot, be conservative: liability per contract = base floor * multiplier.
             if (!okSpot) {
-                uint256 baseFloor = _scaledBaseMmFloorPerContract(s);
+                uint256 baseFloor = _baseMmFloorPerContract(s);
                 uint256 liabPerContract = Math.mulDiv(
                     baseFloor,
                     oracleDownMmMultiplierBps,
@@ -559,7 +569,7 @@ contract RiskModule is IRiskModule {
                 _convert1e8SettlementToBase(s.settlementAsset, intrinsicAmount1e8);
 
             if (!okConv || intrinsicBase == 0) {
-                uint256 baseFloor2 = _scaledBaseMmFloorPerContract(s);
+                uint256 baseFloor2 = _baseMmFloorPerContract(s);
                 intrinsicBase = Math.mulDiv(
                     baseFloor2,
                     oracleDownMmMultiplierBps,
@@ -685,10 +695,10 @@ contract RiskModule is IRiskModule {
         if (tokenDec == baseDec) {
             maxToken = Math.mulDiv(numerator, PRICE_SCALE, price * denominator);
         } else if (tokenDec > baseDec) {
-            uint256 factor = 10 ** (tokenDec - baseDec);
+            uint256 factor = _pow10(uint256(tokenDec - baseDec));
             maxToken = Math.mulDiv(numerator, PRICE_SCALE * factor, price * denominator);
         } else {
-            uint256 factor = 10 ** (baseDec - tokenDec);
+            uint256 factor = _pow10(uint256(baseDec - tokenDec));
             maxToken = Math.mulDiv(numerator, PRICE_SCALE, price * denominator * factor);
         }
 
@@ -755,10 +765,10 @@ contract RiskModule is IRiskModule {
                         if (tokenDec == baseDec) {
                             valueBase = Math.mulDiv(effectiveAmount, price, PRICE_SCALE);
                         } else if (tokenDec > baseDec) {
-                            uint256 factor = 10 ** (tokenDec - baseDec);
+                            uint256 factor = _pow10(uint256(tokenDec - baseDec));
                             valueBase = Math.mulDiv(effectiveAmount, price, PRICE_SCALE * factor);
                         } else {
-                            uint256 factor = 10 ** (baseDec - tokenDec);
+                            uint256 factor = _pow10(uint256(baseDec - tokenDec));
                             valueBase = Math.mulDiv(effectiveAmount * factor, price, PRICE_SCALE);
                         }
 
