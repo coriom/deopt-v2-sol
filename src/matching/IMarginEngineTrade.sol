@@ -2,6 +2,9 @@
 pragma solidity ^0.8.20;
 
 /// @notice Interface minimale pour que MatchingEngine puisse appeler MarginEngine.applyTrade()
+/// @dev
+///  - Ce fichier est OK tel quel.
+///  - Reco d’usage: faire implémenter MarginEngine par cette interface.
 interface IMarginEngineTrade {
     struct Trade {
         address buyer;

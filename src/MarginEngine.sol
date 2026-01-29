@@ -9,11 +9,12 @@ import "./CollateralVault.sol";
 import "./oracle/IOracle.sol";
 import "./risk/IRiskModule.sol";
 import "./risk/IMarginEngineState.sol";
+import "./matching/IMarginEngineTrade.sol";
 
 /// @title MarginEngine
 /// @notice Gère les positions, la marge, les liquidations et le settlement à l'expiration.
 /// @dev Toute la logique de risque (equity / IM / MM) est déléguée au RiskModule (IRiskModule).
-contract MarginEngine is ReentrancyGuard, IMarginEngineState {
+contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade {
     /*//////////////////////////////////////////////////////////////
                                 CONSTANTS
     //////////////////////////////////////////////////////////////*/
@@ -23,18 +24,6 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
 
     int256 private constant INT128_MAX = int256(type(int128).max);
     int256 private constant INT128_MIN = int256(type(int128).min);
-
-    /*//////////////////////////////////////////////////////////////
-                                TYPES
-    //////////////////////////////////////////////////////////////*/
-
-    struct Trade {
-        address buyer;
-        address seller;
-        uint256 optionId;
-        uint128 quantity;
-        uint128 price; // en unités natives du settlementAsset (ex: 1e6 USDC)
-    }
 
     /*//////////////////////////////////////////////////////////////
                                 ERRORS
@@ -49,6 +38,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
     error NoBaseCollateral();
     error RiskModuleNotSet();
     error AmountZero();
+    error PausedError();
 
     // Series / trading
     error SeriesExpired();
@@ -246,7 +236,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
     }
 
     modifier whenNotPaused() {
-        require(!paused, "PAUSED");
+        if (paused) revert PausedError();
         _;
     }
 
@@ -331,7 +321,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
         uint256 _imFactorBps
     ) external onlyOwner {
         if (_baseToken == address(0)) revert ZeroAddress();
-        require(_imFactorBps >= BPS, "IM_FACTOR_TOO_LOW");
+        if (_imFactorBps < BPS) revert InvalidLiquidationParams();
 
         baseCollateralToken = _baseToken;
         baseMaintenanceMarginPerContract = _baseMMPerContract;
@@ -344,8 +334,8 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
         uint256 _liquidationThresholdBps,
         uint256 _liquidationPenaltyBps
     ) external onlyOwner {
-        require(_liquidationThresholdBps >= BPS, "THRESH_TOO_LOW");
-        require(_liquidationPenaltyBps <= BPS, "PENALTY_TOO_HIGH");
+        if (_liquidationThresholdBps < BPS) revert InvalidLiquidationParams();
+        if (_liquidationPenaltyBps > BPS) revert InvalidLiquidationParams();
 
         liquidationThresholdBps = _liquidationThresholdBps;
         liquidationPenaltyBps = _liquidationPenaltyBps;
@@ -383,7 +373,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
     }
 
     function setLiquidationOracleMaxDelay(uint32 _delay) external onlyOwner {
-        require(_delay <= 3600, "DELAY_OUT_OF_RANGE");
+        if (_delay > 3600) revert LiquidationPricingParamsInvalid();
         uint32 old = liquidationOracleMaxDelay;
         liquidationOracleMaxDelay = _delay;
         emit LiquidationOracleMaxDelaySet(old, _delay);
@@ -518,13 +508,11 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
 
     function _toInt128(uint128 x) internal pure returns (int128) {
         if (x > uint128(type(int128).max)) revert QuantityTooLarge();
-        // x in [0, int128.max], safe.
         return int128(int256(uint256(x)));
     }
 
     function _checkedAddInt128(int128 a, int128 b) internal pure returns (int128 r) {
         int256 rr = int256(a) + int256(b);
-        // forbid int128.min explicitly (even though it's in range)
         if (rr > INT128_MAX || rr < INT128_MIN || rr == INT128_MIN) revert QuantityTooLarge();
         r = int128(rr);
         _ensureQtyAllowed(r);
@@ -538,7 +526,6 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
     }
 
     function _absInt128(int128 x) internal pure returns (uint256) {
-        // If someone ever tries to feed min here, we fail fast (protocol invariant).
         if (x == type(int128).min) revert QuantityMinNotAllowed();
         int256 y = int256(x);
         return uint256(y >= 0 ? y : -y);
@@ -568,14 +555,14 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
     }
 
     function _addOpenSeries(address trader, uint256 optionId) internal {
-        if (traderSeriesIndexPlus1[trader][optionId] != 0) return; // already present
+        if (traderSeriesIndexPlus1[trader][optionId] != 0) return;
         traderSeries[trader].push(optionId);
-        traderSeriesIndexPlus1[trader][optionId] = traderSeries[trader].length; // index+1
+        traderSeriesIndexPlus1[trader][optionId] = traderSeries[trader].length;
     }
 
     function _removeOpenSeries(address trader, uint256 optionId) internal {
         uint256 idxPlus1 = traderSeriesIndexPlus1[trader][optionId];
-        if (idxPlus1 == 0) return; // absent
+        if (idxPlus1 == 0) return;
 
         uint256 idx = idxPlus1 - 1;
         uint256 lastIdx = traderSeries[trader].length - 1;
@@ -621,17 +608,20 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
         else totalShortContracts[trader] -= (oldShort - newShort);
     }
 
+    function _requireSettlementAssetConfigured(address settlementAsset) internal view {
+        (bool isSupported, uint8 decimals, ) = collateralVault.collateralConfigs(settlementAsset);
+        if (!isSupported || decimals == 0) revert SettlementAssetNotConfigured();
+    }
+
     function _price1e8ToSettlementUnits(address settlementAsset, uint256 value1e8)
         internal
         view
         returns (uint256 valueNative)
     {
         (bool isSupported, uint8 decimals, ) = collateralVault.collateralConfigs(settlementAsset);
-        // align RiskModule strictness: decimals==0 => not configured for pricing
         if (!isSupported || decimals == 0) revert SettlementAssetNotConfigured();
 
         uint256 scale = 10 ** uint256(decimals);
-        // valueNative = value1e8 * scale / 1e8
         valueNative = Math.mulDiv(value1e8, scale, PRICE_1E8, Math.Rounding.Down);
     }
 
@@ -677,7 +667,6 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
             liqPrice1e8 = (liqPrice1e8 * (BPS + liquidationPriceSpreadBps)) / BPS;
         }
 
-        // scale price by contractSize => amount1e8 per contract
         uint256 amount1e8 = Math.mulDiv(
             liqPrice1e8,
             uint256(s.contractSize1e8),
@@ -698,7 +687,13 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
                               CORE LOGIC (TRADING)
     //////////////////////////////////////////////////////////////*/
 
-    function applyTrade(Trade calldata t) external onlyMatchingEngine whenNotPaused nonReentrant {
+    function applyTrade(IMarginEngineTrade.Trade calldata t)
+        external
+        override
+        onlyMatchingEngine
+        whenNotPaused
+        nonReentrant
+    {
         if (
             t.buyer == address(0) ||
             t.seller == address(0) ||
@@ -713,9 +708,11 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
 
         if (block.timestamp >= series.expiry) revert SeriesExpired();
 
-        if (baseCollateralToken != address(0) && series.settlementAsset != baseCollateralToken) {
-            revert BadSettlementAsset();
-        }
+        // Current mode: single settlement asset = baseCollateralToken (liquidation/withdraw logic assumes it).
+        if (baseCollateralToken == address(0)) revert NoBaseCollateral();
+        if (series.settlementAsset != baseCollateralToken) revert BadSettlementAsset();
+
+        _requireSettlementAssetConfigured(series.settlementAsset);
 
         IMarginEngineState.Position storage buyerPos = _positions[t.buyer][t.optionId];
         IMarginEngineState.Position storage sellerPos = _positions[t.seller][t.optionId];
@@ -728,18 +725,15 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
 
         int128 delta = _toInt128(t.quantity);
 
-        // explicit bounded arithmetic (int128 overflow / min => revert)
         int128 newBuyerQty = _checkedAddInt128(oldBuyerQty, delta);
         int128 newSellerQty = _checkedSubInt128(oldSellerQty, delta);
 
-        // close-only if series inactive
         if (!series.isActive) {
             bool okBuyer = _isCloseOnlyTransition(oldBuyerQty, newBuyerQty);
             bool okSeller = _isCloseOnlyTransition(oldSellerQty, newSellerQty);
             if (!okBuyer || !okSeller) revert SeriesNotActiveCloseOnly();
         }
 
-        // write storage
         buyerPos.quantity = newBuyerQty;
         sellerPos.quantity = newSellerQty;
 
@@ -760,7 +754,6 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
 
         emit TradeExecuted(t.buyer, t.seller, t.optionId, t.quantity, t.price);
 
-        // Post-trade margin checks: buyer ET seller.
         _enforceInitialMargin(t.buyer);
         _enforceInitialMargin(t.seller);
     }
@@ -790,7 +783,6 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
 
         if (intrinsicPrice1e8 == 0) return 0;
 
-        // amount1e8 per contract = intrinsicPrice1e8 * contractSize1e8 / 1e8
         uint256 amount1e8 = Math.mulDiv(
             intrinsicPrice1e8,
             uint256(series.contractSize1e8),
@@ -841,7 +833,6 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
             pnl = q >= 0 ? int256(amount) : -int256(amount);
         }
 
-        // close position
         pos.quantity = 0;
 
         _updateTotalShortContracts(trader, oldQty, 0);
@@ -958,6 +949,8 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
         uint256 totalCashRequested;
         address settlementAsset = baseCollateralToken;
 
+        _requireSettlementAssetConfigured(settlementAsset);
+
         for (uint256 i = 0; i < optionIds.length; i++) {
             if (totalContractsClosed >= maxCloseOverall) break;
 
@@ -981,7 +974,6 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
             _ensureQtyAllowed(oldTraderQty);
             _ensureQtyAllowed(oldLiqQty);
 
-            // oldTraderQty < 0 ensured by condition above
             uint256 traderShortAbs = uint256(-int256(oldTraderQty));
             uint256 remainingAllowance = maxCloseOverall - totalContractsClosed;
 
@@ -995,11 +987,13 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
             int128 delta = _toInt128(liqQty);
 
             uint256 liqPricePerContract = _computeLiquidationPricePerContract(s);
-            totalCashRequested = _addChecked(totalCashRequested, _mulChecked(liqPricePerContract, uint256(liqQty)));
+            totalCashRequested = _addChecked(
+                totalCashRequested,
+                _mulChecked(liqPricePerContract, uint256(liqQty))
+            );
 
-            // explicit bounded arithmetic (int128 overflow / min => revert)
-            traderPos.quantity = _checkedAddInt128(oldTraderQty, delta); // réduit le short (vers 0)
-            liqPos.quantity = _checkedSubInt128(oldLiqQty, delta);       // liquidator reprend du short
+            traderPos.quantity = _checkedAddInt128(oldTraderQty, delta);
+            liqPos.quantity = _checkedSubInt128(oldLiqQty, delta);
 
             int128 newTraderQty = traderPos.quantity;
             int128 newLiqQty = liqPos.quantity;
@@ -1024,7 +1018,6 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
 
         emit LiquidationCashflow(liquidator, trader, settlementAsset, cashPaid, totalCashRequested);
 
-        // penalty = (baseMMPerContract * closed) * penaltyBps / 10_000
         uint256 mmBase = _mulChecked(baseMaintenanceMarginPerContract, totalContractsClosed);
         uint256 penalty = Math.mulDiv(mmBase, liquidationPenaltyBps, BPS, Math.Rounding.Down);
 
@@ -1038,9 +1031,6 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
         IRiskModule.AccountRisk memory riskAfter = riskModule.computeAccountRisk(trader);
         uint256 ratioAfterBps = _marginRatioBpsFromRisk(riskAfter);
 
-        // Improvement rule (handles equity<=0 cases safely):
-        //  - if equity was >0, enforce ratio improvement (prevents making trader insolvent)
-        //  - else allow if exposure decreased OR equity improved (less negative / more positive)
         if (riskBefore.equity > 0) {
             if (ratioAfterBps < ratioBeforeBps + minLiquidationImprovementBps) revert LiquidationNotImproving();
         } else {
@@ -1052,7 +1042,6 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState {
 
         emit Liquidation(liquidator, trader, optionIds, quantities, seized);
 
-        // Le liquidator doit rester sain post-prise de short
         _enforceInitialMargin(liquidator);
     }
 

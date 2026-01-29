@@ -12,8 +12,9 @@ import {IMarginEngineTrade} from "./IMarginEngineTrade.sol";
 /// @dev Modèle:
 ///  - backend (executor) soumet un trade matché + sig buyer + sig seller.
 ///  - nonces séquentiels par trader: nonce doit matcher nonces[trader], puis ++.
-///  - deadline anti-replay temporel.
-///  - permissioned execution (isExecutor), mais signatures restent le fondement de confiance.
+///  - deadline anti-replay temporel (0 = no deadline).
+///  - permissioned execution (isExecutor), signatures restent le fondement de confiance.
+///  - hardening ECDSA: refuse malleability / mauvais v,s via ECDSA.recover OZ.
 contract MatchingEngine is ReentrancyGuard, EIP712 {
     using ECDSA for bytes32;
 
@@ -61,6 +62,7 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
     mapping(address => bool) public isExecutor;
     bool public paused;
 
+    /// @notice nonces séquentiels par trader (anti-replay)
     mapping(address => uint256) public nonces;
 
     // EIP-712 typehash
@@ -77,7 +79,7 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
         uint128 price;
         uint256 buyerNonce;
         uint256 sellerNonce;
-        uint256 deadline;
+        uint256 deadline; // 0 = no deadline
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -103,9 +105,7 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
                                 CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor(address _owner, address _marginEngine)
-        EIP712("DeOptV2-MatchingEngine", "1")
-    {
+    constructor(address _owner, address _marginEngine) EIP712("DeOptV2-MatchingEngine", "1") {
         if (_owner == address(0) || _marginEngine == address(0)) revert ZeroAddress();
 
         owner = _owner;
@@ -194,7 +194,26 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
     }
 
     function _verify(address signer, bytes32 digest, bytes calldata sig) internal pure returns (bool) {
+        // OZ ECDSA.recover: protège contre la malleability (s) + v invalid.
         return digest.recover(sig) == signer;
+    }
+
+    function _validateAndConsumeNonces(MatchedTrade calldata t) internal {
+        if (nonces[t.buyer] != t.buyerNonce) revert BadNonce();
+        if (nonces[t.seller] != t.sellerNonce) revert BadNonce();
+
+        unchecked {
+            nonces[t.buyer] = t.buyerNonce + 1;
+            nonces[t.seller] = t.sellerNonce + 1;
+        }
+    }
+
+    function _validateTradeBasics(MatchedTrade calldata t) internal view {
+        if (t.buyer == address(0) || t.seller == address(0)) revert InvalidTrade();
+        if (t.buyer == t.seller) revert InvalidTrade();
+        if (t.quantity == 0 || t.price == 0) revert InvalidTrade();
+
+        if (t.deadline != 0 && block.timestamp > t.deadline) revert DeadlineExpired();
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -206,25 +225,14 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
         bytes calldata buyerSig,
         bytes calldata sellerSig
     ) external onlyExecutor whenNotPaused nonReentrant {
-        if (t.buyer == address(0) || t.seller == address(0)) revert InvalidTrade();
-        if (t.buyer == t.seller) revert InvalidTrade();
-        if (t.quantity == 0 || t.price == 0) revert InvalidTrade();
-
-        if (t.deadline != 0 && block.timestamp > t.deadline) revert DeadlineExpired();
-
-        if (nonces[t.buyer] != t.buyerNonce) revert BadNonce();
-        if (nonces[t.seller] != t.sellerNonce) revert BadNonce();
+        _validateTradeBasics(t);
 
         bytes32 digest = hashMatchedTrade(t);
 
         if (!_verify(t.buyer, digest, buyerSig)) revert InvalidSignature();
         if (!_verify(t.seller, digest, sellerSig)) revert InvalidSignature();
 
-        // consume nonces
-        unchecked {
-            nonces[t.buyer] = t.buyerNonce + 1;
-            nonces[t.seller] = t.sellerNonce + 1;
-        }
+        _validateAndConsumeNonces(t);
 
         // forward to MarginEngine
         IMarginEngineTrade.Trade memory mt = IMarginEngineTrade.Trade({
@@ -259,24 +267,14 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
         for (uint256 i = 0; i < len; i++) {
             MatchedTrade calldata t = trades[i];
 
-            if (t.buyer == address(0) || t.seller == address(0)) revert InvalidTrade();
-            if (t.buyer == t.seller) revert InvalidTrade();
-            if (t.quantity == 0 || t.price == 0) revert InvalidTrade();
-
-            if (t.deadline != 0 && block.timestamp > t.deadline) revert DeadlineExpired();
-
-            if (nonces[t.buyer] != t.buyerNonce) revert BadNonce();
-            if (nonces[t.seller] != t.sellerNonce) revert BadNonce();
+            _validateTradeBasics(t);
 
             bytes32 digest = hashMatchedTrade(t);
 
             if (!_verify(t.buyer, digest, buyerSigs[i])) revert InvalidSignature();
             if (!_verify(t.seller, digest, sellerSigs[i])) revert InvalidSignature();
 
-            unchecked {
-                nonces[t.buyer] = t.buyerNonce + 1;
-                nonces[t.seller] = t.sellerNonce + 1;
-            }
+            _validateAndConsumeNonces(t);
 
             IMarginEngineTrade.Trade memory mt = IMarginEngineTrade.Trade({
                 buyer: t.buyer,
