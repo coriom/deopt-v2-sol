@@ -8,7 +8,7 @@ pragma solidity ^0.8.20;
 ///
 ///      Conventions d'unités (VERROUILLÉES ici):
 ///        - strike et settlementPrice sont en PRICE_SCALE (= 1e8)
-///        - contractSize1e8 est FIXÉ à PRICE_SCALE (1e8) : 1 contrat = 1 underlying
+///        - contractSize1e8 est VERROUILLÉ à PRICE_SCALE (1e8) : 1 contrat = 1 underlying
 ///
 ///      Rationale: simplifie notional/marge/liquidation et réduit la surface d'erreurs de scaling.
 contract OptionProductRegistry {
@@ -35,7 +35,7 @@ contract OptionProductRegistry {
         uint64 strike;            // Strike * 1e8 (PRICE_SCALE)
         uint128 contractSize1e8;  // Taille contrat (underlying) * 1e8 (DOIT == 1e8)
         bool isCall;              // true = Call, false = Put
-        bool isEuropean;          // true = Européenne (pour usage futur / front)
+        bool isEuropean;          // true = Européenne (usage futur / front)
         bool exists;              // Flag pour savoir si la série est enregistrée
         bool isActive;            // true = tradable, false = close-only / désactivée
     }
@@ -44,10 +44,10 @@ contract OptionProductRegistry {
     /// @dev
     ///   - Les champs *Shock* sont en basis points (bps).
     struct UnderlyingConfig {
-        address oracle;           // Oracle de prix pour ce sous-jacent (optionnel côté RiskModule)
+        address oracle;           // (optionnel) pour usage futur / RiskModule
         uint64 spotShockDownBps;  // choc spot down, ex: 2500 = -25%
         uint64 spotShockUpBps;    // choc spot up, ex: 2500 = +25%
-        uint64 volShockDownBps;   // choc vol down (actuellement inutilisé par le RiskModule)
+        uint64 volShockDownBps;   // choc vol down (actuellement inutilisé)
         uint64 volShockUpBps;     // choc vol up, ex: 1500 = 15% du ref
         bool isEnabled;           // sous-jacent utilisable ou non
     }
@@ -69,26 +69,31 @@ contract OptionProductRegistry {
     error ExpiryInPast();
     error ExpiryTooSoon();              // expiry > now mais < now + minExpiryDelay
     error StrikeZero();
-    error ContractSizeZero();
     error SeriesAlreadyExists();
     error UnknownSeries();
     error NotAuthorized();
     error SettlementPriceZero();
     error SettlementAlreadySet();
     error NotExpiredYet();
-    error InvalidUnderlyingConfig();    // nouveaux paramètres de sous-jacent hors bornes
-    error UnderlyingNotEnabled();       // underlying non activé dans underlyingConfigs
-    error SettlementAssetNotAllowed();  // settlementAsset non autorisé
+    error InvalidUnderlyingConfig();    // paramètres de sous-jacent hors bornes
+    error UnderlyingNotEnabled();
+    error SettlementAssetNotAllowed();
 
     // settlement hardening
     error SettlementProposalAlreadyExists();
     error NoSettlementProposal();
     error SettlementFinalityDelayNotElapsed();
     error InvalidDelay();
+
+    // ownership 2-step
     error OwnershipTransferNotInitiated();
 
-    // NEW: contractSize lock
+    // contractSize lock
     error InvalidContractSize();        // contractSize1e8 must be PRICE_SCALE
+
+    // misc
+    error IndexOutOfBounds();
+    error EmptyStrikes();
 
     /*//////////////////////////////////////////////////////////////
                               DEFENSIVE LIMITS
@@ -96,10 +101,6 @@ contract OptionProductRegistry {
 
     uint64 public constant MAX_SPOT_SHOCK_BPS = 10_000; // 100%
     uint64 public constant MAX_VOL_SHOCK_BPS  = 5_000;  // 50%
-
-    // NOTE: Ces bornes restent, mais contractSize est verrouillé à 1e8
-    uint128 public constant MAX_CONTRACT_SIZE_1E8 = 1_000_000 * uint128(PRICE_SCALE); // 1e6 underlying / contrat
-    uint64 public constant MAX_STRIKE_1E8 = type(uint64).max;
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
@@ -158,9 +159,10 @@ contract OptionProductRegistry {
     mapping(address => bool) public isSeriesCreator;
     mapping(address => UnderlyingConfig) public underlyingConfigs;
 
+    /// @dev address(0) autorisé (désactivation).
     address public settlementOperator;
 
-    mapping(uint256 => uint256) private _settlementPrice;
+    mapping(uint256 => uint256) private _settlementPrice; // 1e8
     mapping(uint256 => bool) private _isSettled;
     mapping(uint256 => uint64) private _settledAt;
 
@@ -318,14 +320,14 @@ contract OptionProductRegistry {
             settlementAsset,
             expiry,
             strike,
-            uint128(PRICE_SCALE), // 1 contrat = 1 underlying
+            uint128(PRICE_SCALE), // hard-lock
             isCall,
             isEuropean
         );
     }
 
     /// @notice Crée une nouvelle série d'options en spécifiant explicitement la taille d'un contrat.
-    /// @dev Hard-lock: contractSize1e8 DOIT être PRICE_SCALE (1e8).
+    /// @dev Compat/shim: HARD-LOCK => revert si != 1e8.
     function createSeries(
         address underlying,
         address settlementAsset,
@@ -367,13 +369,9 @@ contract OptionProductRegistry {
         if (minExpiryDelay > 0 && expiry < uint64(block.timestamp + minExpiryDelay)) revert ExpiryTooSoon();
 
         if (strike == 0) revert StrikeZero();
-        if (contractSize1e8 == 0) revert ContractSizeZero();
 
         // HARD-LOCK: 1 contrat = 1 underlying
         if (contractSize1e8 != uint128(PRICE_SCALE)) revert InvalidContractSize();
-
-        // redundant with hard-lock, but kept for defensive continuity
-        if (contractSize1e8 > MAX_CONTRACT_SIZE_1E8) revert InvalidUnderlyingConfig();
 
         OptionSeries memory s = OptionSeries({
             underlying: underlying,
@@ -415,14 +413,15 @@ contract OptionProductRegistry {
         bool isEuropean
     ) external onlySeriesCreator {
         uint256 len = strikes.length;
+        if (len == 0) revert EmptyStrikes();
+
         for (uint256 i = 0; i < len; i++) {
             createSeries(underlying, settlementAsset, expiry, strikes[i], true, isEuropean);
             createSeries(underlying, settlementAsset, expiry, strikes[i], false, isEuropean);
         }
     }
 
-    /// @notice Crée un strip avec taille de contrat explicite
-    /// @dev Hard-lock: contractSize1e8 DOIT être PRICE_SCALE (1e8).
+    /// @notice Crée un strip avec taille de contrat explicite (shim, hard-lock).
     function createStrip(
         address underlying,
         address settlementAsset,
@@ -432,6 +431,8 @@ contract OptionProductRegistry {
         bool isEuropean
     ) external onlySeriesCreator {
         uint256 len = strikes.length;
+        if (len == 0) revert EmptyStrikes();
+
         for (uint256 i = 0; i < len; i++) {
             createSeries(underlying, settlementAsset, expiry, strikes[i], contractSize1e8, true, isEuropean);
             createSeries(underlying, settlementAsset, expiry, strikes[i], contractSize1e8, false, isEuropean);
@@ -444,6 +445,12 @@ contract OptionProductRegistry {
 
         s.isActive = isActive;
         emit SeriesStatusUpdated(optionId, isActive);
+    }
+
+    function setSeriesMetadata(uint256 optionId, bytes32 metadata) external onlyOwner {
+        if (!_series[optionId].exists) revert UnknownSeries();
+        seriesMetadata[optionId] = metadata;
+        emit SeriesMetadataSet(optionId, metadata);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -502,18 +509,13 @@ contract OptionProductRegistry {
     }
 
     function cancelSettlementProposal(uint256 optionId) external onlyOwner {
+        if (!_series[optionId].exists) revert UnknownSeries();
         if (_isSettled[optionId]) revert SettlementAlreadySet();
+
         SettlementProposal memory p = _settlementProposal[optionId];
         if (!p.exists) revert NoSettlementProposal();
+
         delete _settlementProposal[optionId];
-    }
-
-    function setSeriesMetadata(uint256 optionId, bytes32 metadata) external onlyOwner {
-        OptionSeries memory s = _series[optionId];
-        if (!s.exists) revert UnknownSeries();
-
-        seriesMetadata[optionId] = metadata;
-        emit SeriesMetadataSet(optionId, metadata);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -535,7 +537,7 @@ contract OptionProductRegistry {
     }
 
     function seriesAt(uint256 index) external view returns (uint256) {
-        require(index < _allOptionIds.length, "INDEX_OOB");
+        if (index >= _allOptionIds.length) revert IndexOutOfBounds();
         return _allOptionIds[index];
     }
 

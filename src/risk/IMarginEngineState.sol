@@ -42,4 +42,20 @@ interface IMarginEngineState {
         external
         view
         returns (uint256[] memory slice);
+
+    /*//////////////////////////////////////////////////////////////
+                         OPTIONAL VIEW HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Adresse du registry des séries (OptionProductRegistry).
+    function optionRegistry() external view returns (address);
+
+    /// @notice Adresse du CollateralVault.
+    function collateralVault() external view returns (address);
+
+    /// @notice Adresse de l’oracle (OracleRouter / IOracle).
+    function oracle() external view returns (address);
+
+    /// @notice Adresse du risk module.
+    function riskModule() external view returns (address);
 }

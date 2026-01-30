@@ -19,6 +19,9 @@ interface IYieldAdapter {
     /// @notice L'asset sous-jacent géré par l'adapter (ex: USDC).
     function asset() external view returns (address);
 
+    /// @notice Décimales de l’asset (ex: 6 pour USDC). OPTIONNEL mais utile pour sanity-check.
+    function assetDecimals() external view returns (uint8);
+
     /// @notice Total d'assets actuellement sous gestion (principal + intérêts), en unités de l'asset.
     function totalAssets() external view returns (uint256);
 
@@ -56,10 +59,18 @@ interface IYieldAdapter {
     //////////////////////////////////////////////////////////////*/
 
     /// @dev Le Vault appelle deposit() après avoir fait transfer/approve selon le modèle de l'adapter.
-    /// @return sharesMinted Shares effectivement mintées (DOIT matcher previewDeposit à rounding près).
+    /// @return sharesMinted Shares effectivement mintées (DOIT matcher previewDeposit).
     function deposit(uint256 assets) external returns (uint256 sharesMinted);
 
     /// @dev Retire exactement `assets` et envoie les tokens à `to`.
-    /// @return sharesBurned Shares effectivement brûlées (DOIT matcher previewWithdraw à rounding près).
+    /// @return sharesBurned Shares effectivement brûlées (DOIT matcher previewWithdraw).
     function withdraw(uint256 assets, address to) external returns (uint256 sharesBurned);
+
+    /*//////////////////////////////////////////////////////////////
+                              OPTIONAL ADMIN
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Emergency pull (optionnel) pour récupérer des fonds au Vault (ex: pause Aave).
+    /// @dev Si non supporté, l’impl peut revert.
+    function emergencyWithdrawTo(address to, uint256 assets) external returns (uint256 sharesBurned);
 }
