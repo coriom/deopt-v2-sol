@@ -13,12 +13,11 @@ import "./IMarginEngineState.sol";
 /// @dev Key points:
 ///  - Strike/spot are in 1e8 (PRICE_SCALE).
 ///  - Per-series contract size MUST be 1e8 (OptionProductRegistry enforces; RiskModule re-checks defensively).
-///  - All per-contract settlement amounts are therefore NOT scaled by contractSize anymore (scale == 1).
-///  - Equity includes conservative short liability; if spot is unavailable, falls back to base MM floor * multiplier.
-///  - Strict decimals: no silent fallback, no overflow on 10**decimals (bounded).
-///  - Oracle-down conversion: apply configurable multiplier (bps).
+///  - Current deployment target: USDC base collateral, 6 decimals.
+///  - Equity includes conservative short intrinsic liability; long options are ignored (conservative).
+///  - Strict decimals + overflow hardening.
+///  - Oracle-down fallback: apply configurable multiplier (bps) on base MM floor.
 ///  - Optional local staleness guard (maxOracleDelay), bounded.
-///  - Quantity hardening: explicit int128 abs handling.
 contract RiskModule is IRiskModule {
     using Math for uint256;
 
@@ -31,6 +30,9 @@ contract RiskModule is IRiskModule {
 
     // 10**77 fits in uint256 (10**78 does not).
     uint256 internal constant MAX_POW10_EXP = 77;
+
+    // USDC target (current system)
+    uint8 internal constant EXPECTED_BASE_DECIMALS = 6;
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
@@ -71,6 +73,9 @@ contract RiskModule is IRiskModule {
     // decimals hardening
     error DecimalsOverflow(address token);          // decimals too large for 10**decimals
     error DecimalsDiffOverflow(address token);      // |decimals(token)-decimals(base)| too large
+
+    // USDC-only hardening
+    error BaseTokenDecimalsNotUSDC(address token, uint8 decimals);
 
     // contract size lock
     error InvalidContractSize();                    // series.contractSize1e8 must be PRICE_SCALE
@@ -207,13 +212,22 @@ contract RiskModule is IRiskModule {
         if (_baseToken == address(0)) revert ZeroAddress();
         if (_imFactorBps < BPS) revert InvalidParams();
 
+        // strict: base token must be configured in vault and must be 6 decimals (USDC target)
+        CollateralVault.CollateralTokenConfig memory baseCfg = _vaultCfg(_baseToken);
+        if (!baseCfg.isSupported) revert TokenNotSupportedInVault(_baseToken);
+        if (baseCfg.decimals == 0) revert TokenDecimalsNotConfigured(_baseToken);
+        if (uint256(baseCfg.decimals) > MAX_POW10_EXP) revert DecimalsOverflow(_baseToken);
+        if (baseCfg.decimals != EXPECTED_BASE_DECIMALS) {
+            revert BaseTokenDecimalsNotUSDC(_baseToken, baseCfg.decimals);
+        }
+
         baseCollateralToken = _baseToken;
         baseMaintenanceMarginPerContract = _baseMMPerContract;
         imFactorBps = _imFactorBps;
 
         emit RiskParamsSet(_baseToken, _baseMMPerContract, _imFactorBps);
 
-        // auto-list base token with 100% weight
+        // auto-list base token with 100% weight, enabled
         if (!isCollateralTokenListed[_baseToken]) {
             collateralTokens.push(_baseToken);
             isCollateralTokenListed[_baseToken] = true;
@@ -230,6 +244,9 @@ contract RiskModule is IRiskModule {
         if (token == address(0)) revert ZeroAddress();
         if (weightBps > BPS) revert InvalidParams();
 
+        // USDC-only: you may list other tokens but cannot enable them as collateral here.
+        if (isEnabled && token != baseCollateralToken) revert InvalidParams();
+
         if (!isCollateralTokenListed[token]) {
             collateralTokens.push(token);
             isCollateralTokenListed[token] = true;
@@ -244,7 +261,7 @@ contract RiskModule is IRiskModule {
     }
 
     /*//////////////////////////////////////////////////////////////
-                    INTERNAL: STRICT VAULT CONFIG HELPERS
+                    INTERNAL: STRICT VAULT / REGISTRY HELPERS
     //////////////////////////////////////////////////////////////*/
 
     function _vaultCfg(address token)
@@ -252,7 +269,9 @@ contract RiskModule is IRiskModule {
         view
         returns (CollateralVault.CollateralTokenConfig memory cfg)
     {
-        cfg = collateralVault.collateralConfigs(token);
+        // IMPORTANT: CollateralVault.collateralConfigs(token) is a public mapping getter (tuple),
+        // so we MUST use the explicit struct getter.
+        cfg = collateralVault.getCollateralConfig(token);
     }
 
     function _pow10(uint256 exp) internal pure returns (uint256) {
@@ -261,12 +280,19 @@ contract RiskModule is IRiskModule {
     }
 
     function _requireBaseConfigured() internal view {
-        if (baseCollateralToken == address(0)) revert BaseTokenNotConfigured();
+        address base = baseCollateralToken;
+        if (base == address(0)) revert BaseTokenNotConfigured();
 
+        CollateralVault.CollateralTokenConfig memory baseCfg = _vaultCfg(base);
+        if (!baseCfg.isSupported) revert TokenNotSupportedInVault(base);
+        if (baseCfg.decimals == 0) revert TokenDecimalsNotConfigured(base);
+        if (uint256(baseCfg.decimals) > MAX_POW10_EXP) revert DecimalsOverflow(base);
+        if (baseCfg.decimals != EXPECTED_BASE_DECIMALS) revert BaseTokenDecimalsNotUSDC(base, baseCfg.decimals);
+    }
+
+    function _baseDecimals() internal view returns (uint8) {
         CollateralVault.CollateralTokenConfig memory baseCfg = _vaultCfg(baseCollateralToken);
-        if (!baseCfg.isSupported) revert TokenNotSupportedInVault(baseCollateralToken);
-        if (baseCfg.decimals == 0) revert TokenDecimalsNotConfigured(baseCollateralToken);
-        if (uint256(baseCfg.decimals) > MAX_POW10_EXP) revert DecimalsOverflow(baseCollateralToken);
+        return baseCfg.decimals;
     }
 
     function _requireTokenConfiguredIfEnabled(address token) internal view {
@@ -279,15 +305,34 @@ contract RiskModule is IRiskModule {
         if (uint256(vcfg.decimals) > MAX_POW10_EXP) revert DecimalsOverflow(token);
 
         // also ensure decimals difference won't overflow 10**diff in conversions
-        uint8 baseDec = _baseDecimals(); // base is already bounded by _requireBaseConfigured in callers
+        uint8 baseDec = _baseDecimals(); // base bounded by _requireBaseConfigured in callers
         uint8 tokenDec = vcfg.decimals;
         uint256 diff = tokenDec >= baseDec ? uint256(tokenDec - baseDec) : uint256(baseDec - tokenDec);
         if (diff > MAX_POW10_EXP) revert DecimalsDiffOverflow(token);
     }
 
-    function _baseDecimals() internal view returns (uint8) {
-        CollateralVault.CollateralTokenConfig memory baseCfg = _vaultCfg(baseCollateralToken);
-        return baseCfg.decimals;
+    function _getUnderlyingConfig(address underlying)
+        internal
+        view
+        returns (OptionProductRegistry.UnderlyingConfig memory cfg)
+    {
+        (
+            address o,
+            uint64 spotDown,
+            uint64 spotUp,
+            uint64 volDown,
+            uint64 volUp,
+            bool enabled
+        ) = optionRegistry.underlyingConfigs(underlying);
+
+        cfg = OptionProductRegistry.UnderlyingConfig({
+            oracle: o,
+            spotShockDownBps: spotDown,
+            spotShockUpBps: spotUp,
+            volShockDownBps: volDown,
+            volShockUpBps: volUp,
+            isEnabled: enabled
+        });
     }
 
     function _requireStandardContractSize(OptionProductRegistry.OptionSeries memory s) internal pure {
@@ -303,6 +348,7 @@ contract RiskModule is IRiskModule {
     }
 
     function _effectiveBalanceOf(address user, address token) internal view returns (uint256) {
+        // best-effort: if yield view reverts, fall back to last synced claimable balance.
         try collateralVault.balanceWithYield(user, token) returns (uint256 b) {
             return b;
         } catch {
@@ -317,10 +363,7 @@ contract RiskModule is IRiskModule {
     function _isOracleDataFresh(uint256 updatedAt) internal view returns (bool) {
         if (maxOracleDelay == 0) return true;
         if (updatedAt == 0) return false;
-
-        // refuse future timestamps (defensive)
-        if (updatedAt > block.timestamp) return false;
-
+        if (updatedAt > block.timestamp) return false; // defensive
         return (block.timestamp - updatedAt) <= maxOracleDelay;
     }
 
@@ -367,12 +410,16 @@ contract RiskModule is IRiskModule {
         uint256 baseScale = _pow10(uint256(baseDec));
 
         if (settlementAsset == baseCollateralToken) {
+            // settlement amount is in 1e8 of settlementAsset (whole units).
+            // convert to base smallest units: amount * 10^baseDec / 1e8.
             return (Math.mulDiv(amount1e8, baseScale, PRICE_SCALE), true);
         }
 
         (uint256 px, bool okPx) = _tryGetPrice(settlementAsset, baseCollateralToken);
         if (!okPx) return (0, false);
 
+        // amount1e8 (settle *1e8) * px (base per settle *1e8) => base *1e16
+        // v1e8 = base *1e8
         uint256 v1e8 = Math.mulDiv(amount1e8, px, PRICE_SCALE);
         valueBase = Math.mulDiv(v1e8, baseScale, PRICE_SCALE);
         return (valueBase, true);
@@ -410,8 +457,7 @@ contract RiskModule is IRiskModule {
             intrinsicPrice1e8 = uint256(s.strike) > spot1e8 ? (uint256(s.strike) - spot1e8) : 0;
         }
 
-        // scale==1
-        intrinsicAmount1e8 = intrinsicPrice1e8;
+        intrinsicAmount1e8 = intrinsicPrice1e8; // contractSize scale == 1
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -429,10 +475,10 @@ contract RiskModule is IRiskModule {
         uint256 baseFloor = _baseMmFloorPerContract(s);
         if (baseFloor == 0) return 0;
 
-        if (!cfg.isEnabled) {
-            return baseFloor;
-        }
+        // If underlying is not enabled in registry, fall back to base floor.
+        if (!cfg.isEnabled) return baseFloor;
 
+        // If spot is missing, use strike as conservative anchor.
         uint256 spotLocal = hasSpot ? spot1e8 : uint256(s.strike);
 
         uint256 mmPrice1e8;
@@ -440,6 +486,7 @@ contract RiskModule is IRiskModule {
         if (s.isCall) {
             uint256 shockedSpot =
                 Math.mulDiv(spotLocal, (BPS + uint256(cfg.spotShockUpBps)), BPS);
+
             uint256 intrinsicShock =
                 shockedSpot > uint256(s.strike) ? (shockedSpot - uint256(s.strike)) : 0;
 
@@ -467,13 +514,65 @@ contract RiskModule is IRiskModule {
         (uint256 converted, bool okConv) = _convert1e8SettlementToBase(s.settlementAsset, mmPrice1e8);
 
         if (!okConv || converted == 0) {
-            uint256 bumped = Math.mulDiv(baseFloor, oracleDownMmMultiplierBps, BPS, Math.Rounding.Ceil);
-            return bumped;
+            // Oracle-down fallback: bump base floor by multiplier
+            return Math.mulDiv(baseFloor, oracleDownMmMultiplierBps, BPS, Math.Rounding.Ceil);
         }
 
         if (converted < baseFloor) converted = baseFloor;
-
         return converted;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                      INTERNAL: TOKEN -> BASE VALUE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @dev Converts `tokenAmount` (smallest units) into base collateral (smallest units),
+    /// using `price1e8 = price(token in base)` per 1 whole token.
+    function _tokenAmountToBaseValue(
+        address token,
+        uint256 tokenAmount,
+        uint256 price1e8
+    ) internal view returns (uint256 baseValue) {
+        // baseValue = tokenAmount * price * 10^baseDec / (10^tokenDec * 1e8)
+        // Compute tmp = tokenAmount * price / 1e8 = baseWhole * 10^tokenDec
+        uint256 tmp = Math.mulDiv(tokenAmount, price1e8, PRICE_SCALE);
+
+        uint8 baseDec = _baseDecimals();
+        uint8 tokenDec = _vaultCfg(token).decimals;
+
+        if (baseDec == tokenDec) return tmp;
+
+        if (baseDec > tokenDec) {
+            uint256 factor = _pow10(uint256(baseDec - tokenDec));
+            return Math.mulDiv(tmp, factor, 1);
+        } else {
+            uint256 factor = _pow10(uint256(tokenDec - baseDec));
+            return tmp / factor;
+        }
+    }
+
+    /// @dev Inverse of _tokenAmountToBaseValue: converts `baseValue` (base smallest units)
+    /// into `tokenAmount` (token smallest units), using `price1e8 = price(token in base)`.
+    function _baseValueToTokenAmount(
+        address token,
+        uint256 baseValue,
+        uint256 price1e8
+    ) internal view returns (uint256 tokenAmount) {
+        // tokenAmount = baseValue * 1e8 / price * 10^(tokenDec - baseDec)
+        uint256 tmp = Math.mulDiv(baseValue, PRICE_SCALE, price1e8);
+
+        uint8 baseDec = _baseDecimals();
+        uint8 tokenDec = _vaultCfg(token).decimals;
+
+        if (baseDec == tokenDec) return tmp;
+
+        if (tokenDec > baseDec) {
+            uint256 factor = _pow10(uint256(tokenDec - baseDec));
+            return Math.mulDiv(tmp, factor, 1);
+        } else {
+            uint256 factor = _pow10(uint256(baseDec - tokenDec));
+            return tmp / factor;
+        }
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -483,12 +582,10 @@ contract RiskModule is IRiskModule {
     function _computeCollateralEquityBase(address trader) internal view returns (uint256 totalEquityBase) {
         _requireBaseConfigured();
 
-        uint8 baseDec = _baseDecimals();
-
         CollateralConfig memory baseRiskCfg = collateralConfigs[baseCollateralToken];
         if (!baseRiskCfg.isEnabled) revert TokenNotConfigured(baseCollateralToken);
 
-        // strict validation upfront
+        // strict validation upfront for enabled tokens
         for (uint256 i = 0; i < collateralTokens.length; i++) {
             _requireTokenConfiguredIfEnabled(collateralTokens[i]);
         }
@@ -506,21 +603,10 @@ contract RiskModule is IRiskModule {
             if (token == baseCollateralToken) {
                 valueBase = bal;
             } else {
-                CollateralVault.CollateralTokenConfig memory tCfg = _vaultCfg(token);
-                uint8 tokenDec = tCfg.decimals;
-
                 (uint256 price, bool okPx) = _tryGetPrice(token, baseCollateralToken);
                 if (!okPx) continue; // conservative: ignore this collateral if no price
 
-                if (tokenDec == baseDec) {
-                    valueBase = Math.mulDiv(bal, price, PRICE_SCALE);
-                } else if (tokenDec > baseDec) {
-                    uint256 factor = _pow10(uint256(tokenDec - baseDec));
-                    valueBase = Math.mulDiv(bal, price, PRICE_SCALE * factor);
-                } else {
-                    uint256 factor = _pow10(uint256(baseDec - tokenDec));
-                    valueBase = Math.mulDiv(bal * factor, price, PRICE_SCALE);
-                }
+                valueBase = _tokenAmountToBaseValue(token, bal, price);
             }
 
             uint256 adjusted = Math.mulDiv(valueBase, uint256(rcfg.weightBps), BPS);
@@ -612,13 +698,12 @@ contract RiskModule is IRiskModule {
             uint256 optionId = seriesIds[i];
 
             IMarginEngineState.Position memory pos = marginEngine.positions(trader, optionId);
-            if (pos.quantity >= 0) continue;
+            if (pos.quantity >= 0) continue; // only shorts require margin
 
             uint256 shortAbs = _absQuantityU(pos.quantity);
 
             OptionProductRegistry.OptionSeries memory s = optionRegistry.getSeries(optionId);
-            OptionProductRegistry.UnderlyingConfig memory ucfg =
-                optionRegistry.underlyingConfigs(s.underlying);
+            OptionProductRegistry.UnderlyingConfig memory ucfg = _getUnderlyingConfig(s.underlying);
 
             (uint256 spot, bool okSpot) = _tryGetPrice(s.underlying, s.settlementAsset);
 
@@ -628,8 +713,7 @@ contract RiskModule is IRiskModule {
         }
 
         risk.maintenanceMargin = mm;
-        risk.initialMargin =
-            (mm > 0 && imFactorBps > 0) ? Math.mulDiv(mm, imFactorBps, BPS) : 0;
+        risk.initialMargin = (mm > 0 && imFactorBps > 0) ? Math.mulDiv(mm, imFactorBps, BPS) : 0;
     }
 
     function computeFreeCollateral(address trader)
@@ -657,49 +741,36 @@ contract RiskModule is IRiskModule {
 
         CollateralConfig memory rcfg = collateralConfigs[token];
 
+        // If token is not enabled as collateral (or has 0 weight), allow full withdraw (it doesn't support margin anyway).
         if (!rcfg.isEnabled || rcfg.weightBps == 0) return principalBal;
 
         _requireTokenConfiguredIfEnabled(token);
 
         AccountRisk memory risk = computeAccountRisk(trader);
-        int256 free = (risk.initialMargin == 0) ? risk.equity : (risk.equity - int256(risk.initialMargin));
 
-        if (token != baseCollateralToken) {
-            (uint256 p, bool okP) = _tryGetPrice(token, baseCollateralToken);
-            if (!okP) {
-                if (risk.maintenanceMargin == 0) return principalBal;
-                return 0;
-            }
-        }
+        // free vs initial margin
+        int256 free = (risk.initialMargin == 0)
+            ? risk.equity
+            : (risk.equity - int256(risk.initialMargin));
 
         if (free <= 0) return 0;
 
+        // If no positions, allow full withdrawal even if we can't price (conservative UX).
+        if (risk.maintenanceMargin == 0) return principalBal;
+
         uint256 freeBase = uint256(free);
 
-        if (token == baseCollateralToken) {
-            return freeBase >= principalBal ? principalBal : freeBase;
-        }
-
-        (uint256 price, bool okPrice) = _tryGetPrice(token, baseCollateralToken);
-        if (!okPrice) return (risk.maintenanceMargin == 0) ? principalBal : 0;
-
-        uint8 baseDec = _baseDecimals();
-        CollateralVault.CollateralTokenConfig memory tCfg = _vaultCfg(token);
-        uint8 tokenDec = tCfg.decimals;
-
-        uint256 numerator = freeBase * BPS;
-        uint256 denominator = uint256(rcfg.weightBps);
+        // deltaEquityBase = valueBase * weight / 1e4  <= freeBase
+        // => valueBase <= freeBase * 1e4 / weight
+        uint256 valueBaseMax = Math.mulDiv(freeBase, BPS, uint256(rcfg.weightBps));
 
         uint256 maxToken;
-
-        if (tokenDec == baseDec) {
-            maxToken = Math.mulDiv(numerator, PRICE_SCALE, price * denominator);
-        } else if (tokenDec > baseDec) {
-            uint256 factor = _pow10(uint256(tokenDec - baseDec));
-            maxToken = Math.mulDiv(numerator, PRICE_SCALE * factor, price * denominator);
+        if (token == baseCollateralToken) {
+            maxToken = valueBaseMax;
         } else {
-            uint256 factor = _pow10(uint256(baseDec - tokenDec));
-            maxToken = Math.mulDiv(numerator, PRICE_SCALE, price * denominator * factor);
+            (uint256 price, bool okPrice) = _tryGetPrice(token, baseCollateralToken);
+            if (!okPrice) return 0;
+            maxToken = _baseValueToTokenAmount(token, valueBaseMax, price);
         }
 
         withdrawable = maxToken < principalBal ? maxToken : principalBal;
@@ -736,15 +807,18 @@ contract RiskModule is IRiskModule {
         uint256 mrBefore;
         if (riskBefore.maintenanceMargin == 0) mrBefore = type(uint256).max;
         else if (riskBefore.equity <= 0) mrBefore = 0;
-        else mrBefore = uint256(riskBefore.equity) * BPS / riskBefore.maintenanceMargin;
+        else mrBefore = (uint256(riskBefore.equity) * BPS) / riskBefore.maintenanceMargin;
 
         uint256 maxAllowed = getWithdrawableAmount(trader, token);
         preview.maxWithdrawable = maxAllowed;
         preview.marginRatioBeforeBps = mrBefore;
 
+        // Cap by current synced balance (vault uses balances mapping for withdraw path)
         uint256 principalBal = _principalBalanceOf(trader, token);
-        uint256 capped = amount > principalBal ? principalBal : amount;
-        uint256 effectiveAmount = capped > maxAllowed ? maxAllowed : capped;
+        uint256 cappedReq = amount > principalBal ? principalBal : amount;
+
+        // For ratioAfter we simulate up to what would actually be allowed (since ME reverts if amount > maxAllowed)
+        uint256 effectiveAmount = cappedReq > maxAllowed ? maxAllowed : cappedReq;
 
         uint256 deltaEquityBase;
 
@@ -757,22 +831,11 @@ contract RiskModule is IRiskModule {
                 } else {
                     (uint256 price, bool ok) = _tryGetPrice(token, baseCollateralToken);
                     if (ok) {
-                        uint8 baseDec = _baseDecimals();
-                        CollateralVault.CollateralTokenConfig memory tCfg = _vaultCfg(token);
-                        uint8 tokenDec = tCfg.decimals;
-
-                        uint256 valueBase;
-                        if (tokenDec == baseDec) {
-                            valueBase = Math.mulDiv(effectiveAmount, price, PRICE_SCALE);
-                        } else if (tokenDec > baseDec) {
-                            uint256 factor = _pow10(uint256(tokenDec - baseDec));
-                            valueBase = Math.mulDiv(effectiveAmount, price, PRICE_SCALE * factor);
-                        } else {
-                            uint256 factor = _pow10(uint256(baseDec - tokenDec));
-                            valueBase = Math.mulDiv(effectiveAmount * factor, price, PRICE_SCALE);
-                        }
-
+                        uint256 valueBase = _tokenAmountToBaseValue(token, effectiveAmount, price);
                         deltaEquityBase = Math.mulDiv(valueBase, uint256(rcfg.weightBps), BPS);
+                    } else {
+                        // if we can't price this collateral, treat reduction as full breach (conservative)
+                        deltaEquityBase = uint256(type(int256).max);
                     }
                 }
             }
@@ -783,17 +846,18 @@ contract RiskModule is IRiskModule {
         uint256 mrAfter;
         if (riskBefore.maintenanceMargin == 0) mrAfter = type(uint256).max;
         else if (equityAfter <= 0) mrAfter = 0;
-        else mrAfter = uint256(equityAfter) * BPS / riskBefore.maintenanceMargin;
+        else mrAfter = (uint256(equityAfter) * BPS) / riskBefore.maintenanceMargin;
 
         preview.marginRatioAfterBps = mrAfter;
 
         bool breachFromOvershoot = (amount > maxAllowed);
 
+        // Basic breach flag (not liquidation threshold; ME checks threshold itself)
         bool breachFromMM = false;
         if (riskBefore.maintenanceMargin > 0) {
             if (equityAfter <= 0) breachFromMM = true;
             else {
-                uint256 ratioAfter = uint256(equityAfter) * BPS / riskBefore.maintenanceMargin;
+                uint256 ratioAfter = (uint256(equityAfter) * BPS) / riskBefore.maintenanceMargin;
                 if (ratioAfter < BPS) breachFromMM = true;
             }
         }
