@@ -14,6 +14,11 @@ import "./matching/IMarginEngineTrade.sol";
 /// @title MarginEngine
 /// @notice Gère les positions, la marge, les liquidations et le settlement à l'expiration.
 /// @dev Toute la logique de risque (equity / IM / MM) est déléguée au RiskModule (IRiskModule).
+///      Modifs clés (V2 multi-collat / multi-settlement):
+///       - NE force PLUS series.settlementAsset == baseCollateralToken.
+///       - Liquidation: cashflow par settlementAsset (par série), + pénalité saisissable
+///         en baseCollateralToken puis fallback sur les settlementAsset impliqués (si possible via oracle).
+///       - Risk params: cache local mais VERIFICATION stricte vs RiskModule (source of truth).
 contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade {
     /*//////////////////////////////////////////////////////////////
                                 CONSTANTS
@@ -37,7 +42,6 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
     error ZeroAddress();
     error NotLiquidatable();
     error LengthMismatch();
-    error NotShortPosition();
     error NoBaseCollateral();
     error RiskModuleNotSet();
     error AmountZero();
@@ -45,7 +49,6 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
 
     // Series / trading
     error SeriesExpired();
-    error BadSettlementAsset();
     error SeriesNotActiveCloseOnly();
 
     // Contract size hardening (enforce fixed 1e8)
@@ -83,6 +86,9 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
 
     // Decimals hardening
     error DecimalsOverflow(address token);
+
+    // Risk params strictness
+    error RiskParamsMismatch();
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
@@ -131,7 +137,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         address indexed trader,
         uint256[] optionIds,
         uint128[] quantities,
-        uint256 collateralSeized
+        uint256 collateralSeizedBaseValue
     );
 
     event LiquidationCashflow(
@@ -169,6 +175,14 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         uint256 totalBadDebt
     );
 
+    event LiquidationSeize(
+        address indexed liquidator,
+        address indexed trader,
+        address indexed token,
+        uint256 amountToken,
+        uint256 seizedBaseValue
+    );
+
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
     //////////////////////////////////////////////////////////////*/
@@ -195,6 +209,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
     /// @notice Index+1 dans traderSeries (0 = absent). Permet remove O(1).
     mapping(address => mapping(uint256 => uint256)) private traderSeriesIndexPlus1;
 
+    /// @notice Cache local (doit matcher RiskModule) : baseCollateralToken / baseMM / IM factor.
     address public baseCollateralToken;
     uint256 public baseMaintenanceMarginPerContract;
     uint256 public imFactorBps;
@@ -219,6 +234,8 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
 
     // ===================== Settlement (claim-based) =====================
 
+    /// @dev Adresse "compte" insurance fund dans CollateralVault (peut être un contrat InsuranceFund, mais les fonds
+    ///      sont détenus par CollateralVault et suivis en ledger interne via balances[insuranceFund][token]).
     address public insuranceFund;
 
     mapping(uint256 => mapping(address => bool)) public isAccountSettled;
@@ -226,6 +243,16 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
     mapping(uint256 => uint256) public seriesCollected;
     mapping(uint256 => uint256) public seriesPaid;
     mapping(uint256 => uint256) public seriesBadDebt;
+
+    /*//////////////////////////////////////////////////////////////
+                                INTERNAL PARAM INTERFACE
+    //////////////////////////////////////////////////////////////*/
+
+    interface IRiskModuleParams {
+        function baseCollateralToken() external view returns (address);
+        function baseMaintenanceMarginPerContract() external view returns (uint256);
+        function imFactorBps() external view returns (uint256);
+    }
 
     /*//////////////////////////////////////////////////////////////
                                 MODIFIERS
@@ -251,12 +278,9 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
     //////////////////////////////////////////////////////////////*/
 
     constructor(address _owner, address _registry, address _vault, address _oracle) {
-        if (
-            _owner == address(0) ||
-            _registry == address(0) ||
-            _vault == address(0) ||
-            _oracle == address(0)
-        ) revert ZeroAddress();
+        if (_owner == address(0) || _registry == address(0) || _vault == address(0) || _oracle == address(0)) {
+            revert ZeroAddress();
+        }
 
         owner = _owner;
         optionRegistry = OptionProductRegistry(_registry);
@@ -321,13 +345,18 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         emit InsuranceFundSet(old, _insuranceFund);
     }
 
-    function setRiskParams(
-        address _baseToken,
-        uint256 _baseMMPerContract,
-        uint256 _imFactorBps
-    ) external onlyOwner {
+    /// @notice Configure (cache) les risk params côté MarginEngine, en vérifiant qu'ils MATCHENT RiskModule.
+    /// @dev Source of truth = RiskModule (owner doit config RiskModule séparément).
+    function setRiskParams(address _baseToken, uint256 _baseMMPerContract, uint256 _imFactorBps) external onlyOwner {
         if (_baseToken == address(0)) revert ZeroAddress();
         if (_imFactorBps < BPS) revert InvalidLiquidationParams();
+        if (address(riskModule) == address(0)) revert RiskModuleNotSet();
+
+        IRiskModuleParams rp = IRiskModuleParams(address(riskModule));
+
+        if (rp.baseCollateralToken() != _baseToken) revert RiskParamsMismatch();
+        if (rp.baseMaintenanceMarginPerContract() != _baseMMPerContract) revert RiskParamsMismatch();
+        if (rp.imFactorBps() != _imFactorBps) revert RiskParamsMismatch();
 
         baseCollateralToken = _baseToken;
         baseMaintenanceMarginPerContract = _baseMMPerContract;
@@ -336,10 +365,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         emit RiskParamsSet(_baseToken, _baseMMPerContract, _imFactorBps);
     }
 
-    function setLiquidationParams(
-        uint256 _liquidationThresholdBps,
-        uint256 _liquidationPenaltyBps
-    ) external onlyOwner {
+    function setLiquidationParams(uint256 _liquidationThresholdBps, uint256 _liquidationPenaltyBps) external onlyOwner {
         if (_liquidationThresholdBps < BPS) revert InvalidLiquidationParams();
         if (_liquidationPenaltyBps > BPS) revert InvalidLiquidationParams();
 
@@ -349,10 +375,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         emit LiquidationParamsSet(_liquidationThresholdBps, _liquidationPenaltyBps);
     }
 
-    function setLiquidationHardenParams(
-        uint256 _closeFactorBps,
-        uint256 _minImprovementBps
-    ) external onlyOwner {
+    function setLiquidationHardenParams(uint256 _closeFactorBps, uint256 _minImprovementBps) external onlyOwner {
         if (_closeFactorBps == 0) revert LiquidationCloseFactorZero();
         if (_closeFactorBps > BPS) revert InvalidLiquidationParams();
 
@@ -362,10 +385,10 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         emit LiquidationHardenParamsSet(_closeFactorBps, _minImprovementBps);
     }
 
-    function setLiquidationPricingParams(
-        uint256 _liquidationPriceSpreadBps,
-        uint256 _minLiquidationPriceBpsOfIntrinsic
-    ) external onlyOwner {
+    function setLiquidationPricingParams(uint256 _liquidationPriceSpreadBps, uint256 _minLiquidationPriceBpsOfIntrinsic)
+        external
+        onlyOwner
+    {
         if (_liquidationPriceSpreadBps > BPS) revert LiquidationPricingParamsInvalid();
         if (_minLiquidationPriceBpsOfIntrinsic > BPS) revert LiquidationPricingParamsInvalid();
 
@@ -386,39 +409,25 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
                               IMarginEngineState
     //////////////////////////////////////////////////////////////*/
 
-    function positions(address trader, uint256 optionId)
-        external
-        view
-        override
-        returns (IMarginEngineState.Position memory)
-    {
+    function positions(address trader, uint256 optionId) external view override returns (IMarginEngineState.Position memory) {
         return _positions[trader][optionId];
     }
 
     /// @notice OPEN series only (positions non nulles)
-    function getTraderSeries(address trader)
-        external
-        view
-        override
-        returns (uint256[] memory)
-    {
+    function getTraderSeries(address trader) external view override returns (uint256[] memory) {
         return traderSeries[trader];
     }
 
-    function getTraderSeriesLength(address trader)
-        external
-        view
-        override
-        returns (uint256)
-    {
+    function getTraderSeriesLength(address trader) external view override returns (uint256) {
         return traderSeries[trader].length;
     }
 
-    function getTraderSeriesSlice(
-        address trader,
-        uint256 start,
-        uint256 end
-    ) external view override returns (uint256[] memory slice) {
+    function getTraderSeriesSlice(address trader, uint256 start, uint256 end)
+        external
+        view
+        override
+        returns (uint256[] memory slice)
+    {
         uint256 len = traderSeries[trader].length;
         if (start > len) start = len;
         if (end > len) end = len;
@@ -435,11 +444,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
                               VIEW HELPERS
     //////////////////////////////////////////////////////////////*/
 
-    function getAccountRisk(address trader)
-        external
-        view
-        returns (IRiskModule.AccountRisk memory risk)
-    {
+    function getAccountRisk(address trader) external view returns (IRiskModule.AccountRisk memory risk) {
         if (address(riskModule) == address(0)) {
             IRiskModule.AccountRisk memory empty;
             return empty;
@@ -452,11 +457,11 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         return riskModule.computeFreeCollateral(trader);
     }
 
-    function previewWithdrawImpact(
-        address trader,
-        address token,
-        uint256 amount
-    ) external view returns (IRiskModule.WithdrawPreview memory preview) {
+    function previewWithdrawImpact(address trader, address token, uint256 amount)
+        external
+        view
+        returns (IRiskModule.WithdrawPreview memory preview)
+    {
         if (address(riskModule) == address(0)) return preview;
         return riskModule.previewWithdrawImpact(trader, token, amount);
     }
@@ -471,6 +476,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
     //////////////////////////////////////////////////////////////*/
 
     function depositCollateral(address token, uint256 amount) external whenNotPaused nonReentrant {
+        if (amount == 0) revert AmountZero();
         collateralVault.deposit(token, amount);
         emit CollateralDeposited(msg.sender, token, amount);
     }
@@ -479,8 +485,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         if (address(riskModule) == address(0)) revert RiskModuleNotSet();
         if (amount == 0) revert AmountZero();
 
-        IRiskModule.WithdrawPreview memory preview =
-            riskModule.previewWithdrawImpact(msg.sender, token, amount);
+        IRiskModule.WithdrawPreview memory preview = riskModule.previewWithdrawImpact(msg.sender, token, amount);
 
         if (amount > preview.maxWithdrawable) revert WithdrawTooLarge();
         if (preview.marginRatioAfterBps < liquidationThresholdBps) revert WithdrawWouldBreachMargin();
@@ -534,6 +539,11 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         return uint256(y >= 0 ? y : -y);
     }
 
+    function _pow10(uint256 exp) internal pure returns (uint256) {
+        if (exp > MAX_POW10_EXP) revert MathOverflow();
+        return 10 ** exp;
+    }
+
     /// @dev Enforce contractSize1e8 == 1e8 (fixed contract sizing).
     function _requireStandardContractSize(OptionProductRegistry.OptionSeries memory s) internal pure {
         if (s.contractSize1e8 != uint128(PRICE_1E8)) revert InvalidContractSize();
@@ -585,12 +595,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         traderSeriesIndexPlus1[trader][optionId] = 0;
     }
 
-    function _updateOpenSeriesOnChange(
-        address trader,
-        uint256 optionId,
-        int128 oldQty,
-        int128 newQty
-    ) internal {
+    function _updateOpenSeriesOnChange(address trader, uint256 optionId, int128 oldQty, int128 newQty) internal {
         _ensureQtyAllowed(oldQty);
         _ensureQtyAllowed(newQty);
 
@@ -601,11 +606,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         }
     }
 
-    function _updateTotalShortContracts(
-        address trader,
-        int128 oldQty,
-        int128 newQty
-    ) internal {
+    function _updateTotalShortContracts(address trader, int128 oldQty, int128 newQty) internal {
         _ensureQtyAllowed(oldQty);
         _ensureQtyAllowed(newQty);
 
@@ -616,9 +617,14 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         else totalShortContracts[trader] -= (oldShort - newShort);
     }
 
+    function _vaultCfg(address token) internal view returns (CollateralVault.CollateralTokenConfig memory cfg) {
+        cfg = collateralVault.collateralConfigs(token);
+    }
+
     function _requireSettlementAssetConfigured(address settlementAsset) internal view {
-        (bool isSupported, uint8 decimals, ) = collateralVault.collateralConfigs(settlementAsset);
-        if (!isSupported || decimals == 0) revert SettlementAssetNotConfigured();
+        CollateralVault.CollateralTokenConfig memory cfg = _vaultCfg(settlementAsset);
+        if (!cfg.isSupported || cfg.decimals == 0) revert SettlementAssetNotConfigured();
+        if (uint256(cfg.decimals) > MAX_POW10_EXP) revert DecimalsOverflow(settlementAsset);
     }
 
     function _price1e8ToSettlementUnits(address settlementAsset, uint256 value1e8)
@@ -626,67 +632,104 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         view
         returns (uint256 valueNative)
     {
-        (bool isSupported, uint8 decimals, ) = collateralVault.collateralConfigs(settlementAsset);
-        if (!isSupported || decimals == 0) revert SettlementAssetNotConfigured();
-        if (uint256(decimals) > MAX_POW10_EXP) revert DecimalsOverflow(settlementAsset);
+        CollateralVault.CollateralTokenConfig memory cfg = _vaultCfg(settlementAsset);
+        if (!cfg.isSupported || cfg.decimals == 0) revert SettlementAssetNotConfigured();
+        if (uint256(cfg.decimals) > MAX_POW10_EXP) revert DecimalsOverflow(settlementAsset);
 
-        uint256 scale = 10 ** uint256(decimals);
+        uint256 scale = _pow10(uint256(cfg.decimals));
         valueNative = Math.mulDiv(value1e8, scale, PRICE_1E8, Math.Rounding.Down);
     }
 
-    function _intrinsic1e8(
-        OptionProductRegistry.OptionSeries memory s,
-        uint256 spot1e8
-    ) internal pure returns (uint256 intrinsic) {
+    function _intrinsic1e8(OptionProductRegistry.OptionSeries memory s, uint256 spot1e8) internal pure returns (uint256 intrinsic) {
         if (spot1e8 == 0) return 0;
 
         if (s.isCall) {
-            if (spot1e8 > uint256(s.strike)) intrinsic = spot1e8 - uint256(s.strike);
-            else intrinsic = 0;
+            intrinsic = spot1e8 > uint256(s.strike) ? (spot1e8 - uint256(s.strike)) : 0;
         } else {
-            if (uint256(s.strike) > spot1e8) intrinsic = uint256(s.strike) - spot1e8;
-            else intrinsic = 0;
+            intrinsic = uint256(s.strike) > spot1e8 ? (uint256(s.strike) - spot1e8) : 0;
         }
     }
 
-    /// @dev Returns settlement units per contract.
-    ///      In fixed mode, contractSize1e8 MUST be 1e8 or we revert to avoid premium/payoff mismatch.
-    function _computeLiquidationPricePerContract(
-        OptionProductRegistry.OptionSeries memory s
-    ) internal view returns (uint256 pricePerContract) {
-        _requireStandardContractSize(s);
-
-        (uint256 spot, uint256 updatedAt) = oracle.getPrice(s.underlying, s.settlementAsset);
-        if (spot == 0) revert OraclePriceUnavailable();
-
-        uint32 maxDelay = liquidationOracleMaxDelay;
-        if (maxDelay > 0) {
-            if (updatedAt == 0) revert OraclePriceStale();
-            if (block.timestamp > updatedAt && block.timestamp - updatedAt > maxDelay) {
-                revert OraclePriceStale();
-            }
-        }
-
-        uint256 intrinsicPrice1e8 = _intrinsic1e8(s, spot);
-        uint256 liqPrice1e8 = intrinsicPrice1e8;
-
-        if (intrinsicPrice1e8 > 0 && minLiquidationPriceBpsOfIntrinsic > 0) {
-            uint256 floorPx = (intrinsicPrice1e8 * minLiquidationPriceBpsOfIntrinsic) / BPS;
-            if (liqPrice1e8 < floorPx) liqPrice1e8 = floorPx;
-        }
-
-        if (liquidationPriceSpreadBps > 0) {
-            liqPrice1e8 = (liqPrice1e8 * (BPS + liquidationPriceSpreadBps)) / BPS;
-        }
-
-        // fixed size => amount1e8 == liqPrice1e8
-        pricePerContract = _price1e8ToSettlementUnits(s.settlementAsset, liqPrice1e8);
+    function _requireBaseConfigured() internal view {
+        if (baseCollateralToken == address(0)) revert NoBaseCollateral();
+        _requireSettlementAssetConfigured(baseCollateralToken);
     }
 
     function _marginRatioBpsFromRisk(IRiskModule.AccountRisk memory risk) internal pure returns (uint256) {
         if (risk.maintenanceMargin == 0) return type(uint256).max;
         if (risk.equity <= 0) return 0;
         return (uint256(risk.equity) * BPS) / risk.maintenanceMargin;
+    }
+
+    function _getOraclePriceChecked(address base, address quote) internal view returns (uint256 p) {
+        (uint256 px, uint256 updatedAt) = oracle.getPrice(base, quote);
+        if (px == 0) revert OraclePriceUnavailable();
+
+        uint32 maxDelay = liquidationOracleMaxDelay;
+        if (maxDelay > 0) {
+            if (updatedAt == 0) revert OraclePriceStale();
+            if (updatedAt > block.timestamp) revert OraclePriceStale();
+            if (block.timestamp - updatedAt > maxDelay) revert OraclePriceStale();
+        }
+        return px;
+    }
+
+    /// @dev Convertit une valeur "base token units" en amount de `token` (token units) arrondi UP (conservateur).
+    ///      Utilise oracle.getPrice(token, base) (1e8). Si oracle indispo/stale => (0,false).
+    function _baseValueToTokenAmountUp(address token, uint256 baseValue) internal view returns (uint256 amtToken, bool ok) {
+        if (baseValue == 0) return (0, true);
+        if (token == address(0)) return (0, false);
+
+        if (token == baseCollateralToken) {
+            return (baseValue, true);
+        }
+
+        CollateralVault.CollateralTokenConfig memory baseCfg = _vaultCfg(baseCollateralToken);
+        CollateralVault.CollateralTokenConfig memory tokCfg = _vaultCfg(token);
+
+        if (!baseCfg.isSupported || baseCfg.decimals == 0) return (0, false);
+        if (!tokCfg.isSupported || tokCfg.decimals == 0) return (0, false);
+        if (uint256(baseCfg.decimals) > MAX_POW10_EXP) revert DecimalsOverflow(baseCollateralToken);
+        if (uint256(tokCfg.decimals) > MAX_POW10_EXP) revert DecimalsOverflow(token);
+
+        uint256 px;
+        uint256 updatedAt;
+        try oracle.getPrice(token, baseCollateralToken) returns (uint256 _p, uint256 _u) {
+            px = _p;
+            updatedAt = _u;
+        } catch {
+            return (0, false);
+        }
+        if (px == 0) return (0, false);
+
+        uint32 maxDelay = liquidationOracleMaxDelay;
+        if (maxDelay > 0) {
+            if (updatedAt == 0) return (0, false);
+            if (updatedAt > block.timestamp) return (0, false);
+            if (block.timestamp - updatedAt > maxDelay) return (0, false);
+        }
+
+        uint8 baseDec = baseCfg.decimals;
+        uint8 tokDec = tokCfg.decimals;
+
+        // Step 1 (same decimals): ceil(baseValue * 1e8 / px)
+        uint256 sameDec = Math.mulDiv(baseValue, PRICE_1E8, px, Math.Rounding.Ceil);
+
+        if (tokDec == baseDec) {
+            return (sameDec, true);
+        }
+
+        if (tokDec > baseDec) {
+            uint256 factor = _pow10(uint256(tokDec - baseDec));
+            // conservative: multiply after ceil
+            amtToken = _mulChecked(sameDec, factor);
+            return (amtToken, true);
+        } else {
+            uint256 factor = _pow10(uint256(baseDec - tokDec));
+            // conservative: ceil(sameDec / factor)
+            amtToken = (sameDec + (factor - 1)) / factor;
+            return (amtToken, true);
+        }
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -700,25 +743,19 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         whenNotPaused
         nonReentrant
     {
-        if (
-            t.buyer == address(0) ||
-            t.seller == address(0) ||
-            t.buyer == t.seller ||
-            t.quantity == 0 ||
-            t.price == 0
-        ) revert InvalidTrade();
+        if (t.buyer == address(0) || t.seller == address(0) || t.buyer == t.seller || t.quantity == 0 || t.price == 0) {
+            revert InvalidTrade();
+        }
 
         if (address(riskModule) == address(0)) revert RiskModuleNotSet();
+        _requireBaseConfigured();
 
         OptionProductRegistry.OptionSeries memory series = optionRegistry.getSeries(t.optionId);
         _requireStandardContractSize(series);
 
         if (block.timestamp >= series.expiry) revert SeriesExpired();
 
-        // Current mode: single settlement asset = baseCollateralToken (liquidation/withdraw logic assumes it).
-        if (baseCollateralToken == address(0)) revert NoBaseCollateral();
-        if (series.settlementAsset != baseCollateralToken) revert BadSettlementAsset();
-
+        // settlement asset must be supported by vault (premium + payoff ledger)
         _requireSettlementAssetConfigured(series.settlementAsset);
 
         IMarginEngineState.Position storage buyerPos = _positions[t.buyer][t.optionId];
@@ -750,8 +787,8 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         _updateOpenSeriesOnChange(t.buyer, t.optionId, oldBuyerQty, newBuyerQty);
         _updateOpenSeriesOnChange(t.seller, t.optionId, oldSellerQty, newSellerQty);
 
+        // premium cashflow in settlement asset native units
         uint256 cashAmount = _mulChecked(uint256(t.quantity), uint256(t.price));
-
         collateralVault.transferBetweenAccounts(series.settlementAsset, t.buyer, t.seller, cashAmount);
 
         emit TradeExecuted(t.buyer, t.seller, t.optionId, t.quantity, t.price);
@@ -766,29 +803,25 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
 
     /// @dev Returns settlement units per contract.
     ///      In fixed mode, contractSize1e8 MUST be 1e8 or we revert to avoid premium/payoff mismatch.
-    function _computePerContractPayoff(
-        OptionProductRegistry.OptionSeries memory series,
-        uint256 settlementPrice
-    ) internal view returns (uint256 payoffPerContract) {
+    function _computePerContractPayoff(OptionProductRegistry.OptionSeries memory series, uint256 settlementPrice)
+        internal
+        view
+        returns (uint256 payoffPerContract)
+    {
         _requireStandardContractSize(series);
-
         if (settlementPrice == 0) return 0;
 
         uint256 intrinsicPrice1e8;
-
         if (series.isCall) {
-            intrinsicPrice1e8 = settlementPrice > uint256(series.strike)
-                ? (settlementPrice - uint256(series.strike))
-                : 0;
+            intrinsicPrice1e8 =
+                settlementPrice > uint256(series.strike) ? (settlementPrice - uint256(series.strike)) : 0;
         } else {
-            intrinsicPrice1e8 = uint256(series.strike) > settlementPrice
-                ? (uint256(series.strike) - settlementPrice)
-                : 0;
+            intrinsicPrice1e8 =
+                uint256(series.strike) > settlementPrice ? (uint256(series.strike) - settlementPrice) : 0;
         }
 
         if (intrinsicPrice1e8 == 0) return 0;
 
-        // fixed size => amount1e8 == intrinsicPrice1e8
         payoffPerContract = _price1e8ToSettlementUnits(series.settlementAsset, intrinsicPrice1e8);
     }
 
@@ -803,6 +836,8 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
 
         (uint256 settlementPrice, bool isSet) = optionRegistry.getSettlementInfo(optionId);
         if (!isSet || settlementPrice == 0) revert SettlementNotSet();
+
+        _requireSettlementAssetConfigured(series.settlementAsset);
 
         if (isAccountSettled[optionId][trader]) revert SettlementAlreadyProcessed();
         isAccountSettled[optionId][trader] = true;
@@ -832,8 +867,8 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
             pnl = q >= 0 ? int256(amount) : -int256(amount);
         }
 
+        // close
         pos.quantity = 0;
-
         _updateTotalShortContracts(trader, oldQty, 0);
         _updateOpenSeriesOnChange(trader, optionId, oldQty, 0);
 
@@ -843,6 +878,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
 
         if (pnl > 0) {
             uint256 amountPay = uint256(pnl);
+
             uint256 fundBal = collateralVault.balances(insuranceFund, series.settlementAsset);
             if (fundBal < amountPay) revert InsuranceFundInsufficient();
 
@@ -857,12 +893,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
             uint256 amountToCollect = traderBal >= amountOwed ? amountOwed : traderBal;
 
             if (amountToCollect > 0) {
-                collateralVault.transferBetweenAccounts(
-                    series.settlementAsset,
-                    trader,
-                    insuranceFund,
-                    amountToCollect
-                );
+                collateralVault.transferBetweenAccounts(series.settlementAsset, trader, insuranceFund, amountToCollect);
                 collectedFromTrader = amountToCollect;
                 seriesCollected[optionId] += amountToCollect;
             }
@@ -887,11 +918,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         _settleAccount(optionId, trader);
     }
 
-    function settleAccounts(uint256 optionId, address[] calldata traders)
-        external
-        whenNotPaused
-        nonReentrant
-    {
+    function settleAccounts(uint256 optionId, address[] calldata traders) external whenNotPaused nonReentrant {
         uint256 len = traders.length;
         for (uint256 i = 0; i < len; i++) {
             _settleAccount(optionId, traders[i]);
@@ -919,17 +946,51 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         return ratioBps < liquidationThresholdBps;
     }
 
-    function liquidate(
-        address trader,
-        uint256[] calldata optionIds,
-        uint128[] calldata quantities
-    ) external whenNotPaused nonReentrant {
+    /// @dev Returns settlement units per contract.
+    function _computeLiquidationPricePerContract(OptionProductRegistry.OptionSeries memory s)
+        internal
+        view
+        returns (uint256 pricePerContract)
+    {
+        _requireStandardContractSize(s);
+
+        (uint256 spot, uint256 updatedAt) = oracle.getPrice(s.underlying, s.settlementAsset);
+        if (spot == 0) revert OraclePriceUnavailable();
+
+        uint32 maxDelay = liquidationOracleMaxDelay;
+        if (maxDelay > 0) {
+            if (updatedAt == 0) revert OraclePriceStale();
+            if (updatedAt > block.timestamp) revert OraclePriceStale();
+            if (block.timestamp - updatedAt > maxDelay) revert OraclePriceStale();
+        }
+
+        uint256 intrinsicPrice1e8 = _intrinsic1e8(s, spot);
+        uint256 liqPrice1e8 = intrinsicPrice1e8;
+
+        if (intrinsicPrice1e8 > 0 && minLiquidationPriceBpsOfIntrinsic > 0) {
+            uint256 floorPx = (intrinsicPrice1e8 * minLiquidationPriceBpsOfIntrinsic) / BPS;
+            if (liqPrice1e8 < floorPx) liqPrice1e8 = floorPx;
+        }
+
+        if (liquidationPriceSpreadBps > 0) {
+            liqPrice1e8 = (liqPrice1e8 * (BPS + liquidationPriceSpreadBps)) / BPS;
+        }
+
+        pricePerContract = _price1e8ToSettlementUnits(s.settlementAsset, liqPrice1e8);
+    }
+
+    function liquidate(address trader, uint256[] calldata optionIds, uint128[] calldata quantities)
+        external
+        whenNotPaused
+        nonReentrant
+    {
         if (trader == address(0)) revert ZeroAddress();
         if (trader == msg.sender) revert InvalidTrade();
         if (optionIds.length == 0 || optionIds.length != quantities.length) revert LengthMismatch();
-        if (baseCollateralToken == address(0)) revert NoBaseCollateral();
         if (address(riskModule) == address(0)) revert RiskModuleNotSet();
         if (liquidationCloseFactorBps == 0) revert LiquidationCloseFactorZero();
+
+        _requireBaseConfigured();
 
         IRiskModule.AccountRisk memory riskBefore = riskModule.computeAccountRisk(trader);
         uint256 ratioBeforeBps = _marginRatioBpsFromRisk(riskBefore);
@@ -945,10 +1006,14 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         address liquidator = msg.sender;
         uint256 totalContractsClosed;
 
-        uint256 totalCashRequested;
-        address settlementAsset = baseCollateralToken;
+        // track per settlement asset cash requested
+        address[] memory cashAssets = new address[](optionIds.length);
+        uint256[] memory cashRequested = new uint256[](optionIds.length);
+        uint256 assetsCount;
 
-        _requireSettlementAssetConfigured(settlementAsset);
+        // for penalty fallback seize: track distinct settlement assets touched
+        address[] memory touchedAssets = new address[](optionIds.length);
+        uint256 touchedCount;
 
         for (uint256 i = 0; i < optionIds.length; i++) {
             if (totalContractsClosed >= maxCloseOverall) break;
@@ -961,7 +1026,9 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
             _requireStandardContractSize(s);
 
             if (block.timestamp >= s.expiry) continue;
-            if (s.settlementAsset != baseCollateralToken) continue;
+
+            // settlement asset must be supported in vault for transfers
+            _requireSettlementAssetConfigured(s.settlementAsset);
 
             IMarginEngineState.Position storage traderPos = _positions[trader][optionId];
             if (traderPos.quantity >= 0) continue;
@@ -987,11 +1054,41 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
             int128 delta = _toInt128(liqQty);
 
             uint256 liqPricePerContract = _computeLiquidationPricePerContract(s);
-            totalCashRequested = _addChecked(
-                totalCashRequested,
-                _mulChecked(liqPricePerContract, uint256(liqQty))
-            );
+            uint256 req = _mulChecked(liqPricePerContract, uint256(liqQty));
 
+            // accumulate req per settlementAsset
+            {
+                bool found;
+                for (uint256 k = 0; k < assetsCount; k++) {
+                    if (cashAssets[k] == s.settlementAsset) {
+                        cashRequested[k] = _addChecked(cashRequested[k], req);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    cashAssets[assetsCount] = s.settlementAsset;
+                    cashRequested[assetsCount] = req;
+                    assetsCount++;
+                }
+            }
+
+            // track touched assets unique (for penalty seize fallback)
+            {
+                bool tfound;
+                for (uint256 k2 = 0; k2 < touchedCount; k2++) {
+                    if (touchedAssets[k2] == s.settlementAsset) {
+                        tfound = true;
+                        break;
+                    }
+                }
+                if (!tfound) {
+                    touchedAssets[touchedCount] = s.settlementAsset;
+                    touchedCount++;
+                }
+            }
+
+            // position transfer: trader short reduced, liquidator short increased
             traderPos.quantity = _checkedAddInt128(oldTraderQty, delta);
             liqPos.quantity = _checkedSubInt128(oldLiqQty, delta);
 
@@ -1009,25 +1106,92 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
 
         if (totalContractsClosed == 0) revert LiquidationNothingToDo();
 
-        uint256 traderBalForCash = collateralVault.balances(trader, settlementAsset);
-        uint256 cashPaid = totalCashRequested <= traderBalForCash ? totalCashRequested : traderBalForCash;
+        // cashflow: per settlement asset, pay min(balance, requested)
+        for (uint256 i = 0; i < assetsCount; i++) {
+            address asset = cashAssets[i];
+            uint256 req = cashRequested[i];
+            if (req == 0) continue;
 
-        if (cashPaid > 0) {
-            collateralVault.transferBetweenAccounts(settlementAsset, trader, liquidator, cashPaid);
+            uint256 traderBal = collateralVault.balances(trader, asset);
+            uint256 paid = req <= traderBal ? req : traderBal;
+
+            if (paid > 0) {
+                collateralVault.transferBetweenAccounts(asset, trader, liquidator, paid);
+            }
+
+            emit LiquidationCashflow(liquidator, trader, asset, paid, req);
         }
 
-        emit LiquidationCashflow(liquidator, trader, settlementAsset, cashPaid, totalCashRequested);
-
+        // penalty = MM_floor(base) * closedContracts * penaltyBps
         uint256 mmBase = _mulChecked(baseMaintenanceMarginPerContract, totalContractsClosed);
-        uint256 penalty = Math.mulDiv(mmBase, liquidationPenaltyBps, BPS, Math.Rounding.Down);
+        uint256 penaltyBaseValue = Math.mulDiv(mmBase, liquidationPenaltyBps, BPS, Math.Rounding.Down);
 
-        uint256 traderBal = collateralVault.balances(trader, baseCollateralToken);
-        uint256 seized = penalty <= traderBal ? penalty : traderBal;
+        uint256 remainingBase = penaltyBaseValue;
+        uint256 seizedBaseValueTotal = 0;
 
-        if (seized > 0) {
-            collateralVault.transferBetweenAccounts(baseCollateralToken, trader, liquidator, seized);
+        // 1) seize in base token first
+        if (remainingBase > 0) {
+            uint256 balBase = collateralVault.balances(trader, baseCollateralToken);
+            uint256 seizeBaseTokenAmt = remainingBase <= balBase ? remainingBase : balBase;
+
+            if (seizeBaseTokenAmt > 0) {
+                collateralVault.transferBetweenAccounts(baseCollateralToken, trader, liquidator, seizeBaseTokenAmt);
+                seizedBaseValueTotal += seizeBaseTokenAmt;
+                remainingBase -= seizeBaseTokenAmt;
+
+                emit LiquidationSeize(liquidator, trader, baseCollateralToken, seizeBaseTokenAmt, seizeBaseTokenAmt);
+            }
         }
 
+        // 2) fallback: seize remaining penalty value using settlement assets touched (if oracle ok)
+        if (remainingBase > 0) {
+            for (uint256 i = 0; i < touchedCount; i++) {
+                if (remainingBase == 0) break;
+
+                address tok = touchedAssets[i];
+                if (tok == address(0) || tok == baseCollateralToken) continue;
+
+                // if token not supported in vault, skip
+                CollateralVault.CollateralTokenConfig memory cfg = _vaultCfg(tok);
+                if (!cfg.isSupported || cfg.decimals == 0) continue;
+
+                (uint256 neededTok, bool ok) = _baseValueToTokenAmountUp(tok, remainingBase);
+                if (!ok || neededTok == 0) continue;
+
+                uint256 balTok = collateralVault.balances(trader, tok);
+                uint256 seizeTok = neededTok <= balTok ? neededTok : balTok;
+                if (seizeTok == 0) continue;
+
+                // compute seized base value approx = seizeTok * px / 1e8 adjusted for decimals diff
+                uint256 pxTokBase = _getOraclePriceChecked(tok, baseCollateralToken);
+
+                CollateralVault.CollateralTokenConfig memory baseCfg = _vaultCfg(baseCollateralToken);
+                uint8 baseDec = baseCfg.decimals;
+                uint8 tokDec = cfg.decimals;
+
+                uint256 seizedBaseValueApprox;
+
+                if (tokDec == baseDec) {
+                    seizedBaseValueApprox = Math.mulDiv(seizeTok, pxTokBase, PRICE_1E8, Math.Rounding.Down);
+                } else if (tokDec > baseDec) {
+                    uint256 factor = _pow10(uint256(tokDec - baseDec));
+                    seizedBaseValueApprox = Math.mulDiv(seizeTok, pxTokBase, PRICE_1E8 * factor, Math.Rounding.Down);
+                } else {
+                    uint256 factor = _pow10(uint256(baseDec - tokDec));
+                    seizedBaseValueApprox = Math.mulDiv(seizeTok * factor, pxTokBase, PRICE_1E8, Math.Rounding.Down);
+                }
+
+                collateralVault.transferBetweenAccounts(tok, trader, liquidator, seizeTok);
+
+                uint256 applied = seizedBaseValueApprox <= remainingBase ? seizedBaseValueApprox : remainingBase;
+                seizedBaseValueTotal += applied;
+                remainingBase -= applied;
+
+                emit LiquidationSeize(liquidator, trader, tok, seizeTok, applied);
+            }
+        }
+
+        // post-check improvement
         IRiskModule.AccountRisk memory riskAfter = riskModule.computeAccountRisk(trader);
         uint256 ratioAfterBps = _marginRatioBpsFromRisk(riskAfter);
 
@@ -1040,7 +1204,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
             if (!improved) revert LiquidationNotImproving();
         }
 
-        emit Liquidation(liquidator, trader, optionIds, quantities, seized);
+        emit Liquidation(liquidator, trader, optionIds, quantities, seizedBaseValueTotal);
 
         _enforceInitialMargin(liquidator);
     }
@@ -1049,11 +1213,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
                         ORACLE HELPERS
     //////////////////////////////////////////////////////////////*/
 
-    function getUnderlyingSpot(uint256 optionId)
-        external
-        view
-        returns (uint256 price, uint256 updatedAt)
-    {
+    function getUnderlyingSpot(uint256 optionId) external view returns (uint256 price, uint256 updatedAt) {
         OptionProductRegistry.OptionSeries memory series = optionRegistry.getSeries(optionId);
         _requireStandardContractSize(series);
         return oracle.getPrice(series.underlying, series.settlementAsset);

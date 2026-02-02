@@ -17,6 +17,13 @@ import "./yield/IYieldAdapter.sol";
 ///  - Le vault effectue un _sync() avant toute opération critique afin que:
 ///      * balances reflète le yield (évite "equity fantôme" côté RiskModule / MarginEngine)
 ///      * les retraits/transferts puissent consommer le yield réellement gagné
+///
+/// Hardenings ajoutés:
+///  - Opt-in yield ne DOIT PAS casser les dépôts/transferts si aucun adapter n'est configuré:
+///      * deposit() et transferBetweenAccounts() utilisent _maybeMoveToStrategy() (no-revert si strategy absente)
+///      * moveToStrategy() reste strict (revert si pas de strategy)
+///  - preview calls vers adapter sont wrapées (AdapterPreviewFailed) dans les chemins critiques
+///  - balanceWithYield() est “safe view”: si previewRedeem revert => retourne idle (conservateur)
 contract CollateralVault is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -246,12 +253,12 @@ contract CollateralVault is ReentrancyGuard {
         return collateralTokens;
     }
 
-    /// @notice Getter struct (consommé par RiskModule)
+    /// @notice Getter struct (consommé par RiskModule / MarginEngine)
     function collateralConfigs(address token) external view returns (CollateralTokenConfig memory cfg) {
         cfg = _collateralConfigs[token];
     }
 
-    /// @notice Getter tuple (si tu veux garder les destructuring côté MarginEngine)
+    /// @notice Getter tuple (legacy compat si besoin)
     function collateralConfigsRaw(address token)
         external
         view
@@ -261,7 +268,7 @@ contract CollateralVault is ReentrancyGuard {
         return (cfg.isSupported, cfg.decimals, cfg.collateralFactorBps);
     }
 
-    /// @notice Helper: retourne la config sous forme de struct (alias explicite).
+    /// @notice Helper explicite.
     function getCollateralConfig(address token) external view returns (CollateralTokenConfig memory cfg) {
         cfg = _collateralConfigs[token];
     }
@@ -281,6 +288,7 @@ contract CollateralVault is ReentrancyGuard {
         }
 
         if (adapter != address(0)) {
+            // asset mismatch = mauvais adapter
             if (IYieldAdapter(adapter).asset() != token) revert StrategyMismatch();
         }
 
@@ -293,6 +301,7 @@ contract CollateralVault is ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     function setYieldOptIn(address token, bool optedIn) external {
+        // évite toute tentative depuis un compte protocole
         if (msg.sender == marginEngine) revert YieldNotAllowedForProtocolAccount();
 
         CollateralTokenConfig memory cfg = _collateralConfigs[token];
@@ -303,14 +312,18 @@ contract CollateralVault is ReentrancyGuard {
     }
 
     /// @notice Vue “réelle” (idle + assets représentés par shares), indépendante des syncs.
+    /// @dev Safe-view: si previewRedeem revert, retourne idle (conservateur).
     function balanceWithYield(address user, address token) external view returns (uint256) {
         uint256 idle = idleBalances[user][token];
         uint256 shares = strategyShares[user][token];
         address adapter = tokenStrategy[token];
         if (shares == 0 || adapter == address(0)) return idle;
 
-        uint256 assetsFromShares = IYieldAdapter(adapter).previewRedeem(shares);
-        return idle + assetsFromShares;
+        try IYieldAdapter(adapter).previewRedeem(shares) returns (uint256 assetsFromShares) {
+            return idle + assetsFromShares;
+        } catch {
+            return idle;
+        }
     }
 
     /// @notice Force un sync de l’utilisateur (utile front / UX).
@@ -342,7 +355,11 @@ contract CollateralVault is ReentrancyGuard {
 
         address adapter = tokenStrategy[token];
         if (shares != 0 && adapter != address(0)) {
-            assetsFromShares = IYieldAdapter(adapter).previewRedeem(shares);
+            try IYieldAdapter(adapter).previewRedeem(shares) returns (uint256 a) {
+                assetsFromShares = a;
+            } catch {
+                assetsFromShares = 0;
+            }
         } else {
             assetsFromShares = 0;
         }
@@ -369,9 +386,8 @@ contract CollateralVault is ReentrancyGuard {
 
         emit Deposited(msg.sender, token, amount);
 
-        if (yieldOptIn[msg.sender][token]) {
-            _moveToStrategy(msg.sender, token, amount);
-        }
+        // IMPORTANT: ne doit pas revert si aucun adapter n'est configuré
+        _maybeMoveToStrategy(msg.sender, token, amount);
     }
 
     function withdraw(address token, uint256 amount) external nonReentrant {
@@ -387,11 +403,13 @@ contract CollateralVault is ReentrancyGuard {
         _withdrawInternal(user, user, token, amount);
     }
 
+    /// @notice Strict: revert si strategy non configurée.
     function moveToStrategy(address token, uint256 amount) external whenNotPaused nonReentrant {
         _sync(msg.sender, token);
         _moveToStrategy(msg.sender, token, amount);
     }
 
+    /// @notice Peut rester autorisé même si paused (sortie d'urgence).
     function moveToIdle(address token, uint256 amount) external nonReentrant {
         if (amount == 0) revert AmountZero();
 
@@ -403,7 +421,7 @@ contract CollateralVault is ReentrancyGuard {
         address adapter = tokenStrategy[token];
         if (adapter == address(0)) revert StrategyNotSet();
 
-        uint256 sharesNeeded = IYieldAdapter(adapter).previewWithdraw(amount);
+        uint256 sharesNeeded = _previewWithdraw(adapter, amount);
 
         uint256 userShares = strategyShares[msg.sender][token];
         if (userShares < sharesNeeded) revert InsufficientStrategyShares();
@@ -443,9 +461,11 @@ contract CollateralVault is ReentrancyGuard {
         uint256 fromBal = balances[from][token];
         if (fromBal < amount) revert InsufficientBalance();
 
+        // accounting "claimable" moved
         balances[from][token] = fromBal - amount;
         balances[to][token] += amount;
 
+        // move idle first
         uint256 idleFrom = idleBalances[from][token];
         uint256 idleMove = idleFrom >= amount ? amount : idleFrom;
 
@@ -454,12 +474,13 @@ contract CollateralVault is ReentrancyGuard {
             idleBalances[to][token] += idleMove;
         }
 
+        // if needed, pull remaining from strategy of `from` into idle (vault)
         uint256 remaining = amount - idleMove;
         if (remaining > 0) {
             address adapter = tokenStrategy[token];
             if (adapter == address(0)) revert NotEnoughIdle();
 
-            uint256 sharesNeeded = IYieldAdapter(adapter).previewWithdraw(remaining);
+            uint256 sharesNeeded = _previewWithdraw(adapter, remaining);
 
             uint256 sharesFrom = strategyShares[from][token];
             if (sharesFrom < sharesNeeded) revert InsufficientStrategyShares();
@@ -471,9 +492,12 @@ contract CollateralVault is ReentrancyGuard {
 
             idleBalances[to][token] += remaining;
 
-            if (yieldOptIn[to][token]) {
-                _moveToStrategy(to, token, remaining);
-            }
+            // IMPORTANT: ne doit pas revert si strategy absente (adapter==0)
+            _maybeMoveToStrategy(to, token, remaining);
+        } else {
+            // Optionnel: si le transfert a alimenté idle du receveur et qu'il est opt-in,
+            // on peut pousser vers strategy sans risque (adapter peut être 0 => no-op).
+            _maybeMoveToStrategy(to, token, idleMove);
         }
 
         emit InternalTransfer(token, from, to, amount);
@@ -486,6 +510,30 @@ contract CollateralVault is ReentrancyGuard {
                           INTERNALS
     //////////////////////////////////////////////////////////////*/
 
+    function _previewDeposit(address adapter, uint256 assets) internal view returns (uint256) {
+        try IYieldAdapter(adapter).previewDeposit(assets) returns (uint256 s) {
+            return s;
+        } catch {
+            revert AdapterPreviewFailed();
+        }
+    }
+
+    function _previewWithdraw(address adapter, uint256 assets) internal view returns (uint256) {
+        try IYieldAdapter(adapter).previewWithdraw(assets) returns (uint256 s) {
+            return s;
+        } catch {
+            revert AdapterPreviewFailed();
+        }
+    }
+
+    function _previewRedeem(address adapter, uint256 shares) internal view returns (uint256) {
+        try IYieldAdapter(adapter).previewRedeem(shares) returns (uint256 a) {
+            return a;
+        } catch {
+            revert AdapterPreviewFailed();
+        }
+    }
+
     function _sync(address user, address token) internal {
         CollateralTokenConfig memory cfg = _collateralConfigs[token];
         if (!cfg.isSupported) revert TokenNotSupported();
@@ -497,17 +545,25 @@ contract CollateralVault is ReentrancyGuard {
         uint256 assetsFromShares = 0;
         if (shares != 0) {
             if (adapter == address(0)) revert StrategyNotSet();
-            try IYieldAdapter(adapter).previewRedeem(shares) returns (uint256 a) {
-                assetsFromShares = a;
-            } catch {
-                revert AdapterPreviewFailed();
-            }
+            assetsFromShares = _previewRedeem(adapter, shares);
         }
 
         uint256 effective = idle + assetsFromShares;
         balances[user][token] = effective;
 
         emit Synced(user, token, effective);
+    }
+
+    /// @dev no-op si user n'est pas opt-in ou si aucun adapter n'est configuré.
+    function _maybeMoveToStrategy(address user, address token, uint256 amount) internal {
+        if (amount == 0) return;
+        if (!yieldOptIn[user][token]) return;
+
+        address adapter = tokenStrategy[token];
+        if (adapter == address(0)) return;
+
+        // strict move: si adapter présent, on exécute et on revert si invariants cassés
+        _moveToStrategy(user, token, amount);
     }
 
     function _moveToStrategy(address user, address token, uint256 amount) internal {
@@ -524,7 +580,7 @@ contract CollateralVault is ReentrancyGuard {
 
         idleBalances[user][token] = idle - amount;
 
-        uint256 expectedShares = IYieldAdapter(adapter).previewDeposit(amount);
+        uint256 expectedShares = _previewDeposit(adapter, amount);
 
         IERC20(token).forceApprove(adapter, amount);
         uint256 sharesMinted = IYieldAdapter(adapter).deposit(amount);
@@ -548,11 +604,13 @@ contract CollateralVault is ReentrancyGuard {
         uint256 bal = balances[user][token];
         if (bal < amount) revert InsufficientBalance();
 
+        // Optional hard-check via RiskModule (if configured)
         if (address(riskModule) != address(0)) {
             uint256 maxAllowed = riskModule.getWithdrawableAmount(user, token);
             if (amount > maxAllowed) revert WithdrawExceedsRiskLimits();
         }
 
+        // optimistic update; final truth will be re-synced
         balances[user][token] = bal - amount;
 
         uint256 idle = idleBalances[user][token];
@@ -573,7 +631,7 @@ contract CollateralVault is ReentrancyGuard {
         address adapter = tokenStrategy[token];
         if (adapter == address(0)) revert StrategyNotSet();
 
-        uint256 sharesNeeded = IYieldAdapter(adapter).previewWithdraw(remaining);
+        uint256 sharesNeeded = _previewWithdraw(adapter, remaining);
 
         uint256 userShares = strategyShares[user][token];
         if (userShares < sharesNeeded) revert InsufficientStrategyShares();
