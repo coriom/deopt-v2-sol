@@ -1,3 +1,4 @@
+// PythPriceSource.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
@@ -18,22 +19,35 @@ interface IPyth {
 
 /// @title PythPriceSource
 /// @notice Adapte un feed Pyth vers IPriceSource (prix normalisé en 1e8).
+/// @dev
+///  - Revert sur données invalides: OracleRouter catch et fallback.
+///  - Normalisation:
+///      valeur réelle = mantissa * 10^expo
+///      target(1e8)  = valeur réelle * 1e8 = mantissa * 10^(expo+8)
 contract PythPriceSource is IPriceSource {
+    uint256 internal constant MAX_POW10_EXP = 77;
+
     IPyth public immutable pyth;
     bytes32 public immutable priceId;
 
     error ZeroPyth();
     error ZeroId();
     error InvalidPrice();
-    error ExpoOutOfRange();
     error ScaleOverflow();
     error InvalidTimestamp();
+    error Pow10Overflow();
+    error ExpoOutOfRange();
 
     constructor(address _pyth, bytes32 _priceId) {
         if (_pyth == address(0)) revert ZeroPyth();
         if (_priceId == bytes32(0)) revert ZeroId();
         pyth = IPyth(_pyth);
         priceId = _priceId;
+    }
+
+    function _pow10(uint256 exp) internal pure returns (uint256) {
+        if (exp > MAX_POW10_EXP) revert Pow10Overflow();
+        return 10 ** exp;
     }
 
     /// @inheritdoc IPriceSource
@@ -48,34 +62,32 @@ contract PythPriceSource is IPriceSource {
         if (p.publishTime == 0) revert InvalidTimestamp();
         if (p.price <= 0) revert InvalidPrice();
 
-        // Normalisation en 1e8 :
-        // valeur réelle = mantissa * 10^expo
-        // target(1e8) = valeur réelle * 1e8 = mantissa * 10^(expo + 8)
-        int32 expo = p.expo;
+        // target exponent to 1e8
+        // expTo1e8 = expo + 8
+        int32 expTo1e8 = p.expo + 8;
 
-        // Borne défensive (évite 10**k trop grand même si uint256 le supporterait largement ici)
-        if (expo < -30 || expo > 30) revert ExpoOutOfRange();
+        // borne défensive: on exige |expTo1e8| <= 77 (10**77 max safe en uint256)
+        if (expTo1e8 > int32(int256(MAX_POW10_EXP)) || expTo1e8 < -int32(int256(MAX_POW10_EXP))) {
+            revert ExpoOutOfRange();
+        }
 
-        int32 expTo1e8 = expo + 8;
-
-        // p.price est int64 > 0 => cast safe vers uint256
+        // p.price int64 > 0 => cast sûr après check
         uint256 mantissa = uint256(uint64(p.price));
 
         if (expTo1e8 == 0) {
             price = mantissa;
         } else if (expTo1e8 < 0) {
             uint256 diff = uint256(uint32(-expTo1e8));
-            uint256 factor = 10 ** diff;
-            price = mantissa / factor;
+            uint256 factor = _pow10(diff);
+            price = mantissa / factor; // floor
         } else {
             uint256 diff = uint256(uint32(expTo1e8));
-            uint256 factor = 10 ** diff;
+            uint256 factor = _pow10(diff);
             if (mantissa != 0 && factor > type(uint256).max / mantissa) revert ScaleOverflow();
             price = mantissa * factor;
         }
 
         if (price == 0) revert InvalidPrice();
-
         updatedAt = p.publishTime;
     }
 }
