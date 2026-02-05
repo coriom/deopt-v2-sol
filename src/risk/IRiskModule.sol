@@ -9,7 +9,19 @@ pragma solidity ^0.8.20;
 ///  - La taille de contrat est hard-lock à 1e8 dans OptionProductRegistry (1 contrat = 1 underlying),
 ///    donc les impls peuvent supposer contractSize1e8 == 1e8, mais ne doivent pas casser si futur.
 ///  - Quantity hardening: l'implémentation doit supposer que MarginEngine n'autorise jamais int128.min.
+///
+/// Ajouts requis:
+///  - baseMaintenanceMarginPerContract() et imFactorBps() (consommés par MarginEngine pour vérifier la synchro de params).
 interface IRiskModule {
+    /*//////////////////////////////////////////////////////////////
+                                CONSTANTS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Scale prix oracle/registry (spot/strike/settlementPrice).
+    uint256 constant PRICE_SCALE = 1e8;
+
+    uint256 constant BPS = 10_000;
+
     /*//////////////////////////////////////////////////////////////
                                 TYPES
     //////////////////////////////////////////////////////////////*/
@@ -38,22 +50,13 @@ interface IRiskModule {
                               CORE RISK VIEW
     //////////////////////////////////////////////////////////////*/
 
-    function computeAccountRisk(address trader)
-        external
-        view
-        returns (AccountRisk memory risk);
+    function computeAccountRisk(address trader) external view returns (AccountRisk memory risk);
 
-    function computeFreeCollateral(address trader)
-        external
-        view
-        returns (int256 freeCollateral);
+    function computeFreeCollateral(address trader) external view returns (int256 freeCollateral);
 
     /// @notice Ratio de marge en bps: equity / maintenanceMargin * 1e4.
     /// @dev Retourne type(uint256).max si maintenanceMargin == 0. Retourne 0 si equity <= 0.
-    function computeMarginRatioBps(address trader)
-        external
-        view
-        returns (uint256);
+    function computeMarginRatioBps(address trader) external view returns (uint256);
 
     /*//////////////////////////////////////////////////////////////
                        WITHDRAW LIMITS (LEGACY V1)
@@ -61,29 +64,30 @@ interface IRiskModule {
 
     /// @notice Montant max retirable "legacy" (en unités du token).
     /// @dev Conservé pour compat CollateralVault, mais l’UX doit utiliser previewWithdrawImpact().
-    function getWithdrawableAmount(address trader, address token)
-        external
-        view
-        returns (uint256 amount);
+    function getWithdrawableAmount(address trader, address token) external view returns (uint256 amount);
 
     /*//////////////////////////////////////////////////////////////
                     WITHDRAW PREVIEW (UX-FRIENDLY V2)
     //////////////////////////////////////////////////////////////*/
 
-    function previewWithdrawImpact(
-        address trader,
-        address token,
-        uint256 amount
-    ) external view returns (WithdrawPreview memory preview);
+    function previewWithdrawImpact(address trader, address token, uint256 amount)
+        external
+        view
+        returns (WithdrawPreview memory preview);
 
     /*//////////////////////////////////////////////////////////////
-                           OPTIONAL HELPERS
+                           REQUIRED PARAM GETTERS
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Base collateral token (ex: USDC).
-    /// @dev Permet aux autres modules de vérifier la cohérence sans lire l’impl.
     function baseCollateralToken() external view returns (address);
 
     /// @notice Décimales de la base (ex: 6 pour USDC).
     function baseDecimals() external view returns (uint8);
+
+    /// @notice Maintenance margin "floor" par contrat (en base units).
+    function baseMaintenanceMarginPerContract() external view returns (uint256);
+
+    /// @notice Initial margin factor (>= 1e4) en bps, appliqué à maintenanceMargin.
+    function imFactorBps() external view returns (uint256);
 }

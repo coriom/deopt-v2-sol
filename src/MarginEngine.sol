@@ -20,6 +20,7 @@ import "./matching/IMarginEngineTrade.sol";
 ///  - Liquidation: cashflow par settlementAsset + pénalité saisissable (base puis fallback assets touchés).
 ///  - Hardening:
 ///      * depositCollateral() utilise CollateralVault.depositFor(user, token, amount) (évite le bug msg.sender).
+///      * withdrawCollateral() utilise CollateralVault.withdrawFor(user, token, amount) (évite le bug msg.sender).
 ///      * best-effort sync du vault avant lectures de balances en settlement/liquidation.
 ///      * conversions/approx de saisie sans overflow (pas de PRICE_1E8*factor, pas de seizeTok*factor).
 contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade {
@@ -63,6 +64,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
     error SettlementAlreadyProcessed();
     error SettlementAssetNotConfigured();
     error InsuranceFundNotSet();
+    error InsuranceFundInsufficient(uint256 needed, uint256 available);
 
     // Withdraw via MarginEngine
     error WithdrawTooLarge();
@@ -92,8 +94,9 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
     // Risk params strictness
     error RiskParamsMismatch();
 
-    // Vault deposit wrapper hardening
+    // Vault deposit/withdraw wrapper hardening
     error VaultDepositForNotSupported();
+    error VaultWithdrawForNotSupported();
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
@@ -491,6 +494,8 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         emit CollateralDeposited(msg.sender, token, amount);
     }
 
+    /// @dev IMPORTANT: ne jamais appeler collateralVault.withdraw() ici (msg.sender=MarginEngine).
+    ///      On force withdrawFor(user, token, amount). Si non supporté => revert.
     function withdrawCollateral(address token, uint256 amount) external whenNotPaused nonReentrant {
         if (address(riskModule) == address(0)) revert RiskModuleNotSet();
         if (amount == 0) revert AmountZero();
@@ -500,7 +505,10 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         if (amount > preview.maxWithdrawable) revert WithdrawTooLarge();
         if (preview.marginRatioAfterBps < liquidationThresholdBps) revert WithdrawWouldBreachMargin();
 
-        collateralVault.withdraw(token, amount);
+        (bool ok,) = address(collateralVault).call(
+            abi.encodeWithSignature("withdrawFor(address,address,uint256)", msg.sender, token, amount)
+        );
+        if (!ok) revert VaultWithdrawForNotSupported();
 
         emit CollateralWithdrawn(msg.sender, token, amount, preview.marginRatioAfterBps);
     }
@@ -628,7 +636,6 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
     }
 
     function _vaultCfg(address token) internal view returns (CollateralVault.CollateralTokenConfig memory cfg) {
-        // utilise le getter struct (pas le mapping getter tuple)
         cfg = collateralVault.getCollateralConfig(token);
     }
 
@@ -698,7 +705,6 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
     }
 
     function _syncVaultBestEffort(address user, address token) internal {
-        // permissionless dans CollateralVault; ignore si revert
         try collateralVault.syncAccountFor(user, token) {} catch {}
     }
 
@@ -942,10 +948,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
             uint256 amountPay = uint256(pnl);
 
             uint256 fundBal = collateralVault.balances(insuranceFund, asset);
-            if (fundBal < amountPay) {
-                // on ne peut pas "partially settle" (isAccountSettled), donc revert.
-                revert InsuranceFundNotSet(); // conserve erreur ancienne? non. => garde comportement strict via revert explicite ci-dessous.
-            }
+            if (fundBal < amountPay) revert InsuranceFundInsufficient(amountPay, fundBal);
 
             collateralVault.transferBetweenAccounts(asset, insuranceFund, trader, amountPay);
 

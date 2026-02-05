@@ -29,6 +29,8 @@ import "./yield/IYieldAdapter.sol";
 ///  - depositFor(user, token, amount) callable UNIQUEMENT par MarginEngine:
 ///      * évite le bug "deposit(token, amount)" appelé depuis MarginEngine qui crédite msg.sender (MarginEngine)
 ///      * transfère bien les tokens depuis `user`, crédite `balances[user][token]`
+///  - withdrawFor(user, token, amount) callable UNIQUEMENT par MarginEngine (et quandNotPaused):
+///      * évite le bug "withdraw(token, amount)" depuis MarginEngine (msg.sender = MarginEngine)
 contract CollateralVault is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -69,6 +71,9 @@ contract CollateralVault is ReentrancyGuard {
 
     // ownership 2-step
     error OwnershipTransferNotInitiated();
+
+    // riskModule optional hook not present / failed
+    error RiskModuleHookFailed();
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
@@ -403,11 +408,18 @@ contract CollateralVault is ReentrancyGuard {
         _maybeMoveToStrategy(user, token, amount);
     }
 
+    /// @notice Retrait direct user (peut rester possible même si paused, choix "exit" d'urgence).
     function withdraw(address token, uint256 amount) external nonReentrant {
         _withdrawInternal(msg.sender, msg.sender, token, amount);
     }
 
-    function withdrawFor(address user, address token, uint256 amount) external onlyMarginEngine nonReentrant {
+    /// @notice Retrait au nom de `user` — appelé par MarginEngine (bloqué si vault paused).
+    function withdrawFor(address user, address token, uint256 amount)
+        external
+        onlyMarginEngine
+        whenNotPaused
+        nonReentrant
+    {
         if (user == address(0)) revert ZeroAddress();
         _withdrawInternal(user, user, token, amount);
     }
@@ -501,7 +513,7 @@ contract CollateralVault is ReentrancyGuard {
 
             idleBalances[to][token] += remaining;
 
-            // IMPORTANT: ne doit pas revert si strategy absente (adapter==0)
+            // IMPORTANT: ne doit pas revert si strategy absente (adapter==0) — ici adapter!=0, ok.
             _maybeMoveToStrategy(to, token, remaining);
         } else {
             _maybeMoveToStrategy(to, token, idleMove);
@@ -598,6 +610,20 @@ contract CollateralVault is ReentrancyGuard {
         emit MovedToStrategy(user, token, amount, sharesMinted);
     }
 
+    function _getWithdrawableAmountBestEffort(address user, address token) internal view returns (uint256 maxAllowed, bool ok)
+    {
+        address rm = address(riskModule);
+        if (rm == address(0)) return (type(uint256).max, false);
+
+        // best-effort hook: getWithdrawableAmount(address,address) -> uint256
+        (bool success, bytes memory data) =
+            rm.staticcall(abi.encodeWithSignature("getWithdrawableAmount(address,address)", user, token));
+
+        if (!success || data.length < 32) return (type(uint256).max, false);
+        maxAllowed = abi.decode(data, (uint256));
+        return (maxAllowed, true);
+    }
+
     function _withdrawInternal(address user, address to, address token, uint256 amount) internal {
         if (amount == 0) revert AmountZero();
         if (to == address(0)) revert ZeroAddress();
@@ -610,13 +636,13 @@ contract CollateralVault is ReentrancyGuard {
         uint256 bal = balances[user][token];
         if (bal < amount) revert InsufficientBalance();
 
-        // Optional hard-check via RiskModule (if configured)
-        if (address(riskModule) != address(0)) {
-            uint256 maxAllowed = riskModule.getWithdrawableAmount(user, token);
-            if (amount > maxAllowed) revert WithdrawExceedsRiskLimits();
+        // Optional hard-check via RiskModule (if configured AND hook exists)
+        {
+            (uint256 maxAllowed, bool ok) = _getWithdrawableAmountBestEffort(user, token);
+            if (ok && amount > maxAllowed) revert WithdrawExceedsRiskLimits();
         }
 
-        // optimistic update; final truth will be re-synced
+        // optimistic update; final truth will be re-synced on paths needing strategy withdraw
         balances[user][token] = bal - amount;
 
         uint256 idle = idleBalances[user][token];
