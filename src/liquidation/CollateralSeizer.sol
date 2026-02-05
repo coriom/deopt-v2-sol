@@ -5,29 +5,26 @@ import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 import "../CollateralVault.sol";
 import "../oracle/IOracle.sol";
+import "./ICollateralSeizer.sol";
 
-/// @notice Minimal view sur RiskModule impl (weightBps + enable + baseToken)
+/// @notice Minimal view sur RiskModule (haircut/enable + baseToken)
 interface IRiskModuleConfigView {
     function baseCollateralToken() external view returns (address);
 
-    // mapping(address => CollateralConfig) public collateralConfigs;
     // struct CollateralConfig { uint64 weightBps; bool isEnabled; }
     function collateralConfigs(address token) external view returns (uint64 weightBps, bool isEnabled);
 }
 
 /// @title CollateralSeizer
-/// @notice Construit un plan de saisie multi-collat valorisé en base (USDC) avec haircuts+spread.
+/// @notice Planner: construit un plan de saisie multi-collat valorisé en base avec haircuts+spread.
 /// @dev
-///  - Le vault garde l’autorité de mouvement (onlyMarginEngine).
-///  - Ce contrat est un "planner": computeSeizurePlan() -> (tokens, amounts, baseCovered).
+///  - Ne déplace pas les fonds. MarginEngine exécute via CollateralVault.transferBetweenAccounts().
 ///  - Valorisation conservative:
-///      * conversion token->base via oracle (1e8)
+///      * conversion token->base via oracle (1e8) avec staleness check optionnel
 ///      * décimales via CollateralVault configs
 ///      * haircut = RiskModule.weightBps
-///      * spread = seizeConfig.spreadBps (dégrade la valeur => saisie + grande)
-contract CollateralSeizer {
-    using Math for uint256;
-
+///      * spread = seizeConfigs[token].spreadBps (dégrade la valeur => saisie + grande)
+contract CollateralSeizer is ICollateralSeizer {
     /*//////////////////////////////////////////////////////////////
                                 CONSTANTS
     //////////////////////////////////////////////////////////////*/
@@ -68,7 +65,10 @@ contract CollateralSeizer {
     event VaultSet(address indexed oldVault, address indexed newVault);
     event RiskModuleSet(address indexed oldRisk, address indexed newRisk);
 
-    event TokenSeizeConfigSet(address indexed token, uint16 spreadBps, bool isEnabled);
+    event TokenSeizeConfigSet(address indexed token, uint16 spreadBps, bool isEnabled, bool isSet);
+
+    /// @notice Fraîcheur maximale acceptée pour oracle.getPrice() (en secondes). 0 = off.
+    event OracleMaxDelaySet(uint32 oldDelay, uint32 newDelay);
 
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
@@ -81,11 +81,16 @@ contract CollateralSeizer {
     IOracle public oracle;
     IRiskModuleConfigView public riskModule;
 
+    /// @notice Si oracleMaxDelay>0: prix stale => ignoré (ok=false).
+    uint32 public oracleMaxDelay = 600;
+
     struct SeizeTokenConfig {
         uint16 spreadBps; // degrade value by (BPS - spread)
         bool isEnabled;
+        bool isSet; // distinguish "unset" vs "explicitly disabled"
     }
 
+    /// @dev Si config non set => default: enabled=true, spread=0 (ne bloque pas la liquidation).
     mapping(address => SeizeTokenConfig) public seizeConfigs;
 
     /*//////////////////////////////////////////////////////////////
@@ -118,6 +123,8 @@ contract CollateralSeizer {
             riskModule = IRiskModuleConfigView(_riskModule);
             emit RiskModuleSet(address(0), _riskModule);
         }
+
+        emit OracleMaxDelaySet(0, oracleMaxDelay);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -174,16 +181,24 @@ contract CollateralSeizer {
         if (token == address(0)) revert ZeroAddress();
         if (spreadBps > uint16(BPS)) revert SpreadOutOfRange();
 
-        seizeConfigs[token] = SeizeTokenConfig({spreadBps: spreadBps, isEnabled: isEnabled});
-        emit TokenSeizeConfigSet(token, spreadBps, isEnabled);
+        seizeConfigs[token] = SeizeTokenConfig({spreadBps: spreadBps, isEnabled: isEnabled, isSet: true});
+        emit TokenSeizeConfigSet(token, spreadBps, isEnabled, true);
+    }
+
+    /// @notice Set oracle max delay (0 = off).
+    function setOracleMaxDelay(uint32 _delay) external onlyOwner {
+        if (_delay > 6 hours) revert DelayOutOfRange();
+        uint32 old = oracleMaxDelay;
+        oracleMaxDelay = _delay;
+        emit OracleMaxDelaySet(old, _delay);
     }
 
     /*//////////////////////////////////////////////////////////////
                             VIEW: CORE HELPERS
     //////////////////////////////////////////////////////////////*/
 
-    function _pow10(uint256 exp) internal pure returns (uint256) {
-        if (exp > MAX_POW10_EXP) revert DecimalsOverflow(address(0));
+    function _pow10(address token, uint256 exp) internal pure returns (uint256) {
+        if (exp > MAX_POW10_EXP) revert DecimalsOverflow(token);
         return 10 ** exp;
     }
 
@@ -199,6 +214,12 @@ contract CollateralSeizer {
         if (uint256(dec) > MAX_POW10_EXP) revert DecimalsOverflow(token);
     }
 
+    function _requireSetup() internal view {
+        if (address(collateralVault) == address(0)) revert VaultNotSet();
+        if (address(oracle) == address(0)) revert OracleNotSet();
+        if (address(riskModule) == address(0)) revert RiskModuleNotSet();
+    }
+
     function _baseToken() internal view returns (address base) {
         base = riskModule.baseCollateralToken();
         if (base == address(0)) revert BaseTokenNotSet();
@@ -209,27 +230,38 @@ contract CollateralSeizer {
         baseDec = _requireVaultToken(base);
     }
 
+    /// @dev discountBps = weightBps * (1 - spreadBps), en bps.
+    ///      - weightBps/isEnabled vient du RiskModule (source of truth)
+    ///      - spread/isEnabled vient du Seizer (safety knob)
+    ///      - config non-set => enabled=true, spread=0 (ne bloque pas)
     function _discountBps(address token) internal view returns (uint256 discBps) {
         (uint64 weightBps, bool enabledWeight) = riskModule.collateralConfigs(token);
         if (!enabledWeight || weightBps == 0) return 0;
 
         SeizeTokenConfig memory scfg = seizeConfigs[token];
-        if (!scfg.isEnabled) return 0;
+        uint256 spread = 0;
+
+        if (scfg.isSet) {
+            if (!scfg.isEnabled) return 0;
+            spread = uint256(scfg.spreadBps);
+        } else {
+            // default: enabled + spread=0
+            spread = 0;
+        }
 
         // disc = weight * (1 - spread)
         uint256 w = uint256(weightBps);
-        uint256 s = uint256(scfg.spreadBps);
-        uint256 wAfterSpread = Math.mulDiv(w, (BPS - s), BPS, Math.Rounding.Floor);
-        return wAfterSpread; // in BPS
+        uint256 wAfterSpread = Math.mulDiv(w, (BPS - spread), BPS, Math.Rounding.Floor);
+        return wAfterSpread;
     }
 
-    function tokenDiscountBps(address token) external view returns (uint256) {
+    function tokenDiscountBps(address token) external view override returns (uint256) {
+        _requireSetup();
         return _discountBps(token);
     }
 
     function _safeBalanceWithYield(address user, address token) internal view returns (uint256 bal) {
-        // balanceWithYield peut revert si l’adapter revert en previewRedeem.
-        // fallback: balances (potentiellement non-sync, mais évite un revert dur).
+        // balanceWithYield est safe-view côté Vault, mais on garde un try/catch défensif.
         try collateralVault.balanceWithYield(user, token) returns (uint256 b) {
             return b;
         } catch {
@@ -237,9 +269,21 @@ contract CollateralSeizer {
         }
     }
 
+    function _priceOk(uint256 updatedAt) internal view returns (bool) {
+        uint32 maxDelay = oracleMaxDelay;
+        if (maxDelay == 0) return true;
+
+        if (updatedAt == 0) return false;
+        if (updatedAt > block.timestamp) return false;
+        if (block.timestamp - updatedAt > maxDelay) return false;
+
+        return true;
+    }
+
     function _tryPrice(address baseAsset, address quoteAsset) internal view returns (uint256 px, bool ok) {
-        try oracle.getPrice(baseAsset, quoteAsset) returns (uint256 p, uint256 /*updatedAt*/) {
+        try oracle.getPrice(baseAsset, quoteAsset) returns (uint256 p, uint256 updatedAt) {
             if (p == 0) return (0, false);
+            if (!_priceOk(updatedAt)) return (0, false);
             return (p, true);
         } catch {
             return (0, false);
@@ -259,20 +303,18 @@ contract CollateralSeizer {
         (uint256 price, bool okPx) = _tryPrice(token, base);
         if (!okPx) return (0, false);
 
-        // conservative sequencing to avoid overflow; may under-estimate slightly (OK).
         if (tokenDec == baseDec) {
             valueBase = Math.mulDiv(amountToken, price, PRICE_SCALE, Math.Rounding.Floor);
             return (valueBase, true);
         }
 
         if (tokenDec > baseDec) {
-            uint256 factor = _pow10(uint256(tokenDec - baseDec));
+            uint256 factor = _pow10(token, uint256(tokenDec - baseDec));
             uint256 tmp = Math.mulDiv(amountToken, price, PRICE_SCALE, Math.Rounding.Floor);
             valueBase = tmp / factor; // floor
             return (valueBase, true);
         } else {
-            uint256 factor = _pow10(uint256(baseDec - tokenDec));
-            // amountToken * factor can overflow in theory; assume realistic balances, still harden:
+            uint256 factor = _pow10(token, uint256(baseDec - tokenDec));
             uint256 scaled = amountToken * factor;
             if (factor != 0 && scaled / factor != amountToken) revert DecimalsOverflow(token);
             valueBase = Math.mulDiv(scaled, price, PRICE_SCALE, Math.Rounding.Floor);
@@ -299,14 +341,14 @@ contract CollateralSeizer {
         return (effBase, true);
     }
 
-    /// @notice Pour couvrir remainingEffBase, calcule le "valueBase" brut nécessaire (ceil).
-    function _requiredValueBaseCeil(uint256 remainingEffBase, uint256 discountBps)
+    /// @notice Pour couvrir remainingBase (en base effective), calcule le "valueBase" brut nécessaire (ceil).
+    /// @dev requiredValueBase = ceil(remaining * BPS / discountBps).
+    function _requiredValueBaseCeil(uint256 remainingBase, uint256 discountBps)
         internal
         pure
         returns (uint256 requiredValueBase)
     {
-        // requiredValueBase = ceil(remaining * BPS / discount)
-        requiredValueBase = Math.mulDiv(remainingEffBase, BPS, discountBps, Math.Rounding.Ceil);
+        requiredValueBase = Math.mulDiv(remainingBase, BPS, discountBps, Math.Rounding.Ceil);
     }
 
     /// @notice Convertit un valueBase (unités base) -> amountToken nécessaire, ceil.
@@ -334,12 +376,12 @@ contract CollateralSeizer {
         }
 
         if (tokenDec > baseDec) {
-            uint256 factor = _pow10(uint256(tokenDec - baseDec));
+            uint256 factor = _pow10(token, uint256(tokenDec - baseDec));
             uint256 scaled = temp * factor;
             if (factor != 0 && scaled / factor != temp) revert DecimalsOverflow(token);
             return (scaled, true);
         } else {
-            uint256 factor = _pow10(uint256(baseDec - tokenDec));
+            uint256 factor = _pow10(token, uint256(baseDec - tokenDec));
             // amountToken = ceil(temp / factor)
             amountToken = Math.mulDiv(temp, 1, factor, Math.Rounding.Ceil);
             return (amountToken, true);
@@ -350,13 +392,10 @@ contract CollateralSeizer {
                         PUBLIC VIEW: PLAN BUILDER
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Construit un plan de saisie pour couvrir `targetBaseAmount` (unités base token).
-    /// @return tokensOut tokens saisis
-    /// @return amountsOut montants saisis (unités natives token)
-    /// @return baseCovered valeur effective couverte (unités base token), conservative floor
     function computeSeizurePlan(address trader, uint256 targetBaseAmount)
         external
         view
+        override
         returns (address[] memory tokensOut, uint256[] memory amountsOut, uint256 baseCovered)
     {
         if (trader == address(0)) revert ZeroAddress();
@@ -364,9 +403,7 @@ contract CollateralSeizer {
             return (new address, new uint256, 0);
         }
 
-        if (address(collateralVault) == address(0)) revert VaultNotSet();
-        if (address(oracle) == address(0)) revert OracleNotSet();
-        if (address(riskModule) == address(0)) revert RiskModuleNotSet();
+        _requireSetup();
 
         address base = _baseToken();
 
@@ -386,8 +423,7 @@ contract CollateralSeizer {
                 uint256 avail = _safeBalanceWithYield(trader, base);
                 if (avail != 0) {
                     uint256 needValueBase = _requiredValueBaseCeil(remaining, disc);
-                    // base => amount == valueBase
-                    uint256 want = needValueBase;
+                    uint256 want = needValueBase; // base => amount == valueBase
                     uint256 seizeAmt = want <= avail ? want : avail;
 
                     (uint256 covered, bool okCov) = _effectiveBaseFromTokenFloor(base, seizeAmt);
@@ -395,12 +431,11 @@ contract CollateralSeizer {
                         tokensOut[n] = base;
                         amountsOut[n] = seizeAmt;
                         n++;
+
                         baseCovered += covered;
-                        if (covered >= remaining) {
-                            remaining = 0;
-                        } else {
-                            remaining -= covered;
-                        }
+
+                        if (covered >= remaining) remaining = 0;
+                        else remaining -= covered;
                     }
                 }
             }
@@ -451,14 +486,16 @@ contract CollateralSeizer {
     }
 
     /*//////////////////////////////////////////////////////////////
-                        DEBUG VIEWS (optional)
+                        DEBUG VIEWS
     //////////////////////////////////////////////////////////////*/
 
     function previewEffectiveBaseValue(address token, uint256 amountToken)
         external
         view
+        override
         returns (uint256 valueBaseFloor, uint256 effectiveBaseFloor, bool ok)
     {
+        _requireSetup();
         (uint256 vb, bool okV) = _valueBaseFloor(token, amountToken);
         if (!okV) return (0, 0, false);
         uint256 eff = _effectiveBaseFloor(token, vb);

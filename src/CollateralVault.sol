@@ -18,12 +18,17 @@ import "./yield/IYieldAdapter.sol";
 ///      * balances reflète le yield (évite "equity fantôme" côté RiskModule / MarginEngine)
 ///      * les retraits/transferts puissent consommer le yield réellement gagné
 ///
-/// Hardenings ajoutés:
+/// Hardenings:
 ///  - Opt-in yield ne DOIT PAS casser les dépôts/transferts si aucun adapter n'est configuré:
 ///      * deposit() et transferBetweenAccounts() utilisent _maybeMoveToStrategy() (no-revert si strategy absente)
 ///      * moveToStrategy() reste strict (revert si pas de strategy)
 ///  - preview calls vers adapter sont wrapées (AdapterPreviewFailed) dans les chemins critiques
 ///  - balanceWithYield() est “safe view”: si previewRedeem revert => retourne idle (conservateur)
+///
+/// Ajout requis (patch MarginEngine):
+///  - depositFor(user, token, amount) callable UNIQUEMENT par MarginEngine:
+///      * évite le bug "deposit(token, amount)" appelé depuis MarginEngine qui crédite msg.sender (MarginEngine)
+///      * transfère bien les tokens depuis `user`, crédite `balances[user][token]`
 contract CollateralVault is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -75,12 +80,7 @@ contract CollateralVault is ReentrancyGuard {
     event MarginEngineSet(address indexed newMarginEngine);
     event RiskModuleSet(address indexed newRiskModule);
 
-    event CollateralTokenConfigured(
-        address indexed token,
-        bool isSupported,
-        uint8 decimals,
-        uint16 collateralFactorBps
-    );
+    event CollateralTokenConfigured(address indexed token, bool isSupported, uint8 decimals, uint16 collateralFactorBps);
 
     event Deposited(address indexed user, address indexed token, uint256 amount);
     event Withdrawn(address indexed user, address indexed token, uint256 amount);
@@ -223,23 +223,18 @@ contract CollateralVault is ReentrancyGuard {
         emit RiskModuleSet(_riskModule);
     }
 
-    function setCollateralToken(
-        address token,
-        bool isSupported,
-        uint8 decimals,
-        uint16 collateralFactorBps
-    ) external onlyOwner {
+    function setCollateralToken(address token, bool isSupported, uint8 decimals, uint16 collateralFactorBps)
+        external
+        onlyOwner
+    {
         if (token == address(0)) revert ZeroAddress();
         if (collateralFactorBps > 10_000) revert FactorTooHigh();
 
         // hardening: si supported => decimals doit être non-zero
         if (isSupported && decimals == 0) revert BadDecimals();
 
-        _collateralConfigs[token] = CollateralTokenConfig({
-            isSupported: isSupported,
-            decimals: decimals,
-            collateralFactorBps: collateralFactorBps
-        });
+        _collateralConfigs[token] =
+            CollateralTokenConfig({isSupported: isSupported, decimals: decimals, collateralFactorBps: collateralFactorBps});
 
         if (!isCollateralTokenListed[token]) {
             isCollateralTokenListed[token] = true;
@@ -288,7 +283,6 @@ contract CollateralVault is ReentrancyGuard {
         }
 
         if (adapter != address(0)) {
-            // asset mismatch = mauvais adapter
             if (IYieldAdapter(adapter).asset() != token) revert StrategyMismatch();
         }
 
@@ -301,7 +295,6 @@ contract CollateralVault is ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     function setYieldOptIn(address token, bool optedIn) external {
-        // évite toute tentative depuis un compte protocole
         if (msg.sender == marginEngine) revert YieldNotAllowedForProtocolAccount();
 
         CollateralTokenConfig memory cfg = _collateralConfigs[token];
@@ -386,19 +379,35 @@ contract CollateralVault is ReentrancyGuard {
 
         emit Deposited(msg.sender, token, amount);
 
-        // IMPORTANT: ne doit pas revert si aucun adapter n'est configuré
         _maybeMoveToStrategy(msg.sender, token, amount);
+    }
+
+    /// @notice Dépôt au nom de `user` (tokens transférés depuis `user`) — appelé par MarginEngine.
+    /// @dev Patch requis: empêche de créditer MarginEngine au lieu du user.
+    function depositFor(address user, address token, uint256 amount) external whenNotPaused onlyMarginEngine nonReentrant {
+        if (user == address(0)) revert ZeroAddress();
+        if (amount == 0) revert AmountZero();
+
+        CollateralTokenConfig memory cfg = _collateralConfigs[token];
+        if (!cfg.isSupported) revert TokenNotSupported();
+
+        _sync(user, token);
+
+        IERC20(token).safeTransferFrom(user, address(this), amount);
+
+        balances[user][token] += amount;
+        idleBalances[user][token] += amount;
+
+        emit Deposited(user, token, amount);
+
+        _maybeMoveToStrategy(user, token, amount);
     }
 
     function withdraw(address token, uint256 amount) external nonReentrant {
         _withdrawInternal(msg.sender, msg.sender, token, amount);
     }
 
-    function withdrawFor(address user, address token, uint256 amount)
-        external
-        onlyMarginEngine
-        nonReentrant
-    {
+    function withdrawFor(address user, address token, uint256 amount) external onlyMarginEngine nonReentrant {
         if (user == address(0)) revert ZeroAddress();
         _withdrawInternal(user, user, token, amount);
     }
@@ -442,12 +451,12 @@ contract CollateralVault is ReentrancyGuard {
                         MARGIN ENGINE HOOKS
     //////////////////////////////////////////////////////////////*/
 
-    function transferBetweenAccounts(
-        address token,
-        address from,
-        address to,
-        uint256 amount
-    ) external onlyMarginEngine whenNotPaused nonReentrant {
+    function transferBetweenAccounts(address token, address from, address to, uint256 amount)
+        external
+        onlyMarginEngine
+        whenNotPaused
+        nonReentrant
+    {
         if (from == to) revert SameAccountTransfer();
         if (to == address(0)) revert ZeroAddress();
         if (amount == 0) revert AmountZero();
@@ -495,8 +504,6 @@ contract CollateralVault is ReentrancyGuard {
             // IMPORTANT: ne doit pas revert si strategy absente (adapter==0)
             _maybeMoveToStrategy(to, token, remaining);
         } else {
-            // Optionnel: si le transfert a alimenté idle du receveur et qu'il est opt-in,
-            // on peut pousser vers strategy sans risque (adapter peut être 0 => no-op).
             _maybeMoveToStrategy(to, token, idleMove);
         }
 
@@ -562,7 +569,6 @@ contract CollateralVault is ReentrancyGuard {
         address adapter = tokenStrategy[token];
         if (adapter == address(0)) return;
 
-        // strict move: si adapter présent, on exécute et on revert si invariants cassés
         _moveToStrategy(user, token, amount);
     }
 
