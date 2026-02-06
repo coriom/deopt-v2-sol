@@ -467,6 +467,7 @@ contract OptionProductRegistry {
         if (uint64(block.timestamp) < s.expiry) revert NotExpiredYet();
         if (_isSettled[optionId]) revert SettlementAlreadySet();
 
+        // 0 => finalize immédiat (legacy)
         if (settlementFinalityDelay == 0) {
             _settlementPrice[optionId] = settlementPrice;
             _isSettled[optionId] = true;

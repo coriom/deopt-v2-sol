@@ -26,11 +26,8 @@ import "./yield/IYieldAdapter.sol";
 ///  - balanceWithYield() est “safe view”: si previewRedeem revert => retourne idle (conservateur)
 ///
 /// Ajout requis (patch MarginEngine):
-///  - depositFor(user, token, amount) callable UNIQUEMENT par MarginEngine:
-///      * évite le bug "deposit(token, amount)" appelé depuis MarginEngine qui crédite msg.sender (MarginEngine)
-///      * transfère bien les tokens depuis `user`, crédite `balances[user][token]`
-///  - withdrawFor(user, token, amount) callable UNIQUEMENT par MarginEngine (et quandNotPaused):
-///      * évite le bug "withdraw(token, amount)" depuis MarginEngine (msg.sender = MarginEngine)
+///  - depositFor(user, token, amount) callable UNIQUEMENT par MarginEngine
+///  - withdrawFor(user, token, amount) callable UNIQUEMENT par MarginEngine (et whenNotPaused)
 contract CollateralVault is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -71,9 +68,6 @@ contract CollateralVault is ReentrancyGuard {
 
     // ownership 2-step
     error OwnershipTransferNotInitiated();
-
-    // riskModule optional hook not present / failed
-    error RiskModuleHookFailed();
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
@@ -228,18 +222,23 @@ contract CollateralVault is ReentrancyGuard {
         emit RiskModuleSet(_riskModule);
     }
 
-    function setCollateralToken(address token, bool isSupported, uint8 decimals, uint16 collateralFactorBps)
-        external
-        onlyOwner
-    {
+    function setCollateralToken(
+        address token,
+        bool isSupported,
+        uint8 decimals,
+        uint16 collateralFactorBps
+    ) external onlyOwner {
         if (token == address(0)) revert ZeroAddress();
         if (collateralFactorBps > 10_000) revert FactorTooHigh();
 
         // hardening: si supported => decimals doit être non-zero
         if (isSupported && decimals == 0) revert BadDecimals();
 
-        _collateralConfigs[token] =
-            CollateralTokenConfig({isSupported: isSupported, decimals: decimals, collateralFactorBps: collateralFactorBps});
+        _collateralConfigs[token] = CollateralTokenConfig({
+            isSupported: isSupported,
+            decimals: decimals,
+            collateralFactorBps: collateralFactorBps
+        });
 
         if (!isCollateralTokenListed[token]) {
             isCollateralTokenListed[token] = true;
@@ -388,8 +387,12 @@ contract CollateralVault is ReentrancyGuard {
     }
 
     /// @notice Dépôt au nom de `user` (tokens transférés depuis `user`) — appelé par MarginEngine.
-    /// @dev Patch requis: empêche de créditer MarginEngine au lieu du user.
-    function depositFor(address user, address token, uint256 amount) external whenNotPaused onlyMarginEngine nonReentrant {
+    function depositFor(address user, address token, uint256 amount)
+        external
+        whenNotPaused
+        onlyMarginEngine
+        nonReentrant
+    {
         if (user == address(0)) revert ZeroAddress();
         if (amount == 0) revert AmountZero();
 
@@ -408,7 +411,7 @@ contract CollateralVault is ReentrancyGuard {
         _maybeMoveToStrategy(user, token, amount);
     }
 
-    /// @notice Retrait direct user (peut rester possible même si paused, choix "exit" d'urgence).
+    /// @notice Retrait direct user (peut rester possible même si paused).
     function withdraw(address token, uint256 amount) external nonReentrant {
         _withdrawInternal(msg.sender, msg.sender, token, amount);
     }
@@ -482,7 +485,7 @@ contract CollateralVault is ReentrancyGuard {
         uint256 fromBal = balances[from][token];
         if (fromBal < amount) revert InsufficientBalance();
 
-        // accounting "claimable" moved
+        // accounting "claimable" moved (sera re-syncé en fin de fonction)
         balances[from][token] = fromBal - amount;
         balances[to][token] += amount;
 
@@ -495,7 +498,7 @@ contract CollateralVault is ReentrancyGuard {
             idleBalances[to][token] += idleMove;
         }
 
-        // if needed, pull remaining from strategy of `from` into idle (vault)
+        // if needed, pull remaining from strategy of `from` into idle (vault) and credit `to`
         uint256 remaining = amount - idleMove;
         if (remaining > 0) {
             address adapter = tokenStrategy[token];
@@ -513,7 +516,6 @@ contract CollateralVault is ReentrancyGuard {
 
             idleBalances[to][token] += remaining;
 
-            // IMPORTANT: ne doit pas revert si strategy absente (adapter==0) — ici adapter!=0, ok.
             _maybeMoveToStrategy(to, token, remaining);
         } else {
             _maybeMoveToStrategy(to, token, idleMove);
@@ -610,16 +612,19 @@ contract CollateralVault is ReentrancyGuard {
         emit MovedToStrategy(user, token, amount, sharesMinted);
     }
 
-    function _getWithdrawableAmountBestEffort(address user, address token) internal view returns (uint256 maxAllowed, bool ok)
+    function _getWithdrawableAmountBestEffort(address user, address token)
+        internal
+        view
+        returns (uint256 maxAllowed, bool ok)
     {
         address rm = address(riskModule);
         if (rm == address(0)) return (type(uint256).max, false);
 
-        // best-effort hook: getWithdrawableAmount(address,address) -> uint256
         (bool success, bytes memory data) =
             rm.staticcall(abi.encodeWithSignature("getWithdrawableAmount(address,address)", user, token));
 
         if (!success || data.length < 32) return (type(uint256).max, false);
+
         maxAllowed = abi.decode(data, (uint256));
         return (maxAllowed, true);
     }
@@ -642,7 +647,7 @@ contract CollateralVault is ReentrancyGuard {
             if (ok && amount > maxAllowed) revert WithdrawExceedsRiskLimits();
         }
 
-        // optimistic update; final truth will be re-synced on paths needing strategy withdraw
+        // optimistic update; final truth will be re-synced where needed
         balances[user][token] = bal - amount;
 
         uint256 idle = idleBalances[user][token];

@@ -295,9 +295,7 @@ contract OracleRouter is IOracle {
 
         // après validation, si plus rien => erreur staleness/future
         if (!ok1 && !ok2) {
-            // si toutes les candidates échouent à cause de futur => FutureTimestamp, sinon StalePrice
             if (sawFuture) revert FutureTimestamp();
-            // on a bien reçu des données mais pas utilisables
             if (anyRaw) revert StalePrice();
             revert NoSource();
         }

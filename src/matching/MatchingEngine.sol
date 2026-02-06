@@ -14,12 +14,15 @@ import {IMarginEngineTrade} from "./IMarginEngineTrade.sol";
 ///  - Nonces séquentiels par trader (anti-replay), consommés atomiquement.
 ///  - deadline: 0 = no deadline.
 ///  - Hardening signatures: utilise ECDSA.tryRecover => erreurs uniformisées (InvalidSignature).
+///  - Ownership: 2-step transfer (transferOwnership + acceptOwnership), cancelable.
 contract MatchingEngine is ReentrancyGuard, EIP712 {
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
     //////////////////////////////////////////////////////////////*/
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event OwnershipTransferStarted(address indexed previousOwner, address indexed pendingOwner);
+
     event ExecutorSet(address indexed executor, bool allowed);
     event MarginEngineSet(address indexed oldEngine, address indexed newEngine);
     event Paused(address indexed account);
@@ -49,11 +52,16 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
     error BadNonce();
     error InvalidSignature();
 
+    // ownership 2-step
+    error OwnershipTransferNotInitiated();
+
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
     //////////////////////////////////////////////////////////////*/
 
     address public owner;
+    address public pendingOwner;
+
     IMarginEngineTrade public marginEngine;
 
     mapping(address => bool) public isExecutor;
@@ -117,20 +125,57 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
     }
 
     /*//////////////////////////////////////////////////////////////
-                                ADMIN
+                                OWNERSHIP (2-step)
     //////////////////////////////////////////////////////////////*/
 
     function transferOwnership(address newOwner) external onlyOwner {
         if (newOwner == address(0)) revert ZeroAddress();
-        address oldOwner = owner;
-        owner = newOwner;
-        emit OwnershipTransferred(oldOwner, newOwner);
+        pendingOwner = newOwner;
+        emit OwnershipTransferStarted(owner, newOwner);
     }
+
+    function acceptOwnership() external {
+        address po = pendingOwner;
+        if (msg.sender != po) revert NotAuthorized();
+        address oldOwner = owner;
+        owner = po;
+        pendingOwner = address(0);
+        emit OwnershipTransferred(oldOwner, po);
+    }
+
+    function cancelOwnershipTransfer() external onlyOwner {
+        if (pendingOwner == address(0)) revert OwnershipTransferNotInitiated();
+        pendingOwner = address(0);
+    }
+
+    function renounceOwnership() external onlyOwner {
+        if (pendingOwner != address(0)) revert NotAuthorized();
+        address oldOwner = owner;
+        owner = address(0);
+        emit OwnershipTransferred(oldOwner, address(0));
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                ADMIN
+    //////////////////////////////////////////////////////////////*/
 
     function setExecutor(address executor, bool allowed) external onlyOwner {
         if (executor == address(0)) revert ZeroAddress();
         isExecutor[executor] = allowed;
         emit ExecutorSet(executor, allowed);
+    }
+
+    function setExecutors(address[] calldata executors, bool[] calldata allowed) external onlyOwner {
+        uint256 len = executors.length;
+        if (len == 0 || allowed.length != len) revert InvalidTrade();
+
+        for (uint256 i = 0; i < len; i++) {
+            address ex = executors[i];
+            if (ex == address(0)) revert ZeroAddress();
+            bool a = allowed[i];
+            isExecutor[ex] = a;
+            emit ExecutorSet(ex, a);
+        }
     }
 
     function setMarginEngine(address _marginEngine) external onlyOwner {
