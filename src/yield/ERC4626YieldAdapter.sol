@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 
@@ -18,7 +20,7 @@ import "./IYieldAdapter.sol";
 /// Hypothèses pour CollateralVault (strict-equality):
 ///  - previewDeposit == deposit (même tx; pas de fee dynamique / pas de changement d’état externe affectant les previews)
 ///  - previewWithdraw == withdraw (idem)
-contract ERC4626YieldAdapter is IYieldAdapter {
+contract ERC4626YieldAdapter is IYieldAdapter, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////
@@ -137,6 +139,15 @@ contract ERC4626YieldAdapter is IYieldAdapter {
         return underlying;
     }
 
+    function assetDecimals() external view override returns (uint8) {
+        // best-effort: certains tokens non-standards peuvent revert
+        try IERC20Metadata(underlying).decimals() returns (uint8 d) {
+            return d;
+        } catch {
+            return 0;
+        }
+    }
+
     function totalShares() public view override returns (uint256) {
         // ERC-4626 shares token = l’ERC20 du vault ERC-4626 lui-même
         return IERC20(address(erc4626)).balanceOf(address(this));
@@ -146,60 +157,88 @@ contract ERC4626YieldAdapter is IYieldAdapter {
         return erc4626.convertToAssets(totalShares());
     }
 
-    function previewDeposit(uint256 assets) external view override returns (uint256 sharesMinted) {
-        return erc4626.previewDeposit(assets);
+    function previewDeposit(uint256 assets_) external view override returns (uint256 sharesMinted) {
+        return erc4626.previewDeposit(assets_);
     }
 
-    function previewWithdraw(uint256 assets) external view override returns (uint256 sharesBurned) {
-        return erc4626.previewWithdraw(assets);
+    function previewWithdraw(uint256 assets_) external view override returns (uint256 sharesBurned) {
+        return erc4626.previewWithdraw(assets_);
     }
 
-    function previewRedeem(uint256 shares) external view override returns (uint256 assetsOut) {
-        return erc4626.previewRedeem(shares);
+    function previewRedeem(uint256 shares_) external view override returns (uint256 assetsOut) {
+        return erc4626.previewRedeem(shares_);
     }
 
-    function previewMint(uint256 shares) external view override returns (uint256 assetsIn) {
-        return erc4626.previewMint(shares);
+    function previewMint(uint256 shares_) external view override returns (uint256 assetsIn) {
+        return erc4626.previewMint(shares_);
     }
 
-    function convertToShares(uint256 assets) external view override returns (uint256 shares) {
-        return erc4626.convertToShares(assets);
+    function convertToShares(uint256 assets_) external view override returns (uint256 shares_) {
+        // floor
+        return erc4626.convertToShares(assets_);
     }
 
-    function convertToAssets(uint256 shares) external view override returns (uint256 assets) {
-        return erc4626.convertToAssets(shares);
+    function convertToAssets(uint256 shares_) external view override returns (uint256 assets_) {
+        // floor
+        return erc4626.convertToAssets(shares_);
     }
 
     /*//////////////////////////////////////////////////////////////
                         IYieldAdapter: ACTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function deposit(uint256 assets) external override onlyVault returns (uint256 sharesMinted) {
-        if (assets == 0) revert AmountZero();
+    function deposit(uint256 assets_) external override onlyVault nonReentrant returns (uint256 sharesMinted) {
+        if (assets_ == 0) revert AmountZero();
 
         // Expected shares (strict)
-        uint256 expected = erc4626.previewDeposit(assets);
+        uint256 expected = erc4626.previewDeposit(assets_);
         if (expected == 0) revert ZeroSharesMinted();
 
         // Pull assets depuis CollateralVault
-        IERC20(underlying).safeTransferFrom(msg.sender, address(this), assets);
+        IERC20(underlying).safeTransferFrom(msg.sender, address(this), assets_);
 
         // Approve vers le vault ERC-4626 et deposit au profit de l’adapter
-        IERC20(underlying).forceApprove(address(erc4626), assets);
-        sharesMinted = erc4626.deposit(assets, address(this));
+        IERC20(underlying).forceApprove(address(erc4626), assets_);
+        sharesMinted = erc4626.deposit(assets_, address(this));
 
         if (sharesMinted == 0) revert ZeroSharesMinted();
         if (sharesMinted != expected) revert UnexpectedSharesMinted();
     }
 
-    function withdraw(uint256 assets, address to) external override onlyVault returns (uint256 sharesBurned) {
-        if (assets == 0) revert AmountZero();
+    function withdraw(uint256 assets_, address to) external override onlyVault nonReentrant returns (uint256 sharesBurned) {
+        if (assets_ == 0) revert AmountZero();
         if (to == address(0)) revert ZeroAddress();
 
-        uint256 expected = erc4626.previewWithdraw(assets);
+        uint256 expected = erc4626.previewWithdraw(assets_);
         if (expected == 0) revert ZeroSharesBurned();
 
-        sharesBurned = erc4626.withdraw(assets, to, address(this));
+        // owner = address(this) (adapter) car les shares sont détenues ici
+        sharesBurned = erc4626.withdraw(assets_, to, address(this));
+
+        if (sharesBurned == 0) revert ZeroSharesBurned();
+        if (sharesBurned != expected) revert UnexpectedSharesBurned();
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        OPTIONAL ADMIN (IYieldAdapter)
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Emergency pull (optionnel) pour récupérer des fonds au Vault (ex: pause Aave).
+    /// @dev Owner-only. Retire exactement `assets_` vers `to`.
+    function emergencyWithdrawTo(address to, uint256 assets_)
+        external
+        override
+        onlyOwner
+        nonReentrant
+        returns (uint256 sharesBurned)
+    {
+        if (to == address(0)) revert ZeroAddress();
+        if (assets_ == 0) revert AmountZero();
+
+        uint256 expected = erc4626.previewWithdraw(assets_);
+        if (expected == 0) revert ZeroSharesBurned();
+
+        sharesBurned = erc4626.withdraw(assets_, to, address(this));
 
         if (sharesBurned == 0) revert ZeroSharesBurned();
         if (sharesBurned != expected) revert UnexpectedSharesBurned();

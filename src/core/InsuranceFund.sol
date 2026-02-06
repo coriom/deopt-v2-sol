@@ -15,6 +15,10 @@ import "../CollateralVault.sol";
 ///      * gérer l’allowlist de tokens,
 ///      * déposer/retirer des fonds dans le CollateralVault sous l’adresse de ce contrat,
 ///      * (optionnel) activer le yield côté vault (moveToStrategy/moveToIdle).
+///  - Hardenings:
+///      * ownership 2-step
+///      * allowlist stricte (TokenNotAllowed)
+///      * helpers "depositAllToVault" / "sweepUnexpectedToken"
 contract InsuranceFund is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -26,6 +30,8 @@ contract InsuranceFund is ReentrancyGuard {
     error ZeroAddress();
     error TokenNotAllowed();
     error AmountZero();
+    error InsufficientBalance();
+    error RescueForbidden();
 
     // ownership 2-step
     error OwnershipTransferNotInitiated();
@@ -50,6 +56,8 @@ contract InsuranceFund is ReentrancyGuard {
     event MovedToStrategy(address indexed token, uint256 assets);
     event MovedToIdle(address indexed token, uint256 assets);
     event Synced(address indexed token);
+
+    event Swept(address indexed token, address indexed to, uint256 amount);
 
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
@@ -122,6 +130,13 @@ contract InsuranceFund is ReentrancyGuard {
         pendingOwner = address(0);
     }
 
+    function renounceOwnership() external onlyOwner {
+        if (pendingOwner != address(0)) revert NotAuthorized();
+        address old = owner;
+        owner = address(0);
+        emit OwnershipTransferred(old, address(0));
+    }
+
     /*//////////////////////////////////////////////////////////////
                                 ADMIN
     //////////////////////////////////////////////////////////////*/
@@ -144,11 +159,7 @@ contract InsuranceFund is ReentrancyGuard {
 
     /// @notice Pull des tokens depuis l’owner, puis dépôt dans le CollateralVault au nom de ce fund.
     /// @dev Owner doit approve ce contrat.
-    function fundAndDepositToVault(address token, uint256 amount)
-        external
-        onlyOwner
-        nonReentrant
-    {
+    function fundAndDepositToVault(address token, uint256 amount) external onlyOwner nonReentrant {
         if (!isTokenAllowed[token]) revert TokenNotAllowed();
         if (amount == 0) revert AmountZero();
 
@@ -159,18 +170,26 @@ contract InsuranceFund is ReentrancyGuard {
     }
 
     /// @notice Dépôt de tokens déjà détenus par le fund vers le CollateralVault.
-    function depositToVault(address token, uint256 amount)
-        external
-        onlyOwnerOrOperator
-        nonReentrant
-    {
+    function depositToVault(address token, uint256 amount) external onlyOwnerOrOperator nonReentrant {
         if (!isTokenAllowed[token]) revert TokenNotAllowed();
+        if (amount == 0) revert AmountZero();
+
+        uint256 bal = IERC20(token).balanceOf(address(this));
+        if (bal < amount) revert InsufficientBalance();
+
+        _depositToVault(token, amount);
+    }
+
+    /// @notice Dépose 100% du solde détenu par le fund dans le CollateralVault.
+    function depositAllToVault(address token) external onlyOwnerOrOperator nonReentrant returns (uint256 amount) {
+        if (!isTokenAllowed[token]) revert TokenNotAllowed();
+        amount = IERC20(token).balanceOf(address(this));
         if (amount == 0) revert AmountZero();
         _depositToVault(token, amount);
     }
 
     function _depositToVault(address token, uint256 amount) internal {
-        // approve vault, puis vault.transferFrom(this -> vault)
+        // approve vault, puis vault.safeTransferFrom(this -> vault) dans deposit()
         IERC20(token).forceApprove(address(collateralVault), amount);
         collateralVault.deposit(token, amount);
         emit DepositedToVault(token, amount);
@@ -178,11 +197,7 @@ contract InsuranceFund is ReentrancyGuard {
 
     /// @notice Retire des tokens du CollateralVault (depuis le balance interne du fund) et les envoie à `to`.
     /// @dev Ici, on sort des actifs du vault (on-chain transfer). À utiliser pour ops/gestion.
-    function withdrawFromVault(address token, address to, uint256 amount)
-        external
-        onlyOwner
-        nonReentrant
-    {
+    function withdrawFromVault(address token, address to, uint256 amount) external onlyOwner nonReentrant {
         if (!isTokenAllowed[token]) revert TokenNotAllowed();
         if (to == address(0)) revert ZeroAddress();
         if (amount == 0) revert AmountZero();
@@ -227,6 +242,23 @@ contract InsuranceFund is ReentrancyGuard {
     }
 
     /*//////////////////////////////////////////////////////////////
+                                RESCUE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Récupère des tokens envoyés par erreur AU CONTRAT (pas dans le vault).
+    /// @dev Interdit de "sweep" un token allowlisté (fonds de backstop). Pour ces tokens:
+    ///      - déposer via depositToVault(), ou
+    ///      - retirer via withdrawFromVault().
+    function sweepUnexpectedToken(address token, address to, uint256 amount) external onlyOwner nonReentrant {
+        if (to == address(0)) revert ZeroAddress();
+        if (amount == 0) revert AmountZero();
+        if (isTokenAllowed[token]) revert RescueForbidden();
+
+        IERC20(token).safeTransfer(to, amount);
+        emit Swept(token, to, amount);
+    }
+
+    /*//////////////////////////////////////////////////////////////
                                 VIEWS
     //////////////////////////////////////////////////////////////*/
 
@@ -235,11 +267,14 @@ contract InsuranceFund is ReentrancyGuard {
     }
 
     function vaultBalanceWithYield(address token) external view returns (uint256) {
-        // balanceWithYield est une view “réelle” (idle + parts), mais on reste défensif.
         try collateralVault.balanceWithYield(address(this), token) returns (uint256 b) {
             return b;
         } catch {
             return collateralVault.balances(address(this), token);
         }
+    }
+
+    function localBalance(address token) external view returns (uint256) {
+        return IERC20(token).balanceOf(address(this));
     }
 }
