@@ -222,12 +222,7 @@ contract CollateralVault is ReentrancyGuard {
         emit RiskModuleSet(_riskModule);
     }
 
-    function setCollateralToken(
-        address token,
-        bool isSupported,
-        uint8 decimals,
-        uint16 collateralFactorBps
-    ) external onlyOwner {
+    function setCollateralToken(address token, bool isSupported, uint8 decimals, uint16 collateralFactorBps) external onlyOwner {
         if (token == address(0)) revert ZeroAddress();
         if (collateralFactorBps > 10_000) revert FactorTooHigh();
 
@@ -258,11 +253,7 @@ contract CollateralVault is ReentrancyGuard {
     }
 
     /// @notice Getter tuple (legacy compat si besoin)
-    function collateralConfigsRaw(address token)
-        external
-        view
-        returns (bool isSupported, uint8 decimals, uint16 collateralFactorBps)
-    {
+    function collateralConfigsRaw(address token) external view returns (bool isSupported, uint8 decimals, uint16 collateralFactorBps) {
         CollateralTokenConfig memory cfg = _collateralConfigs[token];
         return (cfg.isSupported, cfg.decimals, cfg.collateralFactorBps);
     }
@@ -299,6 +290,7 @@ contract CollateralVault is ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     function setYieldOptIn(address token, bool optedIn) external {
+        // protocole: on ne veut pas que le MarginEngine opt-in le yield via msg.sender
         if (msg.sender == marginEngine) revert YieldNotAllowedForProtocolAccount();
 
         CollateralTokenConfig memory cfg = _collateralConfigs[token];
@@ -338,13 +330,7 @@ contract CollateralVault is ReentrancyGuard {
     function checkInvariant(address user, address token)
         external
         view
-        returns (
-            uint256 balanceClaimable,
-            uint256 idle,
-            uint256 shares,
-            uint256 assetsFromShares,
-            uint256 effective
-        )
+        returns (uint256 balanceClaimable, uint256 idle, uint256 shares, uint256 assetsFromShares, uint256 effective)
     {
         balanceClaimable = balances[user][token];
         idle = idleBalances[user][token];

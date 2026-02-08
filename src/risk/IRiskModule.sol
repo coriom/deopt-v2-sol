@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-/// @notice IRiskModule (version COMPATIBLE avec ton RiskModule actuel)
-/// @dev Retire tout ajout non implémenté par RiskModule. Garde uniquement les getters requis par MarginEngine.
+/// @notice IRiskModule (compatible MarginEngine/CollateralVault de ton codebase)
 interface IRiskModule {
     uint256 constant PRICE_SCALE = 1e8;
     uint256 constant BPS = 10_000;

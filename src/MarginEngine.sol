@@ -23,6 +23,11 @@ import "./matching/IMarginEngineTrade.sol";
 ///      * withdrawCollateral() utilise CollateralVault.withdrawFor(user, token, amount) (évite le bug msg.sender).
 ///      * best-effort sync du vault avant lectures de balances en settlement/liquidation.
 ///      * conversions/approx de saisie sans overflow (pas de PRICE_1E8*factor, pas de seizeTok*factor).
+///
+/// Patch majeur (compile + compat IMarginEngineState):
+///  - IMarginEngineState expose optionRegistry()/collateralVault()/oracle()/riskModule() => returns (address).
+///  - Les variables publiques typées créent des getters incompatibles (return type != address).
+///  => on renomme les variables et on implémente explicitement les getters address.
 contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade {
     /*//////////////////////////////////////////////////////////////
                                 CONSTANTS
@@ -113,11 +118,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         uint128 price
     );
 
-    event RiskParamsSet(
-        address baseCollateralToken,
-        uint256 baseMaintenanceMarginPerContract,
-        uint256 imFactorBps
-    );
+    event RiskParamsSet(address baseCollateralToken, uint256 baseMaintenanceMarginPerContract, uint256 imFactorBps);
 
     event Paused(address indexed account);
     event Unpaused(address indexed account);
@@ -127,15 +128,9 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
 
     event LiquidationParamsSet(uint256 liquidationThresholdBps, uint256 liquidationPenaltyBps);
 
-    event LiquidationHardenParamsSet(
-        uint256 liquidationCloseFactorBps,
-        uint256 minLiquidationImprovementBps
-    );
+    event LiquidationHardenParamsSet(uint256 liquidationCloseFactorBps, uint256 minLiquidationImprovementBps);
 
-    event LiquidationPricingParamsSet(
-        uint256 liquidationPriceSpreadBps,
-        uint256 minLiquidationPriceBpsOfIntrinsic
-    );
+    event LiquidationPricingParamsSet(uint256 liquidationPriceSpreadBps, uint256 minLiquidationPriceBpsOfIntrinsic);
 
     /// @notice Fraîcheur minimale exigée côté liquidation (en secondes). 0 = désactivé.
     event LiquidationOracleMaxDelaySet(uint32 oldDelay, uint32 newDelay);
@@ -144,7 +139,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         address indexed liquidator,
         address indexed trader,
         uint256[] optionIds,
-        uint128[] quantities,
+        uint128[] quantitiesExecuted,
         uint256 collateralSeizedBaseValue
     );
 
@@ -158,12 +153,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
 
     event CollateralDeposited(address indexed trader, address indexed token, uint256 amount);
 
-    event CollateralWithdrawn(
-        address indexed trader,
-        address indexed token,
-        uint256 amount,
-        uint256 marginRatioAfterBps
-    );
+    event CollateralWithdrawn(address indexed trader, address indexed token, uint256 amount, uint256 marginRatioAfterBps);
 
     event InsuranceFundSet(address indexed oldFund, address indexed newFund);
 
@@ -176,12 +166,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         uint256 badDebt
     );
 
-    event SeriesSettlementAccountingUpdated(
-        uint256 indexed optionId,
-        uint256 totalCollected,
-        uint256 totalPaid,
-        uint256 totalBadDebt
-    );
+    event SeriesSettlementAccountingUpdated(uint256 indexed optionId, uint256 totalCollected, uint256 totalPaid, uint256 totalBadDebt);
 
     event LiquidationSeize(
         address indexed liquidator,
@@ -198,10 +183,11 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
     address public owner;
     address public matchingEngine;
 
-    OptionProductRegistry public optionRegistry;
-    CollateralVault public collateralVault;
-    IOracle public oracle;
-    IRiskModule public riskModule;
+    // renamed to avoid getter conflicts with IMarginEngineState optional helpers
+    OptionProductRegistry private _optionRegistry;
+    CollateralVault private _collateralVault;
+    IOracle private _oracle;
+    IRiskModule private _riskModule;
 
     mapping(address => mapping(uint256 => IMarginEngineState.Position)) private _positions;
 
@@ -283,18 +269,18 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
                                 CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor(address _owner, address _registry, address _vault, address _oracle) {
-        if (_owner == address(0) || _registry == address(0) || _vault == address(0) || _oracle == address(0)) {
+    constructor(address _owner, address registry_, address vault_, address oracle_) {
+        if (_owner == address(0) || registry_ == address(0) || vault_ == address(0) || oracle_ == address(0)) {
             revert ZeroAddress();
         }
 
         owner = _owner;
-        optionRegistry = OptionProductRegistry(_registry);
-        collateralVault = CollateralVault(_vault);
-        oracle = IOracle(_oracle);
+        _optionRegistry = OptionProductRegistry(registry_);
+        _collateralVault = CollateralVault(vault_);
+        _oracle = IOracle(oracle_);
 
         emit OwnershipTransferred(address(0), _owner);
-        emit OracleSet(_oracle);
+        emit OracleSet(oracle_);
 
         emit LiquidationOracleMaxDelaySet(0, liquidationOracleMaxDelay);
     }
@@ -326,93 +312,93 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         emit Unpaused(msg.sender);
     }
 
-    function setMatchingEngine(address _matchingEngine) external onlyOwner {
-        if (_matchingEngine == address(0)) revert ZeroAddress();
-        matchingEngine = _matchingEngine;
-        emit MatchingEngineSet(_matchingEngine);
+    function setMatchingEngine(address matchingEngine_) external onlyOwner {
+        if (matchingEngine_ == address(0)) revert ZeroAddress();
+        matchingEngine = matchingEngine_;
+        emit MatchingEngineSet(matchingEngine_);
     }
 
-    function setOracle(address _oracle) external onlyOwner {
-        if (_oracle == address(0)) revert ZeroAddress();
-        oracle = IOracle(_oracle);
-        emit OracleSet(_oracle);
+    function setOracle(address oracle_) external onlyOwner {
+        if (oracle_ == address(0)) revert ZeroAddress();
+        _oracle = IOracle(oracle_);
+        emit OracleSet(oracle_);
     }
 
-    function setRiskModule(address _riskModule) external onlyOwner {
-        if (_riskModule == address(0)) revert ZeroAddress();
-        riskModule = IRiskModule(_riskModule);
-        emit RiskModuleSet(_riskModule);
+    function setRiskModule(address riskModule_) external onlyOwner {
+        if (riskModule_ == address(0)) revert ZeroAddress();
+        _riskModule = IRiskModule(riskModule_);
+        emit RiskModuleSet(riskModule_);
     }
 
-    function setInsuranceFund(address _insuranceFund) external onlyOwner {
-        if (_insuranceFund == address(0)) revert ZeroAddress();
+    function setInsuranceFund(address insuranceFund_) external onlyOwner {
+        if (insuranceFund_ == address(0)) revert ZeroAddress();
         address old = insuranceFund;
-        insuranceFund = _insuranceFund;
-        emit InsuranceFundSet(old, _insuranceFund);
+        insuranceFund = insuranceFund_;
+        emit InsuranceFundSet(old, insuranceFund_);
     }
 
     /// @notice Configure (cache) les risk params côté MarginEngine, en vérifiant qu'ils MATCHENT RiskModule.
     /// @dev Source of truth = RiskModule.
-    function setRiskParams(address _baseToken, uint256 _baseMMPerContract, uint256 _imFactorBps) external onlyOwner {
-        if (_baseToken == address(0)) revert ZeroAddress();
-        if (_imFactorBps < BPS) revert InvalidLiquidationParams();
-        if (address(riskModule) == address(0)) revert RiskModuleNotSet();
+    function setRiskParams(address baseToken_, uint256 baseMMPerContract_, uint256 imFactorBps_) external onlyOwner {
+        if (baseToken_ == address(0)) revert ZeroAddress();
+        if (imFactorBps_ < BPS) revert InvalidLiquidationParams();
+        if (address(_riskModule) == address(0)) revert RiskModuleNotSet();
 
-        IRiskModuleParams rp = IRiskModuleParams(address(riskModule));
+        IRiskModuleParams rp = IRiskModuleParams(address(_riskModule));
 
-        if (rp.baseCollateralToken() != _baseToken) revert RiskParamsMismatch();
-        if (rp.baseMaintenanceMarginPerContract() != _baseMMPerContract) revert RiskParamsMismatch();
-        if (rp.imFactorBps() != _imFactorBps) revert RiskParamsMismatch();
+        if (rp.baseCollateralToken() != baseToken_) revert RiskParamsMismatch();
+        if (rp.baseMaintenanceMarginPerContract() != baseMMPerContract_) revert RiskParamsMismatch();
+        if (rp.imFactorBps() != imFactorBps_) revert RiskParamsMismatch();
 
-        baseCollateralToken = _baseToken;
-        baseMaintenanceMarginPerContract = _baseMMPerContract;
-        imFactorBps = _imFactorBps;
+        baseCollateralToken = baseToken_;
+        baseMaintenanceMarginPerContract = baseMMPerContract_;
+        imFactorBps = imFactorBps_;
 
-        emit RiskParamsSet(_baseToken, _baseMMPerContract, _imFactorBps);
+        emit RiskParamsSet(baseToken_, baseMMPerContract_, imFactorBps_);
     }
 
-    function setLiquidationParams(uint256 _liquidationThresholdBps, uint256 _liquidationPenaltyBps) external onlyOwner {
-        if (_liquidationThresholdBps < BPS) revert InvalidLiquidationParams();
-        if (_liquidationPenaltyBps > BPS) revert InvalidLiquidationParams();
+    function setLiquidationParams(uint256 liquidationThresholdBps_, uint256 liquidationPenaltyBps_) external onlyOwner {
+        if (liquidationThresholdBps_ < BPS) revert InvalidLiquidationParams();
+        if (liquidationPenaltyBps_ > BPS) revert InvalidLiquidationParams();
 
-        liquidationThresholdBps = _liquidationThresholdBps;
-        liquidationPenaltyBps = _liquidationPenaltyBps;
+        liquidationThresholdBps = liquidationThresholdBps_;
+        liquidationPenaltyBps = liquidationPenaltyBps_;
 
-        emit LiquidationParamsSet(_liquidationThresholdBps, _liquidationPenaltyBps);
+        emit LiquidationParamsSet(liquidationThresholdBps_, liquidationPenaltyBps_);
     }
 
-    function setLiquidationHardenParams(uint256 _closeFactorBps, uint256 _minImprovementBps) external onlyOwner {
-        if (_closeFactorBps == 0) revert LiquidationCloseFactorZero();
-        if (_closeFactorBps > BPS) revert InvalidLiquidationParams();
+    function setLiquidationHardenParams(uint256 closeFactorBps_, uint256 minImprovementBps_) external onlyOwner {
+        if (closeFactorBps_ == 0) revert LiquidationCloseFactorZero();
+        if (closeFactorBps_ > BPS) revert InvalidLiquidationParams();
 
-        minLiquidationImprovementBps = _minImprovementBps;
-        liquidationCloseFactorBps = _closeFactorBps;
+        minLiquidationImprovementBps = minImprovementBps_;
+        liquidationCloseFactorBps = closeFactorBps_;
 
-        emit LiquidationHardenParamsSet(_closeFactorBps, _minImprovementBps);
+        emit LiquidationHardenParamsSet(closeFactorBps_, minImprovementBps_);
     }
 
-    function setLiquidationPricingParams(uint256 _liquidationPriceSpreadBps, uint256 _minLiquidationPriceBpsOfIntrinsic)
+    function setLiquidationPricingParams(uint256 liquidationPriceSpreadBps_, uint256 minLiqPriceBpsOfIntrinsic_)
         external
         onlyOwner
     {
-        if (_liquidationPriceSpreadBps > BPS) revert LiquidationPricingParamsInvalid();
-        if (_minLiquidationPriceBpsOfIntrinsic > BPS) revert LiquidationPricingParamsInvalid();
+        if (liquidationPriceSpreadBps_ > BPS) revert LiquidationPricingParamsInvalid();
+        if (minLiqPriceBpsOfIntrinsic_ > BPS) revert LiquidationPricingParamsInvalid();
 
-        liquidationPriceSpreadBps = _liquidationPriceSpreadBps;
-        minLiquidationPriceBpsOfIntrinsic = _minLiquidationPriceBpsOfIntrinsic;
+        liquidationPriceSpreadBps = liquidationPriceSpreadBps_;
+        minLiquidationPriceBpsOfIntrinsic = minLiqPriceBpsOfIntrinsic_;
 
-        emit LiquidationPricingParamsSet(_liquidationPriceSpreadBps, _minLiquidationPriceBpsOfIntrinsic);
+        emit LiquidationPricingParamsSet(liquidationPriceSpreadBps_, minLiqPriceBpsOfIntrinsic_);
     }
 
-    function setLiquidationOracleMaxDelay(uint32 _delay) external onlyOwner {
-        if (_delay > 3600) revert LiquidationPricingParamsInvalid();
+    function setLiquidationOracleMaxDelay(uint32 delay_) external onlyOwner {
+        if (delay_ > 3600) revert LiquidationPricingParamsInvalid();
         uint32 old = liquidationOracleMaxDelay;
-        liquidationOracleMaxDelay = _delay;
-        emit LiquidationOracleMaxDelaySet(old, _delay);
+        liquidationOracleMaxDelay = delay_;
+        emit LiquidationOracleMaxDelaySet(old, delay_);
     }
 
     /*//////////////////////////////////////////////////////////////
-                              IMarginEngineState
+                          IMarginEngineState (required)
     //////////////////////////////////////////////////////////////*/
 
     function positions(address trader, uint256 optionId) external view override returns (IMarginEngineState.Position memory) {
@@ -447,20 +433,40 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
     }
 
     /*//////////////////////////////////////////////////////////////
+                    IMarginEngineState (optional helpers)
+    //////////////////////////////////////////////////////////////*/
+
+    function optionRegistry() external view override returns (address) {
+        return address(_optionRegistry);
+    }
+
+    function collateralVault() external view override returns (address) {
+        return address(_collateralVault);
+    }
+
+    function oracle() external view override returns (address) {
+        return address(_oracle);
+    }
+
+    function riskModule() external view override returns (address) {
+        return address(_riskModule);
+    }
+
+    /*//////////////////////////////////////////////////////////////
                               VIEW HELPERS
     //////////////////////////////////////////////////////////////*/
 
     function getAccountRisk(address trader) external view returns (IRiskModule.AccountRisk memory risk) {
-        if (address(riskModule) == address(0)) {
+        if (address(_riskModule) == address(0)) {
             IRiskModule.AccountRisk memory empty;
             return empty;
         }
-        return riskModule.computeAccountRisk(trader);
+        return _riskModule.computeAccountRisk(trader);
     }
 
     function getFreeCollateral(address trader) external view returns (int256) {
-        if (address(riskModule) == address(0)) return 0;
-        return riskModule.computeFreeCollateral(trader);
+        if (address(_riskModule) == address(0)) return 0;
+        return _riskModule.computeFreeCollateral(trader);
     }
 
     function previewWithdrawImpact(address trader, address token, uint256 amount)
@@ -468,12 +474,12 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         view
         returns (IRiskModule.WithdrawPreview memory preview)
     {
-        if (address(riskModule) == address(0)) return preview;
-        return riskModule.previewWithdrawImpact(trader, token, amount);
+        if (address(_riskModule) == address(0)) return preview;
+        return _riskModule.previewWithdrawImpact(trader, token, amount);
     }
 
     function isSeriesExpired(uint256 optionId) public view returns (bool) {
-        OptionProductRegistry.OptionSeries memory series = optionRegistry.getSeries(optionId);
+        OptionProductRegistry.OptionSeries memory series = _optionRegistry.getSeries(optionId);
         return block.timestamp >= series.expiry;
     }
 
@@ -486,9 +492,8 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
     function depositCollateral(address token, uint256 amount) external whenNotPaused nonReentrant {
         if (amount == 0) revert AmountZero();
 
-        (bool ok,) = address(collateralVault).call(
-            abi.encodeWithSignature("depositFor(address,address,uint256)", msg.sender, token, amount)
-        );
+        (bool ok,) =
+            address(_collateralVault).call(abi.encodeWithSignature("depositFor(address,address,uint256)", msg.sender, token, amount));
         if (!ok) revert VaultDepositForNotSupported();
 
         emit CollateralDeposited(msg.sender, token, amount);
@@ -497,17 +502,16 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
     /// @dev IMPORTANT: ne jamais appeler collateralVault.withdraw() ici (msg.sender=MarginEngine).
     ///      On force withdrawFor(user, token, amount). Si non supporté => revert.
     function withdrawCollateral(address token, uint256 amount) external whenNotPaused nonReentrant {
-        if (address(riskModule) == address(0)) revert RiskModuleNotSet();
+        if (address(_riskModule) == address(0)) revert RiskModuleNotSet();
         if (amount == 0) revert AmountZero();
 
-        IRiskModule.WithdrawPreview memory preview = riskModule.previewWithdrawImpact(msg.sender, token, amount);
+        IRiskModule.WithdrawPreview memory preview = _riskModule.previewWithdrawImpact(msg.sender, token, amount);
 
         if (amount > preview.maxWithdrawable) revert WithdrawTooLarge();
         if (preview.marginRatioAfterBps < liquidationThresholdBps) revert WithdrawWouldBreachMargin();
 
-        (bool ok,) = address(collateralVault).call(
-            abi.encodeWithSignature("withdrawFor(address,address,uint256)", msg.sender, token, amount)
-        );
+        (bool ok,) =
+            address(_collateralVault).call(abi.encodeWithSignature("withdrawFor(address,address,uint256)", msg.sender, token, amount));
         if (!ok) revert VaultWithdrawForNotSupported();
 
         emit CollateralWithdrawn(msg.sender, token, amount, preview.marginRatioAfterBps);
@@ -586,7 +590,9 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
     }
 
     function _enforceInitialMargin(address trader) internal view {
-        IRiskModule.AccountRisk memory r = riskModule.computeAccountRisk(trader);
+        IRiskModule.AccountRisk memory r = _riskModule.computeAccountRisk(trader);
+        // (si initialMargin dépassait int256.max => déploiement incohérent)
+        if (r.initialMargin > uint256(type(int256).max)) revert MathOverflow();
         if (r.equity < int256(r.initialMargin)) revert MarginRequirementBreached(trader);
     }
 
@@ -636,7 +642,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
     }
 
     function _vaultCfg(address token) internal view returns (CollateralVault.CollateralTokenConfig memory cfg) {
-        cfg = collateralVault.getCollateralConfig(token);
+        cfg = _collateralVault.getCollateralConfig(token);
     }
 
     function _requireSettlementAssetConfigured(address settlementAsset) internal view {
@@ -645,11 +651,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         if (uint256(cfg.decimals) > MAX_POW10_EXP) revert DecimalsOverflow(settlementAsset);
     }
 
-    function _price1e8ToSettlementUnits(address settlementAsset, uint256 value1e8)
-        internal
-        view
-        returns (uint256 valueNative)
-    {
+    function _price1e8ToSettlementUnits(address settlementAsset, uint256 value1e8) internal view returns (uint256 valueNative) {
         CollateralVault.CollateralTokenConfig memory cfg = _vaultCfg(settlementAsset);
         if (!cfg.isSupported || cfg.decimals == 0) revert SettlementAssetNotConfigured();
         if (uint256(cfg.decimals) > MAX_POW10_EXP) revert DecimalsOverflow(settlementAsset);
@@ -658,11 +660,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         valueNative = Math.mulDiv(value1e8, scale, PRICE_1E8, Math.Rounding.Down);
     }
 
-    function _intrinsic1e8(OptionProductRegistry.OptionSeries memory s, uint256 spot1e8)
-        internal
-        pure
-        returns (uint256 intrinsic)
-    {
+    function _intrinsic1e8(OptionProductRegistry.OptionSeries memory s, uint256 spot1e8) internal pure returns (uint256 intrinsic) {
         if (spot1e8 == 0) return 0;
 
         if (s.isCall) {
@@ -678,8 +676,8 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
     }
 
     function _requireRiskParamsSynced() internal view {
-        if (address(riskModule) == address(0)) revert RiskModuleNotSet();
-        IRiskModuleParams rp = IRiskModuleParams(address(riskModule));
+        if (address(_riskModule) == address(0)) revert RiskModuleNotSet();
+        IRiskModuleParams rp = IRiskModuleParams(address(_riskModule));
         if (rp.baseCollateralToken() != baseCollateralToken) revert RiskParamsMismatch();
         if (rp.baseMaintenanceMarginPerContract() != baseMaintenanceMarginPerContract) revert RiskParamsMismatch();
         if (rp.imFactorBps() != imFactorBps) revert RiskParamsMismatch();
@@ -692,7 +690,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
     }
 
     function _getOraclePriceChecked(address base, address quote) internal view returns (uint256 p) {
-        (uint256 px, uint256 updatedAt) = oracle.getPrice(base, quote);
+        (uint256 px, uint256 updatedAt) = _oracle.getPrice(base, quote);
         if (px == 0) revert OraclePriceUnavailable();
 
         uint32 maxDelay = liquidationOracleMaxDelay;
@@ -705,13 +703,14 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
     }
 
     function _syncVaultBestEffort(address user, address token) internal {
-        try collateralVault.syncAccountFor(user, token) {} catch {}
+        // Ne dépend pas de l'ABI compile-time de CollateralVault (best effort).
+        (bool ok,) = address(_collateralVault).call(abi.encodeWithSignature("syncAccountFor(address,address)", user, token));
+        ok;
     }
 
     /// @dev Convertit une valeur "base token units" en amount de `token` (token units) arrondi UP (conservateur).
     ///      Utilise oracle.getPrice(token, base) (1e8). Si oracle indispo/stale => (0,false).
-    function _baseValueToTokenAmountUp(address token, uint256 baseValue) internal view returns (uint256 amtToken, bool ok)
-    {
+    function _baseValueToTokenAmountUp(address token, uint256 baseValue) internal view returns (uint256 amtToken, bool ok) {
         if (baseValue == 0) return (0, true);
         if (token == address(0)) return (0, false);
 
@@ -729,7 +728,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
 
         uint256 px;
         uint256 updatedAt;
-        try oracle.getPrice(token, baseCollateralToken) returns (uint256 _p, uint256 _u) {
+        try _oracle.getPrice(token, baseCollateralToken) returns (uint256 _p, uint256 _u) {
             px = _p;
             updatedAt = _u;
         } catch {
@@ -809,11 +808,11 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
             revert InvalidTrade();
         }
 
-        if (address(riskModule) == address(0)) revert RiskModuleNotSet();
+        if (address(_riskModule) == address(0)) revert RiskModuleNotSet();
         _requireBaseConfigured();
         _requireRiskParamsSynced();
 
-        OptionProductRegistry.OptionSeries memory series = optionRegistry.getSeries(t.optionId);
+        OptionProductRegistry.OptionSeries memory series = _optionRegistry.getSeries(t.optionId);
         _requireStandardContractSize(series);
 
         if (block.timestamp >= series.expiry) revert SeriesExpired();
@@ -852,7 +851,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
 
         // premium cashflow in settlement asset native units
         uint256 cashAmount = _mulChecked(uint256(t.quantity), uint256(t.price));
-        collateralVault.transferBetweenAccounts(series.settlementAsset, t.buyer, t.seller, cashAmount);
+        _collateralVault.transferBetweenAccounts(series.settlementAsset, t.buyer, t.seller, cashAmount);
 
         emit TradeExecuted(t.buyer, t.seller, t.optionId, t.quantity, t.price);
 
@@ -875,11 +874,9 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
 
         uint256 intrinsicPrice1e8;
         if (series.isCall) {
-            intrinsicPrice1e8 =
-                settlementPrice > uint256(series.strike) ? (settlementPrice - uint256(series.strike)) : 0;
+            intrinsicPrice1e8 = settlementPrice > uint256(series.strike) ? (settlementPrice - uint256(series.strike)) : 0;
         } else {
-            intrinsicPrice1e8 =
-                uint256(series.strike) > settlementPrice ? (uint256(series.strike) - settlementPrice) : 0;
+            intrinsicPrice1e8 = uint256(series.strike) > settlementPrice ? (uint256(series.strike) - settlementPrice) : 0;
         }
 
         if (intrinsicPrice1e8 == 0) return 0;
@@ -891,12 +888,12 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         if (trader == address(0)) revert ZeroAddress();
         if (insuranceFund == address(0)) revert InsuranceFundNotSet();
 
-        OptionProductRegistry.OptionSeries memory series = optionRegistry.getSeries(optionId);
+        OptionProductRegistry.OptionSeries memory series = _optionRegistry.getSeries(optionId);
         _requireStandardContractSize(series);
 
         if (block.timestamp < series.expiry) revert NotExpired();
 
-        (uint256 settlementPrice, bool isSet) = optionRegistry.getSettlementInfo(optionId);
+        (uint256 settlementPrice, bool isSet) = _optionRegistry.getSettlementInfo(optionId);
         if (!isSet || settlementPrice == 0) revert SettlementNotSet();
 
         _requireSettlementAssetConfigured(series.settlementAsset);
@@ -947,21 +944,21 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         if (pnl > 0) {
             uint256 amountPay = uint256(pnl);
 
-            uint256 fundBal = collateralVault.balances(insuranceFund, asset);
+            uint256 fundBal = _collateralVault.balances(insuranceFund, asset);
             if (fundBal < amountPay) revert InsuranceFundInsufficient(amountPay, fundBal);
 
-            collateralVault.transferBetweenAccounts(asset, insuranceFund, trader, amountPay);
+            _collateralVault.transferBetweenAccounts(asset, insuranceFund, trader, amountPay);
 
             paidToTrader = amountPay;
             seriesPaid[optionId] += amountPay;
         } else if (pnl < 0) {
             uint256 amountOwed = uint256(-pnl);
 
-            uint256 traderBal = collateralVault.balances(trader, asset);
+            uint256 traderBal = _collateralVault.balances(trader, asset);
             uint256 amountToCollect = traderBal >= amountOwed ? amountOwed : traderBal;
 
             if (amountToCollect > 0) {
-                collateralVault.transferBetweenAccounts(asset, trader, insuranceFund, amountToCollect);
+                _collateralVault.transferBetweenAccounts(asset, trader, insuranceFund, amountToCollect);
                 collectedFromTrader = amountToCollect;
                 seriesCollected[optionId] += amountToCollect;
             }
@@ -974,12 +971,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
 
         emit AccountSettled(trader, optionId, pnl, collectedFromTrader, paidToTrader, badDebt);
 
-        emit SeriesSettlementAccountingUpdated(
-            optionId,
-            seriesCollected[optionId],
-            seriesPaid[optionId],
-            seriesBadDebt[optionId]
-        );
+        emit SeriesSettlementAccountingUpdated(optionId, seriesCollected[optionId], seriesPaid[optionId], seriesBadDebt[optionId]);
     }
 
     function settleAccount(uint256 optionId, address trader) public whenNotPaused nonReentrant {
@@ -998,15 +990,15 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
     //////////////////////////////////////////////////////////////*/
 
     function getMarginRatioBps(address trader) public view returns (uint256) {
-        if (address(riskModule) == address(0)) return type(uint256).max;
-        IRiskModule.AccountRisk memory risk = riskModule.computeAccountRisk(trader);
+        if (address(_riskModule) == address(0)) return type(uint256).max;
+        IRiskModule.AccountRisk memory risk = _riskModule.computeAccountRisk(trader);
         return _marginRatioBpsFromRisk(risk);
     }
 
     function isLiquidatable(address trader) public view returns (bool) {
-        if (address(riskModule) == address(0)) return false;
+        if (address(_riskModule) == address(0)) return false;
 
-        IRiskModule.AccountRisk memory risk = riskModule.computeAccountRisk(trader);
+        IRiskModule.AccountRisk memory risk = _riskModule.computeAccountRisk(trader);
         if (risk.maintenanceMargin == 0) return false;
         if (risk.equity <= 0) return true;
 
@@ -1015,14 +1007,10 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
     }
 
     /// @dev Returns settlement units per contract.
-    function _computeLiquidationPricePerContract(OptionProductRegistry.OptionSeries memory s)
-        internal
-        view
-        returns (uint256 pricePerContract)
-    {
+    function _computeLiquidationPricePerContract(OptionProductRegistry.OptionSeries memory s) internal view returns (uint256 pricePerContract) {
         _requireStandardContractSize(s);
 
-        (uint256 spot, uint256 updatedAt) = oracle.getPrice(s.underlying, s.settlementAsset);
+        (uint256 spot, uint256 updatedAt) = _oracle.getPrice(s.underlying, s.settlementAsset);
         if (spot == 0) revert OraclePriceUnavailable();
 
         uint32 maxDelay = liquidationOracleMaxDelay;
@@ -1055,13 +1043,13 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         if (trader == address(0)) revert ZeroAddress();
         if (trader == msg.sender) revert InvalidTrade();
         if (optionIds.length == 0 || optionIds.length != quantities.length) revert LengthMismatch();
-        if (address(riskModule) == address(0)) revert RiskModuleNotSet();
+        if (address(_riskModule) == address(0)) revert RiskModuleNotSet();
         if (liquidationCloseFactorBps == 0) revert LiquidationCloseFactorZero();
 
         _requireBaseConfigured();
         _requireRiskParamsSynced();
 
-        IRiskModule.AccountRisk memory riskBefore = riskModule.computeAccountRisk(trader);
+        IRiskModule.AccountRisk memory riskBefore = _riskModule.computeAccountRisk(trader);
         uint256 ratioBeforeBps = _marginRatioBpsFromRisk(riskBefore);
 
         if (!isLiquidatable(trader)) revert NotLiquidatable();
@@ -1074,6 +1062,9 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
 
         address liquidator = msg.sender;
         uint256 totalContractsClosed;
+
+        // precise executed quantities for event
+        uint128[] memory executed = new uint128[](optionIds.length);
 
         // track per settlement asset cash requested
         address[] memory cashAssets = new address[](optionIds.length);
@@ -1091,7 +1082,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
             uint128 requestedQty = quantities[i];
             if (requestedQty == 0) continue;
 
-            OptionProductRegistry.OptionSeries memory s = optionRegistry.getSeries(optionId);
+            OptionProductRegistry.OptionSeries memory s = _optionRegistry.getSeries(optionId);
             _requireStandardContractSize(s);
 
             if (block.timestamp >= s.expiry) continue;
@@ -1169,6 +1160,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
             _updateOpenSeriesOnChange(trader, optionId, oldTraderQty, newTraderQty);
             _updateOpenSeriesOnChange(liquidator, optionId, oldLiqQty, newLiqQty);
 
+            executed[i] = liqQty;
             totalContractsClosed += uint256(liqQty);
         }
 
@@ -1182,11 +1174,11 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
 
             _syncVaultBestEffort(trader, asset);
 
-            uint256 traderBal = collateralVault.balances(trader, asset);
+            uint256 traderBal = _collateralVault.balances(trader, asset);
             uint256 paid = req <= traderBal ? req : traderBal;
 
             if (paid > 0) {
-                collateralVault.transferBetweenAccounts(asset, trader, liquidator, paid);
+                _collateralVault.transferBetweenAccounts(asset, trader, liquidator, paid);
             }
 
             emit LiquidationCashflow(liquidator, trader, asset, paid, req);
@@ -1203,11 +1195,11 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         if (remainingBase > 0) {
             _syncVaultBestEffort(trader, baseCollateralToken);
 
-            uint256 balBase = collateralVault.balances(trader, baseCollateralToken);
+            uint256 balBase = _collateralVault.balances(trader, baseCollateralToken);
             uint256 seizeBaseTokenAmt = remainingBase <= balBase ? remainingBase : balBase;
 
             if (seizeBaseTokenAmt > 0) {
-                collateralVault.transferBetweenAccounts(baseCollateralToken, trader, liquidator, seizeBaseTokenAmt);
+                _collateralVault.transferBetweenAccounts(baseCollateralToken, trader, liquidator, seizeBaseTokenAmt);
                 seizedBaseValueTotal += seizeBaseTokenAmt;
                 remainingBase -= seizeBaseTokenAmt;
 
@@ -1231,15 +1223,14 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
                 (uint256 neededTok, bool ok) = _baseValueToTokenAmountUp(tok, remainingBase);
                 if (!ok || neededTok == 0) continue;
 
-                uint256 balTok = collateralVault.balances(trader, tok);
+                uint256 balTok = _collateralVault.balances(trader, tok);
                 uint256 seizeTok = neededTok <= balTok ? neededTok : balTok;
                 if (seizeTok == 0) continue;
 
                 uint256 pxTokBase = _getOraclePriceChecked(tok, baseCollateralToken);
-
                 uint256 seizedBaseValueApprox = _tokenAmountToBaseValueDown(tok, seizeTok, pxTokBase);
 
-                collateralVault.transferBetweenAccounts(tok, trader, liquidator, seizeTok);
+                _collateralVault.transferBetweenAccounts(tok, trader, liquidator, seizeTok);
 
                 uint256 applied = seizedBaseValueApprox <= remainingBase ? seizedBaseValueApprox : remainingBase;
                 seizedBaseValueTotal += applied;
@@ -1250,19 +1241,17 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         }
 
         // post-check improvement
-        IRiskModule.AccountRisk memory riskAfter = riskModule.computeAccountRisk(trader);
+        IRiskModule.AccountRisk memory riskAfter = _riskModule.computeAccountRisk(trader);
         uint256 ratioAfterBps = _marginRatioBpsFromRisk(riskAfter);
 
         if (riskBefore.equity > 0) {
             if (ratioAfterBps < ratioBeforeBps + minLiquidationImprovementBps) revert LiquidationNotImproving();
         } else {
-            bool improved =
-                (riskAfter.maintenanceMargin < riskBefore.maintenanceMargin) ||
-                (riskAfter.equity > riskBefore.equity);
+            bool improved = (riskAfter.maintenanceMargin < riskBefore.maintenanceMargin) || (riskAfter.equity > riskBefore.equity);
             if (!improved) revert LiquidationNotImproving();
         }
 
-        emit Liquidation(liquidator, trader, optionIds, quantities, seizedBaseValueTotal);
+        emit Liquidation(liquidator, trader, optionIds, executed, seizedBaseValueTotal);
 
         _enforceInitialMargin(liquidator);
     }
@@ -1272,8 +1261,8 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
     //////////////////////////////////////////////////////////////*/
 
     function getUnderlyingSpot(uint256 optionId) external view returns (uint256 price, uint256 updatedAt) {
-        OptionProductRegistry.OptionSeries memory series = optionRegistry.getSeries(optionId);
+        OptionProductRegistry.OptionSeries memory series = _optionRegistry.getSeries(optionId);
         _requireStandardContractSize(series);
-        return oracle.getPrice(series.underlying, series.settlementAsset);
+        return _oracle.getPrice(series.underlying, series.settlementAsset);
     }
 }

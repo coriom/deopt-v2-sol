@@ -203,11 +203,7 @@ contract OracleRouter is IOracle {
                             VIEW HELPERS
     //////////////////////////////////////////////////////////////*/
 
-    function getFeed(address baseAsset, address quoteAsset)
-        external
-        view
-        returns (FeedConfig memory cfg)
-    {
+    function getFeed(address baseAsset, address quoteAsset) external view returns (FeedConfig memory cfg) {
         bytes32 key = _pairKey(baseAsset, quoteAsset);
         return feeds[key];
     }
@@ -260,14 +256,10 @@ contract OracleRouter is IOracle {
         uint256 minP = p1 < p2 ? p1 : p2;
         if (minP == 0) return type(uint256).max;
         uint256 diff = p1 > p2 ? (p1 - p2) : (p2 - p1);
-        return Math.mulDiv(diff, BPS, minP);
+        return Math.mulDiv(diff, BPS, minP, Math.Rounding.Down);
     }
 
-    function _getPriceFromConfig(FeedConfig memory cfg)
-        internal
-        view
-        returns (uint256 price, uint256 updatedAt)
-    {
+    function _getPriceFromConfig(FeedConfig memory cfg) internal view returns (uint256 price, uint256 updatedAt) {
         // read
         (uint256 p1, uint256 t1, bool ok1Raw) = _readSource(cfg.primarySource);
         (uint256 p2, uint256 t2, bool ok2Raw) = _readSource(cfg.secondarySource);
@@ -329,12 +321,7 @@ contract OracleRouter is IOracle {
                             ORACLE LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    function getPrice(address baseAsset, address quoteAsset)
-        external
-        view
-        override
-        returns (uint256 price, uint256 updatedAt)
-    {
+    function getPrice(address baseAsset, address quoteAsset) external view override returns (uint256 price, uint256 updatedAt) {
         if (baseAsset == address(0) || quoteAsset == address(0)) revert ZeroAddress();
 
         // identité
