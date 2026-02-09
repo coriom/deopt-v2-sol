@@ -110,13 +110,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event MatchingEngineSet(address indexed newMatchingEngine);
 
-    event TradeExecuted(
-        address indexed buyer,
-        address indexed seller,
-        uint256 indexed optionId,
-        uint128 quantity,
-        uint128 price
-    );
+    event TradeExecuted(address indexed buyer, address indexed seller, uint256 indexed optionId, uint128 quantity, uint128 price);
 
     event RiskParamsSet(address baseCollateralToken, uint256 baseMaintenanceMarginPerContract, uint256 imFactorBps);
 
@@ -168,13 +162,7 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
 
     event SeriesSettlementAccountingUpdated(uint256 indexed optionId, uint256 totalCollected, uint256 totalPaid, uint256 totalBadDebt);
 
-    event LiquidationSeize(
-        address indexed liquidator,
-        address indexed trader,
-        address indexed token,
-        uint256 amountToken,
-        uint256 seizedBaseValue
-    );
+    event LiquidationSeize(address indexed liquidator, address indexed trader, address indexed token, uint256 amountToken, uint256 seizedBaseValue);
 
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
@@ -452,6 +440,15 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         return address(_riskModule);
     }
 
+    function getPositionQuantity(address trader, uint256 optionId) external view override returns (int128) {
+        // invariant: jamais int128.min (enforced by state transitions)
+        return _positions[trader][optionId].quantity;
+    }
+
+    function isOpenSeries(address trader, uint256 optionId) external view override returns (bool) {
+        return traderSeriesIndexPlus1[trader][optionId] != 0;
+    }
+
     /*//////////////////////////////////////////////////////////////
                               VIEW HELPERS
     //////////////////////////////////////////////////////////////*/
@@ -543,14 +540,16 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
 
     function _checkedAddInt128(int128 a, int128 b) internal pure returns (int128 r) {
         int256 rr = int256(a) + int256(b);
-        if (rr > INT128_MAX || rr < INT128_MIN || rr == INT128_MIN) revert QuantityTooLarge();
+        if (rr == INT128_MIN) revert QuantityMinNotAllowed();
+        if (rr > INT128_MAX || rr < INT128_MIN) revert QuantityTooLarge();
         r = int128(rr);
         _ensureQtyAllowed(r);
     }
 
     function _checkedSubInt128(int128 a, int128 b) internal pure returns (int128 r) {
         int256 rr = int256(a) - int256(b);
-        if (rr > INT128_MAX || rr < INT128_MIN || rr == INT128_MIN) revert QuantityTooLarge();
+        if (rr == INT128_MIN) revert QuantityMinNotAllowed();
+        if (rr > INT128_MAX || rr < INT128_MIN) revert QuantityTooLarge();
         r = int128(rr);
         _ensureQtyAllowed(r);
     }
@@ -591,7 +590,6 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
 
     function _enforceInitialMargin(address trader) internal view {
         IRiskModule.AccountRisk memory r = _riskModule.computeAccountRisk(trader);
-        // (si initialMargin dépassait int256.max => déploiement incohérent)
         if (r.initialMargin > uint256(type(int256).max)) revert MathOverflow();
         if (r.equity < int256(r.initialMargin)) revert MarginRequirementBreached(trader);
     }
@@ -703,7 +701,6 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
     }
 
     function _syncVaultBestEffort(address user, address token) internal {
-        // Ne dépend pas de l'ABI compile-time de CollateralVault (best effort).
         (bool ok,) = address(_collateralVault).call(abi.encodeWithSignature("syncAccountFor(address,address)", user, token));
         ok;
     }
@@ -1247,7 +1244,8 @@ contract MarginEngine is ReentrancyGuard, IMarginEngineState, IMarginEngineTrade
         if (riskBefore.equity > 0) {
             if (ratioAfterBps < ratioBeforeBps + minLiquidationImprovementBps) revert LiquidationNotImproving();
         } else {
-            bool improved = (riskAfter.maintenanceMargin < riskBefore.maintenanceMargin) || (riskAfter.equity > riskBefore.equity);
+            bool improved =
+                (riskAfter.maintenanceMargin < riskBefore.maintenanceMargin) || (riskAfter.equity > riskBefore.equity);
             if (!improved) revert LiquidationNotImproving();
         }
 
