@@ -15,7 +15,26 @@ import {IMarginEngineTrade} from "../matching/IMarginEngineTrade.sol";
 import {MarginEngineTypes} from "./MarginEngineTypes.sol";
 
 /// @notice Storage + helpers stateful (only file that declares MarginEngine state)
+/// @dev Keep this file "state-oriented". Pure helpers are namespaced here to avoid collisions.
 abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMarginEngineState, IMarginEngineTrade {
+    /*//////////////////////////////////////////////////////////////
+                                LOCAL CONSTANTS
+    //////////////////////////////////////////////////////////////*/
+
+    // Defensive local mirrors (avoid relying on whether Types defines them).
+    uint256 internal constant _ME_PRICE_1E8 = 1e8;
+    uint256 internal constant _ME_MAX_POW10_EXP = 77;
+
+    /*//////////////////////////////////////////////////////////////
+                        INTERNAL PARAM INTERFACE
+    //////////////////////////////////////////////////////////////*/
+
+    interface _IRiskModuleParams {
+        function baseCollateralToken() external view returns (address);
+        function baseMaintenanceMarginPerContract() external view returns (uint256);
+        function imFactorBps() external view returns (uint256);
+    }
+
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
     //////////////////////////////////////////////////////////////*/
@@ -96,6 +115,26 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     }
 
     /*//////////////////////////////////////////////////////////////
+                          INTERNAL PURE HELPERS (NAMESPACED)
+    //////////////////////////////////////////////////////////////*/
+
+    function _meEnsureQtyAllowed(int128 q) internal pure {
+        // hard rule: never allow int128.min (abs/negation overflow)
+        if (q == type(int128).min) revert QuantityMinNotAllowed();
+    }
+
+    function _meMulChecked(uint256 a, uint256 b) internal pure returns (uint256 c) {
+        if (a == 0 || b == 0) return 0;
+        c = a * b;
+        if (c / a != b) revert MathOverflow();
+    }
+
+    function _mePow10(uint256 exp) internal pure returns (uint256) {
+        if (exp > _ME_MAX_POW10_EXP) revert MathOverflow();
+        return 10 ** exp;
+    }
+
+    /*//////////////////////////////////////////////////////////////
                           INTERNAL (STATEFUL) HELPERS
     //////////////////////////////////////////////////////////////*/
 
@@ -108,7 +147,7 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     function _addOpenSeries(address trader, uint256 optionId) internal {
         if (traderSeriesIndexPlus1[trader][optionId] != 0) return;
         traderSeries[trader].push(optionId);
-        traderSeriesIndexPlus1[trader][optionId] = traderSeries[trader].length;
+        traderSeriesIndexPlus1[trader][optionId] = traderSeries[trader].length; // index+1
     }
 
     function _removeOpenSeries(address trader, uint256 optionId) internal {
@@ -129,8 +168,8 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     }
 
     function _updateOpenSeriesOnChange(address trader, uint256 optionId, int128 oldQty, int128 newQty) internal {
-        _ensureQtyAllowed(oldQty);
-        _ensureQtyAllowed(newQty);
+        _meEnsureQtyAllowed(oldQty);
+        _meEnsureQtyAllowed(newQty);
 
         if (oldQty == 0 && newQty != 0) {
             _addOpenSeries(trader, optionId);
@@ -140,8 +179,8 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     }
 
     function _updateTotalShortContracts(address trader, int128 oldQty, int128 newQty) internal {
-        _ensureQtyAllowed(oldQty);
-        _ensureQtyAllowed(newQty);
+        _meEnsureQtyAllowed(oldQty);
+        _meEnsureQtyAllowed(newQty);
 
         uint256 oldShort = oldQty < 0 ? uint256(-int256(oldQty)) : 0;
         uint256 newShort = newQty < 0 ? uint256(-int256(newQty)) : 0;
@@ -157,16 +196,20 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     function _requireSettlementAssetConfigured(address settlementAsset) internal view {
         CollateralVault.CollateralTokenConfig memory cfg = _vaultCfg(settlementAsset);
         if (!cfg.isSupported || cfg.decimals == 0) revert SettlementAssetNotConfigured();
-        if (uint256(cfg.decimals) > MAX_POW10_EXP) revert DecimalsOverflow(settlementAsset);
+        if (uint256(cfg.decimals) > _ME_MAX_POW10_EXP) revert DecimalsOverflow(settlementAsset);
     }
 
-    function _price1e8ToSettlementUnits(address settlementAsset, uint256 value1e8) internal view returns (uint256 valueNative) {
+    function _price1e8ToSettlementUnits(address settlementAsset, uint256 value1e8)
+        internal
+        view
+        returns (uint256 valueNative)
+    {
         CollateralVault.CollateralTokenConfig memory cfg = _vaultCfg(settlementAsset);
         if (!cfg.isSupported || cfg.decimals == 0) revert SettlementAssetNotConfigured();
-        if (uint256(cfg.decimals) > MAX_POW10_EXP) revert DecimalsOverflow(settlementAsset);
+        if (uint256(cfg.decimals) > _ME_MAX_POW10_EXP) revert DecimalsOverflow(settlementAsset);
 
-        uint256 scale = _pow10(uint256(cfg.decimals));
-        valueNative = Math.mulDiv(value1e8, scale, PRICE_1E8, Math.Rounding.Down);
+        uint256 scale = _mePow10(uint256(cfg.decimals));
+        valueNative = Math.mulDiv(value1e8, scale, _ME_PRICE_1E8, Math.Rounding.Down);
     }
 
     function _requireBaseConfigured() internal view {
@@ -176,7 +219,7 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
 
     function _requireRiskParamsSynced() internal view {
         if (address(_riskModule) == address(0)) revert RiskModuleNotSet();
-        IRiskModuleParams rp = IRiskModuleParams(address(_riskModule));
+        _IRiskModuleParams rp = _IRiskModuleParams(address(_riskModule));
         if (rp.baseCollateralToken() != baseCollateralToken) revert RiskParamsMismatch();
         if (rp.baseMaintenanceMarginPerContract() != baseMaintenanceMarginPerContract) revert RiskParamsMismatch();
         if (rp.imFactorBps() != imFactorBps) revert RiskParamsMismatch();
@@ -196,6 +239,7 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     }
 
     function _syncVaultBestEffort(address user, address token) internal {
+        // best-effort: ignore failures to keep UX paths non-reverting
         (bool ok,) = address(_collateralVault).call(abi.encodeWithSignature("syncAccountFor(address,address)", user, token));
         ok;
     }
@@ -215,8 +259,8 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
 
         if (!baseCfg.isSupported || baseCfg.decimals == 0) return (0, false);
         if (!tokCfg.isSupported || tokCfg.decimals == 0) return (0, false);
-        if (uint256(baseCfg.decimals) > MAX_POW10_EXP) revert DecimalsOverflow(baseCollateralToken);
-        if (uint256(tokCfg.decimals) > MAX_POW10_EXP) revert DecimalsOverflow(token);
+        if (uint256(baseCfg.decimals) > _ME_MAX_POW10_EXP) revert DecimalsOverflow(baseCollateralToken);
+        if (uint256(tokCfg.decimals) > _ME_MAX_POW10_EXP) revert DecimalsOverflow(token);
 
         uint256 px;
         uint256 updatedAt;
@@ -239,24 +283,25 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         uint8 tokDec = tokCfg.decimals;
 
         // Step 1 (same decimals): ceil(baseValue * 1e8 / px)
-        uint256 sameDec = Math.mulDiv(baseValue, PRICE_1E8, px, Math.Rounding.Ceil);
+        uint256 sameDec = Math.mulDiv(baseValue, _ME_PRICE_1E8, px, Math.Rounding.Ceil);
 
         if (tokDec == baseDec) {
             return (sameDec, true);
         }
 
         if (tokDec > baseDec) {
-            uint256 factor = _pow10(uint256(tokDec - baseDec));
-            amtToken = _mulChecked(sameDec, factor);
+            uint256 factor = _mePow10(uint256(tokDec - baseDec));
+            amtToken = _meMulChecked(sameDec, factor);
             return (amtToken, true);
         } else {
-            uint256 factor = _pow10(uint256(baseDec - tokDec));
-            amtToken = (sameDec + (factor - 1)) / factor;
+            uint256 factor = _mePow10(uint256(baseDec - tokDec));
+            amtToken = (sameDec + (factor - 1)) / factor; // ceil-div
             return (amtToken, true);
         }
     }
 
     /// @dev Approx base value (DOWN) de `tokenAmount` à un prix `pxTokBase` (token->base, 1e8).
+    ///      Best-effort: si config invalide, renvoie 0 (conservateur, évite revert en liquidation).
     function _tokenAmountToBaseValueDown(address token, uint256 tokenAmount, uint256 pxTokBase)
         internal
         view
@@ -268,19 +313,25 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         CollateralVault.CollateralTokenConfig memory baseCfg = _vaultCfg(baseCollateralToken);
         CollateralVault.CollateralTokenConfig memory tokCfg = _vaultCfg(token);
 
+        if (!baseCfg.isSupported || baseCfg.decimals == 0) return 0;
+        if (!tokCfg.isSupported || tokCfg.decimals == 0) return 0;
+
+        if (uint256(baseCfg.decimals) > _ME_MAX_POW10_EXP) revert DecimalsOverflow(baseCollateralToken);
+        if (uint256(tokCfg.decimals) > _ME_MAX_POW10_EXP) revert DecimalsOverflow(token);
+
         uint8 baseDec = baseCfg.decimals;
         uint8 tokDec = tokCfg.decimals;
 
         // num = tokenAmount * px / 1e8 (still scaled by token decimals vs base decimals)
-        uint256 num = Math.mulDiv(tokenAmount, pxTokBase, PRICE_1E8, Math.Rounding.Down);
+        uint256 num = Math.mulDiv(tokenAmount, pxTokBase, _ME_PRICE_1E8, Math.Rounding.Down);
 
         if (tokDec == baseDec) return num;
 
         if (baseDec > tokDec) {
-            uint256 factor = _pow10(uint256(baseDec - tokDec));
-            return _mulChecked(num, factor);
+            uint256 factor = _mePow10(uint256(baseDec - tokDec));
+            return _meMulChecked(num, factor);
         } else {
-            uint256 factor = _pow10(uint256(tokDec - baseDec));
+            uint256 factor = _mePow10(uint256(tokDec - baseDec));
             return num / factor;
         }
     }
