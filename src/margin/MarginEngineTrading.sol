@@ -2,10 +2,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {OptionProductRegistry} from "../OptionProductRegistry.sol";
+import {IMarginEngineState} from "../risk/IMarginEngineState.sol";
+import {IMarginEngineTrade} from "../matching/IMarginEngineTrade.sol";
+
 import {MarginEngineAdmin} from "./MarginEngineAdmin.sol";
 
 /// @notice Matching-engine entrypoint (applyTrade)
 abstract contract MarginEngineTrading is MarginEngineAdmin {
+    /// @inheritdoc IMarginEngineTrade
     function applyTrade(IMarginEngineTrade.Trade calldata t)
         external
         override
@@ -43,15 +48,18 @@ abstract contract MarginEngineTrading is MarginEngineAdmin {
         int128 newBuyerQty = _checkedAddInt128(oldBuyerQty, delta);
         int128 newSellerQty = _checkedSubInt128(oldSellerQty, delta);
 
+        // close-only when series inactive (no open, no flip, no increase abs)
         if (!series.isActive) {
             bool okBuyer = _isCloseOnlyTransition(oldBuyerQty, newBuyerQty);
             bool okSeller = _isCloseOnlyTransition(oldSellerQty, newSellerQty);
             if (!okBuyer || !okSeller) revert SeriesNotActiveCloseOnly();
         }
 
+        // write positions
         buyerPos.quantity = newBuyerQty;
         sellerPos.quantity = newSellerQty;
 
+        // maintain short counters + open-series tracking
         _updateTotalShortContracts(t.buyer, oldBuyerQty, newBuyerQty);
         _updateTotalShortContracts(t.seller, oldSellerQty, newSellerQty);
 
@@ -64,6 +72,7 @@ abstract contract MarginEngineTrading is MarginEngineAdmin {
 
         emit TradeExecuted(t.buyer, t.seller, t.optionId, t.quantity, t.price);
 
+        // post-trade IM enforcement
         _enforceInitialMargin(t.buyer);
         _enforceInitialMargin(t.seller);
     }

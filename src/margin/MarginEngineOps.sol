@@ -2,17 +2,40 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+
+import {OptionProductRegistry} from "../OptionProductRegistry.sol";
+import {CollateralVault} from "../CollateralVault.sol";
 import {IRiskModule} from "../risk/IRiskModule.sol";
+import {IMarginEngineState} from "../risk/IMarginEngineState.sol";
 
 import {MarginEngineTrading} from "./MarginEngineTrading.sol";
 
 /// @notice Views + collateral + settlement + liquidation + oracle views
 abstract contract MarginEngineOps is MarginEngineTrading {
     /*//////////////////////////////////////////////////////////////
+                          INTERNAL PURE HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @dev Derive margin ratio in BPS from (equity, maintenanceMargin).
+    ///      - maintenanceMargin==0 => infinite ratio
+    ///      - equity<=0 => 0 ratio
+    function _marginRatioBpsFromRisk(int256 equity, uint256 maintenanceMargin) internal pure returns (uint256) {
+        if (maintenanceMargin == 0) return type(uint256).max;
+        if (equity <= 0) return 0;
+        return (uint256(equity) * BPS) / maintenanceMargin;
+    }
+
+    /*//////////////////////////////////////////////////////////////
                           IMarginEngineState (required)
     //////////////////////////////////////////////////////////////*/
 
-    function positions(address trader, uint256 optionId) external view override returns (IMarginEngineState.Position memory) {
+    function positions(address trader, uint256 optionId)
+        external
+        view
+        override
+        returns (IMarginEngineState.Position memory)
+    {
         return _positions[trader][optionId];
     }
 
@@ -112,8 +135,9 @@ abstract contract MarginEngineOps is MarginEngineTrading {
     function depositCollateral(address token, uint256 amount) external whenNotPaused nonReentrant {
         if (amount == 0) revert AmountZero();
 
-        (bool ok,) =
-            address(_collateralVault).call(abi.encodeWithSignature("depositFor(address,address,uint256)", msg.sender, token, amount));
+        (bool ok,) = address(_collateralVault).call(
+            abi.encodeWithSignature("depositFor(address,address,uint256)", msg.sender, token, amount)
+        );
         if (!ok) revert VaultDepositForNotSupported();
 
         emit CollateralDeposited(msg.sender, token, amount);
@@ -130,8 +154,9 @@ abstract contract MarginEngineOps is MarginEngineTrading {
         if (amount > preview.maxWithdrawable) revert WithdrawTooLarge();
         if (preview.marginRatioAfterBps < liquidationThresholdBps) revert WithdrawWouldBreachMargin();
 
-        (bool ok,) =
-            address(_collateralVault).call(abi.encodeWithSignature("withdrawFor(address,address,uint256)", msg.sender, token, amount));
+        (bool ok,) = address(_collateralVault).call(
+            abi.encodeWithSignature("withdrawFor(address,address,uint256)", msg.sender, token, amount)
+        );
         if (!ok) revert VaultWithdrawForNotSupported();
 
         emit CollateralWithdrawn(msg.sender, token, amount, preview.marginRatioAfterBps);
@@ -249,12 +274,7 @@ abstract contract MarginEngineOps is MarginEngineTrading {
 
         emit AccountSettled(trader, optionId, pnl, collectedFromTrader, paidToTrader, badDebt);
 
-        emit SeriesSettlementAccountingUpdated(
-            optionId,
-            seriesCollected[optionId],
-            seriesPaid[optionId],
-            seriesBadDebt[optionId]
-        );
+        emit SeriesSettlementAccountingUpdated(optionId, seriesCollected[optionId], seriesPaid[optionId], seriesBadDebt[optionId]);
     }
 
     function settleAccount(uint256 optionId, address trader) public whenNotPaused nonReentrant {
@@ -290,7 +310,11 @@ abstract contract MarginEngineOps is MarginEngineTrading {
     }
 
     /// @dev Returns settlement units per contract.
-    function _computeLiquidationPricePerContract(OptionProductRegistry.OptionSeries memory s) internal view returns (uint256 pricePerContract) {
+    function _computeLiquidationPricePerContract(OptionProductRegistry.OptionSeries memory s)
+        internal
+        view
+        returns (uint256 pricePerContract)
+    {
         _requireStandardContractSize(s);
 
         (uint256 spot, uint256 updatedAt) = _oracle.getPrice(s.underlying, s.settlementAsset);
@@ -530,8 +554,7 @@ abstract contract MarginEngineOps is MarginEngineTrading {
         if (riskBefore.equity > 0) {
             if (ratioAfterBps < ratioBeforeBps + minLiquidationImprovementBps) revert LiquidationNotImproving();
         } else {
-            bool improved =
-                (riskAfter.maintenanceMargin < riskBefore.maintenanceMargin) || (riskAfter.equity > riskBefore.equity);
+            bool improved = (riskAfter.maintenanceMargin < riskBefore.maintenanceMargin) || (riskAfter.equity > riskBefore.equity);
             if (!improved) revert LiquidationNotImproving();
         }
 

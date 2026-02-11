@@ -129,6 +129,9 @@ contract CollateralVault is ReentrancyGuard {
     /// @notice shares détenues dans l’adapter (comptabilité interne)
     mapping(address => mapping(address => uint256)) public strategyShares;
 
+    /// @notice total shares détenues par le Vault (par token) — hardening setTokenStrategy
+    mapping(address => uint256) public tokenTotalStrategyShares;
+
     /// @notice part idle conservée dans le Vault (liquide)
     mapping(address => mapping(address => uint256)) public idleBalances;
 
@@ -264,7 +267,7 @@ contract CollateralVault is ReentrancyGuard {
     }
 
     /// @notice Configure un adapter de rendement pour un token
-    /// @dev Robuste: interdit de changer d’adapter si totalShares != 0.
+    /// @dev Robuste: interdit de changer d’adapter si le Vault a encore des shares (suivi interne).
     function setTokenStrategy(address token, address adapter) external onlyOwner {
         if (token == address(0)) revert ZeroAddress();
 
@@ -273,8 +276,17 @@ contract CollateralVault is ReentrancyGuard {
 
         address old = tokenStrategy[token];
         if (old != address(0) && old != adapter) {
-            uint256 ts = IYieldAdapter(old).totalShares();
-            if (ts != 0) revert StrategyChangeNotAllowedWithActiveShares();
+            // hardening principal: tracking interne (source de vérité du Vault)
+            if (tokenTotalStrategyShares[token] != 0) revert StrategyChangeNotAllowedWithActiveShares();
+
+            // hardening secondaire: si l’adapter expose totalShares() non-zero, on bloque aussi
+            // (au cas où tracking interne serait désynchronisé suite à un bug).
+            try IYieldAdapter(old).totalShares() returns (uint256 ts) {
+                if (ts != 0) revert StrategyChangeNotAllowedWithActiveShares();
+            } catch {
+                // si l’ancien adapter revert ici, on préfère empêcher le changement
+                revert StrategyChangeNotAllowedWithActiveShares();
+            }
         }
 
         if (adapter != address(0)) {
@@ -362,14 +374,18 @@ contract CollateralVault is ReentrancyGuard {
 
         _sync(msg.sender, token);
 
+        // hardening: fee-on-transfer safe credit
+        uint256 pre = IERC20(token).balanceOf(address(this));
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+        uint256 received = IERC20(token).balanceOf(address(this)) - pre;
+        if (received == 0) revert AmountZero();
 
-        balances[msg.sender][token] += amount;
-        idleBalances[msg.sender][token] += amount;
+        balances[msg.sender][token] += received;
+        idleBalances[msg.sender][token] += received;
 
-        emit Deposited(msg.sender, token, amount);
+        emit Deposited(msg.sender, token, received);
 
-        _maybeMoveToStrategy(msg.sender, token, amount);
+        _maybeMoveToStrategy(msg.sender, token, received);
     }
 
     /// @notice Dépôt au nom de `user` (tokens transférés depuis `user`) — appelé par MarginEngine.
@@ -387,14 +403,18 @@ contract CollateralVault is ReentrancyGuard {
 
         _sync(user, token);
 
+        // hardening: fee-on-transfer safe credit
+        uint256 pre = IERC20(token).balanceOf(address(this));
         IERC20(token).safeTransferFrom(user, address(this), amount);
+        uint256 received = IERC20(token).balanceOf(address(this)) - pre;
+        if (received == 0) revert AmountZero();
 
-        balances[user][token] += amount;
-        idleBalances[user][token] += amount;
+        balances[user][token] += received;
+        idleBalances[user][token] += received;
 
-        emit Deposited(user, token, amount);
+        emit Deposited(user, token, received);
 
-        _maybeMoveToStrategy(user, token, amount);
+        _maybeMoveToStrategy(user, token, received);
     }
 
     /// @notice Retrait direct user (peut rester possible même si paused).
@@ -417,6 +437,7 @@ contract CollateralVault is ReentrancyGuard {
     function moveToStrategy(address token, uint256 amount) external whenNotPaused nonReentrant {
         _sync(msg.sender, token);
         _moveToStrategy(msg.sender, token, amount);
+        _sync(msg.sender, token);
     }
 
     /// @notice Peut rester autorisé même si paused (sortie d'urgence).
@@ -441,6 +462,7 @@ contract CollateralVault is ReentrancyGuard {
         uint256 sharesBurned = IYieldAdapter(adapter).withdraw(amount, address(this));
         if (sharesBurned != sharesNeeded) revert AdapterReturnedUnexpectedShares();
 
+        tokenTotalStrategyShares[token] -= sharesBurned;
         idleBalances[msg.sender][token] += amount;
 
         emit MovedToIdle(msg.sender, token, amount, sharesBurned);
@@ -499,6 +521,8 @@ contract CollateralVault is ReentrancyGuard {
 
             uint256 sharesBurned = IYieldAdapter(adapter).withdraw(remaining, address(this));
             if (sharesBurned != sharesNeeded) revert AdapterReturnedUnexpectedShares();
+
+            tokenTotalStrategyShares[token] -= sharesBurned;
 
             idleBalances[to][token] += remaining;
 
@@ -594,6 +618,7 @@ contract CollateralVault is ReentrancyGuard {
         if (sharesMinted != expectedShares) revert AdapterReturnedUnexpectedShares();
 
         strategyShares[user][token] += sharesMinted;
+        tokenTotalStrategyShares[token] += sharesMinted;
 
         emit MovedToStrategy(user, token, amount, sharesMinted);
     }
@@ -663,6 +688,8 @@ contract CollateralVault is ReentrancyGuard {
 
         uint256 sharesBurned = IYieldAdapter(adapter).withdraw(remaining, to);
         if (sharesBurned != sharesNeeded) revert AdapterReturnedUnexpectedShares();
+
+        tokenTotalStrategyShares[token] -= sharesBurned;
 
         emit Withdrawn(user, token, amount);
 

@@ -138,6 +138,7 @@ contract OptionProductRegistry {
 
     event SettlementPriceProposed(uint256 indexed optionId, uint256 proposedPrice, uint256 proposedAt);
     event SettlementPriceFinalized(uint256 indexed optionId, uint256 settlementPrice, uint256 finalizedAt);
+    event SettlementProposalCancelled(uint256 indexed optionId, uint256 cancelledAt);
 
     event SettlementAssetConfigured(address indexed asset, bool isAllowed);
 
@@ -517,6 +518,7 @@ contract OptionProductRegistry {
         if (!p.exists) revert NoSettlementProposal();
 
         delete _settlementProposal[optionId];
+        emit SettlementProposalCancelled(optionId, block.timestamp);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -527,6 +529,12 @@ contract OptionProductRegistry {
         OptionSeries memory s = _series[optionId];
         if (!s.exists) revert UnknownSeries();
         return s;
+    }
+
+    /// @notice Safe-view (ne revert pas): utile front/offchain.
+    function getSeriesIfExists(uint256 optionId) external view returns (OptionSeries memory s, bool exists) {
+        s = _series[optionId];
+        return (s, s.exists);
     }
 
     function seriesExists(uint256 optionId) external view returns (bool) {
@@ -540,6 +548,20 @@ contract OptionProductRegistry {
     function seriesAt(uint256 index) external view returns (uint256) {
         if (index >= _allOptionIds.length) revert IndexOutOfBounds();
         return _allOptionIds[index];
+    }
+
+    /// @notice Pagination (anti-DoS arrays géants).
+    function getAllOptionIdsSlice(uint256 start, uint256 end) external view returns (uint256[] memory slice) {
+        uint256 len = _allOptionIds.length;
+        if (start > len) start = len;
+        if (end > len) end = len;
+        if (end < start) end = start;
+
+        uint256 outLen = end - start;
+        slice = new uint256[](outLen);
+        for (uint256 i = 0; i < outLen; i++) {
+            slice[i] = _allOptionIds[start + i];
+        }
     }
 
     function getSettlementInfo(uint256 optionId) external view returns (uint256 settlementPrice, bool isSet) {
@@ -575,6 +597,25 @@ contract OptionProductRegistry {
         return _seriesByUnderlying[underlying];
     }
 
+    /// @notice Pagination by underlying.
+    function getSeriesByUnderlyingSlice(address underlying, uint256 start, uint256 end)
+        external
+        view
+        returns (uint256[] memory slice)
+    {
+        uint256[] memory allIds = _seriesByUnderlying[underlying];
+        uint256 len = allIds.length;
+        if (start > len) start = len;
+        if (end > len) end = len;
+        if (end < start) end = start;
+
+        uint256 outLen = end - start;
+        slice = new uint256[](outLen);
+        for (uint256 i = 0; i < outLen; i++) {
+            slice[i] = allIds[start + i];
+        }
+    }
+
     function getActiveSeriesByUnderlying(address underlying) external view returns (uint256[] memory activeIds) {
         uint256[] memory allIds = _seriesByUnderlying[underlying];
         uint256 len = allIds.length;
@@ -593,6 +634,34 @@ contract OptionProductRegistry {
                 activeIds[j++] = allIds[i];
             }
         }
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        OFFCHAIN HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Helper public: calcule l'optionId exact (doit matcher _computeOptionId).
+    function computeOptionId(
+        address underlying,
+        address settlementAsset,
+        uint64 expiry,
+        uint64 strike,
+        uint128 contractSize1e8,
+        bool isCall,
+        bool isEuropean
+    ) external pure returns (uint256) {
+        OptionSeries memory s = OptionSeries({
+            underlying: underlying,
+            settlementAsset: settlementAsset,
+            expiry: expiry,
+            strike: strike,
+            contractSize1e8: contractSize1e8,
+            isCall: isCall,
+            isEuropean: isEuropean,
+            exists: true,
+            isActive: true
+        });
+        return _computeOptionId(s);
     }
 
     /*//////////////////////////////////////////////////////////////

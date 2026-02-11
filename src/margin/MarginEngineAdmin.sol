@@ -8,7 +8,12 @@ import {IOracle} from "../oracle/IOracle.sol";
 import {MarginEngineStorage} from "./MarginEngineStorage.sol";
 
 /// @notice Owner-only configuration & admin surface
+/// @dev Assumes constants/errors/events/IRiskModuleParams are declared in MarginEngineTypes (via MarginEngineStorage).
 abstract contract MarginEngineAdmin is MarginEngineStorage {
+    /*//////////////////////////////////////////////////////////////
+                              OWNERSHIP
+    //////////////////////////////////////////////////////////////*/
+
     function transferOwnership(address newOwner) external onlyOwner {
         if (newOwner == address(0)) revert ZeroAddress();
         address oldOwner = owner;
@@ -22,6 +27,10 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
         emit OwnershipTransferred(oldOwner, address(0));
     }
 
+    /*//////////////////////////////////////////////////////////////
+                               PAUSE
+    //////////////////////////////////////////////////////////////*/
+
     function pause() external onlyOwner {
         paused = true;
         emit Paused(msg.sender);
@@ -31,6 +40,10 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
         paused = false;
         emit Unpaused(msg.sender);
     }
+
+    /*//////////////////////////////////////////////////////////////
+                                CONFIG
+    //////////////////////////////////////////////////////////////*/
 
     function setMatchingEngine(address matchingEngine_) external onlyOwner {
         if (matchingEngine_ == address(0)) revert ZeroAddress();
@@ -57,11 +70,15 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
         emit InsuranceFundSet(old, insuranceFund_);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                          RISK PARAMS CACHE
+    //////////////////////////////////////////////////////////////*/
+
     /// @notice Configure (cache) les risk params côté MarginEngine, en vérifiant qu'ils MATCHENT RiskModule.
     /// @dev Source of truth = RiskModule.
     function setRiskParams(address baseToken_, uint256 baseMMPerContract_, uint256 imFactorBps_) external onlyOwner {
         if (baseToken_ == address(0)) revert ZeroAddress();
-        if (imFactorBps_ < BPS) revert InvalidLiquidationParams();
+        if (imFactorBps_ < BPS) revert InvalidLiquidationParams(); // IM factor must be >= 100%
         if (address(_riskModule) == address(0)) revert RiskModuleNotSet();
 
         IRiskModuleParams rp = IRiskModuleParams(address(_riskModule));
@@ -77,6 +94,10 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
         emit RiskParamsSet(baseToken_, baseMMPerContract_, imFactorBps_);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                         LIQUIDATION PARAMS
+    //////////////////////////////////////////////////////////////*/
+
     function setLiquidationParams(uint256 liquidationThresholdBps_, uint256 liquidationPenaltyBps_) external onlyOwner {
         if (liquidationThresholdBps_ < BPS) revert InvalidLiquidationParams();
         if (liquidationPenaltyBps_ > BPS) revert InvalidLiquidationParams();
@@ -91,8 +112,8 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
         if (closeFactorBps_ == 0) revert LiquidationCloseFactorZero();
         if (closeFactorBps_ > BPS) revert InvalidLiquidationParams();
 
-        minLiquidationImprovementBps = minImprovementBps_;
         liquidationCloseFactorBps = closeFactorBps_;
+        minLiquidationImprovementBps = minImprovementBps_;
 
         emit LiquidationHardenParamsSet(closeFactorBps_, minImprovementBps_);
     }
@@ -110,6 +131,7 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
         emit LiquidationPricingParamsSet(liquidationPriceSpreadBps_, minLiqPriceBpsOfIntrinsic_);
     }
 
+    /// @notice Set max oracle staleness allowed in liquidation paths. 0 disables staleness enforcement.
     function setLiquidationOracleMaxDelay(uint32 delay_) external onlyOwner {
         if (delay_ > 3600) revert LiquidationPricingParamsInvalid();
         uint32 old = liquidationOracleMaxDelay;
