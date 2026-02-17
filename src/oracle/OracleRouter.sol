@@ -1,3 +1,4 @@
+// src/oracle/OracleRouter.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
@@ -20,8 +21,6 @@ import "./IPriceSource.sol";
 ///  - Reverse support:
 ///      * si feed (base,quote) absent/inactif, tente (quote,base) et inverse le prix
 contract OracleRouter is IOracle {
-    using Math for uint256;
-
     /*//////////////////////////////////////////////////////////////
                                 CONSTANTS
     //////////////////////////////////////////////////////////////*/
@@ -235,7 +234,6 @@ contract OracleRouter is IOracle {
         uint32 d = _effectiveDelay(feedMaxDelay);
         if (d == 0) return (true, false);
 
-        // updatedAt <= block.timestamp ici
         if (block.timestamp - updatedAt > d) return (false, false);
 
         return (true, false);
@@ -260,16 +258,12 @@ contract OracleRouter is IOracle {
     }
 
     function _getPriceFromConfig(FeedConfig memory cfg) internal view returns (uint256 price, uint256 updatedAt) {
-        // read
         (uint256 p1, uint256 t1, bool ok1Raw) = _readSource(cfg.primarySource);
         (uint256 p2, uint256 t2, bool ok2Raw) = _readSource(cfg.secondarySource);
 
         if (!ok1Raw && !ok2Raw) revert NoSource();
 
-        // validate timestamps (stale/future) => on ignore les sources invalides
         bool sawFuture;
-        bool anyRaw = ok1Raw || ok2Raw;
-
         bool ok1;
         bool ok2;
 
@@ -285,11 +279,9 @@ contract OracleRouter is IOracle {
             ok2 = tsOk;
         }
 
-        // après validation, si plus rien => erreur staleness/future
         if (!ok1 && !ok2) {
             if (sawFuture) revert FutureTimestamp();
-            if (anyRaw) revert StalePrice();
-            revert NoSource();
+            revert StalePrice();
         }
 
         // fallback single usable
@@ -301,14 +293,15 @@ contract OracleRouter is IOracle {
 
         if (maxDev == 0) {
             if (p1 != p2) revert DeviationTooHigh();
-            return (p1, t1 >= t2 ? t1 : t2);
+            // primary choisi => timestamp doit correspondre au prix retourné (t1)
+            return (p1, t1);
         }
 
         uint256 dev = _deviationBps(p1, p2);
         if (dev > uint256(maxDev)) revert DeviationTooHigh();
 
-        // return primary price, with fresher updatedAt
-        return (p1, t1 >= t2 ? t1 : t2);
+        // primary choisi => timestamp doit correspondre au prix retourné (t1)
+        return (p1, t1);
     }
 
     function _invertPrice(uint256 price1e8) internal pure returns (uint256 inv1e8) {
@@ -321,7 +314,12 @@ contract OracleRouter is IOracle {
                             ORACLE LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    function getPrice(address baseAsset, address quoteAsset) external view override returns (uint256 price, uint256 updatedAt) {
+    function getPrice(address baseAsset, address quoteAsset)
+        external
+        view
+        override
+        returns (uint256 price, uint256 updatedAt)
+    {
         if (baseAsset == address(0) || quoteAsset == address(0)) revert ZeroAddress();
 
         // identité
@@ -345,7 +343,6 @@ contract OracleRouter is IOracle {
 
         (uint256 revPrice, uint256 revUpdatedAt) = _getPriceFromConfig(rcfg);
 
-        // invert
         return (_invertPrice(revPrice), revUpdatedAt);
     }
 }
