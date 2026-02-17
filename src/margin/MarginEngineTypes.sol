@@ -2,8 +2,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
-
 import {OptionProductRegistry} from "../OptionProductRegistry.sol";
 
 /// @notice Types/Constants/Errors/Events + helpers purs (no storage)
@@ -250,7 +248,11 @@ abstract contract MarginEngineTypes {
         return (uint256(equity) * BPS) / maintenanceMargin;
     }
 
-    function _intrinsic1e8(OptionProductRegistry.OptionSeries memory s, uint256 spot1e8) internal pure returns (uint256 intrinsic) {
+    function _intrinsic1e8(OptionProductRegistry.OptionSeries memory s, uint256 spot1e8)
+        internal
+        pure
+        returns (uint256 intrinsic)
+    {
         if (spot1e8 == 0) return 0;
 
         if (s.isCall) {
