@@ -8,7 +8,7 @@ import {IOracle} from "../oracle/IOracle.sol";
 import {MarginEngineStorage} from "./MarginEngineStorage.sol";
 
 /// @notice Owner-only configuration & admin surface
-/// @dev Assumes constants/errors/events/IRiskModuleParams are declared in MarginEngineTypes (via MarginEngineStorage).
+/// @dev Assumes constants/errors/events are declared in MarginEngineTypes (via MarginEngineStorage).
 abstract contract MarginEngineAdmin is MarginEngineStorage {
     /*//////////////////////////////////////////////////////////////
                               OWNERSHIP
@@ -32,13 +32,17 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
     //////////////////////////////////////////////////////////////*/
 
     function pause() external onlyOwner {
-        paused = true;
-        emit Paused(msg.sender);
+        if (!paused) {
+            paused = true;
+            emit Paused(msg.sender);
+        }
     }
 
     function unpause() external onlyOwner {
-        paused = false;
-        emit Unpaused(msg.sender);
+        if (paused) {
+            paused = false;
+            emit Unpaused(msg.sender);
+        }
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -74,14 +78,14 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
                           RISK PARAMS CACHE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Configure (cache) les risk params côté MarginEngine, en vérifiant qu'ils MATCHENT RiskModule.
+    /// @notice Configure le cache risk params côté MarginEngine, en vérifiant qu'ils MATCHENT RiskModule.
     /// @dev Source of truth = RiskModule.
     function setRiskParams(address baseToken_, uint256 baseMMPerContract_, uint256 imFactorBps_) external onlyOwner {
         if (baseToken_ == address(0)) revert ZeroAddress();
         if (imFactorBps_ < BPS) revert InvalidLiquidationParams(); // IM factor must be >= 100%
         if (address(_riskModule) == address(0)) revert RiskModuleNotSet();
 
-        IRiskModuleParams rp = IRiskModuleParams(address(_riskModule));
+        _IRiskModuleParams rp = _IRiskModuleParams(address(_riskModule));
 
         if (rp.baseCollateralToken() != baseToken_) revert RiskParamsMismatch();
         if (rp.baseMaintenanceMarginPerContract() != baseMMPerContract_) revert RiskParamsMismatch();

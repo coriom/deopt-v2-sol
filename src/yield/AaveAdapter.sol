@@ -1,7 +1,10 @@
+// contracts/yield/AaveAdapter.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
@@ -15,15 +18,14 @@ interface IAaveV3Pool {
 /// @title AaveAdapter
 /// @notice Adapter “vault-managed shares” pour Aave v3 : seul le CollateralVault appelle deposit/withdraw.
 /// @dev
-///  - totalAssets() ≈ balance(aToken) (aToken accrue les intérêts via balance croissant)
-///  - Shares internes suivent une logique type ERC4626:
-///      * deposit: shares = floor(assets * totalShares / totalAssets)
+///  - totalAssets() ≈ balance(aToken) (aToken accrues interest via growing balance)
+///  - Shares internes (comptabilité) type ERC4626:
+///      * deposit:  shares = floor(assets * totalShares / totalAssets)
 ///      * withdraw: shares = ceil(assets * totalShares / totalAssets)
 ///  - Hardening:
-///      * refuse l’état “assets>0 && totalShares==0” (donation aToken) pour éviter captation.
-///  - Admin:
-///      * emergencyWithdrawAll + rescue accessibles à l’owner (sinon dead-code si onlyVault).
-contract AaveAdapter is IYieldAdapter {
+///      * refuse l’état “assets>0 && totalShares==0” (donation aToken) dans les previews.
+///  - IMPORTANT: l’adapter ne tient PAS un ledger per-user : CollateralVault est la source de vérité.
+contract AaveAdapter is IYieldAdapter, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     /*//////////////////////////////////////////////////////////////
@@ -39,11 +41,9 @@ contract AaveAdapter is IYieldAdapter {
     error InsufficientShares();
     error WithdrawSlippage();
     error RescueNotAllowed();
-    error EmergencyOnlyWhenNoShares();
     error UnexpectedAssetsWithoutShares();
-
-    // ownership 2-step
     error OwnershipTransferNotInitiated();
+    error EmergencyOnlyWhenNoShares();
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
@@ -62,9 +62,11 @@ contract AaveAdapter is IYieldAdapter {
     address public owner;
     address public pendingOwner;
 
-    address public immutable vault;             // CollateralVault
-    address public immutable override asset;    // underlying (ex: USDC)
-    address public immutable aToken;            // aToken correspondant
+    address public immutable vault;                 // CollateralVault
+    address public immutable override asset;        // underlying (ex: USDC)
+    uint8 private immutable _assetDecimals;         // cached (best-effort)
+
+    address public immutable aToken;                // aToken correspondant
     IAaveV3Pool public immutable pool;
 
     /// @notice Supply interne de shares (comptabilité adapter)
@@ -99,6 +101,14 @@ contract AaveAdapter is IYieldAdapter {
         pool = IAaveV3Pool(_pool);
         asset = _asset;
         aToken = _aToken;
+
+        uint8 d;
+        try IERC20Metadata(_asset).decimals() returns (uint8 dd) {
+            d = dd;
+        } catch {
+            d = 0;
+        }
+        _assetDecimals = d;
 
         // approve max vers Aave pool (adapter -> pool)
         IERC20(_asset).forceApprove(_pool, type(uint256).max);
@@ -141,6 +151,10 @@ contract AaveAdapter is IYieldAdapter {
                                 VIEWS
     //////////////////////////////////////////////////////////////*/
 
+    function assetDecimals() external view override returns (uint8) {
+        return _assetDecimals;
+    }
+
     function totalAssets() public view override returns (uint256) {
         return IERC20(aToken).balanceOf(address(this));
     }
@@ -149,8 +163,8 @@ contract AaveAdapter is IYieldAdapter {
                             PREVIEWS (CANONICAL)
     //////////////////////////////////////////////////////////////*/
 
-    function previewDeposit(uint256 assets) public view override returns (uint256 sharesMinted) {
-        if (assets == 0) return 0;
+    function previewDeposit(uint256 assets_) public view override returns (uint256 sharesMinted) {
+        if (assets_ == 0) return 0;
 
         uint256 ts = totalShares;
         uint256 ta = totalAssets();
@@ -159,16 +173,16 @@ contract AaveAdapter is IYieldAdapter {
         if (ts == 0 && ta > 0) revert UnexpectedAssetsWithoutShares();
 
         // Bootstrap: 1 share = 1 asset
-        if (ts == 0 && ta == 0) return assets;
+        if (ts == 0 && ta == 0) return assets_;
 
         // Si shares existent, assets doit exister
         if (ta == 0) revert ZeroAssetsUnderManagement();
 
-        sharesMinted = Math.mulDiv(assets, ts, ta, Math.Rounding.Floor);
+        sharesMinted = Math.mulDiv(assets_, ts, ta, Math.Rounding.Floor);
     }
 
-    function previewWithdraw(uint256 assets) public view override returns (uint256 sharesBurned) {
-        if (assets == 0) return 0;
+    function previewWithdraw(uint256 assets_) public view override returns (uint256 sharesBurned) {
+        if (assets_ == 0) return 0;
 
         uint256 ts = totalShares;
         uint256 ta = totalAssets();
@@ -176,11 +190,11 @@ contract AaveAdapter is IYieldAdapter {
         if (ts == 0) revert InsufficientShares();
         if (ta == 0) revert ZeroAssetsUnderManagement();
 
-        sharesBurned = Math.mulDiv(assets, ts, ta, Math.Rounding.Ceil);
+        sharesBurned = Math.mulDiv(assets_, ts, ta, Math.Rounding.Ceil);
     }
 
-    function previewRedeem(uint256 shares) public view override returns (uint256 assetsOut) {
-        if (shares == 0) return 0;
+    function previewRedeem(uint256 shares_) public view override returns (uint256 assetsOut) {
+        if (shares_ == 0) return 0;
 
         uint256 ts = totalShares;
         uint256 ta = totalAssets();
@@ -188,11 +202,11 @@ contract AaveAdapter is IYieldAdapter {
         if (ts == 0) return 0;
         if (ta == 0) revert ZeroAssetsUnderManagement();
 
-        assetsOut = Math.mulDiv(shares, ta, ts, Math.Rounding.Floor);
+        assetsOut = Math.mulDiv(shares_, ta, ts, Math.Rounding.Floor);
     }
 
-    function previewMint(uint256 shares) public view override returns (uint256 assetsIn) {
-        if (shares == 0) return 0;
+    function previewMint(uint256 shares_) public view override returns (uint256 assetsIn) {
+        if (shares_ == 0) return 0;
 
         uint256 ts = totalShares;
         uint256 ta = totalAssets();
@@ -200,55 +214,82 @@ contract AaveAdapter is IYieldAdapter {
         if (ts == 0 && ta > 0) revert UnexpectedAssetsWithoutShares();
 
         // Bootstrap: 1 share = 1 asset
-        if (ts == 0 && ta == 0) return shares;
+        if (ts == 0 && ta == 0) return shares_;
 
         if (ta == 0) revert ZeroAssetsUnderManagement();
 
-        assetsIn = Math.mulDiv(shares, ta, ts, Math.Rounding.Ceil);
+        assetsIn = Math.mulDiv(shares_, ta, ts, Math.Rounding.Ceil);
     }
 
     /*//////////////////////////////////////////////////////////////
                         CONVERSION HELPERS (FLOOR)
     //////////////////////////////////////////////////////////////*/
 
-    function convertToShares(uint256 assets) public view override returns (uint256 shares) {
-        return previewDeposit(assets);
+    function convertToShares(uint256 assets_) public view override returns (uint256 shares_) {
+        return previewDeposit(assets_);
     }
 
-    function convertToAssets(uint256 shares) public view override returns (uint256 assetsOut) {
-        return previewRedeem(shares);
+    function convertToAssets(uint256 shares_) public view override returns (uint256 assetsOut) {
+        return previewRedeem(shares_);
     }
 
     /*//////////////////////////////////////////////////////////////
                                 ACTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function deposit(uint256 assets) external override onlyVault returns (uint256 sharesMinted) {
-        if (assets == 0) revert AmountZero();
+    function deposit(uint256 assets_) external override onlyVault nonReentrant returns (uint256 sharesMinted) {
+        if (assets_ == 0) revert AmountZero();
 
-        sharesMinted = previewDeposit(assets);
+        sharesMinted = previewDeposit(assets_);
         if (sharesMinted == 0) revert ZeroSharesMinted();
 
-        IERC20(asset).safeTransferFrom(msg.sender, address(this), assets);
+        // Pull assets depuis CollateralVault
+        IERC20(asset).safeTransferFrom(msg.sender, address(this), assets_);
 
+        // Comptabilité shares (source de vérité = CollateralVault pour le mapping user->shares)
         totalShares = totalShares + sharesMinted;
 
-        pool.supply(asset, assets, address(this), 0);
+        // Supply sur Aave (adapter détient les aTokens)
+        pool.supply(asset, assets_, address(this), 0);
     }
 
-    function withdraw(uint256 assets, address to) external override onlyVault returns (uint256 sharesBurned) {
-        if (assets == 0) revert AmountZero();
+    function withdraw(uint256 assets_, address to) external override onlyVault nonReentrant returns (uint256 sharesBurned) {
+        if (assets_ == 0) revert AmountZero();
         if (to == address(0)) revert ZeroAddress();
 
-        sharesBurned = previewWithdraw(assets);
+        sharesBurned = previewWithdraw(assets_);
 
         uint256 ts = totalShares;
         if (sharesBurned > ts) revert InsufficientShares();
 
         totalShares = ts - sharesBurned;
 
-        uint256 got = pool.withdraw(asset, assets, to);
-        if (got != assets) revert WithdrawSlippage();
+        uint256 got = pool.withdraw(asset, assets_, to);
+        if (got != assets_) revert WithdrawSlippage();
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        OPTIONAL ADMIN (IYieldAdapter)
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Emergency pull (optionnel).
+    /// @dev Hardening: uniquement si totalShares == 0 (sinon désynchronise CollateralVault).
+    function emergencyWithdrawTo(address to, uint256 assets_)
+        external
+        override
+        onlyOwner
+        nonReentrant
+        returns (uint256 sharesBurned)
+    {
+        if (to == address(0)) revert ZeroAddress();
+        if (assets_ == 0) revert AmountZero();
+        if (totalShares != 0) revert EmergencyOnlyWhenNoShares();
+
+        // Si totalShares==0, on n’a aucune dette de shares; on retire simplement.
+        uint256 got = pool.withdraw(asset, assets_, to);
+        if (got != assets_) revert WithdrawSlippage();
+
+        sharesBurned = 0;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -257,7 +298,7 @@ contract AaveAdapter is IYieldAdapter {
 
     /// @notice Retire TOUT d'Aave (type(uint256).max) vers `to`.
     /// @dev Safety: uniquement si totalShares == 0 (pas de comptes utilisateurs).
-    function emergencyWithdrawAll(address to) external onlyOwner returns (uint256 assetsWithdrawn) {
+    function emergencyWithdrawAll(address to) external onlyOwner nonReentrant returns (uint256 assetsWithdrawn) {
         if (to == address(0)) revert ZeroAddress();
         if (totalShares != 0) revert EmergencyOnlyWhenNoShares();
 
@@ -267,7 +308,7 @@ contract AaveAdapter is IYieldAdapter {
 
     /// @notice Rescue tokens envoyés par erreur.
     /// @dev Interdit de sortir `asset` et `aToken`.
-    function rescue(address token, address to, uint256 amount) external onlyOwner {
+    function rescue(address token, address to, uint256 amount) external onlyOwner nonReentrant {
         if (to == address(0)) revert ZeroAddress();
         if (token == asset || token == aToken) revert RescueNotAllowed();
         IERC20(token).safeTransfer(to, amount);

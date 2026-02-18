@@ -1,3 +1,4 @@
+// contracts/yield/ERC4626YieldAdapter.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
@@ -43,6 +44,9 @@ contract ERC4626YieldAdapter is IYieldAdapter, ReentrancyGuard {
 
     // ownership 2-step
     error OwnershipTransferNotInitiated();
+
+    // emergency hardening (avoid desync with CollateralVault accounting)
+    error EmergencyForbiddenWithActiveShares();
 
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
@@ -223,8 +227,8 @@ contract ERC4626YieldAdapter is IYieldAdapter, ReentrancyGuard {
                         OPTIONAL ADMIN (IYieldAdapter)
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Emergency pull (optionnel) pour récupérer des fonds au Vault (ex: pause Aave).
-    /// @dev Owner-only. Retire exactement `assets_` vers `to`.
+    /// @notice Emergency pull (optionnel).
+    /// @dev Hardening: interdit si des shares sont actives (sinon désynchronise CollateralVault).
     function emergencyWithdrawTo(address to, uint256 assets_)
         external
         override
@@ -234,6 +238,8 @@ contract ERC4626YieldAdapter is IYieldAdapter, ReentrancyGuard {
     {
         if (to == address(0)) revert ZeroAddress();
         if (assets_ == 0) revert AmountZero();
+
+        if (totalShares() != 0) revert EmergencyForbiddenWithActiveShares();
 
         uint256 expected = erc4626.previewWithdraw(assets_);
         if (expected == 0) revert ZeroSharesBurned();

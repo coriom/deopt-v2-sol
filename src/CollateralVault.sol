@@ -1,3 +1,4 @@
+// contracts/CollateralVault.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
@@ -12,8 +13,10 @@ import "./yield/IYieldAdapter.sol";
 /// @notice Coffre-fort central de collatéral (multi-token, cross-margin, yield optionnel)
 /// @dev
 ///  - balances[user][token] = montant "claimable" (inclut le yield ACCRU après sync)
-///  - idleBalances = part liquide détenue par le vault
-///  - strategyShares = parts détenues dans une stratégie (AaveAdapter, etc.)
+///  - idleBalances = part liquide détenue par le vault (par user)
+///  - strategyShares = parts détenues dans une stratégie (par user)
+///  - tokenTotalStrategyShares = total shares détenues par le vault pour ce token (hardening setTokenStrategy)
+///
 ///  - Le vault effectue un _sync() avant toute opération critique afin que:
 ///      * balances reflète le yield (évite "equity fantôme" côté RiskModule / MarginEngine)
 ///      * les retraits/transferts puissent consommer le yield réellement gagné
@@ -25,9 +28,10 @@ import "./yield/IYieldAdapter.sol";
 ///  - preview calls vers adapter sont wrapées (AdapterPreviewFailed) dans les chemins critiques
 ///  - balanceWithYield() est “safe view”: si previewRedeem revert => retourne idle (conservateur)
 ///
-/// Ajout requis (patch MarginEngine):
+/// MarginEngine hooks:
 ///  - depositFor(user, token, amount) callable UNIQUEMENT par MarginEngine
 ///  - withdrawFor(user, token, amount) callable UNIQUEMENT par MarginEngine (et whenNotPaused)
+///  - transferBetweenAccounts(...) callable UNIQUEMENT par MarginEngine (et whenNotPaused)
 contract CollateralVault is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -225,7 +229,10 @@ contract CollateralVault is ReentrancyGuard {
         emit RiskModuleSet(_riskModule);
     }
 
-    function setCollateralToken(address token, bool isSupported, uint8 decimals, uint16 collateralFactorBps) external onlyOwner {
+    function setCollateralToken(address token, bool isSupported, uint8 decimals, uint16 collateralFactorBps)
+        external
+        onlyOwner
+    {
         if (token == address(0)) revert ZeroAddress();
         if (collateralFactorBps > 10_000) revert FactorTooHigh();
 
@@ -256,7 +263,11 @@ contract CollateralVault is ReentrancyGuard {
     }
 
     /// @notice Getter tuple (legacy compat si besoin)
-    function collateralConfigsRaw(address token) external view returns (bool isSupported, uint8 decimals, uint16 collateralFactorBps) {
+    function collateralConfigsRaw(address token)
+        external
+        view
+        returns (bool isSupported, uint8 decimals, uint16 collateralFactorBps)
+    {
         CollateralTokenConfig memory cfg = _collateralConfigs[token];
         return (cfg.isSupported, cfg.decimals, cfg.collateralFactorBps);
     }
