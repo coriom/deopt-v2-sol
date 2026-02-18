@@ -115,6 +115,29 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     }
 
     /*//////////////////////////////////////////////////////////////
+                          INTERNAL INITIALIZER (optional)
+    //////////////////////////////////////////////////////////////*/
+
+    /// @dev Optional initializer helper for a concrete MarginEngine constructor.
+    /// Call once from the concrete contract constructor.
+    function _initMarginEngineStorage(address owner_, address registry_, address vault_, address oracle_) internal {
+        if (owner != address(0)) revert NotAuthorized(); // already initialized (cheap sentinel)
+        if (owner_ == address(0) || registry_ == address(0) || vault_ == address(0) || oracle_ == address(0)) {
+            revert ZeroAddress();
+        }
+
+        owner = owner_;
+        _optionRegistry = OptionProductRegistry(registry_);
+        _collateralVault = CollateralVault(vault_);
+        _oracle = IOracle(oracle_);
+
+        paused = false;
+
+        emit OwnershipTransferred(address(0), owner_);
+        emit OracleSet(oracle_);
+    }
+
+    /*//////////////////////////////////////////////////////////////
                           INTERNAL PURE HELPERS (NAMESPACED)
     //////////////////////////////////////////////////////////////*/
 
@@ -129,9 +152,30 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         if (c / a != b) revert MathOverflow();
     }
 
+    function _meTryMul(uint256 a, uint256 b) internal pure returns (uint256 c, bool ok) {
+        if (a == 0 || b == 0) return (0, true);
+        unchecked {
+            c = a * b;
+        }
+        if (c / a != b) return (0, false);
+        return (c, true);
+    }
+
     function _mePow10(uint256 exp) internal pure returns (uint256) {
         if (exp > _ME_MAX_POW10_EXP) revert MathOverflow();
         return 10 ** exp;
+    }
+
+    function _meAddChecked(uint256 a, uint256 b) internal pure returns (uint256 c) {
+        c = a + b;
+        if (c < a) revert MathOverflow();
+    }
+
+    function _meSubChecked(uint256 a, uint256 b) internal pure returns (uint256 c) {
+        if (b > a) revert MathOverflow();
+        unchecked {
+            c = a - b;
+        }
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -185,8 +229,15 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         uint256 oldShort = oldQty < 0 ? uint256(-int256(oldQty)) : 0;
         uint256 newShort = newQty < 0 ? uint256(-int256(newQty)) : 0;
 
-        if (newShort >= oldShort) totalShortContracts[trader] += (newShort - oldShort);
-        else totalShortContracts[trader] -= (oldShort - newShort);
+        uint256 cur = totalShortContracts[trader];
+
+        if (newShort >= oldShort) {
+            uint256 delta = newShort - oldShort;
+            totalShortContracts[trader] = _meAddChecked(cur, delta);
+        } else {
+            uint256 delta = oldShort - newShort;
+            totalShortContracts[trader] = _meSubChecked(cur, delta);
+        }
     }
 
     function _vaultCfg(address token) internal view returns (CollateralVault.CollateralTokenConfig memory cfg) {
@@ -246,6 +297,7 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
 
     /// @dev Convertit une valeur "base token units" en amount de `token` (token units) arrondi UP (conservateur).
     ///      Utilise oracle.getPrice(token, base) (1e8). Si oracle indispo/stale => (0,false).
+    ///      Best-effort: ne doit pas revert sur overflow (chemin liquidation).
     function _baseValueToTokenAmountUp(address token, uint256 baseValue) internal view returns (uint256 amtToken, bool ok) {
         if (baseValue == 0) return (0, true);
         if (token == address(0)) return (0, false);
@@ -291,17 +343,19 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
 
         if (tokDec > baseDec) {
             uint256 factor = _mePow10(uint256(tokDec - baseDec));
-            amtToken = _meMulChecked(sameDec, factor);
-            return (amtToken, true);
+            (uint256 mul, bool okMul) = _meTryMul(sameDec, factor);
+            if (!okMul) return (0, false);
+            return (mul, true);
         } else {
             uint256 factor = _mePow10(uint256(baseDec - tokDec));
-            amtToken = (sameDec + (factor - 1)) / factor; // ceil-div
+            // ceil-div
+            amtToken = (sameDec + (factor - 1)) / factor;
             return (amtToken, true);
         }
     }
 
     /// @dev Approx base value (DOWN) de `tokenAmount` à un prix `pxTokBase` (token->base, 1e8).
-    ///      Best-effort: si config invalide, renvoie 0 (conservateur, évite revert en liquidation).
+    ///      Best-effort: si config invalide/overflow, renvoie 0 (conservateur, évite revert en liquidation).
     function _tokenAmountToBaseValueDown(address token, uint256 tokenAmount, uint256 pxTokBase)
         internal
         view
@@ -329,7 +383,9 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
 
         if (baseDec > tokDec) {
             uint256 factor = _mePow10(uint256(baseDec - tokDec));
-            return _meMulChecked(num, factor);
+            (uint256 mul, bool okMul) = _meTryMul(num, factor);
+            if (!okMul) return 0;
+            return mul;
         } else {
             uint256 factor = _mePow10(uint256(tokDec - baseDec));
             return num / factor;

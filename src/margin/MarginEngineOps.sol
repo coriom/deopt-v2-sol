@@ -177,9 +177,11 @@ abstract contract MarginEngineOps is MarginEngineTrading {
 
         uint256 intrinsicPrice1e8;
         if (series.isCall) {
-            intrinsicPrice1e8 = settlementPrice > uint256(series.strike) ? (settlementPrice - uint256(series.strike)) : 0;
+            intrinsicPrice1e8 =
+                settlementPrice > uint256(series.strike) ? (settlementPrice - uint256(series.strike)) : 0;
         } else {
-            intrinsicPrice1e8 = uint256(series.strike) > settlementPrice ? (uint256(series.strike) - settlementPrice) : 0;
+            intrinsicPrice1e8 =
+                uint256(series.strike) > settlementPrice ? (uint256(series.strike) - settlementPrice) : 0;
         }
 
         if (intrinsicPrice1e8 == 0) return 0;
@@ -274,7 +276,9 @@ abstract contract MarginEngineOps is MarginEngineTrading {
 
         emit AccountSettled(trader, optionId, pnl, collectedFromTrader, paidToTrader, badDebt);
 
-        emit SeriesSettlementAccountingUpdated(optionId, seriesCollected[optionId], seriesPaid[optionId], seriesBadDebt[optionId]);
+        emit SeriesSettlementAccountingUpdated(
+            optionId, seriesCollected[optionId], seriesPaid[optionId], seriesBadDebt[optionId]
+        );
     }
 
     function settleAccount(uint256 optionId, address trader) public whenNotPaused nonReentrant {
@@ -364,7 +368,7 @@ abstract contract MarginEngineOps is MarginEngineTrading {
         uint256 traderTotalShort = totalShortContracts[trader];
         if (traderTotalShort == 0) revert NotLiquidatable();
 
-        uint256 maxCloseOverall = (traderTotalShort * liquidationCloseFactorBps) / BPS;
+        uint256 maxCloseOverall = Math.mulDiv(traderTotalShort, liquidationCloseFactorBps, BPS, Math.Rounding.Down);
         if (maxCloseOverall == 0) maxCloseOverall = 1;
 
         address liquidator = msg.sender;
@@ -554,7 +558,8 @@ abstract contract MarginEngineOps is MarginEngineTrading {
         if (riskBefore.equity > 0) {
             if (ratioAfterBps < ratioBeforeBps + minLiquidationImprovementBps) revert LiquidationNotImproving();
         } else {
-            bool improved = (riskAfter.maintenanceMargin < riskBefore.maintenanceMargin) || (riskAfter.equity > riskBefore.equity);
+            bool improved =
+                (riskAfter.maintenanceMargin < riskBefore.maintenanceMargin) || (riskAfter.equity > riskBefore.equity);
             if (!improved) revert LiquidationNotImproving();
         }
 

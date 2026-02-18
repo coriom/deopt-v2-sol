@@ -1,80 +1,67 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-/// @notice Interface minimale en lecture pour le MarginEngine,
-///         utilisée par le RiskModule pour lire les positions.
-/// @dev Spécification:
-///  - getTraderSeries() DOIT retourner uniquement les séries OPEN (quantity != 0),
-///    sinon risque DoS (boucles de risk computation non bornées).
-///  - Quantity hardening: l'implémentation DOIT garantir que `quantity` ne peut jamais
-///    valoir type(int128).min (sinon abs(quantity) overflow côté RiskModule).
-///
-/// Ajouts (compat / sécurité):
-///  - Optionnel: helper `isOpenSeries(trader, optionId)` pour vérif O(1) côté consumers.
-///  - Optionnel: helper `getPositionQuantity(trader, optionId)` pour éviter la copie struct.
-///  - Eventless: interface only.
-interface IMarginEngineState {
+/// @title IMarginEngineTrade
+/// @notice Interface minimale d’exécution de trades pour le MatchingEngine.
+/// @dev Objectif: découpler le matching (orderbook/offchain) du moteur de marge.
+///      Hypothèses DeOpt v2:
+///       - price est en 1e8 (PRICE_SCALE) et représente le prix par contrat (settlementAsset / underlying),
+///         cohérent avec OptionProductRegistry (strike/spot/settlement en 1e8).
+///       - quantity est un nombre de contrats (contractSize hard-locked à 1e8 côté registry).
+///       - Le MarginEngine applique les vérifs: série active, non expirée, close-only si désactivée, etc.
+///       - L’implémentation DOIT:
+///           * mettre à jour positions buyer/seller
+///           * maintenir la liste OPEN series (anti-DoS) et totalShortContracts
+///           * faire l’enforcement IM (initial margin) post-trade
+///           * émettre l’event TradeExecuted (défini dans MarginEngineTypes)
+interface IMarginEngineTrade {
     /*//////////////////////////////////////////////////////////////
-                                TYPES
+                                CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Représente la position nette sur une série d'options.
-    /// @dev quantity > 0 : net long, quantity < 0 : net short, quantity == 0 : fermé.
-    ///      WARNING: quantity MUST NOT be type(int128).min.
-    struct Position {
-        int128 quantity;
-    }
+    /// @notice Scale canonique des prix (Chainlink-like).
+    uint256 constant PRICE_SCALE = 1e8;
 
     /*//////////////////////////////////////////////////////////////
-                                CORE READS
+                                ERRORS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Nombre total de contrats shorts (toutes séries OPEN) pour un trader.
-    function totalShortContracts(address trader) external view returns (uint256);
+    /// @notice Caller non autorisé (typiquement: pas le matching engine).
+    error NotAuthorized();
 
-    /// @notice Position sur une série donnée pour un trader.
-    /// @dev Doit retourner quantity = 0 si aucune position (ne doit pas revert).
-    function positions(address trader, uint256 optionId) external view returns (Position memory);
-
-    /// @notice Liste des séries OPEN (positions non nulles) pour un trader.
-    /// @dev DOIT être cohérente avec positions(): pour tout id retourné, positions().quantity != 0.
-    ///      WARNING: for any id returned, positions().quantity MUST NOT be type(int128).min.
-    function getTraderSeries(address trader) external view returns (uint256[] memory);
-
-    /// @notice Longueur de la liste OPEN (utile pagination).
-    function getTraderSeriesLength(address trader) external view returns (uint256);
-
-    /// @notice Slice paginée [start, end) sur la liste OPEN.
-    function getTraderSeriesSlice(address trader, uint256 start, uint256 end)
-        external
-        view
-        returns (uint256[] memory slice);
+    /// @notice Paramètres invalides (buyer/seller/qty/price/optionId).
+    error InvalidTrade();
 
     /*//////////////////////////////////////////////////////////////
-                         OPTIONAL VIEW HELPERS
+                                CORE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Adresse du registry des séries (OptionProductRegistry).
-    function optionRegistry() external view returns (address);
-
-    /// @notice Adresse du CollateralVault.
-    function collateralVault() external view returns (address);
-
-    /// @notice Adresse de l’oracle (OracleRouter / IOracle).
-    function oracle() external view returns (address);
-
-    /// @notice Adresse du risk module.
-    function riskModule() external view returns (address);
+    /// @notice Exécute un trade entre buyer et seller sur une série optionId.
+    /// @dev price en 1e8 (prix par contrat), quantity = nb de contrats.
+    ///      Convention: buyer prend +quantity, seller prend -quantity.
+    ///      L’implémentation doit protéger:
+    ///        - buyer != seller, non-zero addresses
+    ///        - quantity>0, price>0
+    ///        - quantity <= int128.max (hardening)
+    ///        - series non expirée / tradable
+    function executeTrade(
+        address buyer,
+        address seller,
+        uint256 optionId,
+        uint128 quantity,
+        uint128 price
+    ) external;
 
     /*//////////////////////////////////////////////////////////////
-                         OPTIONAL QUALITY-OF-LIFE
+                        OPTIONAL VIEW (QUALITY-OF-LIFE)
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Retourne directement la quantité (évite un struct copy côté consommateurs).
-    /// @dev Doit respecter la même règle: jamais int128.min.
-    function getPositionQuantity(address trader, uint256 optionId) external view returns (int128);
+    /// @notice Matching engine actuellement autorisé.
+    function matchingEngine() external view returns (address);
 
-    /// @notice True si la série est dans la liste OPEN (positions non nulles).
-    /// @dev Doit être cohérent avec positions(): si true => quantity != 0.
-    function isOpenSeries(address trader, uint256 optionId) external view returns (bool);
+    /// @notice Owner du MarginEngine (utile ops).
+    function owner() external view returns (address);
+
+    /// @notice Pause globale du moteur (si exposée par l’implémentation).
+    function paused() external view returns (bool);
 }
