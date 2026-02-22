@@ -9,13 +9,7 @@ interface AggregatorV3Interface {
     function latestRoundData()
         external
         view
-        returns (
-            uint80 roundId,
-            int256 answer,
-            uint256 startedAt,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        );
+        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound);
 
     function decimals() external view returns (uint8);
 }
@@ -59,14 +53,8 @@ contract ChainlinkPriceSource is IPriceSource {
     }
 
     /// @inheritdoc IPriceSource
-    function getLatestPrice()
-        external
-        view
-        override
-        returns (uint256 price, uint256 updatedAt)
-    {
-        (uint80 roundId, int256 answer, , uint256 updatedAt_, uint80 answeredInRound) =
-            aggregator.latestRoundData();
+    function getLatestPrice() external view override returns (uint256 price, uint256 updatedAt) {
+        (uint80 roundId, int256 answer,, uint256 updatedAt_, uint80 answeredInRound) = aggregator.latestRoundData();
 
         // Round sanity (Chainlink best practice)
         if (roundId == 0) revert InvalidRound();

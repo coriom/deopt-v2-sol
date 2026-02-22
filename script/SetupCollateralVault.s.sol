@@ -6,7 +6,7 @@ import "../src/CollateralVault.sol";
 
 contract SetupCollateralVault is Script {
     // À REMPLIR avant d'exécuter le script
-    address constant OWNER      = 0x0000000000000000000000000000000000000000; // ton EOA gouvernance
+    address constant OWNER = 0x0000000000000000000000000000000000000000; // ton EOA gouvernance
     address constant VAULT_ADDR = 0x0000000000000000000000000000000000000000; // adresse du CollateralVault déployé
 
     // Tokens Base (réseau Base)
@@ -22,24 +22,19 @@ contract SetupCollateralVault is Script {
         // Collat principal : USDC
         vault.setCollateralToken(
             USDC,
-            true,   // isSupported
-            6,      // decimals
-            10_000  // collateralFactorBps (100%, on gère les haircuts dans le RiskModule)
+            true, // isSupported
+            6, // decimals
+            10_000 // collateralFactorBps (100%, on gère les haircuts dans le RiskModule)
         );
 
         // WETH
-        vault.setCollateralToken(
-            WETH,
-            true,
-            18,
-            10_000
-        );
+        vault.setCollateralToken(WETH, true, 18, 10_000);
 
         // WBTC — à adapter si ton WBTC a 8 décimales
         vault.setCollateralToken(
             WBTC,
             true,
-            8,      // si ton WBTC est 8 décimales ; mets 18 si besoin
+            8, // si ton WBTC est 8 décimales ; mets 18 si besoin
             10_000
         );
 

@@ -88,11 +88,7 @@ abstract contract MarginEngineTypes {
     event MatchingEngineSet(address indexed newMatchingEngine);
 
     event TradeExecuted(
-        address indexed buyer,
-        address indexed seller,
-        uint256 indexed optionId,
-        uint128 quantity,
-        uint128 price
+        address indexed buyer, address indexed seller, uint256 indexed optionId, uint128 quantity, uint128 price
     );
 
     event RiskParamsSet(address baseCollateralToken, uint256 baseMaintenanceMarginPerContract, uint256 imFactorBps);
@@ -130,7 +126,9 @@ abstract contract MarginEngineTypes {
 
     event CollateralDeposited(address indexed trader, address indexed token, uint256 amount);
 
-    event CollateralWithdrawn(address indexed trader, address indexed token, uint256 amount, uint256 marginRatioAfterBps);
+    event CollateralWithdrawn(
+        address indexed trader, address indexed token, uint256 amount, uint256 marginRatioAfterBps
+    );
 
     event InsuranceFundSet(address indexed oldFund, address indexed newFund);
 
@@ -144,10 +142,7 @@ abstract contract MarginEngineTypes {
     );
 
     event SeriesSettlementAccountingUpdated(
-        uint256 indexed optionId,
-        uint256 totalCollected,
-        uint256 totalPaid,
-        uint256 totalBadDebt
+        uint256 indexed optionId, uint256 totalCollected, uint256 totalPaid, uint256 totalBadDebt
     );
 
     event LiquidationSeize(
@@ -161,12 +156,6 @@ abstract contract MarginEngineTypes {
     /*//////////////////////////////////////////////////////////////
                         INTERNAL PARAM INTERFACE
     //////////////////////////////////////////////////////////////*/
-
-    interface IRiskModuleParams {
-        function baseCollateralToken() external view returns (address);
-        function baseMaintenanceMarginPerContract() external view returns (uint256);
-        function imFactorBps() external view returns (uint256);
-    }
 
     /*//////////////////////////////////////////////////////////////
                           PURE / SAFE HELPERS

@@ -17,7 +17,7 @@ contract SetupProducts is Script {
     // =========================
 
     // EOA admin / owner qui va faire les tx de création de séries
-    address constant OWNER                = 0x0000000000000000000000000000000000000000;
+    address constant OWNER = 0x0000000000000000000000000000000000000000;
 
     // Adresse du OptionProductRegistry déjà déployé
     address constant OPTION_REGISTRY_ADDR = 0x0000000000000000000000000000000000000000;
@@ -36,8 +36,8 @@ contract SetupProducts is Script {
         // 1) Paramètres d’échéance
         // =========================
         // Exemple : 1 semaine et 1 mois à partir de maintenant.
-        uint64 expiry1W  = uint64(block.timestamp + 7 days);
-        uint64 expiry1M  = uint64(block.timestamp + 30 days);
+        uint64 expiry1W = uint64(block.timestamp + 7 days);
+        uint64 expiry1M = uint64(block.timestamp + 30 days);
 
         // ⚠️ Important :
         // assure-toi que expiryX >= block.timestamp + minExpiryDelay
@@ -86,30 +86,12 @@ contract SetupProducts is Script {
             true // isEuropean
         );
 
-        reg.createStrip(
-            WETH,
-            USDC,
-            expiry1M,
-            wethStrikes1M,
-            true
-        );
+        reg.createStrip(WETH, USDC, expiry1M, wethStrikes1M, true);
 
         // --- WBTC / USDC ---
-        reg.createStrip(
-            WBTC,
-            USDC,
-            expiry1W,
-            wbtcStrikes1W,
-            true
-        );
+        reg.createStrip(WBTC, USDC, expiry1W, wbtcStrikes1W, true);
 
-        reg.createStrip(
-            WBTC,
-            USDC,
-            expiry1M,
-            wbtcStrikes1M,
-            true
-        );
+        reg.createStrip(WBTC, USDC, expiry1M, wbtcStrikes1M, true);
 
         vm.stopBroadcast();
     }

@@ -79,18 +79,18 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Configure le cache risk params côté MarginEngine, en vérifiant qu'ils MATCHENT RiskModule.
-    /// @dev Source of truth = RiskModule.
+    /// @dev Source of truth = RiskModule (no local interface shims).
     function setRiskParams(address baseToken_, uint256 baseMMPerContract_, uint256 imFactorBps_) external onlyOwner {
         if (baseToken_ == address(0)) revert ZeroAddress();
         if (imFactorBps_ < BPS) revert InvalidLiquidationParams(); // IM factor must be >= 100%
         if (address(_riskModule) == address(0)) revert RiskModuleNotSet();
 
-        _IRiskModuleParams rp = _IRiskModuleParams(address(_riskModule));
+        // read from RiskModule (source of truth)
+        if (_riskModule.baseCollateralToken() != baseToken_) revert RiskParamsMismatch();
+        if (_riskModule.baseMaintenanceMarginPerContract() != baseMMPerContract_) revert RiskParamsMismatch();
+        if (_riskModule.imFactorBps() != imFactorBps_) revert RiskParamsMismatch();
 
-        if (rp.baseCollateralToken() != baseToken_) revert RiskParamsMismatch();
-        if (rp.baseMaintenanceMarginPerContract() != baseMMPerContract_) revert RiskParamsMismatch();
-        if (rp.imFactorBps() != imFactorBps_) revert RiskParamsMismatch();
-
+        // cache locally (used by MarginEngine paths)
         baseCollateralToken = baseToken_;
         baseMaintenanceMarginPerContract = baseMMPerContract_;
         imFactorBps = imFactorBps_;

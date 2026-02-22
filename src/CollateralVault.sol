@@ -83,7 +83,9 @@ contract CollateralVault is ReentrancyGuard {
     event MarginEngineSet(address indexed newMarginEngine);
     event RiskModuleSet(address indexed newRiskModule);
 
-    event CollateralTokenConfigured(address indexed token, bool isSupported, uint8 decimals, uint16 collateralFactorBps);
+    event CollateralTokenConfigured(
+        address indexed token, bool isSupported, uint8 decimals, uint16 collateralFactorBps
+    );
 
     event Deposited(address indexed user, address indexed token, uint256 amount);
     event Withdrawn(address indexed user, address indexed token, uint256 amount);
@@ -240,9 +242,7 @@ contract CollateralVault is ReentrancyGuard {
         if (isSupported && decimals == 0) revert BadDecimals();
 
         _collateralConfigs[token] = CollateralTokenConfig({
-            isSupported: isSupported,
-            decimals: decimals,
-            collateralFactorBps: collateralFactorBps
+            isSupported: isSupported, decimals: decimals, collateralFactorBps: collateralFactorBps
         });
 
         if (!isCollateralTokenListed[token]) {

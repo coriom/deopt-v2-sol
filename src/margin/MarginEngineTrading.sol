@@ -24,13 +24,7 @@ abstract contract MarginEngineTrading is MarginEngineAdmin {
         nonReentrant
     {
         // Basic validation
-        if (
-            t.buyer == address(0) ||
-            t.seller == address(0) ||
-            t.buyer == t.seller ||
-            t.quantity == 0 ||
-            t.price == 0
-        ) {
+        if (t.buyer == address(0) || t.seller == address(0) || t.buyer == t.seller || t.quantity == 0 || t.price == 0) {
             revert InvalidTrade();
         }
 

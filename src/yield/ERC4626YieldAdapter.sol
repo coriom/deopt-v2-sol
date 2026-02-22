@@ -55,9 +55,9 @@ contract ERC4626YieldAdapter is IYieldAdapter, ReentrancyGuard {
     address public owner;
     address public pendingOwner;
 
-    address public immutable vault;        // CollateralVault (caller autorisé)
-    IERC4626 public immutable erc4626;     // vault ERC-4626 cible
-    address public immutable underlying;   // erc4626.asset()
+    address public immutable vault; // CollateralVault (caller autorisé)
+    IERC4626 public immutable erc4626; // vault ERC-4626 cible
+    address public immutable underlying; // erc4626.asset()
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
@@ -209,7 +209,13 @@ contract ERC4626YieldAdapter is IYieldAdapter, ReentrancyGuard {
         if (sharesMinted != expected) revert UnexpectedSharesMinted();
     }
 
-    function withdraw(uint256 assets_, address to) external override onlyVault nonReentrant returns (uint256 sharesBurned) {
+    function withdraw(uint256 assets_, address to)
+        external
+        override
+        onlyVault
+        nonReentrant
+        returns (uint256 sharesBurned)
+    {
         if (assets_ == 0) revert AmountZero();
         if (to == address(0)) revert ZeroAddress();
 

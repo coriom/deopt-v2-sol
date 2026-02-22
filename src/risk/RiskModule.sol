@@ -73,7 +73,7 @@ contract RiskModule is IRiskModule {
     error TokenNotSupportedInVault(address token);
 
     // decimals hardening
-    error DecimalsOverflow(address token);     // decimals too large for 10**decimals
+    error DecimalsOverflow(address token); // decimals too large for 10**decimals
     error DecimalsDiffOverflow(address token); // |decimals(token)-decimals(base)| too large
 
     // USDC-only hardening (base token only)
@@ -143,11 +143,8 @@ contract RiskModule is IRiskModule {
 
     constructor(address _owner, address _vault, address _registry, address _marginEngine, address _oracle) {
         if (
-            _owner == address(0) ||
-            _vault == address(0) ||
-            _registry == address(0) ||
-            _marginEngine == address(0) ||
-            _oracle == address(0)
+            _owner == address(0) || _vault == address(0) || _registry == address(0) || _marginEngine == address(0)
+                || _oracle == address(0)
         ) {
             revert ZeroAddress();
         }
@@ -541,7 +538,8 @@ contract RiskModule is IRiskModule {
             mmPrice1e8 = intrinsicShock > floorPrice ? intrinsicShock : floorPrice;
         }
 
-        (uint256 converted, bool okConv) = _convert1e8SettlementToBaseWithBase(s.settlementAsset, mmPrice1e8, base, baseScale);
+        (uint256 converted, bool okConv) =
+            _convert1e8SettlementToBaseWithBase(s.settlementAsset, mmPrice1e8, base, baseScale);
 
         if (!okConv || converted == 0) {
             return Math.mulDiv(baseFloor, oracleDownMmMultiplierBps, BPS_U, Math.Rounding.Ceil);
@@ -607,7 +605,11 @@ contract RiskModule is IRiskModule {
                       INTERNAL: MULTI-COLLATERAL EQUITY
     //////////////////////////////////////////////////////////////*/
 
-    function _computeCollateralEquityBase(address trader, address base, uint8 baseDec) internal view returns (uint256 totalEquityBase) {
+    function _computeCollateralEquityBase(address trader, address base, uint8 baseDec)
+        internal
+        view
+        returns (uint256 totalEquityBase)
+    {
         CollateralConfig memory baseRiskCfg = collateralConfigs[base];
         if (!baseRiskCfg.isEnabled || baseRiskCfg.weightBps == 0) revert TokenNotConfigured(base);
 
@@ -640,7 +642,11 @@ contract RiskModule is IRiskModule {
         return totalEquityBase;
     }
 
-    function _computeShortLiabilityBase(address trader, address base, uint256 baseScale) internal view returns (uint256 liabilityBase) {
+    function _computeShortLiabilityBase(address trader, address base, uint256 baseScale)
+        internal
+        view
+        returns (uint256 liabilityBase)
+    {
         uint256 len = marginEngine.getTraderSeriesLength(trader);
 
         for (uint256 start = 0; start < len; start += SERIES_PAGE) {
@@ -664,7 +670,8 @@ contract RiskModule is IRiskModule {
 
                 if (!okSpot) {
                     uint256 baseFloor = _baseMmFloorPerContract(s);
-                    uint256 liabPerContract = Math.mulDiv(baseFloor, oracleDownMmMultiplierBps, BPS_U, Math.Rounding.Ceil);
+                    uint256 liabPerContract =
+                        Math.mulDiv(baseFloor, oracleDownMmMultiplierBps, BPS_U, Math.Rounding.Ceil);
                     uint256 add = shortAbs * liabPerContract;
                     if (liabPerContract != 0 && add / liabPerContract != shortAbs) revert MathOverflow();
                     liabilityBase = _addChecked(liabilityBase, add);
@@ -743,8 +750,7 @@ contract RiskModule is IRiskModule {
         }
 
         risk.maintenanceMargin = mm;
-        risk.initialMargin =
-            (mm > 0 && imFactorBps > 0) ? Math.mulDiv(mm, imFactorBps, BPS_U, Math.Rounding.Ceil) : 0;
+        risk.initialMargin = (mm > 0 && imFactorBps > 0) ? Math.mulDiv(mm, imFactorBps, BPS_U, Math.Rounding.Ceil) : 0;
     }
 
     function computeFreeCollateral(address trader) public view override returns (int256 freeCollateral) {
@@ -773,9 +779,8 @@ contract RiskModule is IRiskModule {
 
         AccountRisk memory risk = computeAccountRisk(trader);
 
-        int256 free = (risk.initialMargin == 0)
-            ? risk.equity
-            : _subInt256Sat(risk.equity, _uintToInt256Sat(risk.initialMargin));
+        int256 free =
+            (risk.initialMargin == 0) ? risk.equity : _subInt256Sat(risk.equity, _uintToInt256Sat(risk.initialMargin));
 
         if (free <= 0) return 0;
         if (risk.maintenanceMargin == 0) return avail;

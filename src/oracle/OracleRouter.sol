@@ -35,8 +35,8 @@ contract OracleRouter is IOracle {
     struct FeedConfig {
         IPriceSource primarySource;
         IPriceSource secondarySource; // optionnel
-        uint32 maxDelay;              // staleness locale (0 = off)
-        uint16 maxDeviationBps;       // ex: 500 = 5%
+        uint32 maxDelay; // staleness locale (0 = off)
+        uint16 maxDeviationBps; // ex: 500 = 5%
         bool isActive;
     }
 
@@ -181,13 +181,7 @@ contract OracleRouter is IOracle {
         });
 
         emit FeedConfigured(
-            baseAsset,
-            quoteAsset,
-            address(primarySource),
-            address(secondarySource),
-            maxDelay,
-            maxDeviationBps,
-            isActive
+            baseAsset, quoteAsset, address(primarySource), address(secondarySource), maxDelay, maxDeviationBps, isActive
         );
     }
 

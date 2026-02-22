@@ -16,12 +16,7 @@ contract PeggedStablePriceSource is IPriceSource {
         price = _price;
     }
 
-    function getLatestPrice()
-        external
-        view
-        override
-        returns (uint256, uint256)
-    {
+    function getLatestPrice() external view override returns (uint256, uint256) {
         return (price, block.timestamp);
     }
 }

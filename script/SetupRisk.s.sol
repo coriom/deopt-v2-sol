@@ -1,9 +1,9 @@
-// SPDX-License-Identifier: MIT 
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
 import "forge-std/Script.sol";
 
-import "../src/MarginEngine.sol";
+import "../src/margin/MarginEngine.sol";
 import "../src/risk/RiskModule.sol";
 import "../src/CollateralVault.sol";
 import "../src/OptionProductRegistry.sol";
@@ -26,11 +26,11 @@ contract SetupRisk is Script {
     address constant OWNER = 0x0000000000000000000000000000000000000000;
 
     /// @notice Contrats core DÉJÀ déployés
-    address constant MARGIN_ENGINE_ADDR    = 0x0000000000000000000000000000000000000000;
-    address constant RISK_MODULE_ADDR      = 0x0000000000000000000000000000000000000000;
+    address constant MARGIN_ENGINE_ADDR = 0x0000000000000000000000000000000000000000;
+    address constant RISK_MODULE_ADDR = 0x0000000000000000000000000000000000000000;
     address constant COLLATERAL_VAULT_ADDR = 0x0000000000000000000000000000000000000000;
-    address constant OPTION_REGISTRY_ADDR  = 0x0000000000000000000000000000000000000000;
-    address constant ORACLE_ROUTER_ADDR    = 0x0000000000000000000000000000000000000000;
+    address constant OPTION_REGISTRY_ADDR = 0x0000000000000000000000000000000000000000;
+    address constant ORACLE_ROUTER_ADDR = 0x0000000000000000000000000000000000000000;
 
     // =========================
     // 💰 TOKENS (réseau Base)
@@ -70,7 +70,7 @@ contract SetupRisk is Script {
     /// - Seuil de liquidation : equity / MM < 103% → compte liquidable.
     /// - Pénalité : 3% de la MM sur les contrats liquidés (entièrement pour le liquidateur v1).
     uint256 constant LIQ_THRESHOLD_BPS = 10_300; // 103%
-    uint256 constant LIQ_PENALTY_BPS   = 300;    // 3%
+    uint256 constant LIQ_PENALTY_BPS = 300; // 3%
 
     // =========================
     // 📌 DÉCIMALES COLLATERAL VAULT
@@ -88,11 +88,11 @@ contract SetupRisk is Script {
         vm.startBroadcast(OWNER);
 
         // Instances des contrats
-        MarginEngine margin       = MarginEngine(MARGIN_ENGINE_ADDR);
-        RiskModule risk           = RiskModule(RISK_MODULE_ADDR);
-        CollateralVault vault     = CollateralVault(COLLATERAL_VAULT_ADDR);
+        MarginEngine margin = MarginEngine(MARGIN_ENGINE_ADDR);
+        RiskModule risk = RiskModule(RISK_MODULE_ADDR);
+        CollateralVault vault = CollateralVault(COLLATERAL_VAULT_ADDR);
         OptionProductRegistry reg = OptionProductRegistry(OPTION_REGISTRY_ADDR);
-        OracleRouter oracle       = OracleRouter(ORACLE_ROUTER_ADDR);
+        OracleRouter oracle = OracleRouter(ORACLE_ROUTER_ADDR);
 
         // =========================
         // 🔌 WIRING DES CONTRATS
@@ -151,15 +151,14 @@ contract SetupRisk is Script {
         // WETH & WBTC : même "bucket majors" (BTC/ETH-like).
         // Chocs spot +/-25%, vol +20% : assez conservateur pour v1.
 
-        OptionProductRegistry.UnderlyingConfig memory cfgMajors =
-            OptionProductRegistry.UnderlyingConfig({
-                oracle: address(oracle),
-                spotShockDownBps: 2_500, // -25%
-                spotShockUpBps:   2_500, // +25%
-                volShockDownBps:  0,
-                volShockUpBps:    2_000, // +20%
-                isEnabled:        true
-            });
+        OptionProductRegistry.UnderlyingConfig memory cfgMajors = OptionProductRegistry.UnderlyingConfig({
+            oracle: address(oracle),
+            spotShockDownBps: 2_500, // -25%
+            spotShockUpBps: 2_500, // +25%
+            volShockDownBps: 0,
+            volShockUpBps: 2_000, // +20%
+            isEnabled: true
+        });
 
         reg.setUnderlyingConfig(WETH, cfgMajors);
         reg.setUnderlyingConfig(WBTC, cfgMajors);

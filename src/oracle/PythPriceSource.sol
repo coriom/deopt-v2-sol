@@ -8,9 +8,9 @@ import "./IPriceSource.sol";
 /// @notice On utilise getPriceUnsafe et on laisse le Router gérer la staleness.
 interface IPyth {
     struct Price {
-        int64 price;        // mantissa
-        uint64 conf;        // ignoré
-        int32 expo;         // exponent (ex: -8 => 1e-8)
+        int64 price; // mantissa
+        uint64 conf; // ignoré
+        int32 expo; // exponent (ex: -8 => 1e-8)
         uint256 publishTime;
     }
 
@@ -51,12 +51,7 @@ contract PythPriceSource is IPriceSource {
     }
 
     /// @inheritdoc IPriceSource
-    function getLatestPrice()
-        external
-        view
-        override
-        returns (uint256 price, uint256 updatedAt)
-    {
+    function getLatestPrice() external view override returns (uint256 price, uint256 updatedAt) {
         IPyth.Price memory p = pyth.getPriceUnsafe(priceId);
 
         if (p.publishTime == 0) revert InvalidTimestamp();

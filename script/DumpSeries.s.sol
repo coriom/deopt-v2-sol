@@ -34,6 +34,6 @@ contract DumpSeries is Script {
         }
 
         console2.log("==================================");
-        console2.log("Dump terminé ✅");
+        console2.log(unicode"Dump terminé ✅");
     }
 }

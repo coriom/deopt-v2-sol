@@ -29,34 +29,34 @@ contract OptionProductRegistry {
     ///   - `contractSize1e8` : taille d'un contrat en "unités d'underlying" normalisées 1e8.
     ///        VERROUILLÉ à 1e8 (1 contrat = 1 underlying).
     struct OptionSeries {
-        address underlying;       // Sous-jacent (ex: WETH)
-        address settlementAsset;  // Asset de règlement (ex: USDC)
-        uint64 expiry;            // Timestamp d'expiration
-        uint64 strike;            // Strike * 1e8 (PRICE_SCALE)
-        uint128 contractSize1e8;  // Taille contrat (underlying) * 1e8 (DOIT == 1e8)
-        bool isCall;              // true = Call, false = Put
-        bool isEuropean;          // true = Européenne (usage futur / front)
-        bool exists;              // Flag pour savoir si la série est enregistrée
-        bool isActive;            // true = tradable, false = close-only / désactivée
+        address underlying; // Sous-jacent (ex: WETH)
+        address settlementAsset; // Asset de règlement (ex: USDC)
+        uint64 expiry; // Timestamp d'expiration
+        uint64 strike; // Strike * 1e8 (PRICE_SCALE)
+        uint128 contractSize1e8; // Taille contrat (underlying) * 1e8 (DOIT == 1e8)
+        bool isCall; // true = Call, false = Put
+        bool isEuropean; // true = Européenne (usage futur / front)
+        bool exists; // Flag pour savoir si la série est enregistrée
+        bool isActive; // true = tradable, false = close-only / désactivée
     }
 
     /// @notice Configuration de risque / oracle par sous-jacent
     /// @dev
     ///   - Les champs *Shock* sont en basis points (bps).
     struct UnderlyingConfig {
-        address oracle;           // (optionnel) pour usage futur / RiskModule
-        uint64 spotShockDownBps;  // choc spot down, ex: 2500 = -25%
-        uint64 spotShockUpBps;    // choc spot up, ex: 2500 = +25%
-        uint64 volShockDownBps;   // choc vol down (actuellement inutilisé)
-        uint64 volShockUpBps;     // choc vol up, ex: 1500 = 15% du ref
-        bool isEnabled;           // sous-jacent utilisable ou non
+        address oracle; // (optionnel) pour usage futur / RiskModule
+        uint64 spotShockDownBps; // choc spot down, ex: 2500 = -25%
+        uint64 spotShockUpBps; // choc spot up, ex: 2500 = +25%
+        uint64 volShockDownBps; // choc vol down (actuellement inutilisé)
+        uint64 volShockUpBps; // choc vol up, ex: 1500 = 15% du ref
+        bool isEnabled; // sous-jacent utilisable ou non
     }
 
     /// @notice Proposition de prix de settlement (phase 1), finalisation (phase 2).
     struct SettlementProposal {
-        uint256 price;      // prix proposé en 1e8
-        uint64 proposedAt;  // timestamp de proposition
-        bool exists;        // proposal set
+        uint256 price; // prix proposé en 1e8
+        uint64 proposedAt; // timestamp de proposition
+        bool exists; // proposal set
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -67,7 +67,7 @@ contract OptionProductRegistry {
     error UnderlyingZero();
     error SettlementZero();
     error ExpiryInPast();
-    error ExpiryTooSoon();              // expiry > now mais < now + minExpiryDelay
+    error ExpiryTooSoon(); // expiry > now mais < now + minExpiryDelay
     error StrikeZero();
     error SeriesAlreadyExists();
     error UnknownSeries();
@@ -75,7 +75,7 @@ contract OptionProductRegistry {
     error SettlementPriceZero();
     error SettlementAlreadySet();
     error NotExpiredYet();
-    error InvalidUnderlyingConfig();    // paramètres de sous-jacent hors bornes
+    error InvalidUnderlyingConfig(); // paramètres de sous-jacent hors bornes
     error UnderlyingNotEnabled();
     error SettlementAssetNotAllowed();
 
@@ -89,7 +89,7 @@ contract OptionProductRegistry {
     error OwnershipTransferNotInitiated();
 
     // contractSize lock
-    error InvalidContractSize();        // contractSize1e8 must be PRICE_SCALE
+    error InvalidContractSize(); // contractSize1e8 must be PRICE_SCALE
 
     // misc
     error IndexOutOfBounds();
@@ -100,7 +100,7 @@ contract OptionProductRegistry {
     //////////////////////////////////////////////////////////////*/
 
     uint64 public constant MAX_SPOT_SHOCK_BPS = 10_000; // 100%
-    uint64 public constant MAX_VOL_SHOCK_BPS  = 5_000;  // 50%
+    uint64 public constant MAX_VOL_SHOCK_BPS = 5_000; // 50%
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
@@ -338,15 +338,7 @@ contract OptionProductRegistry {
         bool isCall,
         bool isEuropean
     ) public onlySeriesCreator returns (uint256 optionId) {
-        optionId = _createSeries(
-            underlying,
-            settlementAsset,
-            expiry,
-            strike,
-            contractSize1e8,
-            isCall,
-            isEuropean
-        );
+        optionId = _createSeries(underlying, settlementAsset, expiry, strike, contractSize1e8, isCall, isEuropean);
     }
 
     function _createSeries(
@@ -393,16 +385,7 @@ contract OptionProductRegistry {
         _allOptionIds.push(optionId);
         _seriesByUnderlying[underlying].push(optionId);
 
-        emit SeriesCreated(
-            optionId,
-            underlying,
-            settlementAsset,
-            expiry,
-            strike,
-            contractSize1e8,
-            isCall,
-            isEuropean
-        );
+        emit SeriesCreated(optionId, underlying, settlementAsset, expiry, strike, contractSize1e8, isCall, isEuropean);
     }
 
     /// @notice Crée un strip (tous les strikes d'une même échéance) en calls + puts (contractSize1e8 = 1e8)
@@ -458,10 +441,7 @@ contract OptionProductRegistry {
                         SETTLEMENT (2-phase)
     //////////////////////////////////////////////////////////////*/
 
-    function setSettlementPrice(uint256 optionId, uint256 settlementPrice)
-        external
-        onlyOwnerOrSettlementOperator
-    {
+    function setSettlementPrice(uint256 optionId, uint256 settlementPrice) external onlyOwnerOrSettlementOperator {
         OptionSeries memory s = _series[optionId];
         if (!s.exists) revert UnknownSeries();
         if (settlementPrice == 0) revert SettlementPriceZero();
@@ -672,13 +652,7 @@ contract OptionProductRegistry {
         return uint256(
             keccak256(
                 abi.encode(
-                    s.underlying,
-                    s.settlementAsset,
-                    s.expiry,
-                    s.strike,
-                    s.contractSize1e8,
-                    s.isCall,
-                    s.isEuropean
+                    s.underlying, s.settlementAsset, s.expiry, s.strike, s.contractSize1e8, s.isCall, s.isEuropean
                 )
             )
         );

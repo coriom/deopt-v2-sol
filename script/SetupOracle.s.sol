@@ -42,16 +42,14 @@ contract SetupOracle is Script {
 
     // ===== IDs de price feeds Pyth (WETH/USD, USDC/USD) =====
     // fournis par toi (sans le préfixe 0x) → remis au format bytes32.
-    bytes32 constant PYTH_WETH_USD_PRICE_ID =
-        0x9d4294bbcd1174d6f2003ec365831e64cc31d9f6f15a2b85399db8d5000960f6;
+    bytes32 constant PYTH_WETH_USD_PRICE_ID = 0x9d4294bbcd1174d6f2003ec365831e64cc31d9f6f15a2b85399db8d5000960f6;
 
     // (Optionnel – gardé pour usage futur si tu veux un jour un prix USDC/USD)
-    bytes32 constant PYTH_USDC_USD_PRICE_ID =
-        0xeaa020c61cc479712813461ce153894a96a6c00b21ed0cfc2798d1f9a9e9c94a;
+    bytes32 constant PYTH_USDC_USD_PRICE_ID = 0xeaa020c61cc479712813461ce153894a96a6c00b21ed0cfc2798d1f9a9e9c94a;
 
     // ===== Paramètres de sécurité de l’oracle =====
-    uint32 constant MAX_DELAY   = 600; // 10 minutes
-    uint16 constant MAX_DEV_BPS = 0;   // pas de secondary, donc 0
+    uint32 constant MAX_DELAY = 600; // 10 minutes
+    uint16 constant MAX_DEV_BPS = 0; // pas de secondary, donc 0
 
     function run() external {
         vm.startBroadcast(OWNER);
@@ -77,8 +75,7 @@ contract SetupOracle is Script {
         ChainlinkPriceSource wbtcSource = new ChainlinkPriceSource(CHAINLINK_WBTC_USD);
 
         // --- WETH via Pyth (WETH/USD) ---
-        PythPriceSource wethSource =
-            new PythPriceSource(PYTH_CORE, PYTH_WETH_USD_PRICE_ID);
+        PythPriceSource wethSource = new PythPriceSource(PYTH_CORE, PYTH_WETH_USD_PRICE_ID);
 
         // (Optionnel) USDC/USD via Pyth, si tu veux l’exposer plus tard.
         // PythPriceSource usdcSource =
@@ -101,13 +98,7 @@ contract SetupOracle is Script {
 
         // WETH / USDC via Pyth (WETH/USD)
         router.setFeed(
-            WETH,
-            USDC,
-            IPriceSource(address(wethSource)),
-            IPriceSource(address(0)),
-            MAX_DELAY,
-            MAX_DEV_BPS,
-            true
+            WETH, USDC, IPriceSource(address(wethSource)), IPriceSource(address(0)), MAX_DELAY, MAX_DEV_BPS, true
         );
 
         // (Optionnel) si un jour tu veux un prix USDC / "USD numéraire",

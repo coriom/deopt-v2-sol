@@ -16,8 +16,8 @@ contract SetupProductsWithOracle is Script {
     // =========================
     // 🔐 ADRESSES À RENSEIGNER
     // =========================
-    address constant OWNER              = 0x0000000000000000000000000000000000000000; // ton EOA admin
-    address constant OPTION_REGISTRY    = 0x0000000000000000000000000000000000000000; // OptionProductRegistry déployé
+    address constant OWNER = 0x0000000000000000000000000000000000000000; // ton EOA admin
+    address constant OPTION_REGISTRY = 0x0000000000000000000000000000000000000000; // OptionProductRegistry déployé
     address constant ORACLE_ROUTER_ADDR = 0x0000000000000000000000000000000000000000; // OracleRouter déployé
 
     // Tokens (Base)
@@ -46,7 +46,7 @@ contract SetupProductsWithOracle is Script {
         vm.startBroadcast(OWNER);
 
         OptionProductRegistry reg = OptionProductRegistry(OPTION_REGISTRY);
-        OracleRouter oracle       = OracleRouter(ORACLE_ROUTER_ADDR);
+        OracleRouter oracle = OracleRouter(ORACLE_ROUTER_ADDR);
 
         // 1) WBTC / USDC
         {
@@ -81,11 +81,7 @@ contract SetupProductsWithOracle is Script {
     // 📈 WBTC : listing avec step dynamique
     // =========================================================
 
-    function _listWBTCWithOracle(
-        OptionProductRegistry reg,
-        OracleRouter oracle,
-        uint64[] memory expiries
-    ) internal {
+    function _listWBTCWithOracle(OptionProductRegistry reg, OracleRouter oracle, uint64[] memory expiries) internal {
         (uint256 spot, uint256 updatedAt) = oracle.getPrice(WBTC, USDC);
         require(spot > 0, "WBTC:NO_SPOT");
         require(updatedAt != 0, "WBTC:NO_TIMESTAMP");
@@ -100,16 +96,9 @@ contract SetupProductsWithOracle is Script {
 
             // ATM = floor(spot / step) * step
             uint256 atm = (spot / uint256(step1e8)) * uint256(step1e8);
-            require(
-                atm > uint256(STRIKES_PER_SIDE) * uint256(step1e8),
-                "WBTC:ATM_TOO_LOW"
-            );
+            require(atm > uint256(STRIKES_PER_SIDE) * uint256(step1e8), "WBTC:ATM_TOO_LOW");
 
-            uint64[] memory strikes = _buildStrikesAroundATM(
-                atm,
-                step1e8,
-                STRIKES_PER_SIDE
-            );
+            uint64[] memory strikes = _buildStrikesAroundATM(atm, step1e8, STRIKES_PER_SIDE);
 
             // Crée toutes les séries Call + Put pour cette échéance
             reg.createStrip(
@@ -126,11 +115,7 @@ contract SetupProductsWithOracle is Script {
     // 📈 WETH : listing avec step dynamique
     // =========================================================
 
-    function _listWETHWithOracle(
-        OptionProductRegistry reg,
-        OracleRouter oracle,
-        uint64[] memory expiries
-    ) internal {
+    function _listWETHWithOracle(OptionProductRegistry reg, OracleRouter oracle, uint64[] memory expiries) internal {
         (uint256 spot, uint256 updatedAt) = oracle.getPrice(WETH, USDC);
         require(spot > 0, "WETH:NO_SPOT");
         require(updatedAt != 0, "WETH:NO_TIMESTAMP");
@@ -145,16 +130,9 @@ contract SetupProductsWithOracle is Script {
 
             // ATM = floor(spot / step) * step
             uint256 atm = (spot / uint256(step1e8)) * uint256(step1e8);
-            require(
-                atm > uint256(STRIKES_PER_SIDE) * uint256(step1e8),
-                "WETH:ATM_TOO_LOW"
-            );
+            require(atm > uint256(STRIKES_PER_SIDE) * uint256(step1e8), "WETH:ATM_TOO_LOW");
 
-            uint64[] memory strikes = _buildStrikesAroundATM(
-                atm,
-                step1e8,
-                STRIKES_PER_SIDE
-            );
+            uint64[] memory strikes = _buildStrikesAroundATM(atm, step1e8, STRIKES_PER_SIDE);
 
             reg.createStrip(
                 WETH,
@@ -178,11 +156,7 @@ contract SetupProductsWithOracle is Script {
     /// puis :
     ///  - TTE <= 7j    → step /= 2 (grille plus fine)
     ///  - TTE >= 60j   → step *= 2 (grille plus large)
-    function _computeStepBtc(uint256 spot1e8, uint64 expiry)
-        internal
-        view
-        returns (uint64 step1e8)
-    {
+    function _computeStepBtc(uint256 spot1e8, uint64 expiry) internal view returns (uint64 step1e8) {
         uint256 tte = expiry > block.timestamp ? expiry - block.timestamp : 0;
 
         // Base step selon niveau de prix
@@ -215,11 +189,7 @@ contract SetupProductsWithOracle is Script {
     /// puis :
     ///  - TTE <= 7j     → step /= 2
     ///  - TTE >= 60j    → step *= 2
-    function _computeStepEth(uint256 spot1e8, uint64 expiry)
-        internal
-        view
-        returns (uint64 step1e8)
-    {
+    function _computeStepEth(uint256 spot1e8, uint64 expiry) internal view returns (uint64 step1e8) {
         uint256 tte = expiry > block.timestamp ? expiry - block.timestamp : 0;
 
         if (spot1e8 < 2_000 * 1e8) {
@@ -248,11 +218,11 @@ contract SetupProductsWithOracle is Script {
     /// @dev Construit le tableau des strikes :
     ///     baseStrike = ATM - N * step
     ///     puis baseStrike + k * step pour k = 0..(2N)
-    function _buildStrikesAroundATM(
-        uint256 atm,
-        uint64 step1e8,
-        uint8 strikesPerSide
-    ) internal pure returns (uint64[] memory strikes) {
+    function _buildStrikesAroundATM(uint256 atm, uint64 step1e8, uint8 strikesPerSide)
+        internal
+        pure
+        returns (uint64[] memory strikes)
+    {
         uint256 totalStrikes = uint256(strikesPerSide) * 2 + 1;
         strikes = new uint64[](totalStrikes);
 

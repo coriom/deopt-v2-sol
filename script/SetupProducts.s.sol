@@ -67,9 +67,9 @@ contract SetupProducts is Script {
         // On part de block.timestamp pour construire quelques expirations relatives.
         // Tu peux modifier les horizons (7j / 30j / 90j) selon ton design produit.
 
-        uint64 expiry1 = uint64(block.timestamp + 7 days);   // ~1 semaine
-        uint64 expiry2 = uint64(block.timestamp + 30 days);  // ~1 mois
-        uint64 expiry3 = uint64(block.timestamp + 90 days);  // ~3 mois
+        uint64 expiry1 = uint64(block.timestamp + 7 days); // ~1 semaine
+        uint64 expiry2 = uint64(block.timestamp + 30 days); // ~1 mois
+        uint64 expiry3 = uint64(block.timestamp + 90 days); // ~3 mois
 
         // =========================
         // 3) STRIKES WETH (en *1e8*)
@@ -128,14 +128,14 @@ contract SetupProducts is Script {
         // donc 3 strikes → 6 séries par sous-jacent & par expiration.
 
         // --- WETH strips ---
-        reg.createStrip(WETH, USDC, expiry1, strikesWETH_1w,  true); // 1w, européens
-        reg.createStrip(WETH, USDC, expiry2, strikesWETH_1m,  true); // 1m
-        reg.createStrip(WETH, USDC, expiry3, strikesWETH_3m,  true); // 3m
+        reg.createStrip(WETH, USDC, expiry1, strikesWETH_1w, true); // 1w, européens
+        reg.createStrip(WETH, USDC, expiry2, strikesWETH_1m, true); // 1m
+        reg.createStrip(WETH, USDC, expiry3, strikesWETH_3m, true); // 3m
 
         // --- WBTC strips ---
-        reg.createStrip(WBTC, USDC, expiry1, strikesWBTC_1w,  true); // 1w
-        reg.createStrip(WBTC, USDC, expiry2, strikesWBTC_1m,  true); // 1m
-        reg.createStrip(WBTC, USDC, expiry3, strikesWBTC_3m,  true); // 3m
+        reg.createStrip(WBTC, USDC, expiry1, strikesWBTC_1w, true); // 1w
+        reg.createStrip(WBTC, USDC, expiry2, strikesWBTC_1m, true); // 1m
+        reg.createStrip(WBTC, USDC, expiry3, strikesWBTC_3m, true); // 3m
 
         vm.stopBroadcast();
     }

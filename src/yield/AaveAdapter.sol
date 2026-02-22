@@ -62,11 +62,11 @@ contract AaveAdapter is IYieldAdapter, ReentrancyGuard {
     address public owner;
     address public pendingOwner;
 
-    address public immutable vault;                 // CollateralVault
-    address public immutable override asset;        // underlying (ex: USDC)
-    uint8 private immutable _assetDecimals;         // cached (best-effort)
+    address public immutable vault; // CollateralVault
+    address public immutable override asset; // underlying (ex: USDC)
+    uint8 private immutable _assetDecimals; // cached (best-effort)
 
-    address public immutable aToken;                // aToken correspondant
+    address public immutable aToken; // aToken correspondant
     IAaveV3Pool public immutable pool;
 
     /// @notice Supply interne de shares (comptabilité adapter)
@@ -91,7 +91,10 @@ contract AaveAdapter is IYieldAdapter, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     constructor(address _owner, address _vault, address _pool, address _asset, address _aToken) {
-        if (_owner == address(0) || _vault == address(0) || _pool == address(0) || _asset == address(0) || _aToken == address(0)) {
+        if (
+            _owner == address(0) || _vault == address(0) || _pool == address(0) || _asset == address(0)
+                || _aToken == address(0)
+        ) {
             revert ZeroAddress();
         }
 
@@ -253,7 +256,13 @@ contract AaveAdapter is IYieldAdapter, ReentrancyGuard {
         pool.supply(asset, assets_, address(this), 0);
     }
 
-    function withdraw(uint256 assets_, address to) external override onlyVault nonReentrant returns (uint256 sharesBurned) {
+    function withdraw(uint256 assets_, address to)
+        external
+        override
+        onlyVault
+        nonReentrant
+        returns (uint256 sharesBurned)
+    {
         if (assets_ == 0) revert AmountZero();
         if (to == address(0)) revert ZeroAddress();
 

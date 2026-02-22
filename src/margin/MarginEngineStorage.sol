@@ -29,12 +29,6 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
                         INTERNAL PARAM INTERFACE
     //////////////////////////////////////////////////////////////*/
 
-    interface _IRiskModuleParams {
-        function baseCollateralToken() external view returns (address);
-        function baseMaintenanceMarginPerContract() external view returns (uint256);
-        function imFactorBps() external view returns (uint256);
-    }
-
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
     //////////////////////////////////////////////////////////////*/
@@ -291,14 +285,19 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
 
     function _syncVaultBestEffort(address user, address token) internal {
         // best-effort: ignore failures to keep UX paths non-reverting
-        (bool ok,) = address(_collateralVault).call(abi.encodeWithSignature("syncAccountFor(address,address)", user, token));
+        (bool ok,) =
+            address(_collateralVault).call(abi.encodeWithSignature("syncAccountFor(address,address)", user, token));
         ok;
     }
 
     /// @dev Convertit une valeur "base token units" en amount de `token` (token units) arrondi UP (conservateur).
     ///      Utilise oracle.getPrice(token, base) (1e8). Si oracle indispo/stale => (0,false).
     ///      Best-effort: ne doit pas revert sur overflow (chemin liquidation).
-    function _baseValueToTokenAmountUp(address token, uint256 baseValue) internal view returns (uint256 amtToken, bool ok) {
+    function _baseValueToTokenAmountUp(address token, uint256 baseValue)
+        internal
+        view
+        returns (uint256 amtToken, bool ok)
+    {
         if (baseValue == 0) return (0, true);
         if (token == address(0)) return (0, false);
 

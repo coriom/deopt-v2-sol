@@ -8,8 +8,5 @@ pragma solidity ^0.8.20;
 ///  - getPrice(base, quote) = prix de 1 unité de `base` exprimé en `quote`, en 1e8.
 ///  - updatedAt = timestamp UNIX de dernière mise à jour (0 si indisponible).
 interface IOracle {
-    function getPrice(address baseAsset, address quoteAsset)
-        external
-        view
-        returns (uint256 price, uint256 updatedAt);
+    function getPrice(address baseAsset, address quoteAsset) external view returns (uint256 price, uint256 updatedAt);
 }

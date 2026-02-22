@@ -71,20 +71,19 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
     mapping(address => uint256) public nonces;
 
     /// @dev EIP-712 typehash
-    bytes32 public constant MATCHED_TRADE_TYPEHASH =
-        keccak256(
-            "MatchedTrade(address buyer,address seller,uint256 optionId,uint128 quantity,uint128 price,uint256 buyerNonce,uint256 sellerNonce,uint256 deadline)"
-        );
+    bytes32 public constant MATCHED_TRADE_TYPEHASH = keccak256(
+        "MatchedTrade(address buyer,address seller,uint256 optionId,uint128 quantity,uint128 price,uint256 buyerNonce,uint256 sellerNonce,uint256 deadline)"
+    );
 
     struct MatchedTrade {
         address buyer;
         address seller;
         uint256 optionId;
         uint128 quantity;
-        uint128 price;       // unités natives du settlementAsset (ex: 1e6 USDC)
+        uint128 price; // unités natives du settlementAsset (ex: 1e6 USDC)
         uint256 buyerNonce;
         uint256 sellerNonce;
-        uint256 deadline;    // 0 = no deadline
+        uint256 deadline; // 0 = no deadline
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -265,11 +264,12 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
                                 EXECUTION
     //////////////////////////////////////////////////////////////*/
 
-    function executeTrade(
-        MatchedTrade calldata t,
-        bytes calldata buyerSig,
-        bytes calldata sellerSig
-    ) external onlyExecutor whenNotPaused nonReentrant {
+    function executeTrade(MatchedTrade calldata t, bytes calldata buyerSig, bytes calldata sellerSig)
+        external
+        onlyExecutor
+        whenNotPaused
+        nonReentrant
+    {
         _validateTradeBasics(t);
 
         bytes32 digest = hashMatchedTrade(t);
@@ -280,31 +280,20 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
         _validateAndConsumeNonces(t);
 
         IMarginEngineTrade.Trade memory mt = IMarginEngineTrade.Trade({
-            buyer: t.buyer,
-            seller: t.seller,
-            optionId: t.optionId,
-            quantity: t.quantity,
-            price: t.price
+            buyer: t.buyer, seller: t.seller, optionId: t.optionId, quantity: t.quantity, price: t.price
         });
 
         marginEngine.applyTrade(mt);
 
-        emit TradeSubmitted(
-            t.buyer,
-            t.seller,
-            t.optionId,
-            t.quantity,
-            t.price,
-            t.buyerNonce,
-            t.sellerNonce
-        );
+        emit TradeSubmitted(t.buyer, t.seller, t.optionId, t.quantity, t.price, t.buyerNonce, t.sellerNonce);
     }
 
-    function executeBatch(
-        MatchedTrade[] calldata trades,
-        bytes[] calldata buyerSigs,
-        bytes[] calldata sellerSigs
-    ) external onlyExecutor whenNotPaused nonReentrant {
+    function executeBatch(MatchedTrade[] calldata trades, bytes[] calldata buyerSigs, bytes[] calldata sellerSigs)
+        external
+        onlyExecutor
+        whenNotPaused
+        nonReentrant
+    {
         uint256 len = trades.length;
         if (len == 0 || buyerSigs.length != len || sellerSigs.length != len) revert InvalidTrade();
 
@@ -321,24 +310,12 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
             _validateAndConsumeNonces(t);
 
             IMarginEngineTrade.Trade memory mt = IMarginEngineTrade.Trade({
-                buyer: t.buyer,
-                seller: t.seller,
-                optionId: t.optionId,
-                quantity: t.quantity,
-                price: t.price
+                buyer: t.buyer, seller: t.seller, optionId: t.optionId, quantity: t.quantity, price: t.price
             });
 
             marginEngine.applyTrade(mt);
 
-            emit TradeSubmitted(
-                t.buyer,
-                t.seller,
-                t.optionId,
-                t.quantity,
-                t.price,
-                t.buyerNonce,
-                t.sellerNonce
-            );
+            emit TradeSubmitted(t.buyer, t.seller, t.optionId, t.quantity, t.price, t.buyerNonce, t.sellerNonce);
         }
     }
 }

@@ -15,9 +15,9 @@ interface IRiskModule {
     /// @notice Résumé du risque d’un compte à l’instant t.
     /// @dev equity peut être négative.
     struct AccountRisk {
-        int256 equity;                // valeur nette (base collateral units, int)
-        uint256 maintenanceMargin;    // exigence MM (base collateral units)
-        uint256 initialMargin;        // exigence IM (base collateral units)
+        int256 equity; // valeur nette (base collateral units, int)
+        uint256 maintenanceMargin; // exigence MM (base collateral units)
+        uint256 initialMargin; // exigence IM (base collateral units)
     }
 
     /// @notice Prévisualisation d’un retrait.

@@ -135,9 +135,8 @@ abstract contract MarginEngineOps is MarginEngineTrading {
     function depositCollateral(address token, uint256 amount) external whenNotPaused nonReentrant {
         if (amount == 0) revert AmountZero();
 
-        (bool ok,) = address(_collateralVault).call(
-            abi.encodeWithSignature("depositFor(address,address,uint256)", msg.sender, token, amount)
-        );
+        (bool ok,) = address(_collateralVault)
+            .call(abi.encodeWithSignature("depositFor(address,address,uint256)", msg.sender, token, amount));
         if (!ok) revert VaultDepositForNotSupported();
 
         emit CollateralDeposited(msg.sender, token, amount);
@@ -154,9 +153,8 @@ abstract contract MarginEngineOps is MarginEngineTrading {
         if (amount > preview.maxWithdrawable) revert WithdrawTooLarge();
         if (preview.marginRatioAfterBps < liquidationThresholdBps) revert WithdrawWouldBreachMargin();
 
-        (bool ok,) = address(_collateralVault).call(
-            abi.encodeWithSignature("withdrawFor(address,address,uint256)", msg.sender, token, amount)
-        );
+        (bool ok,) = address(_collateralVault)
+            .call(abi.encodeWithSignature("withdrawFor(address,address,uint256)", msg.sender, token, amount));
         if (!ok) revert VaultWithdrawForNotSupported();
 
         emit CollateralWithdrawn(msg.sender, token, amount, preview.marginRatioAfterBps);
