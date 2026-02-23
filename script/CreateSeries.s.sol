@@ -35,7 +35,6 @@ contract CreateSeries is Script {
         // -------------------------
         // WBTC / USDC strikes (1e8)
         // -------------------------
-        uint64;
         wbtcStrikes[0] = uint64(60_000 * PRICE_1E8);
         wbtcStrikes[1] = uint64(70_000 * PRICE_1E8);
         wbtcStrikes[2] = uint64(80_000 * PRICE_1E8);
@@ -46,7 +45,6 @@ contract CreateSeries is Script {
         // -------------------------
         // WETH / USDC strikes (1e8)
         // -------------------------
-        uint64;
         wethStrikes[0] = uint64(2_500 * PRICE_1E8);
         wethStrikes[1] = uint64(3_000 * PRICE_1E8);
         wethStrikes[2] = uint64(3_500 * PRICE_1E8);
