@@ -6,21 +6,28 @@ import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProo
 import {IFeesManager} from "./IFeesManager.sol";
 
 /// @title FeesManager
-/// @notice Hybrid fees config (defaults + Merkle tier allowlist + admin overrides).
+/// @notice Module de fees hybride DeOpt v2:
+///         defaults onchain + tiers claimés via Merkle root + overrides admin.
 /// @dev
-///  - No token moves here. MarginEngine computes notional and executes transfers.
-///  - Epoch-based Merkle roots enable scalable tier updates offchain.
-///  - Per-account overrides enable bespoke terms (MM/VIP) with optional expiry.
-///  - Hardening: feeBpsCap upper-bounds any bps returned (defaults/tiers/overrides).
+///  Modèle économique visé:
+///    fee = min(notionalImplicit * notionalFeeBps / 10_000, premium * premiumCapBps / 10_000)
+///
+///  Le contrat NE déplace PAS de fonds.
+///  Le caller (MarginEngine) fournit:
+///    - premium effectivement échangé
+///    - notionnel implicite retenu par le protocole
+///
+///  Priorité des paramètres:
+///    override actif > tier actif > defaults
+///
+///  Hardening:
+///    - feeBpsCap borne chaque champ bps individuellement
+///    - claim Merkle lié à l'epoch courant
+///    - expiry optionnelle sur tiers et overrides
+///    - ownership en 2-step
 contract FeesManager is IFeesManager {
     /*//////////////////////////////////////////////////////////////
-                                CONSTANTS
-    //////////////////////////////////////////////////////////////*/
-
-    uint16 internal constant BPS = 10_000;
-
-    /*//////////////////////////////////////////////////////////////
-                                 ERRORS
+                                ERRORS
     //////////////////////////////////////////////////////////////*/
 
     error NotAuthorized();
@@ -28,8 +35,6 @@ contract FeesManager is IFeesManager {
     error InvalidBps();
     error ProofInvalid();
     error Expired();
-
-    // ownership 2-step
     error OwnershipTransferNotInitiated();
 
     /*//////////////////////////////////////////////////////////////
@@ -39,14 +44,16 @@ contract FeesManager is IFeesManager {
     address public override owner;
     address public override pendingOwner;
 
-    uint16 public override defaultMakerBps;
-    uint16 public override defaultTakerBps;
-
-    /// @notice Hard cap for safety (applies to defaults/tiers/overrides).
-    uint16 public override feeBpsCap;
-
     bytes32 public override merkleRoot;
     uint64 public override epoch;
+
+    /// @notice Cap de sécurité appliqué individuellement à chaque champ bps.
+    uint16 public override feeBpsCap;
+
+    uint16 public override defaultMakerNotionalFeeBps;
+    uint16 public override defaultMakerPremiumCapBps;
+    uint16 public override defaultTakerNotionalFeeBps;
+    uint16 public override defaultTakerPremiumCapBps;
 
     mapping(address => Tier) internal _tiers;
     mapping(address => OverrideFee) internal _overrides;
@@ -64,13 +71,26 @@ contract FeesManager is IFeesManager {
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor(address _owner, uint16 _defaultMakerBps, uint16 _defaultTakerBps, uint16 _feeBpsCap) {
+    constructor(
+        address _owner,
+        uint16 _defaultMakerNotionalFeeBps,
+        uint16 _defaultMakerPremiumCapBps,
+        uint16 _defaultTakerNotionalFeeBps,
+        uint16 _defaultTakerPremiumCapBps,
+        uint16 _feeBpsCap
+    ) {
         if (_owner == address(0)) revert ZeroAddress();
+
         owner = _owner;
         emit OwnershipTransferred(address(0), _owner);
 
         _setFeeBpsCap(_feeBpsCap);
-        _setDefaults(_defaultMakerBps, _defaultTakerBps);
+        _setDefaultFees(
+            _defaultMakerNotionalFeeBps,
+            _defaultMakerPremiumCapBps,
+            _defaultTakerNotionalFeeBps,
+            _defaultTakerPremiumCapBps
+        );
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -86,9 +106,11 @@ contract FeesManager is IFeesManager {
     function acceptOwnership() external {
         address po = pendingOwner;
         if (msg.sender != po) revert NotAuthorized();
+
         address oldOwner = owner;
         owner = po;
         pendingOwner = address(0);
+
         emit OwnershipTransferred(oldOwner, po);
     }
 
@@ -99,8 +121,10 @@ contract FeesManager is IFeesManager {
 
     function renounceOwnership() external onlyOwner {
         if (pendingOwner != address(0)) revert NotAuthorized();
+
         address oldOwner = owner;
         owner = address(0);
+
         emit OwnershipTransferred(oldOwner, address(0));
     }
 
@@ -108,61 +132,85 @@ contract FeesManager is IFeesManager {
                                 ADMIN
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Set defaults (bps). Must respect cap.
-    function setDefaults(uint16 makerBps, uint16 takerBps) external onlyOwner {
-        _setDefaults(makerBps, takerBps);
-    }
-
-    /// @notice Set absolute cap for any bps returned.
     function setFeeBpsCap(uint16 newCap) external onlyOwner {
         _setFeeBpsCap(newCap);
     }
 
-    /// @notice Set Merkle root and increments epoch.
-    /// @dev New epoch = old epoch + 1, unless you want to jump; use setMerkleRootWithEpoch.
+    function setDefaultFees(
+        uint16 makerNotionalFeeBps,
+        uint16 makerPremiumCapBps,
+        uint16 takerNotionalFeeBps,
+        uint16 takerPremiumCapBps
+    ) external onlyOwner {
+        _setDefaultFees(makerNotionalFeeBps, makerPremiumCapBps, takerNotionalFeeBps, takerPremiumCapBps);
+    }
+
+    /// @notice Set Merkle root and auto-increment epoch.
     function setMerkleRoot(bytes32 newRoot) external onlyOwner {
         bytes32 old = merkleRoot;
         merkleRoot = newRoot;
+
         unchecked {
             epoch = epoch + 1;
         }
+
         emit MerkleRootSet(old, newRoot, epoch);
     }
 
-    /// @notice Set Merkle root with explicit epoch (for migrations / replays).
+    /// @notice Set Merkle root with explicit epoch.
     function setMerkleRootWithEpoch(bytes32 newRoot, uint64 newEpoch) external onlyOwner {
         bytes32 old = merkleRoot;
         merkleRoot = newRoot;
         epoch = newEpoch;
+
         emit MerkleRootSet(old, newRoot, newEpoch);
     }
 
-    /// @notice Manual override for a trader (MM/VIP) with optional expiry.
-    /// @dev Precedence: override > tier > default.
-    function setOverride(address trader, uint16 makerBps, uint16 takerBps, uint64 expiry, bool enabled)
-        external
-        onlyOwner
-    {
+    /// @notice Set override MM/VIP.
+    /// @dev Prioritaire sur tier tant que enabled && !expired.
+    function setOverride(
+        address trader,
+        uint16 makerNotionalFeeBps,
+        uint16 makerPremiumCapBps,
+        uint16 takerNotionalFeeBps,
+        uint16 takerPremiumCapBps,
+        uint64 expiry,
+        bool enabled
+    ) external onlyOwner {
         if (trader == address(0)) revert ZeroAddress();
-        _validateBps(makerBps);
-        _validateBps(takerBps);
 
-        _overrides[trader] = OverrideFee({
-            makerBps: makerBps,
-            takerBps: takerBps,
-            expiry: expiry,
-            enabled: enabled
-        });
+        FeeProfile memory profile = _buildCappedProfile(
+            makerNotionalFeeBps, makerPremiumCapBps, takerNotionalFeeBps, takerPremiumCapBps
+        );
 
-        emit OverrideSet(trader, makerBps, takerBps, expiry, enabled);
+        _overrides[trader] = OverrideFee({profile: profile, expiry: expiry, enabled: enabled});
+
+        emit OverrideSet(
+            trader,
+            profile.maker.notionalFeeBps,
+            profile.maker.premiumCapBps,
+            profile.taker.notionalFeeBps,
+            profile.taker.premiumCapBps,
+            expiry,
+            enabled
+        );
     }
 
-    /// @notice Disable override quickly.
     function disableOverride(address trader) external onlyOwner {
         if (trader == address(0)) revert ZeroAddress();
+
         OverrideFee storage o = _overrides[trader];
         o.enabled = false;
-        emit OverrideSet(trader, o.makerBps, o.takerBps, o.expiry, false);
+
+        emit OverrideSet(
+            trader,
+            o.profile.maker.notionalFeeBps,
+            o.profile.maker.premiumCapBps,
+            o.profile.taker.notionalFeeBps,
+            o.profile.taker.premiumCapBps,
+            o.expiry,
+            false
+        );
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -170,29 +218,57 @@ contract FeesManager is IFeesManager {
     //////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IFeesManager
-    function claimTier(address trader, uint16 makerBps, uint16 takerBps, uint64 expiry, bytes32[] calldata proof)
-        external
-        override
-    {
+    function claimTier(
+        address trader,
+        uint16 makerNotionalFeeBps,
+        uint16 makerPremiumCapBps,
+        uint16 takerNotionalFeeBps,
+        uint16 takerPremiumCapBps,
+        uint64 expiry,
+        bytes32[] calldata proof
+    ) external override {
         if (trader == address(0)) revert ZeroAddress();
         if (msg.sender != trader) revert NotAuthorized();
-
-        _validateBps(makerBps);
-        _validateBps(takerBps);
-
-        // If expiry != 0, the claim must not already be expired at claim time.
         if (expiry != 0 && block.timestamp > expiry) revert Expired();
 
         bytes32 root = merkleRoot;
         if (root == bytes32(0)) revert ProofInvalid();
 
-        bytes32 leaf = keccak256(abi.encode(trader, makerBps, takerBps, expiry, epoch));
+        _validateBps(makerNotionalFeeBps);
+        _validateBps(makerPremiumCapBps);
+        _validateBps(takerNotionalFeeBps);
+        _validateBps(takerPremiumCapBps);
+
+        bytes32 leaf = keccak256(
+            abi.encode(
+                trader,
+                makerNotionalFeeBps,
+                makerPremiumCapBps,
+                takerNotionalFeeBps,
+                takerPremiumCapBps,
+                expiry,
+                epoch
+            )
+        );
+
         bool ok = MerkleProof.verifyCalldata(proof, root, leaf);
         if (!ok) revert ProofInvalid();
 
-        _tiers[trader] = Tier({makerBps: makerBps, takerBps: takerBps, expiry: expiry, epoch: epoch});
+        FeeProfile memory profile = _buildCappedProfile(
+            makerNotionalFeeBps, makerPremiumCapBps, takerNotionalFeeBps, takerPremiumCapBps
+        );
 
-        emit TierClaimed(trader, makerBps, takerBps, expiry, epoch);
+        _tiers[trader] = Tier({profile: profile, expiry: expiry, epoch: epoch});
+
+        emit TierClaimed(
+            trader,
+            profile.maker.notionalFeeBps,
+            profile.maker.premiumCapBps,
+            profile.taker.notionalFeeBps,
+            profile.taker.premiumCapBps,
+            expiry,
+            epoch
+        );
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -208,71 +284,172 @@ contract FeesManager is IFeesManager {
     }
 
     /// @inheritdoc IFeesManager
-    function getFeeBps(address trader, bool isMaker) external view override returns (uint16 bps) {
+    function getFeeProfile(address trader) public view override returns (FeeProfile memory profile) {
         if (trader == address(0)) revert ZeroAddress();
 
-        // 1) override (if enabled and not expired)
         OverrideFee memory o = _overrides[trader];
-        if (o.enabled) {
-            if (o.expiry == 0 || block.timestamp <= o.expiry) {
-                bps = isMaker ? o.makerBps : o.takerBps;
-                return _cap(bps);
-            }
+        if (o.enabled && _isActive(o.expiry)) {
+            return o.profile;
         }
 
-        // 2) tier (if not expired)
         Tier memory t = _tiers[trader];
-        if (t.epoch != 0) {
-            if (t.expiry == 0 || block.timestamp <= t.expiry) {
-                bps = isMaker ? t.makerBps : t.takerBps;
-                return _cap(bps);
-            }
+        if (t.epoch != 0 && _isActive(t.expiry)) {
+            return t.profile;
         }
 
-        // 3) defaults
-        bps = isMaker ? defaultMakerBps : defaultTakerBps;
-        return _cap(bps);
+        return _defaultProfile();
     }
 
     /// @inheritdoc IFeesManager
-    function computeFee(uint256 notional, address trader, bool isMaker) external view override returns (uint256 fee) {
-        uint16 bps = this.getFeeBps(trader, isMaker);
-        if (notional == 0 || bps == 0) return 0;
-        fee = (notional * uint256(bps)) / uint256(BPS);
+    function getFeeParams(address trader, bool isMaker) public view override returns (FeeParams memory params) {
+        FeeProfile memory profile = getFeeProfile(trader);
+        return isMaker ? profile.maker : profile.taker;
+    }
+
+    /// @inheritdoc IFeesManager
+    function quoteFee(address trader, bool isMaker, uint256 premium, uint256 notionalImplicit)
+        public
+        view
+        override
+        returns (FeeQuote memory quote)
+    {
+        FeeParams memory params = getFeeParams(trader, isMaker);
+        quote.paramsUsed = params;
+
+        if (premium == 0 && notionalImplicit == 0) {
+            return quote;
+        }
+
+        if (params.notionalFeeBps != 0 && notionalImplicit != 0) {
+            quote.notionalFee = (notionalImplicit * uint256(params.notionalFeeBps)) / uint256(BPS);
+        }
+
+        if (params.premiumCapBps != 0 && premium != 0) {
+            quote.premiumCapFee = (premium * uint256(params.premiumCapBps)) / uint256(BPS);
+        }
+
+        // Cas limites:
+        // - si premiumCapBps == 0 => seule la branche notionnelle compte
+        // - si notionalFeeBps == 0 => seule la branche premium cap compte
+        // - si les deux == 0 => fee 0
+        if (params.notionalFeeBps == 0) {
+            quote.appliedFee = quote.premiumCapFee;
+            quote.cappedByPremium = quote.premiumCapFee != 0;
+            return quote;
+        }
+
+        if (params.premiumCapBps == 0) {
+            quote.appliedFee = quote.notionalFee;
+            quote.cappedByPremium = false;
+            return quote;
+        }
+
+        if (quote.notionalFee <= quote.premiumCapFee) {
+            quote.appliedFee = quote.notionalFee;
+            quote.cappedByPremium = false;
+        } else {
+            quote.appliedFee = quote.premiumCapFee;
+            quote.cappedByPremium = true;
+        }
+    }
+
+    /// @inheritdoc IFeesManager
+    function computeFee(address trader, bool isMaker, uint256 premium, uint256 notionalImplicit)
+        external
+        view
+        override
+        returns (uint256 fee)
+    {
+        return quoteFee(trader, isMaker, premium, notionalImplicit).appliedFee;
     }
 
     /*//////////////////////////////////////////////////////////////
                                  INTERNALS
     //////////////////////////////////////////////////////////////*/
 
-    function _setDefaults(uint16 makerBps, uint16 takerBps) internal {
-        _validateBps(makerBps);
-        _validateBps(takerBps);
-
-        defaultMakerBps = _cap(makerBps);
-        defaultTakerBps = _cap(takerBps);
-
-        emit DefaultsSet(defaultMakerBps, defaultTakerBps);
-    }
-
     function _setFeeBpsCap(uint16 newCap) internal {
-        // cap cannot exceed BPS and cannot be 0 (avoid accidental "all fees 0" safety disable).
-        if (newCap == 0 || newCap > BPS) revert InvalidBps();
+        if (newCap == 0 || newCap > uint16(BPS)) revert InvalidBps();
+
         uint16 old = feeBpsCap;
         feeBpsCap = newCap;
-        emit FeeBpsCapSet(old, newCap);
 
-        // Also re-cap defaults if cap reduced.
-        if (defaultMakerBps > newCap) defaultMakerBps = newCap;
-        if (defaultTakerBps > newCap) defaultTakerBps = newCap;
+        // Re-cap des defaults si le cap baisse.
+        if (defaultMakerNotionalFeeBps > newCap) defaultMakerNotionalFeeBps = newCap;
+        if (defaultMakerPremiumCapBps > newCap) defaultMakerPremiumCapBps = newCap;
+        if (defaultTakerNotionalFeeBps > newCap) defaultTakerNotionalFeeBps = newCap;
+        if (defaultTakerPremiumCapBps > newCap) defaultTakerPremiumCapBps = newCap;
+
+        emit FeeBpsCapSet(old, newCap);
+    }
+
+    function _setDefaultFees(
+        uint16 makerNotionalFeeBps,
+        uint16 makerPremiumCapBps,
+        uint16 takerNotionalFeeBps,
+        uint16 takerPremiumCapBps
+    ) internal {
+        _validateBps(makerNotionalFeeBps);
+        _validateBps(makerPremiumCapBps);
+        _validateBps(takerNotionalFeeBps);
+        _validateBps(takerPremiumCapBps);
+
+        defaultMakerNotionalFeeBps = _cap(makerNotionalFeeBps);
+        defaultMakerPremiumCapBps = _cap(makerPremiumCapBps);
+        defaultTakerNotionalFeeBps = _cap(takerNotionalFeeBps);
+        defaultTakerPremiumCapBps = _cap(takerPremiumCapBps);
+
+        emit DefaultFeesSet(
+            defaultMakerNotionalFeeBps,
+            defaultMakerPremiumCapBps,
+            defaultTakerNotionalFeeBps,
+            defaultTakerPremiumCapBps
+        );
+    }
+
+    function _defaultProfile() internal view returns (FeeProfile memory profile) {
+        profile.maker = FeeParams({
+            notionalFeeBps: defaultMakerNotionalFeeBps,
+            premiumCapBps: defaultMakerPremiumCapBps
+        });
+
+        profile.taker = FeeParams({
+            notionalFeeBps: defaultTakerNotionalFeeBps,
+            premiumCapBps: defaultTakerPremiumCapBps
+        });
+    }
+
+    function _buildCappedProfile(
+        uint16 makerNotionalFeeBps,
+        uint16 makerPremiumCapBps,
+        uint16 takerNotionalFeeBps,
+        uint16 takerPremiumCapBps
+    ) internal view returns (FeeProfile memory profile) {
+        _validateBps(makerNotionalFeeBps);
+        _validateBps(makerPremiumCapBps);
+        _validateBps(takerNotionalFeeBps);
+        _validateBps(takerPremiumCapBps);
+
+        profile.maker = FeeParams({
+            notionalFeeBps: _cap(makerNotionalFeeBps),
+            premiumCapBps: _cap(makerPremiumCapBps)
+        });
+
+        profile.taker = FeeParams({
+            notionalFeeBps: _cap(takerNotionalFeeBps),
+            premiumCapBps: _cap(takerPremiumCapBps)
+        });
     }
 
     function _validateBps(uint16 bps) internal pure {
-        if (bps > BPS) revert InvalidBps();
+        if (bps > uint16(BPS)) revert InvalidBps();
     }
 
     function _cap(uint16 bps) internal view returns (uint16) {
         uint16 cap = feeBpsCap;
         return bps > cap ? cap : bps;
+    }
+
+    function _isActive(uint64 expiry) internal view returns (bool) {
+        return expiry == 0 || block.timestamp <= expiry;
     }
 }
