@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 
 import {IRiskModule} from "../risk/IRiskModule.sol";
 import {IOracle} from "../oracle/IOracle.sol";
+import {IFeesManager} from "../fees/IFeesManager.sol";
 
 import {MarginEngineStorage} from "./MarginEngineStorage.sol";
 
@@ -72,6 +73,30 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
         address old = insuranceFund;
         insuranceFund = insuranceFund_;
         emit InsuranceFundSet(old, insuranceFund_);
+    }
+
+    /// @notice Set hybrid fees manager.
+    /// @dev FeesManager is read-only from MarginEngine perspective; fee transfers still happen via CollateralVault.
+    function setFeesManager(address feesManager_) external onlyOwner {
+        if (feesManager_ == address(0)) revert ZeroAddress();
+        feesManager = IFeesManager(feesManager_);
+        emit FeesManagerSet(feesManager_);
+    }
+
+    /// @notice Explicit fee recipient.
+    /// @dev If unset, integration code may fallback to insuranceFund.
+    function setFeeRecipient(address feeRecipient_) external onlyOwner {
+        if (feeRecipient_ == address(0)) revert ZeroAddress();
+        address old = feeRecipient;
+        feeRecipient = feeRecipient_;
+        emit FeeRecipientSet(old, feeRecipient_);
+    }
+
+    /// @notice Clear explicit fee recipient and fallback to insuranceFund if integration uses it.
+    function clearFeeRecipient() external onlyOwner {
+        address old = feeRecipient;
+        feeRecipient = address(0);
+        emit FeeRecipientSet(old, address(0));
     }
 
     /*//////////////////////////////////////////////////////////////

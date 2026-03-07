@@ -5,6 +5,7 @@ pragma solidity ^0.8.20;
 import {OptionProductRegistry} from "../OptionProductRegistry.sol";
 import {IMarginEngineState} from "../risk/IMarginEngineState.sol";
 import {IMarginEngineTrade} from "../matching/IMarginEngineTrade.sol";
+import {IFeesManager} from "../fees/IFeesManager.sol";
 
 import {MarginEngineAdmin} from "./MarginEngineAdmin.sol";
 
@@ -13,8 +14,57 @@ import {MarginEngineAdmin} from "./MarginEngineAdmin.sol";
 ///  - Updates positions (int128) with strict hardening (no int128.min).
 ///  - Enforces close-only when series is inactive.
 ///  - Executes premium cashflow in settlementAsset units via CollateralVault.transferBetweenAccounts().
+///  - Charges hybrid trading fees when FeesManager + recipient are configured.
 ///  - Enforces Initial Margin post-trade for both sides.
+///
+///  LEGACY maker/taker convention:
+///  - With the current IMarginEngineTrade.Trade shape, maker/taker is not explicitly carried.
+///  - This implementation uses:
+///      * buyer  = taker
+///      * seller = maker
+///  - This is a temporary protocol convention until IMarginEngineTrade/MatchingEngine are patched
+///    to carry explicit maker/taker role information.
 abstract contract MarginEngineTrading is MarginEngineAdmin {
+    /*//////////////////////////////////////////////////////////////
+                            INTERNAL HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function _chargeTradingFee(
+        address trader,
+        bool isMaker,
+        address settlementAsset,
+        uint256 optionId,
+        uint256 premium,
+        uint256 notionalImplicit,
+        address recipient
+    ) internal {
+        IFeesManager fm = feesManager;
+        if (address(fm) == address(0)) return;
+
+        if (recipient == address(0)) revert FeesRecipientNotSet();
+        if (recipient == trader) revert FeesRecipientEqualsTrader();
+
+        IFeesManager.FeeQuote memory q = _quoteHybridFee(trader, isMaker, premium, notionalImplicit);
+        uint256 fee = q.appliedFee;
+        if (fee == 0) return;
+
+        _collateralVault.transferBetweenAccounts(settlementAsset, trader, recipient, fee);
+
+        emit TradingFeeCharged(
+            trader,
+            recipient,
+            settlementAsset,
+            optionId,
+            isMaker,
+            premium,
+            notionalImplicit,
+            q.notionalFee,
+            q.premiumCapFee,
+            q.appliedFee,
+            q.cappedByPremium
+        );
+    }
+
     /// @inheritdoc IMarginEngineTrade
     function applyTrade(IMarginEngineTrade.Trade calldata t)
         external
@@ -78,13 +128,45 @@ abstract contract MarginEngineTrading is MarginEngineAdmin {
         _updateOpenSeriesOnChange(t.seller, t.optionId, oldSellerQty, newSellerQty);
 
         // Premium cashflow: settlement asset native units
-        // cash = quantity * pricePerContract
-        uint256 cashAmount = _mulChecked(uint256(t.quantity), uint256(t.price));
-        _collateralVault.transferBetweenAccounts(series.settlementAsset, t.buyer, t.seller, cashAmount);
+        // premium = quantity * pricePerContract
+        uint256 premium = _mulChecked(uint256(t.quantity), uint256(t.price));
+        _collateralVault.transferBetweenAccounts(series.settlementAsset, t.buyer, t.seller, premium);
+
+        // Hybrid fees
+        if (address(feesManager) != address(0)) {
+            address recipient = _resolvedFeeRecipient();
+            if (recipient == address(0)) revert FeesRecipientNotSet();
+            if (recipient == t.buyer || recipient == t.seller) revert FeesRecipientEqualsCounterparty();
+
+            uint256 notionalImplicit = _computeStrikeNotionalImplicit(series, uint256(t.quantity));
+
+            // Legacy convention:
+            //  - buyer = taker
+            //  - seller = maker
+            _chargeTradingFee(
+                t.buyer,
+                false, // taker
+                series.settlementAsset,
+                t.optionId,
+                premium,
+                notionalImplicit,
+                recipient
+            );
+
+            _chargeTradingFee(
+                t.seller,
+                true, // maker
+                series.settlementAsset,
+                t.optionId,
+                premium,
+                notionalImplicit,
+                recipient
+            );
+        }
 
         emit TradeExecuted(t.buyer, t.seller, t.optionId, t.quantity, t.price);
 
-        // Post-trade IM enforcement
+        // Post-trade IM enforcement (after premium + fees)
         _enforceInitialMargin(t.buyer);
         _enforceInitialMargin(t.seller);
     }

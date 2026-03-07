@@ -11,11 +11,19 @@ import {IOracle} from "../oracle/IOracle.sol";
 import {IRiskModule} from "../risk/IRiskModule.sol";
 import {IMarginEngineState} from "../risk/IMarginEngineState.sol";
 import {IMarginEngineTrade} from "../matching/IMarginEngineTrade.sol";
+import {IFeesManager} from "../fees/IFeesManager.sol";
 
 import {MarginEngineTypes} from "./MarginEngineTypes.sol";
 
+/// @notice Minimal read view used to assert local cached risk params match RiskModule.
+interface IRiskParamsView {
+    function baseCollateralToken() external view returns (address);
+    function baseMaintenanceMarginPerContract() external view returns (uint256);
+    function imFactorBps() external view returns (uint256);
+}
+
 /// @notice Storage + helpers stateful (only file that declares MarginEngine state)
-/// @dev Keep this file "state-oriented". Pure helpers are namespaced here to avoid collisions.
+/// @dev Keep this file state-oriented. Pure helpers are namespaced here to avoid collisions.
 abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMarginEngineState, IMarginEngineTrade {
     /*//////////////////////////////////////////////////////////////
                                 LOCAL CONSTANTS
@@ -24,10 +32,6 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     // Defensive local mirrors (avoid relying on whether Types defines them).
     uint256 internal constant _ME_PRICE_1E8 = 1e8;
     uint256 internal constant _ME_MAX_POW10_EXP = 77;
-
-    /*//////////////////////////////////////////////////////////////
-                        INTERNAL PARAM INTERFACE
-    //////////////////////////////////////////////////////////////*/
 
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
@@ -41,6 +45,14 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     CollateralVault internal _collateralVault;
     IOracle internal _oracle;
     IRiskModule internal _riskModule;
+
+    /// @notice Hybrid fee engine (defaults + tiers + overrides).
+    /// @dev Read-only dependency from MarginEngine perspective.
+    IFeesManager public feesManager;
+
+    /// @notice Recipient of collected trading fees.
+    /// @dev If zero, integration code may fallback to `insuranceFund`.
+    address public feeRecipient;
 
     mapping(address => mapping(uint256 => IMarginEngineState.Position)) internal _positions;
 
@@ -264,7 +276,9 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
 
     function _requireRiskParamsSynced() internal view {
         if (address(_riskModule) == address(0)) revert RiskModuleNotSet();
-        _IRiskModuleParams rp = _IRiskModuleParams(address(_riskModule));
+
+        IRiskParamsView rp = IRiskParamsView(address(_riskModule));
+
         if (rp.baseCollateralToken() != baseCollateralToken) revert RiskParamsMismatch();
         if (rp.baseMaintenanceMarginPerContract() != baseMaintenanceMarginPerContract) revert RiskParamsMismatch();
         if (rp.imFactorBps() != imFactorBps) revert RiskParamsMismatch();
@@ -285,19 +299,58 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
 
     function _syncVaultBestEffort(address user, address token) internal {
         // best-effort: ignore failures to keep UX paths non-reverting
-        (bool ok,) =
-            address(_collateralVault).call(abi.encodeWithSignature("syncAccountFor(address,address)", user, token));
+        (bool ok,) = address(_collateralVault).call(abi.encodeWithSignature("syncAccountFor(address,address)", user, token));
         ok;
+    }
+
+    /// @notice Resolve fee recipient.
+    /// @dev Preferred target is explicit `feeRecipient`; fallback is `insuranceFund`.
+    function _resolvedFeeRecipient() internal view returns (address recipient) {
+        recipient = feeRecipient;
+        if (recipient == address(0)) {
+            recipient = insuranceFund;
+        }
+    }
+
+    /// @notice Returns true if a fee recipient is configured directly or via insuranceFund fallback.
+    function _hasFeeRecipient() internal view returns (bool) {
+        return _resolvedFeeRecipient() != address(0);
+    }
+
+    /// @notice Computes the strike-based implicit notional in native settlement units.
+    /// @dev
+    ///  With contractSize locked to 1e8 (= 1 underlying), strike per contract is directly a 1e8 quote price.
+    ///  Therefore notionalImplicit = quantity * strike, converted to settlement native units.
+    function _computeStrikeNotionalImplicit(
+        OptionProductRegistry.OptionSeries memory s,
+        uint256 quantity
+    ) internal view returns (uint256 notionalImplicit) {
+        _requireStandardContractSize(s);
+        if (quantity == 0) return 0;
+
+        uint256 strikePerContractNative = _price1e8ToSettlementUnits(s.settlementAsset, uint256(s.strike));
+        notionalImplicit = _meMulChecked(quantity, strikePerContractNative);
+    }
+
+    /// @notice Quotes the hybrid fee for a given trader/role using the configured FeesManager.
+    /// @dev If no FeesManager is configured, returns a zeroed quote.
+    function _quoteHybridFee(
+        address trader,
+        bool isMaker,
+        uint256 premium,
+        uint256 notionalImplicit
+    ) internal view returns (IFeesManager.FeeQuote memory quote) {
+        IFeesManager fm = feesManager;
+        if (address(fm) == address(0)) {
+            return quote;
+        }
+        return fm.quoteFee(trader, isMaker, premium, notionalImplicit);
     }
 
     /// @dev Convertit une valeur "base token units" en amount de `token` (token units) arrondi UP (conservateur).
     ///      Utilise oracle.getPrice(token, base) (1e8). Si oracle indispo/stale => (0,false).
     ///      Best-effort: ne doit pas revert sur overflow (chemin liquidation).
-    function _baseValueToTokenAmountUp(address token, uint256 baseValue)
-        internal
-        view
-        returns (uint256 amtToken, bool ok)
-    {
+    function _baseValueToTokenAmountUp(address token, uint256 baseValue) internal view returns (uint256 amtToken, bool ok) {
         if (baseValue == 0) return (0, true);
         if (token == address(0)) return (0, false);
 
