@@ -15,6 +15,7 @@ import {IMarginEngineTrade} from "./IMarginEngineTrade.sol";
 ///  - deadline: 0 = no deadline.
 ///  - Hardening signatures: utilise ECDSA.tryRecover => erreurs uniformisées (InvalidSignature).
 ///  - Ownership: 2-step transfer (transferOwnership + acceptOwnership), cancelable.
+///  - buyerIsMaker transporte explicitement le rôle maker/taker jusqu’au MarginEngine.
 contract MatchingEngine is ReentrancyGuard, EIP712 {
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
@@ -34,6 +35,7 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
         uint256 indexed optionId,
         uint128 quantity,
         uint128 price,
+        bool buyerIsMaker,
         uint256 buyerNonce,
         uint256 sellerNonce
     );
@@ -72,7 +74,7 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
 
     /// @dev EIP-712 typehash
     bytes32 public constant MATCHED_TRADE_TYPEHASH = keccak256(
-        "MatchedTrade(address buyer,address seller,uint256 optionId,uint128 quantity,uint128 price,uint256 buyerNonce,uint256 sellerNonce,uint256 deadline)"
+        "MatchedTrade(address buyer,address seller,uint256 optionId,uint128 quantity,uint128 price,bool buyerIsMaker,uint256 buyerNonce,uint256 sellerNonce,uint256 deadline)"
     );
 
     struct MatchedTrade {
@@ -81,6 +83,7 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
         uint256 optionId;
         uint128 quantity;
         uint128 price; // unités natives du settlementAsset (ex: 1e6 USDC)
+        bool buyerIsMaker; // true => buyer maker / seller taker ; false => buyer taker / seller maker
         uint256 buyerNonce;
         uint256 sellerNonce;
         uint256 deadline; // 0 = no deadline
@@ -229,6 +232,7 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
                 t.optionId,
                 t.quantity,
                 t.price,
+                t.buyerIsMaker,
                 t.buyerNonce,
                 t.sellerNonce,
                 t.deadline
@@ -280,12 +284,19 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
         _validateAndConsumeNonces(t);
 
         IMarginEngineTrade.Trade memory mt = IMarginEngineTrade.Trade({
-            buyer: t.buyer, seller: t.seller, optionId: t.optionId, quantity: t.quantity, price: t.price
+            buyer: t.buyer,
+            seller: t.seller,
+            optionId: t.optionId,
+            quantity: t.quantity,
+            price: t.price,
+            buyerIsMaker: t.buyerIsMaker
         });
 
         marginEngine.applyTrade(mt);
 
-        emit TradeSubmitted(t.buyer, t.seller, t.optionId, t.quantity, t.price, t.buyerNonce, t.sellerNonce);
+        emit TradeSubmitted(
+            t.buyer, t.seller, t.optionId, t.quantity, t.price, t.buyerIsMaker, t.buyerNonce, t.sellerNonce
+        );
     }
 
     function executeBatch(MatchedTrade[] calldata trades, bytes[] calldata buyerSigs, bytes[] calldata sellerSigs)
@@ -310,12 +321,19 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
             _validateAndConsumeNonces(t);
 
             IMarginEngineTrade.Trade memory mt = IMarginEngineTrade.Trade({
-                buyer: t.buyer, seller: t.seller, optionId: t.optionId, quantity: t.quantity, price: t.price
+                buyer: t.buyer,
+                seller: t.seller,
+                optionId: t.optionId,
+                quantity: t.quantity,
+                price: t.price,
+                buyerIsMaker: t.buyerIsMaker
             });
 
             marginEngine.applyTrade(mt);
 
-            emit TradeSubmitted(t.buyer, t.seller, t.optionId, t.quantity, t.price, t.buyerNonce, t.sellerNonce);
+            emit TradeSubmitted(
+                t.buyer, t.seller, t.optionId, t.quantity, t.price, t.buyerIsMaker, t.buyerNonce, t.sellerNonce
+            );
         }
     }
 }
