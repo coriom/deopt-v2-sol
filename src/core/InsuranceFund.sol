@@ -10,15 +10,23 @@ import "../CollateralVault.sol";
 /// @title InsuranceFund
 /// @notice Trésorerie de backstop (multi-token) destinée à être utilisée COMME "account" dans CollateralVault.
 /// @dev
-///  - Le MarginEngine couvre le bad debt via CollateralVault.transferBetweenAccounts(from=address(this), ...).
-///  - Ce contrat sert à:
-///      * gérer l’allowlist de tokens,
-///      * déposer/retirer des fonds dans le CollateralVault sous l’adresse de ce contrat,
-///      * (optionnel) activer le yield côté vault (moveToStrategy/moveToIdle).
-///  - Hardenings:
-///      * ownership 2-step
-///      * allowlist stricte (TokenNotAllowed)
-///      * helpers "depositAllToVault" / "sweepUnexpectedToken"
+///  Rôles dans DeOpt v2:
+///   - backstop de règlement / bad debt via CollateralVault.transferBetweenAccounts(from=address(this), ...),
+///   - réceptacle possible des trading fees si MarginEngine choisit insuranceFund comme feeRecipient fallback.
+///
+///  Important:
+///   - Les fees reçues via MarginEngine NE transitent pas onchain par ce contrat.
+///     Elles arrivent comme crédit interne dans CollateralVault sous l’adresse `address(this)`.
+///   - Ce contrat sert donc à:
+///       * gérer l’allowlist de tokens,
+///       * déposer / retirer des fonds dans le CollateralVault sous l’adresse de ce contrat,
+///       * (optionnel) activer le yield côté vault (moveToStrategy/moveToIdle),
+///       * exposer des vues utilitaires sur les balances locales / vault.
+///
+///  Hardenings:
+///   - ownership 2-step
+///   - allowlist stricte (TokenNotAllowed)
+///   - helpers depositAllToVault / sweepUnexpectedToken
 contract InsuranceFund is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -66,10 +74,10 @@ contract InsuranceFund is ReentrancyGuard {
     address public owner;
     address public pendingOwner;
 
-    /// @notice opérateurs autorisés (optionnel): keepers / ops / etc.
+    /// @notice Opérateurs autorisés (optionnel): keepers / ops / etc.
     mapping(address => bool) public isOperator;
 
-    /// @notice allowlist multi-token (USDC, WETH, WBTC, etc.)
+    /// @notice Allowlist multi-token (USDC, WETH, WBTC, etc.)
     mapping(address => bool) public isTokenAllowed;
 
     CollateralVault public immutable collateralVault;
@@ -101,7 +109,7 @@ contract InsuranceFund is ReentrancyGuard {
         emit OwnershipTransferred(address(0), _owner);
         emit VaultSet(_vault);
 
-        // owner operator par défaut (bootstrap)
+        // bootstrap
         isOperator[_owner] = true;
         emit OperatorSet(_owner, true);
     }
@@ -119,9 +127,11 @@ contract InsuranceFund is ReentrancyGuard {
     function acceptOwnership() external {
         address po = pendingOwner;
         if (msg.sender != po) revert NotAuthorized();
+
         address old = owner;
         owner = po;
         pendingOwner = address(0);
+
         emit OwnershipTransferred(old, po);
     }
 
@@ -132,8 +142,10 @@ contract InsuranceFund is ReentrancyGuard {
 
     function renounceOwnership() external onlyOwner {
         if (pendingOwner != address(0)) revert NotAuthorized();
+
         address old = owner;
         owner = address(0);
+
         emit OwnershipTransferred(old, address(0));
     }
 
@@ -180,11 +192,13 @@ contract InsuranceFund is ReentrancyGuard {
         _depositToVault(token, amount);
     }
 
-    /// @notice Dépose 100% du solde détenu par le fund dans le CollateralVault.
+    /// @notice Dépose 100% du solde local détenu par le fund dans le CollateralVault.
     function depositAllToVault(address token) external onlyOwnerOrOperator nonReentrant returns (uint256 amount) {
         if (!isTokenAllowed[token]) revert TokenNotAllowed();
+
         amount = IERC20(token).balanceOf(address(this));
         if (amount == 0) revert AmountZero();
+
         _depositToVault(token, amount);
     }
 
@@ -192,6 +206,7 @@ contract InsuranceFund is ReentrancyGuard {
         // approve vault, puis vault.safeTransferFrom(this -> vault) dans deposit()
         IERC20(token).forceApprove(address(collateralVault), amount);
         collateralVault.deposit(token, amount);
+
         emit DepositedToVault(token, amount);
     }
 
@@ -224,6 +239,7 @@ contract InsuranceFund is ReentrancyGuard {
     function moveToStrategy(address token, uint256 amount) external onlyOwner nonReentrant {
         if (!isTokenAllowed[token]) revert TokenNotAllowed();
         if (amount == 0) revert AmountZero();
+
         collateralVault.moveToStrategy(token, amount);
         emit MovedToStrategy(token, amount);
     }
@@ -231,6 +247,7 @@ contract InsuranceFund is ReentrancyGuard {
     function moveToIdle(address token, uint256 amount) external onlyOwner nonReentrant {
         if (!isTokenAllowed[token]) revert TokenNotAllowed();
         if (amount == 0) revert AmountZero();
+
         collateralVault.moveToIdle(token, amount);
         emit MovedToIdle(token, amount);
     }
@@ -246,9 +263,10 @@ contract InsuranceFund is ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Récupère des tokens envoyés par erreur AU CONTRAT (pas dans le vault).
-    /// @dev Interdit de "sweep" un token allowlisté (fonds de backstop). Pour ces tokens:
-    ///      - déposer via depositToVault(), ou
-    ///      - retirer via withdrawFromVault().
+    /// @dev Interdit de "sweep" un token allowlisté (fonds de backstop / fees protocolaires).
+    ///      Pour ces tokens:
+    ///        - déposer via depositToVault(), ou
+    ///        - retirer via withdrawFromVault().
     function sweepUnexpectedToken(address token, address to, uint256 amount) external onlyOwner nonReentrant {
         if (to == address(0)) revert ZeroAddress();
         if (amount == 0) revert AmountZero();
@@ -262,10 +280,13 @@ contract InsuranceFund is ReentrancyGuard {
                                 VIEWS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Balance interne vault de ce fund pour `token`.
+    /// @dev Inclut les crédits reçus via MarginEngine.transferBetweenAccounts, y compris les trading fees.
     function vaultBalance(address token) external view returns (uint256) {
         return collateralVault.balances(address(this), token);
     }
 
+    /// @notice Balance économique du fund dans le vault, yield inclus si applicable.
     function vaultBalanceWithYield(address token) external view returns (uint256) {
         try collateralVault.balanceWithYield(address(this), token) returns (uint256 b) {
             return b;
@@ -274,7 +295,15 @@ contract InsuranceFund is ReentrancyGuard {
         }
     }
 
+    /// @notice Solde local on-chain détenu directement par ce contrat (hors vault).
     function localBalance(address token) external view returns (uint256) {
         return IERC20(token).balanceOf(address(this));
+    }
+
+    /// @notice True si le token est à la fois allowlisté côté fund et supporté côté vault.
+    function isUsableToken(address token) external view returns (bool) {
+        if (!isTokenAllowed[token]) return false;
+        CollateralVault.CollateralTokenConfig memory cfg = collateralVault.getCollateralConfig(token);
+        return cfg.isSupported;
     }
 }

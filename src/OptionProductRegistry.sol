@@ -3,14 +3,20 @@ pragma solidity ^0.8.20;
 
 /// @title OptionProductRegistry
 /// @notice Registre central des séries d'options de DeOpt v2
-/// @dev Ne gère pas les positions ni la marge, seulement la définition des instruments
-///      + le prix de settlement officiel à l'expiration.
+/// @dev
+///  Ne gère pas les positions ni la marge, seulement la définition des instruments
+///  + le prix de settlement officiel à l'expiration.
 ///
-///      Conventions d'unités (VERROUILLÉES ici):
-///        - strike et settlementPrice sont en PRICE_SCALE (= 1e8)
-///        - contractSize1e8 est VERROUILLÉ à PRICE_SCALE (1e8) : 1 contrat = 1 underlying
+///  Conventions d'unités (VERROUILLÉES ici):
+///    - strike et settlementPrice sont en PRICE_SCALE (= 1e8)
+///    - contractSize1e8 est VERROUILLÉ à PRICE_SCALE (1e8) : 1 contrat = 1 underlying
 ///
-///      Rationale: simplifie notional/marge/liquidation et réduit la surface d'erreurs de scaling.
+///  Rationale:
+///    - simplifie notional / marge / liquidation
+///    - réduit la surface d'erreurs de scaling
+///    - rend cohérent le calcul du notionnel implicite côté MarginEngine:
+///         notional implicite 1e8 par contrat = strike
+///      puis conversion en unités natives du settlement asset via CollateralVault.
 contract OptionProductRegistry {
     /*//////////////////////////////////////////////////////////////
                                 UNITS
@@ -614,6 +620,62 @@ contract OptionProductRegistry {
                 activeIds[j++] = allIds[i];
             }
         }
+    }
+
+    /// @notice Explicit helper for pricing / fees integrations.
+    /// @dev
+    ///  Because contractSize1e8 is locked to PRICE_SCALE, one contract always represents exactly
+    ///  one unit of underlying. Therefore:
+    ///    - per-contract strike notionnel in 1e8 quote units = strike
+    ///    - total strike notionnel in 1e8 quote units = strike * quantity
+    function getSeriesEconomicParams(uint256 optionId)
+        external
+        view
+        returns (
+            address settlementAsset,
+            uint64 strike,
+            uint128 contractSize1e8,
+            bool isCall,
+            bool isEuropean,
+            bool isActive,
+            uint64 expiry
+        )
+    {
+        OptionSeries memory s = _series[optionId];
+        if (!s.exists) revert UnknownSeries();
+
+        return (
+            s.settlementAsset,
+            s.strike,
+            s.contractSize1e8,
+            s.isCall,
+            s.isEuropean,
+            s.isActive,
+            s.expiry
+        );
+    }
+
+    /// @notice Strike notional per contract in protocol 1e8 quote units.
+    /// @dev Returned value is exactly `strike` because contractSize1e8 is locked to PRICE_SCALE.
+    function getStrikeNotionalPerContract1e8(uint256 optionId) external view returns (uint256 strikeNotional1e8) {
+        OptionSeries memory s = _series[optionId];
+        if (!s.exists) revert UnknownSeries();
+        if (s.contractSize1e8 != uint128(PRICE_SCALE)) revert InvalidContractSize();
+
+        return uint256(s.strike);
+    }
+
+    /// @notice Total strike-based notionnel in protocol 1e8 quote units for `quantity` contracts.
+    function getStrikeNotional1e8(uint256 optionId, uint256 quantity)
+        external
+        view
+        returns (uint256 strikeNotional1e8)
+    {
+        OptionSeries memory s = _series[optionId];
+        if (!s.exists) revert UnknownSeries();
+        if (s.contractSize1e8 != uint128(PRICE_SCALE)) revert InvalidContractSize();
+
+        strikeNotional1e8 = uint256(s.strike) * quantity;
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -8,6 +8,7 @@ import {OptionProductRegistry} from "../OptionProductRegistry.sol";
 import {CollateralVault} from "../CollateralVault.sol";
 import {IRiskModule} from "../risk/IRiskModule.sol";
 import {IMarginEngineState} from "../risk/IMarginEngineState.sol";
+import {IFeesManager} from "../fees/IFeesManager.sol";
 
 import {MarginEngineTrading} from "./MarginEngineTrading.sol";
 
@@ -124,6 +125,49 @@ abstract contract MarginEngineOps is MarginEngineTrading {
     function isSeriesExpired(uint256 optionId) public view returns (bool) {
         OptionProductRegistry.OptionSeries memory series = _optionRegistry.getSeries(optionId);
         return block.timestamp >= series.expiry;
+    }
+
+    /// @notice Returns the currently resolved trading fee recipient.
+    /// @dev Explicit feeRecipient has priority; fallback is insuranceFund.
+    function getResolvedFeeRecipient() external view returns (address) {
+        return _resolvedFeeRecipient();
+    }
+
+    /// @notice Preview hybrid trade fees for both counterparties.
+    /// @dev Useful for UI / executors / analytics.
+    function previewTradeFees(
+        uint256 optionId,
+        uint128 quantity,
+        uint128 price,
+        address buyer,
+        address seller,
+        bool buyerIsMaker
+    )
+        external
+        view
+        returns (
+            address settlementAsset,
+            address recipient,
+            uint256 premium,
+            uint256 notionalImplicit,
+            IFeesManager.FeeQuote memory buyerQuote,
+            IFeesManager.FeeQuote memory sellerQuote
+        )
+    {
+        if (buyer == address(0) || seller == address(0) || buyer == seller) revert InvalidTrade();
+        if (quantity == 0 || price == 0) revert InvalidTrade();
+
+        OptionProductRegistry.OptionSeries memory s = _optionRegistry.getSeries(optionId);
+        _requireStandardContractSize(s);
+        _requireSettlementAssetConfigured(s.settlementAsset);
+
+        settlementAsset = s.settlementAsset;
+        recipient = _resolvedFeeRecipient();
+        premium = _mulChecked(uint256(quantity), uint256(price));
+        notionalImplicit = _computeStrikeNotionalImplicit(s, uint256(quantity));
+
+        buyerQuote = _quoteHybridFee(buyer, buyerIsMaker, premium, notionalImplicit);
+        sellerQuote = _quoteHybridFee(seller, !buyerIsMaker, premium, notionalImplicit);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -441,7 +485,7 @@ abstract contract MarginEngineOps is MarginEngineTrading {
                 }
             }
 
-            // track touched assets unique (for penalty seize fallback)
+            // track touched assets unique (for penalty fallback seize: settlement assets touched by the liquidation)
             {
                 bool tfound;
                 for (uint256 k2 = 0; k2 < touchedCount; k2++) {

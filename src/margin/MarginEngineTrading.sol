@@ -17,13 +17,9 @@ import {MarginEngineAdmin} from "./MarginEngineAdmin.sol";
 ///  - Charges hybrid trading fees when FeesManager + recipient are configured.
 ///  - Enforces Initial Margin post-trade for both sides.
 ///
-///  LEGACY maker/taker convention:
-///  - With the current IMarginEngineTrade.Trade shape, maker/taker is not explicitly carried.
-///  - This implementation uses:
-///      * buyer  = taker
-///      * seller = maker
-///  - This is a temporary protocol convention until IMarginEngineTrade/MatchingEngine are patched
-///    to carry explicit maker/taker role information.
+///  Maker/taker convention:
+///  - t.buyerIsMaker == true  => buyer = maker, seller = taker
+///  - t.buyerIsMaker == false => buyer = taker, seller = maker
 abstract contract MarginEngineTrading is MarginEngineAdmin {
     /*//////////////////////////////////////////////////////////////
                             INTERNAL HELPERS
@@ -140,12 +136,12 @@ abstract contract MarginEngineTrading is MarginEngineAdmin {
 
             uint256 notionalImplicit = _computeStrikeNotionalImplicit(series, uint256(t.quantity));
 
-            // Legacy convention:
-            //  - buyer = taker
-            //  - seller = maker
+            bool buyerIsMaker = t.buyerIsMaker;
+            bool sellerIsMaker = !buyerIsMaker;
+
             _chargeTradingFee(
                 t.buyer,
-                false, // taker
+                buyerIsMaker,
                 series.settlementAsset,
                 t.optionId,
                 premium,
@@ -155,7 +151,7 @@ abstract contract MarginEngineTrading is MarginEngineAdmin {
 
             _chargeTradingFee(
                 t.seller,
-                true, // maker
+                sellerIsMaker,
                 series.settlementAsset,
                 t.optionId,
                 premium,
