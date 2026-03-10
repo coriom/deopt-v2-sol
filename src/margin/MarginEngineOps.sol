@@ -15,19 +15,6 @@ import {MarginEngineTrading} from "./MarginEngineTrading.sol";
 /// @notice Views + collateral + settlement + liquidation + oracle views
 abstract contract MarginEngineOps is MarginEngineTrading {
     /*//////////////////////////////////////////////////////////////
-                          INTERNAL PURE HELPERS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @dev Derive margin ratio in BPS from (equity, maintenanceMargin).
-    ///      - maintenanceMargin==0 => infinite ratio
-    ///      - equity<=0 => 0 ratio
-    function _marginRatioBpsFromRisk(int256 equity, uint256 maintenanceMargin) internal pure returns (uint256) {
-        if (maintenanceMargin == 0) return type(uint256).max;
-        if (equity <= 0) return 0;
-        return (uint256(equity) * BPS) / maintenanceMargin;
-    }
-
-    /*//////////////////////////////////////////////////////////////
                           IMarginEngineState (required)
     //////////////////////////////////////////////////////////////*/
 
@@ -363,8 +350,8 @@ abstract contract MarginEngineOps is MarginEngineTrading {
     {
         _requireStandardContractSize(s);
 
-        (uint256 spot, uint256 updatedAt) = _oracle.getPrice(s.underlying, s.settlementAsset);
-        if (spot == 0) revert OraclePriceUnavailable();
+        (uint256 spot, uint256 updatedAt, bool ok) = _oracle.getPriceSafe(s.underlying, s.settlementAsset);
+        if (!ok || spot == 0) revert OraclePriceUnavailable();
 
         uint32 maxDelay = liquidationOracleMaxDelay;
         if (maxDelay > 0) {
