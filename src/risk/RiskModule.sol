@@ -20,6 +20,11 @@ import "./IMarginEngineState.sol";
 ///  - Oracle-down fallback: apply configurable multiplier (bps) on base MM floor.
 ///  - Optional local staleness guard (maxOracleDelay), bounded.
 ///  - Uses getTraderSeriesSlice() pagination to avoid huge memory returns.
+///
+///  Oracle integration:
+///  - Safe valuation paths use oracle.getPriceSafe(...) when available.
+///  - This avoids hard reverts on preview/risk paths when a feed is absent/stale/deviating.
+///  - A local freshness guard remains available through maxOracleDelay.
 contract RiskModule is IRiskModule {
     /*//////////////////////////////////////////////////////////////
                                 CONSTANTS
@@ -235,7 +240,7 @@ contract RiskModule is IRiskModule {
 
         // If enabling, require base configured + token configured in vault
         if (isEnabled) {
-            (address base, uint8 baseDec,) = _loadBase(); // validates base token + USDC decimals target
+            (, uint8 baseDec,) = _loadBase(); // validates base token + USDC decimals target
 
             CollateralVault.CollateralTokenConfig memory vcfg = _vaultCfg(token);
             if (!vcfg.isSupported) revert TokenNotSupportedInVault(token);
@@ -248,8 +253,6 @@ contract RiskModule is IRiskModule {
 
             // disallow "enabled but 0 weight"
             if (weightBps == 0) revert InvalidParams();
-
-            base; // silence unused warning
         }
 
         _listTokenIfNeeded(token);
@@ -413,14 +416,21 @@ contract RiskModule is IRiskModule {
         return (block.timestamp - updatedAt) <= d;
     }
 
-    /// @dev OracleRouter can revert: wrap to (0,false).
+    /// @dev Safe oracle read using best-effort interface.
     function _tryGetPrice(address base, address quote) internal view returns (uint256 price, bool ok) {
-        try oracle.getPrice(base, quote) returns (uint256 p, uint256 updatedAt) {
-            if (p == 0) return (0, false);
+        try oracle.getPriceSafe(base, quote) returns (uint256 p, uint256 updatedAt, bool okSafe) {
+            if (!okSafe || p == 0) return (0, false);
             if (!_isOracleDataFresh(updatedAt)) return (0, false);
             return (p, true);
         } catch {
-            return (0, false);
+            // compatibility fallback if a legacy oracle implementation is plugged in
+            try oracle.getPrice(base, quote) returns (uint256 p, uint256 updatedAt) {
+                if (p == 0) return (0, false);
+                if (!_isOracleDataFresh(updatedAt)) return (0, false);
+                return (p, true);
+            } catch {
+                return (0, false);
+            }
         }
     }
 
@@ -706,8 +716,7 @@ contract RiskModule is IRiskModule {
         address base = baseCollateralToken;
         if (base == address(0)) return risk;
 
-        (address baseLoaded, uint8 baseDec, uint256 baseScale) = _loadBase();
-        baseLoaded; // baseLoaded == base
+        (, uint8 baseDec, uint256 baseScale) = _loadBase();
 
         uint256 collatEquityBase = _computeCollateralEquityBase(trader, base, baseDec);
         uint256 shortLiabilityBase = _computeShortLiabilityBase(trader, base, baseScale);
