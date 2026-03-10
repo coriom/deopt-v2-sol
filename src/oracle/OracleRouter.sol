@@ -18,8 +18,9 @@ import "./IPriceSource.sol";
 ///      * refuse updatedAt == 0
 ///      * refuse updatedAt dans le futur
 ///      * si une source est invalide (stale/future), on l’ignore et on fallback sur l’autre (si possible)
+///      * si le feed direct échoue, le router tente aussi le feed reverse si présent/actif
 ///  - Reverse support:
-///      * si feed (base,quote) absent/inactif, tente (quote,base) et inverse le prix
+///      * si feed (base,quote) absent/inactif/indisponible, tente (quote,base) et inverse le prix
 contract OracleRouter is IOracle {
     /*//////////////////////////////////////////////////////////////
                                 CONSTANTS
@@ -27,6 +28,7 @@ contract OracleRouter is IOracle {
 
     uint256 internal constant BPS = 10_000;
     uint256 internal constant PRICE_SCALE = 1e8;
+    uint32 internal constant MAX_ALLOWED_DELAY = 3600;
 
     /*//////////////////////////////////////////////////////////////
                                 TYPES
@@ -38,6 +40,15 @@ contract OracleRouter is IOracle {
         uint32 maxDelay; // staleness locale (0 = off)
         uint16 maxDeviationBps; // ex: 500 = 5%
         bool isActive;
+    }
+
+    enum ReadStatus {
+        Ok,
+        FeedInactive,
+        NoSource,
+        Stale,
+        Future,
+        Deviation
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -56,6 +67,9 @@ contract OracleRouter is IOracle {
         uint16 maxDeviationBps,
         bool isActive
     );
+
+    event FeedCleared(address indexed baseAsset, address indexed quoteAsset);
+    event FeedStatusSet(address indexed baseAsset, address indexed quoteAsset, bool isActive);
 
     event MaxOracleDelaySet(uint32 oldDelay, uint32 newDelay);
 
@@ -84,6 +98,7 @@ contract OracleRouter is IOracle {
     error DeviationTooHigh();
     error DeviationOutOfRange();
     error DelayOutOfRange();
+    error SameAssetPair();
 
     // ownership 2-step
     error OwnershipTransferNotInitiated();
@@ -160,11 +175,10 @@ contract OracleRouter is IOracle {
         bool isActive
     ) external onlyOwner {
         if (baseAsset == address(0) || quoteAsset == address(0)) revert ZeroAddress();
-
-        if (maxDelay > 3600) revert DelayOutOfRange();
+        if (baseAsset == quoteAsset) revert SameAssetPair();
+        if (maxDelay > MAX_ALLOWED_DELAY) revert DelayOutOfRange();
         if (maxDeviationBps > uint16(BPS)) revert DeviationOutOfRange();
 
-        // si on active, il faut au moins une source
         if (isActive) {
             if (address(primarySource) == address(0) && address(secondarySource) == address(0)) {
                 revert NoSource();
@@ -185,8 +199,35 @@ contract OracleRouter is IOracle {
         );
     }
 
+    function setFeedStatus(address baseAsset, address quoteAsset, bool isActive) external onlyOwner {
+        if (baseAsset == address(0) || quoteAsset == address(0)) revert ZeroAddress();
+        if (baseAsset == quoteAsset) revert SameAssetPair();
+
+        bytes32 key = _pairKey(baseAsset, quoteAsset);
+        FeedConfig storage cfg = feeds[key];
+
+        if (isActive) {
+            if (address(cfg.primarySource) == address(0) && address(cfg.secondarySource) == address(0)) {
+                revert NoSource();
+            }
+        }
+
+        cfg.isActive = isActive;
+        emit FeedStatusSet(baseAsset, quoteAsset, isActive);
+    }
+
+    function clearFeed(address baseAsset, address quoteAsset) external onlyOwner {
+        if (baseAsset == address(0) || quoteAsset == address(0)) revert ZeroAddress();
+        if (baseAsset == quoteAsset) revert SameAssetPair();
+
+        bytes32 key = _pairKey(baseAsset, quoteAsset);
+        delete feeds[key];
+
+        emit FeedCleared(baseAsset, quoteAsset);
+    }
+
     function setMaxOracleDelay(uint32 _delay) external onlyOwner {
-        if (_delay > 3600) revert DelayOutOfRange();
+        if (_delay > MAX_ALLOWED_DELAY) revert DelayOutOfRange();
         uint32 old = maxOracleDelay;
         maxOracleDelay = _delay;
         emit MaxOracleDelaySet(old, _delay);
@@ -207,12 +248,30 @@ contract OracleRouter is IOracle {
         return cfg.isActive && (address(cfg.primarySource) != address(0) || address(cfg.secondarySource) != address(0));
     }
 
+    /// @notice Best-effort helper: renvoie (0,0,false) si aucun prix utilisable.
+    function getPriceSafe(address baseAsset, address quoteAsset)
+        external
+        view
+        returns (uint256 price, uint256 updatedAt, bool ok)
+    {
+        if (baseAsset == address(0) || quoteAsset == address(0)) return (0, 0, false);
+
+        if (baseAsset == quoteAsset) return (PRICE_SCALE, block.timestamp, true);
+
+        (bool okDir, uint256 pDir, uint256 tDir,) = _tryDirect(baseAsset, quoteAsset);
+        if (okDir) return (pDir, tDir, true);
+
+        (bool okRev, uint256 pRev, uint256 tRev,) = _tryReverse(baseAsset, quoteAsset);
+        if (okRev) return (pRev, tRev, true);
+
+        return (0, 0, false);
+    }
+
     /*//////////////////////////////////////////////////////////////
                             INTERNAL HELPERS
     //////////////////////////////////////////////////////////////*/
 
     function _effectiveDelay(uint32 feedMaxDelay) internal view returns (uint32 d) {
-        // min non-nul entre feedMaxDelay et maxOracleDelay
         uint32 g = maxOracleDelay;
 
         if (feedMaxDelay != 0 && g != 0) return feedMaxDelay < g ? feedMaxDelay : g;
@@ -251,11 +310,21 @@ contract OracleRouter is IOracle {
         return Math.mulDiv(diff, BPS, minP, Math.Rounding.Down);
     }
 
-    function _getPriceFromConfig(FeedConfig memory cfg) internal view returns (uint256 price, uint256 updatedAt) {
+    function _readConfiguredFeed(FeedConfig memory cfg)
+        internal
+        view
+        returns (bool ok, uint256 price, uint256 updatedAt, ReadStatus status)
+    {
+        if (!cfg.isActive) {
+            return (false, 0, 0, ReadStatus.FeedInactive);
+        }
+
         (uint256 p1, uint256 t1, bool ok1Raw) = _readSource(cfg.primarySource);
         (uint256 p2, uint256 t2, bool ok2Raw) = _readSource(cfg.secondarySource);
 
-        if (!ok1Raw && !ok2Raw) revert NoSource();
+        if (!ok1Raw && !ok2Raw) {
+            return (false, 0, 0, ReadStatus.NoSource);
+        }
 
         bool sawFuture;
         bool ok1;
@@ -274,34 +343,69 @@ contract OracleRouter is IOracle {
         }
 
         if (!ok1 && !ok2) {
-            if (sawFuture) revert FutureTimestamp();
-            revert StalePrice();
+            if (sawFuture) return (false, 0, 0, ReadStatus.Future);
+            return (false, 0, 0, ReadStatus.Stale);
         }
 
-        // fallback single usable
-        if (ok1 && !ok2) return (p1, t1);
-        if (!ok1 && ok2) return (p2, t2);
+        if (ok1 && !ok2) return (true, p1, t1, ReadStatus.Ok);
+        if (!ok1 && ok2) return (true, p2, t2, ReadStatus.Ok);
 
-        // both usable => deviation check
         uint16 maxDev = cfg.maxDeviationBps;
 
         if (maxDev == 0) {
-            if (p1 != p2) revert DeviationTooHigh();
-            // primary choisi => timestamp doit correspondre au prix retourné (t1)
-            return (p1, t1);
+            if (p1 != p2) return (false, 0, 0, ReadStatus.Deviation);
+            return (true, p1, t1, ReadStatus.Ok);
         }
 
         uint256 dev = _deviationBps(p1, p2);
-        if (dev > uint256(maxDev)) revert DeviationTooHigh();
+        if (dev > uint256(maxDev)) return (false, 0, 0, ReadStatus.Deviation);
 
-        // primary choisi => timestamp doit correspondre au prix retourné (t1)
-        return (p1, t1);
+        return (true, p1, t1, ReadStatus.Ok);
     }
 
     function _invertPrice(uint256 price1e8) internal pure returns (uint256 inv1e8) {
-        // inv = (1e8*1e8)/price
         if (price1e8 == 0) revert NoSource();
         inv1e8 = Math.mulDiv(PRICE_SCALE, PRICE_SCALE, price1e8, Math.Rounding.Down);
+    }
+
+    function _tryDirect(address baseAsset, address quoteAsset)
+        internal
+        view
+        returns (bool ok, uint256 price, uint256 updatedAt, ReadStatus status)
+    {
+        bytes32 key = _pairKey(baseAsset, quoteAsset);
+        FeedConfig memory cfg = feeds[key];
+        return _readConfiguredFeed(cfg);
+    }
+
+    function _tryReverse(address baseAsset, address quoteAsset)
+        internal
+        view
+        returns (bool ok, uint256 price, uint256 updatedAt, ReadStatus status)
+    {
+        bytes32 rkey = _pairKey(quoteAsset, baseAsset);
+        FeedConfig memory rcfg = feeds[rkey];
+
+        (bool okRev, uint256 revPrice, uint256 revUpdatedAt, ReadStatus st) = _readConfiguredFeed(rcfg);
+        if (!okRev) return (false, 0, 0, st);
+
+        return (true, _invertPrice(revPrice), revUpdatedAt, ReadStatus.Ok);
+    }
+
+    function _revertForStatuses(
+        bool directConfigured,
+        bool reverseConfigured,
+        ReadStatus directStatus,
+        ReadStatus reverseStatus
+    ) internal pure {
+        if (!directConfigured && !reverseConfigured) revert FeedNotActive();
+
+        if (directStatus == ReadStatus.Future || reverseStatus == ReadStatus.Future) revert FutureTimestamp();
+        if (directStatus == ReadStatus.Deviation || reverseStatus == ReadStatus.Deviation) revert DeviationTooHigh();
+        if (directStatus == ReadStatus.Stale || reverseStatus == ReadStatus.Stale) revert StalePrice();
+        if (directStatus == ReadStatus.NoSource || reverseStatus == ReadStatus.NoSource) revert NoSource();
+
+        revert FeedNotActive();
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -316,27 +420,29 @@ contract OracleRouter is IOracle {
     {
         if (baseAsset == address(0) || quoteAsset == address(0)) revert ZeroAddress();
 
-        // identité
         if (baseAsset == quoteAsset) {
             return (PRICE_SCALE, block.timestamp);
         }
 
-        // try direct
         bytes32 key = _pairKey(baseAsset, quoteAsset);
-        FeedConfig memory cfg = feeds[key];
-
-        if (cfg.isActive) {
-            return _getPriceFromConfig(cfg);
-        }
-
-        // try reverse
         bytes32 rkey = _pairKey(quoteAsset, baseAsset);
+
+        FeedConfig memory cfg = feeds[key];
         FeedConfig memory rcfg = feeds[rkey];
 
-        if (!rcfg.isActive) revert FeedNotActive();
+        bool directConfigured =
+            cfg.isActive && (address(cfg.primarySource) != address(0) || address(cfg.secondarySource) != address(0));
 
-        (uint256 revPrice, uint256 revUpdatedAt) = _getPriceFromConfig(rcfg);
+        bool reverseConfigured =
+            rcfg.isActive && (address(rcfg.primarySource) != address(0) || address(rcfg.secondarySource) != address(0));
 
-        return (_invertPrice(revPrice), revUpdatedAt);
+        (bool okDir, uint256 pDir, uint256 tDir, ReadStatus stDir) = _readConfiguredFeed(cfg);
+        if (okDir) return (pDir, tDir);
+
+        (bool okRev, uint256 pRev, uint256 tRev, ReadStatus stRev) = _tryReverse(baseAsset, quoteAsset);
+        if (okRev) return (pRev, tRev);
+
+        _revertForStatuses(directConfigured, reverseConfigured, stDir, stRev);
+        revert FeedNotActive();
     }
 }

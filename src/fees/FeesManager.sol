@@ -239,6 +239,8 @@ contract FeesManager is IFeesManager {
         _validateBps(takerNotionalFeeBps);
         _validateBps(takerPremiumCapBps);
 
+        uint64 currentEpoch = epoch;
+
         bytes32 leaf = keccak256(
             abi.encode(
                 trader,
@@ -247,7 +249,7 @@ contract FeesManager is IFeesManager {
                 takerNotionalFeeBps,
                 takerPremiumCapBps,
                 expiry,
-                epoch
+                currentEpoch
             )
         );
 
@@ -258,7 +260,7 @@ contract FeesManager is IFeesManager {
             makerNotionalFeeBps, makerPremiumCapBps, takerNotionalFeeBps, takerPremiumCapBps
         );
 
-        _tiers[trader] = Tier({profile: profile, expiry: expiry, epoch: epoch});
+        _tiers[trader] = Tier({profile: profile, expiry: expiry, epoch: currentEpoch});
 
         emit TierClaimed(
             trader,
@@ -267,7 +269,7 @@ contract FeesManager is IFeesManager {
             profile.taker.notionalFeeBps,
             profile.taker.premiumCapBps,
             expiry,
-            epoch
+            currentEpoch
         );
     }
 
@@ -293,7 +295,7 @@ contract FeesManager is IFeesManager {
         }
 
         Tier memory t = _tiers[trader];
-        if (t.epoch != 0 && _isActive(t.expiry)) {
+        if (t.epoch != 0 && t.epoch == epoch && _isActive(t.expiry)) {
             return t.profile;
         }
 
@@ -328,10 +330,6 @@ contract FeesManager is IFeesManager {
             quote.premiumCapFee = (premium * uint256(params.premiumCapBps)) / uint256(BPS);
         }
 
-        // Cas limites:
-        // - si premiumCapBps == 0 => seule la branche notionnelle compte
-        // - si notionalFeeBps == 0 => seule la branche premium cap compte
-        // - si les deux == 0 => fee 0
         if (params.notionalFeeBps == 0) {
             quote.appliedFee = quote.premiumCapFee;
             quote.cappedByPremium = quote.premiumCapFee != 0;
@@ -373,7 +371,6 @@ contract FeesManager is IFeesManager {
         uint16 old = feeBpsCap;
         feeBpsCap = newCap;
 
-        // Re-cap des defaults si le cap baisse.
         if (defaultMakerNotionalFeeBps > newCap) defaultMakerNotionalFeeBps = newCap;
         if (defaultMakerPremiumCapBps > newCap) defaultMakerPremiumCapBps = newCap;
         if (defaultTakerNotionalFeeBps > newCap) defaultTakerNotionalFeeBps = newCap;
@@ -445,8 +442,8 @@ contract FeesManager is IFeesManager {
     }
 
     function _cap(uint16 bps) internal view returns (uint16) {
-        uint16 cap = feeBpsCap;
-        return bps > cap ? cap : bps;
+        uint16 cap_ = feeBpsCap;
+        return bps > cap_ ? cap_ : bps;
     }
 
     function _isActive(uint64 expiry) internal view returns (bool) {
