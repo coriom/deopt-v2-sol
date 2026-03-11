@@ -163,7 +163,11 @@ abstract contract MarginEngineOps is MarginEngineTrading {
 
     /// @dev Dépôt correct via CollateralVault.depositFor(user, token, amount).
     ///      Si non implémenté dans CollateralVault => revert (évite créditer le mauvais compte).
-    function depositCollateral(address token, uint256 amount) external whenNotPaused nonReentrant {
+    function depositCollateral(address token, uint256 amount)
+        external
+        whenCollateralOpsNotPaused
+        nonReentrant
+    {
         if (amount == 0) revert AmountZero();
 
         (bool ok,) = address(_collateralVault)
@@ -175,7 +179,11 @@ abstract contract MarginEngineOps is MarginEngineTrading {
 
     /// @dev IMPORTANT: ne jamais appeler collateralVault.withdraw() ici (msg.sender=MarginEngine).
     ///      On force withdrawFor(user, token, amount). Si non supporté => revert.
-    function withdrawCollateral(address token, uint256 amount) external whenNotPaused nonReentrant {
+    function withdrawCollateral(address token, uint256 amount)
+        external
+        whenCollateralOpsNotPaused
+        nonReentrant
+    {
         if (address(_riskModule) == address(0)) revert RiskModuleNotSet();
         if (amount == 0) revert AmountZero();
 
@@ -310,11 +318,19 @@ abstract contract MarginEngineOps is MarginEngineTrading {
         );
     }
 
-    function settleAccount(uint256 optionId, address trader) public whenNotPaused nonReentrant {
+    function settleAccount(uint256 optionId, address trader)
+        public
+        whenSettlementNotPaused
+        nonReentrant
+    {
         _settleAccount(optionId, trader);
     }
 
-    function settleAccounts(uint256 optionId, address[] calldata traders) external whenNotPaused nonReentrant {
+    function settleAccounts(uint256 optionId, address[] calldata traders)
+        external
+        whenSettlementNotPaused
+        nonReentrant
+    {
         uint256 len = traders.length;
         for (uint256 i = 0; i < len; i++) {
             _settleAccount(optionId, traders[i]);
@@ -377,7 +393,7 @@ abstract contract MarginEngineOps is MarginEngineTrading {
 
     function liquidate(address trader, uint256[] calldata optionIds, uint128[] calldata quantities)
         external
-        whenNotPaused
+        whenLiquidationNotPaused
         nonReentrant
     {
         if (trader == address(0)) revert ZeroAddress();

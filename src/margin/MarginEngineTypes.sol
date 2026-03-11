@@ -33,6 +33,13 @@ abstract contract MarginEngineTypes {
     error AmountZero();
     error PausedError();
 
+    // Emergency / guardian
+    error GuardianNotAuthorized();
+    error TradingPaused();
+    error LiquidationPaused();
+    error SettlementPaused();
+    error CollateralOpsPaused();
+
     // Series / trading
     error SeriesExpired();
     error SeriesNotActiveCloseOnly();
@@ -104,6 +111,22 @@ abstract contract MarginEngineTypes {
 
     event Paused(address indexed account);
     event Unpaused(address indexed account);
+
+    // Emergency / guardian events
+    event GuardianSet(address indexed guardian);
+    event GlobalPauseSet(bool paused);
+
+    event TradingPauseSet(bool paused);
+    event LiquidationPauseSet(bool paused);
+    event SettlementPauseSet(bool paused);
+    event CollateralOpsPauseSet(bool paused);
+
+    event EmergencyModeUpdated(
+        bool tradingPaused,
+        bool liquidationPaused,
+        bool settlementPaused,
+        bool collateralOpsPaused
+    );
 
     event OracleSet(address indexed newOracle);
     event RiskModuleSet(address indexed newRiskModule);
