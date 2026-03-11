@@ -40,6 +40,10 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     address public owner;
     address public matchingEngine;
 
+    /// @notice Emergency guardian allowed to trigger protocol emergency actions.
+    /// @dev Intended owner != guardian in production. Guardian is operational, owner is governance/timelock.
+    address public guardian;
+
     // renamed to avoid getter conflicts with IMarginEngineState optional helpers
     OptionProductRegistry internal _optionRegistry;
     CollateralVault internal _collateralVault;
@@ -73,7 +77,15 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     uint256 public baseMaintenanceMarginPerContract;
     uint256 public imFactorBps;
 
+    /// @notice Legacy global pause.
+    /// @dev Kept for backward compatibility. Effective pause checks should use granular flags below.
     bool public paused;
+
+    /// @notice Granular emergency flags.
+    bool public tradingPaused;
+    bool public liquidationPaused;
+    bool public settlementPaused;
+    bool public collateralOpsPaused;
 
     uint256 public liquidationThresholdBps = 10050;
     uint256 public liquidationPenaltyBps = 500;
@@ -110,13 +122,38 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         _;
     }
 
+    modifier onlyGuardianOrOwner() {
+        if (msg.sender != owner && msg.sender != guardian) revert GuardianNotAuthorized();
+        _;
+    }
+
     modifier onlyMatchingEngine() {
         if (msg.sender != matchingEngine) revert NotAuthorized();
         _;
     }
 
     modifier whenNotPaused() {
-        if (paused) revert PausedError();
+        if (_isAnyPauseActive()) revert PausedError();
+        _;
+    }
+
+    modifier whenTradingNotPaused() {
+        if (_isTradingPaused()) revert TradingPaused();
+        _;
+    }
+
+    modifier whenLiquidationNotPaused() {
+        if (_isLiquidationPaused()) revert LiquidationPaused();
+        _;
+    }
+
+    modifier whenSettlementNotPaused() {
+        if (_isSettlementPaused()) revert SettlementPaused();
+        _;
+    }
+
+    modifier whenCollateralOpsNotPaused() {
+        if (_isCollateralOpsPaused()) revert CollateralOpsPaused();
         _;
     }
 
@@ -138,9 +175,14 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         _oracle = IOracle(oracle_);
 
         paused = false;
+        tradingPaused = false;
+        liquidationPaused = false;
+        settlementPaused = false;
+        collateralOpsPaused = false;
 
         emit OwnershipTransferred(address(0), owner_);
         emit OracleSet(oracle_);
+        emit EmergencyModeUpdated(false, false, false, false);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -182,6 +224,49 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         unchecked {
             c = a - b;
         }
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                          INTERNAL EMERGENCY HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function _isAnyPauseActive() internal view returns (bool) {
+        return paused || tradingPaused || liquidationPaused || settlementPaused || collateralOpsPaused;
+    }
+
+    function _isTradingPaused() internal view returns (bool) {
+        return paused || tradingPaused;
+    }
+
+    function _isLiquidationPaused() internal view returns (bool) {
+        return paused || liquidationPaused;
+    }
+
+    function _isSettlementPaused() internal view returns (bool) {
+        return paused || settlementPaused;
+    }
+
+    function _isCollateralOpsPaused() internal view returns (bool) {
+        return paused || collateralOpsPaused;
+    }
+
+    function _setEmergencyModes(
+        bool tradingPaused_,
+        bool liquidationPaused_,
+        bool settlementPaused_,
+        bool collateralOpsPaused_
+    ) internal {
+        tradingPaused = tradingPaused_;
+        liquidationPaused = liquidationPaused_;
+        settlementPaused = settlementPaused_;
+        collateralOpsPaused = collateralOpsPaused_;
+
+        emit EmergencyModeUpdated(tradingPaused_, liquidationPaused_, settlementPaused_, collateralOpsPaused_);
+    }
+
+    function _setGuardian(address guardian_) internal {
+        guardian = guardian_;
+        emit GuardianSet(guardian_);
     }
 
     /*//////////////////////////////////////////////////////////////

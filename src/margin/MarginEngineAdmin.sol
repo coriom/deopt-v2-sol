@@ -8,7 +8,7 @@ import {IFeesManager} from "../fees/IFeesManager.sol";
 
 import {MarginEngineStorage} from "./MarginEngineStorage.sol";
 
-/// @notice Owner-only configuration & admin surface
+/// @notice Owner/guardian configuration & emergency surface
 /// @dev Assumes constants/errors/events are declared in MarginEngineTypes (via MarginEngineStorage).
 abstract contract MarginEngineAdmin is MarginEngineStorage {
     /*//////////////////////////////////////////////////////////////
@@ -29,21 +29,132 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
     }
 
     /*//////////////////////////////////////////////////////////////
+                              GUARDIAN
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Sets the emergency guardian.
+    /// @dev Guardian is expected to be an operational actor, distinct from governance/timelock owner.
+    function setGuardian(address guardian_) external onlyOwner {
+        if (guardian_ == address(0)) revert ZeroAddress();
+        _setGuardian(guardian_);
+    }
+
+    /// @notice Clears the emergency guardian.
+    function clearGuardian() external onlyOwner {
+        _setGuardian(address(0));
+    }
+
+    /*//////////////////////////////////////////////////////////////
                                PAUSE
     //////////////////////////////////////////////////////////////*/
 
-    function pause() external onlyOwner {
+    /// @notice Legacy global pause.
+    /// @dev Freezes all major protocol flows through the legacy flag.
+    function pause() external onlyGuardianOrOwner {
         if (!paused) {
             paused = true;
             emit Paused(msg.sender);
+            emit GlobalPauseSet(true);
         }
     }
 
+    /// @notice Clears legacy global pause.
+    /// @dev Owner only, so guardian can escalate but not fully normalize alone.
     function unpause() external onlyOwner {
         if (paused) {
             paused = false;
             emit Unpaused(msg.sender);
+            emit GlobalPauseSet(false);
         }
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        GRANULAR EMERGENCY CONTROLS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Emergency freeze of trading only.
+    function pauseTrading() external onlyGuardianOrOwner {
+        if (!tradingPaused) {
+            tradingPaused = true;
+            emit TradingPauseSet(true);
+            emit EmergencyModeUpdated(tradingPaused, liquidationPaused, settlementPaused, collateralOpsPaused);
+        }
+    }
+
+    function unpauseTrading() external onlyOwner {
+        if (tradingPaused) {
+            tradingPaused = false;
+            emit TradingPauseSet(false);
+            emit EmergencyModeUpdated(tradingPaused, liquidationPaused, settlementPaused, collateralOpsPaused);
+        }
+    }
+
+    /// @notice Emergency freeze of liquidation only.
+    function pauseLiquidation() external onlyGuardianOrOwner {
+        if (!liquidationPaused) {
+            liquidationPaused = true;
+            emit LiquidationPauseSet(true);
+            emit EmergencyModeUpdated(tradingPaused, liquidationPaused, settlementPaused, collateralOpsPaused);
+        }
+    }
+
+    function unpauseLiquidation() external onlyOwner {
+        if (liquidationPaused) {
+            liquidationPaused = false;
+            emit LiquidationPauseSet(false);
+            emit EmergencyModeUpdated(tradingPaused, liquidationPaused, settlementPaused, collateralOpsPaused);
+        }
+    }
+
+    /// @notice Emergency freeze of settlement only.
+    function pauseSettlement() external onlyGuardianOrOwner {
+        if (!settlementPaused) {
+            settlementPaused = true;
+            emit SettlementPauseSet(true);
+            emit EmergencyModeUpdated(tradingPaused, liquidationPaused, settlementPaused, collateralOpsPaused);
+        }
+    }
+
+    function unpauseSettlement() external onlyOwner {
+        if (settlementPaused) {
+            settlementPaused = false;
+            emit SettlementPauseSet(false);
+            emit EmergencyModeUpdated(tradingPaused, liquidationPaused, settlementPaused, collateralOpsPaused);
+        }
+    }
+
+    /// @notice Emergency freeze of collateral ops only.
+    /// @dev Blocks deposit/withdraw wrappers but preserves the possibility of selectively keeping other protocol flows alive.
+    function pauseCollateralOps() external onlyGuardianOrOwner {
+        if (!collateralOpsPaused) {
+            collateralOpsPaused = true;
+            emit CollateralOpsPauseSet(true);
+            emit EmergencyModeUpdated(tradingPaused, liquidationPaused, settlementPaused, collateralOpsPaused);
+        }
+    }
+
+    function unpauseCollateralOps() external onlyOwner {
+        if (collateralOpsPaused) {
+            collateralOpsPaused = false;
+            emit CollateralOpsPauseSet(false);
+            emit EmergencyModeUpdated(tradingPaused, liquidationPaused, settlementPaused, collateralOpsPaused);
+        }
+    }
+
+    /// @notice Sets all granular emergency flags at once.
+    /// @dev Useful for incident response playbooks.
+    function setEmergencyModes(
+        bool tradingPaused_,
+        bool liquidationPaused_,
+        bool settlementPaused_,
+        bool collateralOpsPaused_
+    ) external onlyGuardianOrOwner {
+        _setEmergencyModes(tradingPaused_, liquidationPaused_, settlementPaused_, collateralOpsPaused_);
+    }
+
+    /// @notice Owner-only recovery helper to clear all granular flags in one tx.
+    function clearEmergencyModes() external onlyOwner {
+        _setEmergencyModes(false, false, false, false);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -104,18 +215,16 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Configure le cache risk params côté MarginEngine, en vérifiant qu'ils MATCHENT RiskModule.
-    /// @dev Source of truth = RiskModule (no local interface shims).
+    /// @dev Source of truth = RiskModule.
     function setRiskParams(address baseToken_, uint256 baseMMPerContract_, uint256 imFactorBps_) external onlyOwner {
         if (baseToken_ == address(0)) revert ZeroAddress();
         if (imFactorBps_ < BPS) revert InvalidLiquidationParams(); // IM factor must be >= 100%
         if (address(_riskModule) == address(0)) revert RiskModuleNotSet();
 
-        // read from RiskModule (source of truth)
         if (_riskModule.baseCollateralToken() != baseToken_) revert RiskParamsMismatch();
         if (_riskModule.baseMaintenanceMarginPerContract() != baseMMPerContract_) revert RiskParamsMismatch();
         if (_riskModule.imFactorBps() != imFactorBps_) revert RiskParamsMismatch();
 
-        // cache locally (used by MarginEngine paths)
         baseCollateralToken = baseToken_;
         baseMaintenanceMarginPerContract = baseMMPerContract_;
         imFactorBps = imFactorBps_;
