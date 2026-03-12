@@ -87,6 +87,11 @@ abstract contract CollateralVaultAdmin is CollateralVaultStorage {
         emit CollateralTokenConfigured(token, isSupported, decimals, collateralFactorBps);
     }
 
+    /// @notice Configure un adapter de rendement pour un token.
+    /// @dev
+    ///  - interdit de changer d’adapter si des shares sont encore actives
+    ///  - autorise adapter = address(0) pour désactiver la stratégie
+    ///  - si adapter != 0, l’asset de l’adapter doit matcher le token
     function setTokenStrategy(address token, address adapter) external onlyOwner {
         if (token == address(0)) revert ZeroAddress();
 

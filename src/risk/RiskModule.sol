@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import "../CollateralVault.sol";
+import "../OptionProductRegistry.sol";
+import "../oracle/IOracle.sol";
+import "./IMarginEngineState.sol";
 import "./RiskModuleViews.sol";
 
 contract RiskModule is RiskModuleViews {

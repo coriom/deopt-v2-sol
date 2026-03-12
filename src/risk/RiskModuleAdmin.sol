@@ -4,6 +4,10 @@ pragma solidity ^0.8.20;
 import "./RiskModuleMargin.sol";
 
 abstract contract RiskModuleAdmin is RiskModuleMargin {
+    /*//////////////////////////////////////////////////////////////
+                                OWNERSHIP
+    //////////////////////////////////////////////////////////////*/
+
     function transferOwnership(address newOwner) external onlyOwner {
         if (newOwner == address(0)) revert ZeroAddress();
         address oldOwner = owner;
@@ -16,6 +20,10 @@ abstract contract RiskModuleAdmin is RiskModuleMargin {
         owner = address(0);
         emit OwnershipTransferred(oldOwner, address(0));
     }
+
+    /*//////////////////////////////////////////////////////////////
+                                CONFIG
+    //////////////////////////////////////////////////////////////*/
 
     function setMarginEngine(address _marginEngine) external onlyOwner {
         if (_marginEngine == address(0)) revert ZeroAddress();
@@ -30,12 +38,14 @@ abstract contract RiskModuleAdmin is RiskModuleMargin {
     }
 
     function setMaxOracleDelay(uint256 _maxOracleDelay) external onlyOwner {
+        // 0 = disabled, > 3600 forbidden
         if (_maxOracleDelay > 3600) revert InvalidParams();
         maxOracleDelay = _maxOracleDelay;
         emit MaxOracleDelaySet(_maxOracleDelay);
     }
 
     function setOracleDownMmMultiplier(uint256 _multiplierBps) external onlyOwner {
+        // must be >= 1x and <= 10x
         if (_multiplierBps < BPS_U || _multiplierBps > 100_000) revert InvalidParams();
         oracleDownMmMultiplierBps = _multiplierBps;
         emit OracleDownMmMultiplierSet(_multiplierBps);
@@ -45,6 +55,7 @@ abstract contract RiskModuleAdmin is RiskModuleMargin {
         if (_baseToken == address(0)) revert ZeroAddress();
         if (_imFactorBps < BPS_U) revert InvalidParams();
 
+        // strict: base token must be configured in vault and must be 6 decimals
         CollateralVault.CollateralTokenConfig memory baseCfg = _vaultCfg(_baseToken);
         if (!baseCfg.isSupported) revert TokenNotSupportedInVault(_baseToken);
         if (baseCfg.decimals == 0) revert TokenDecimalsNotConfigured(_baseToken);
@@ -57,6 +68,7 @@ abstract contract RiskModuleAdmin is RiskModuleMargin {
 
         emit RiskParamsSet(_baseToken, _baseMMPerContract, _imFactorBps);
 
+        // auto-list base token with 100% weight
         _listTokenIfNeeded(_baseToken);
         collateralConfigs[_baseToken] = CollateralConfig({weightBps: uint64(BPS_U), isEnabled: true});
         emit CollateralConfigSet(_baseToken, uint64(BPS_U), true);
@@ -78,6 +90,7 @@ abstract contract RiskModuleAdmin is RiskModuleMargin {
             uint256 diff = tokenDec >= baseDec ? uint256(tokenDec - baseDec) : uint256(baseDec - tokenDec);
             if (diff > MAX_POW10_EXP) revert DecimalsDiffOverflow(token);
 
+            // enabled collateral cannot have zero risk weight
             if (weightBps == 0) revert InvalidParams();
         }
 
@@ -89,15 +102,18 @@ abstract contract RiskModuleAdmin is RiskModuleMargin {
     function syncCollateralTokensFromVault() external onlyOwner returns (uint256 added) {
         address[] memory all = collateralVault.getCollateralTokens();
         uint256 len = all.length;
+
         for (uint256 i = 0; i < len; i++) {
             address t = all[i];
             if (t == address(0)) continue;
+
             if (!isCollateralTokenListed[t]) {
                 collateralTokens.push(t);
                 isCollateralTokenListed[t] = true;
                 added++;
             }
         }
+
         emit CollateralTokensSyncedFromVault(added);
     }
 }

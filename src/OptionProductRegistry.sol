@@ -644,15 +644,7 @@ contract OptionProductRegistry {
         OptionSeries memory s = _series[optionId];
         if (!s.exists) revert UnknownSeries();
 
-        return (
-            s.settlementAsset,
-            s.strike,
-            s.contractSize1e8,
-            s.isCall,
-            s.isEuropean,
-            s.isActive,
-            s.expiry
-        );
+        return (s.settlementAsset, s.strike, s.contractSize1e8, s.isCall, s.isEuropean, s.isActive, s.expiry);
     }
 
     /// @notice Strike notional per contract in protocol 1e8 quote units.
