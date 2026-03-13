@@ -1,4 +1,3 @@
-// src/oracle/OracleRouter.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
@@ -195,7 +194,13 @@ contract OracleRouter is IOracle {
         });
 
         emit FeedConfigured(
-            baseAsset, quoteAsset, address(primarySource), address(secondarySource), maxDelay, maxDeviationBps, isActive
+            baseAsset,
+            quoteAsset,
+            address(primarySource),
+            address(secondarySource),
+            maxDelay,
+            maxDeviationBps,
+            isActive
         );
     }
 
