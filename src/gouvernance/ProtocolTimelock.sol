@@ -2,18 +2,21 @@
 pragma solidity ^0.8.20;
 
 /// @title ProtocolTimelock
-/// @notice Timelock générique pour exécuter les changements sensibles du protocole après délai.
+/// @notice Generic timelock used to execute sensitive protocol changes after a delay.
 /// @dev
-///  - Les opérations sont identifiées par:
+///  - Operations are identified by:
 ///      keccak256(abi.encode(target, value, data, eta))
-///  - `eta` doit être >= block.timestamp + minDelay au moment du queue.
-///  - Une opération queue peut être exécutée entre [eta ; eta + GRACE_PERIOD].
-///  - `proposers` peuvent queue.
-///  - `executors` peuvent execute.
-///  - `guardian` ou `owner` peuvent cancel / pause le queueing.
-///  - Le timelock doit devenir owner des contrats sensibles (RiskModule, OracleRouter, FeesManager, etc.).
-///  - Le queueing peut être stoppé sans bloquer l’exécution des opérations déjà en attente.
-///  - Bootstrap: l’owner est proposer + executor par défaut.
+///  - `eta` must be >= block.timestamp + minDelay when queueing.
+///  - A queued operation can be executed in [eta ; eta + GRACE_PERIOD].
+///  - `proposers` can queue.
+///  - `executors` can execute.
+///  - `guardian` or `owner` can cancel / pause queueing.
+///  - The timelock is expected to become owner of sensitive contracts
+///    (RiskModule, OracleRouter, FeesManager, OptionProductRegistry, etc.).
+///  - Queueing can be stopped without blocking execution of already queued operations.
+///  - Bootstrap: owner is proposer + executor by default.
+///  - Guardian is intentionally limited to cancellation / queue pause, not execution.
+///  - Supports native value forwarding on execution.
 contract ProtocolTimelock {
     /*//////////////////////////////////////////////////////////////
                                 CONSTANTS
@@ -38,21 +41,9 @@ contract ProtocolTimelock {
     event QueuePaused(address indexed account);
     event QueueUnpaused(address indexed account);
 
-    event TransactionQueued(
-        bytes32 indexed txHash,
-        address indexed target,
-        uint256 value,
-        bytes data,
-        uint256 eta
-    );
+    event TransactionQueued(bytes32 indexed txHash, address indexed target, uint256 value, bytes data, uint256 eta);
 
-    event TransactionCancelled(
-        bytes32 indexed txHash,
-        address indexed target,
-        uint256 value,
-        bytes data,
-        uint256 eta
-    );
+    event TransactionCancelled(bytes32 indexed txHash, address indexed target, uint256 value, bytes data, uint256 eta);
 
     event TransactionExecuted(
         bytes32 indexed txHash,
@@ -75,10 +66,12 @@ contract ProtocolTimelock {
     error TransactionAlreadyQueued();
     error TransactionNotReady();
     error TransactionStale();
-    error TransactionExecutionFailed();
+    error TransactionExecutionFailed(bytes revertData);
     error OwnershipTransferNotInitiated();
     error QueuePausedError();
     error InvalidMsgValue();
+    error LengthMismatch();
+    error EmptyBatch();
 
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
@@ -187,7 +180,7 @@ contract ProtocolTimelock {
                                 ADMIN
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev address(0) autorisé pour désactiver le guardian.
+    /// @dev address(0) allowed to disable guardian.
     function setGuardian(address newGuardian) external onlyOwner {
         address old = guardian;
         guardian = newGuardian;
@@ -206,6 +199,32 @@ contract ProtocolTimelock {
         emit ExecutorSet(account, allowed);
     }
 
+    function setProposers(address[] calldata accounts, bool[] calldata allowed) external onlyOwner {
+        uint256 len = accounts.length;
+        if (len == 0) revert EmptyBatch();
+        if (allowed.length != len) revert LengthMismatch();
+
+        for (uint256 i = 0; i < len; i++) {
+            address account = accounts[i];
+            if (account == address(0)) revert ZeroAddress();
+            proposers[account] = allowed[i];
+            emit ProposerSet(account, allowed[i]);
+        }
+    }
+
+    function setExecutors(address[] calldata accounts, bool[] calldata allowed) external onlyOwner {
+        uint256 len = accounts.length;
+        if (len == 0) revert EmptyBatch();
+        if (allowed.length != len) revert LengthMismatch();
+
+        for (uint256 i = 0; i < len; i++) {
+            address account = accounts[i];
+            if (account == address(0)) revert ZeroAddress();
+            executors[account] = allowed[i];
+            emit ExecutorSet(account, allowed[i]);
+        }
+    }
+
     function setMinDelay(uint256 newDelay) external onlyOwner {
         if (newDelay < MIN_DELAY_FLOOR || newDelay > MAX_DELAY_CEILING) revert InvalidDelay();
 
@@ -216,13 +235,17 @@ contract ProtocolTimelock {
     }
 
     function pauseQueueing() external onlyGuardianOrOwner {
-        queuePaused = true;
-        emit QueuePaused(msg.sender);
+        if (!queuePaused) {
+            queuePaused = true;
+            emit QueuePaused(msg.sender);
+        }
     }
 
     function unpauseQueueing() external onlyOwner {
-        queuePaused = false;
-        emit QueueUnpaused(msg.sender);
+        if (queuePaused) {
+            queuePaused = false;
+            emit QueueUnpaused(msg.sender);
+        }
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -245,12 +268,20 @@ contract ProtocolTimelock {
         return keccak256(abi.encode(target, value, data, eta));
     }
 
-    function isQueued(address target, uint256 value, bytes calldata data, uint256 eta)
+    function isQueued(address target, uint256 value, bytes calldata data, uint256 eta) external view returns (bool) {
+        return queuedTransactions[keccak256(abi.encode(target, value, data, eta))];
+    }
+
+    function isOperationReady(address target, uint256 value, bytes calldata data, uint256 eta)
         external
         view
         returns (bool)
     {
-        return queuedTransactions[keccak256(abi.encode(target, value, data, eta))];
+        bytes32 txHash = keccak256(abi.encode(target, value, data, eta));
+        if (!queuedTransactions[txHash]) return false;
+        if (block.timestamp < eta) return false;
+        if (block.timestamp > eta + GRACE_PERIOD) return false;
+        return true;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -303,7 +334,7 @@ contract ProtocolTimelock {
         queuedTransactions[txHash] = false;
 
         (bool ok, bytes memory ret) = target.call{value: value}(data);
-        if (!ok) revert TransactionExecutionFailed();
+        if (!ok) revert TransactionExecutionFailed(ret);
 
         emit TransactionExecuted(txHash, target, value, data, eta, ret);
         return ret;
