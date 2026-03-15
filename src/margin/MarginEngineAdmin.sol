@@ -12,6 +12,54 @@ import {MarginEngineStorage} from "./MarginEngineStorage.sol";
 /// @dev Assumes constants/errors/events are declared in MarginEngineTypes (via MarginEngineStorage).
 abstract contract MarginEngineAdmin is MarginEngineStorage {
     /*//////////////////////////////////////////////////////////////
+                                MODIFIERS
+    //////////////////////////////////////////////////////////////*/
+
+    modifier onlyGuardianOrOwner() {
+        if (msg.sender != guardian && msg.sender != owner) revert NotAuthorized();
+        _;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                              INTERNAL HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function _setGuardian(address guardian_) internal {
+        address old = guardian;
+        guardian = guardian_;
+        emit GuardianSet(old, guardian_);
+    }
+
+    function _setEmergencyModes(
+        bool tradingPaused_,
+        bool liquidationPaused_,
+        bool settlementPaused_,
+        bool collateralOpsPaused_
+    ) internal {
+        if (tradingPaused != tradingPaused_) {
+            tradingPaused = tradingPaused_;
+            emit TradingPauseSet(tradingPaused_);
+        }
+
+        if (liquidationPaused != liquidationPaused_) {
+            liquidationPaused = liquidationPaused_;
+            emit LiquidationPauseSet(liquidationPaused_);
+        }
+
+        if (settlementPaused != settlementPaused_) {
+            settlementPaused = settlementPaused_;
+            emit SettlementPauseSet(settlementPaused_);
+        }
+
+        if (collateralOpsPaused != collateralOpsPaused_) {
+            collateralOpsPaused = collateralOpsPaused_;
+            emit CollateralOpsPauseSet(collateralOpsPaused_);
+        }
+
+        emit EmergencyModeUpdated(tradingPaused, liquidationPaused, settlementPaused, collateralOpsPaused);
+    }
+
+    /*//////////////////////////////////////////////////////////////
                               OWNERSHIP
     //////////////////////////////////////////////////////////////*/
 
@@ -218,7 +266,7 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
     /// @dev Source of truth = RiskModule.
     function setRiskParams(address baseToken_, uint256 baseMMPerContract_, uint256 imFactorBps_) external onlyOwner {
         if (baseToken_ == address(0)) revert ZeroAddress();
-        if (imFactorBps_ < BPS) revert InvalidLiquidationParams(); // IM factor must be >= 100%
+        if (imFactorBps_ < BPS) revert InvalidLiquidationParams();
         if (address(_riskModule) == address(0)) revert RiskModuleNotSet();
 
         if (_riskModule.baseCollateralToken() != baseToken_) revert RiskParamsMismatch();
