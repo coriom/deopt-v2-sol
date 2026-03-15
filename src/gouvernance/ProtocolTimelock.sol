@@ -207,8 +207,10 @@ contract ProtocolTimelock {
         for (uint256 i = 0; i < len; i++) {
             address account = accounts[i];
             if (account == address(0)) revert ZeroAddress();
-            proposers[account] = allowed[i];
-            emit ProposerSet(account, allowed[i]);
+
+            bool allow = allowed[i];
+            proposers[account] = allow;
+            emit ProposerSet(account, allow);
         }
     }
 
@@ -220,8 +222,10 @@ contract ProtocolTimelock {
         for (uint256 i = 0; i < len; i++) {
             address account = accounts[i];
             if (account == address(0)) revert ZeroAddress();
-            executors[account] = allowed[i];
-            emit ExecutorSet(account, allowed[i]);
+
+            bool allow = allowed[i];
+            executors[account] = allow;
+            emit ExecutorSet(account, allow);
         }
     }
 
@@ -257,7 +261,7 @@ contract ProtocolTimelock {
         pure
         returns (bytes32)
     {
-        return keccak256(abi.encode(target, value, data, eta));
+        return _hashOperation(target, value, data, eta);
     }
 
     function hashOperationBytes(address target, uint256 value, bytes memory data, uint256 eta)
@@ -265,11 +269,11 @@ contract ProtocolTimelock {
         pure
         returns (bytes32)
     {
-        return keccak256(abi.encode(target, value, data, eta));
+        return _hashOperation(target, value, data, eta);
     }
 
     function isQueued(address target, uint256 value, bytes calldata data, uint256 eta) external view returns (bool) {
-        return queuedTransactions[keccak256(abi.encode(target, value, data, eta))];
+        return queuedTransactions[_hashOperation(target, value, data, eta)];
     }
 
     function isOperationReady(address target, uint256 value, bytes calldata data, uint256 eta)
@@ -277,7 +281,7 @@ contract ProtocolTimelock {
         view
         returns (bool)
     {
-        bytes32 txHash = keccak256(abi.encode(target, value, data, eta));
+        bytes32 txHash = _hashOperation(target, value, data, eta);
         if (!queuedTransactions[txHash]) return false;
         if (block.timestamp < eta) return false;
         if (block.timestamp > eta + GRACE_PERIOD) return false;
@@ -297,7 +301,7 @@ contract ProtocolTimelock {
         if (target == address(0)) revert ZeroAddress();
         if (eta < block.timestamp + minDelay) revert EtaTooSoon();
 
-        txHash = keccak256(abi.encode(target, value, data, eta));
+        txHash = _hashOperation(target, value, data, eta);
         if (queuedTransactions[txHash]) revert TransactionAlreadyQueued();
 
         queuedTransactions[txHash] = true;
@@ -310,7 +314,7 @@ contract ProtocolTimelock {
         onlyGuardianOrOwner
         returns (bytes32 txHash)
     {
-        txHash = keccak256(abi.encode(target, value, data, eta));
+        txHash = _hashOperation(target, value, data, eta);
         if (!queuedTransactions[txHash]) revert TransactionNotQueued();
 
         queuedTransactions[txHash] = false;
@@ -326,7 +330,7 @@ contract ProtocolTimelock {
     {
         if (msg.value != value) revert InvalidMsgValue();
 
-        bytes32 txHash = keccak256(abi.encode(target, value, data, eta));
+        bytes32 txHash = _hashOperation(target, value, data, eta);
         if (!queuedTransactions[txHash]) revert TransactionNotQueued();
         if (block.timestamp < eta) revert TransactionNotReady();
         if (block.timestamp > eta + GRACE_PERIOD) revert TransactionStale();
@@ -338,6 +342,18 @@ contract ProtocolTimelock {
 
         emit TransactionExecuted(txHash, target, value, data, eta, ret);
         return ret;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                INTERNALS
+    //////////////////////////////////////////////////////////////*/
+
+    function _hashOperation(address target, uint256 value, bytes memory data, uint256 eta)
+        internal
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encode(target, value, data, eta));
     }
 
     receive() external payable {}

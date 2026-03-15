@@ -17,9 +17,11 @@ abstract contract CollateralVaultAdmin is CollateralVaultStorage {
     function acceptOwnership() external {
         address po = pendingOwner;
         if (msg.sender != po) revert NotAuthorized();
+
         address oldOwner = owner;
         owner = po;
         pendingOwner = address(0);
+
         emit OwnershipTransferred(oldOwner, owner);
     }
 
@@ -30,23 +32,134 @@ abstract contract CollateralVaultAdmin is CollateralVaultStorage {
 
     function renounceOwnership() external onlyOwner {
         if (pendingOwner != address(0)) revert NotAuthorized();
+
         address oldOwner = owner;
         owner = address(0);
+
         emit OwnershipTransferred(oldOwner, address(0));
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                              GUARDIAN
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Sets the emergency guardian.
+    /// @dev address(0) is allowed to disable the guardian.
+    function setGuardian(address newGuardian) external onlyOwner {
+        address oldGuardian = guardian;
+        guardian = newGuardian;
+        emit GuardianSet(oldGuardian, newGuardian);
     }
 
     /*//////////////////////////////////////////////////////////////
                                 PAUSABLE
     //////////////////////////////////////////////////////////////*/
 
-    function pause() external onlyOwner {
-        paused = true;
-        emit Paused(msg.sender);
+    /// @notice Legacy global pause.
+    /// @dev Guardian or owner may trigger emergency freeze.
+    function pause() external onlyGuardianOrOwner {
+        if (!paused) {
+            paused = true;
+            emit Paused(msg.sender);
+            emit GlobalPauseSet(true);
+        }
     }
 
+    /// @notice Clears legacy global pause.
+    /// @dev Owner only.
     function unpause() external onlyOwner {
-        paused = false;
-        emit Unpaused(msg.sender);
+        if (paused) {
+            paused = false;
+            emit Unpaused(msg.sender);
+            emit GlobalPauseSet(false);
+        }
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        GRANULAR EMERGENCY CONTROLS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Emergency freeze of deposits.
+    function pauseDeposits() external onlyGuardianOrOwner {
+        if (!depositsPaused) {
+            depositsPaused = true;
+            emit DepositsPauseSet(true);
+            emit EmergencyModeUpdated(depositsPaused, withdrawalsPaused, internalTransfersPaused, yieldOpsPaused);
+        }
+    }
+
+    function unpauseDeposits() external onlyOwner {
+        if (depositsPaused) {
+            depositsPaused = false;
+            emit DepositsPauseSet(false);
+            emit EmergencyModeUpdated(depositsPaused, withdrawalsPaused, internalTransfersPaused, yieldOpsPaused);
+        }
+    }
+
+    /// @notice Emergency freeze of withdrawals.
+    function pauseWithdrawals() external onlyGuardianOrOwner {
+        if (!withdrawalsPaused) {
+            withdrawalsPaused = true;
+            emit WithdrawalsPauseSet(true);
+            emit EmergencyModeUpdated(depositsPaused, withdrawalsPaused, internalTransfersPaused, yieldOpsPaused);
+        }
+    }
+
+    function unpauseWithdrawals() external onlyOwner {
+        if (withdrawalsPaused) {
+            withdrawalsPaused = false;
+            emit WithdrawalsPauseSet(false);
+            emit EmergencyModeUpdated(depositsPaused, withdrawalsPaused, internalTransfersPaused, yieldOpsPaused);
+        }
+    }
+
+    /// @notice Emergency freeze of internal protocol account transfers.
+    function pauseInternalTransfers() external onlyGuardianOrOwner {
+        if (!internalTransfersPaused) {
+            internalTransfersPaused = true;
+            emit InternalTransfersPauseSet(true);
+            emit EmergencyModeUpdated(depositsPaused, withdrawalsPaused, internalTransfersPaused, yieldOpsPaused);
+        }
+    }
+
+    function unpauseInternalTransfers() external onlyOwner {
+        if (internalTransfersPaused) {
+            internalTransfersPaused = false;
+            emit InternalTransfersPauseSet(false);
+            emit EmergencyModeUpdated(depositsPaused, withdrawalsPaused, internalTransfersPaused, yieldOpsPaused);
+        }
+    }
+
+    /// @notice Emergency freeze of yield strategy operations.
+    function pauseYieldOps() external onlyGuardianOrOwner {
+        if (!yieldOpsPaused) {
+            yieldOpsPaused = true;
+            emit YieldOpsPauseSet(true);
+            emit EmergencyModeUpdated(depositsPaused, withdrawalsPaused, internalTransfersPaused, yieldOpsPaused);
+        }
+    }
+
+    function unpauseYieldOps() external onlyOwner {
+        if (yieldOpsPaused) {
+            yieldOpsPaused = false;
+            emit YieldOpsPauseSet(false);
+            emit EmergencyModeUpdated(depositsPaused, withdrawalsPaused, internalTransfersPaused, yieldOpsPaused);
+        }
+    }
+
+    /// @notice Sets all granular emergency flags in one transaction.
+    function setEmergencyModes(
+        bool depositsPaused_,
+        bool withdrawalsPaused_,
+        bool internalTransfersPaused_,
+        bool yieldOpsPaused_
+    ) external onlyGuardianOrOwner {
+        _setEmergencyModes(depositsPaused_, withdrawalsPaused_, internalTransfersPaused_, yieldOpsPaused_);
+    }
+
+    /// @notice Owner-only helper to clear all granular emergency flags.
+    function clearEmergencyModes() external onlyOwner {
+        _setEmergencyModes(false, false, false, false);
     }
 
     /*//////////////////////////////////////////////////////////////

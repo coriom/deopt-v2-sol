@@ -22,6 +22,117 @@ abstract contract RiskModuleAdmin is RiskModuleMargin {
     }
 
     /*//////////////////////////////////////////////////////////////
+                                GUARDIAN
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Sets the emergency guardian.
+    /// @dev Guardian is expected to be an operational actor, distinct from governance/timelock owner.
+    function setGuardian(address guardian_) external onlyOwner {
+        if (guardian_ == address(0)) revert ZeroAddress();
+        _setGuardian(guardian_);
+    }
+
+    /// @notice Clears the emergency guardian.
+    function clearGuardian() external onlyOwner {
+        _setGuardian(address(0));
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                PAUSE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Legacy global pause.
+    /// @dev Freezes all emergency-gated RiskModule paths through the legacy flag.
+    function pause() external onlyGuardianOrOwner {
+        if (!paused) {
+            paused = true;
+            emit Paused(msg.sender);
+            emit GlobalPauseSet(true);
+        }
+    }
+
+    /// @notice Clears legacy global pause.
+    /// @dev Owner only, so guardian can escalate but not fully normalize alone.
+    function unpause() external onlyOwner {
+        if (paused) {
+            paused = false;
+            emit Unpaused(msg.sender);
+            emit GlobalPauseSet(false);
+        }
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        GRANULAR EMERGENCY CONTROLS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Emergency freeze of core risk computation.
+    function pauseRiskChecks() external onlyGuardianOrOwner {
+        if (!riskChecksPaused) {
+            riskChecksPaused = true;
+            emit RiskChecksPauseSet(true);
+            emit EmergencyModeUpdated(riskChecksPaused, collateralValuationPaused, withdrawPreviewPaused);
+        }
+    }
+
+    function unpauseRiskChecks() external onlyOwner {
+        if (riskChecksPaused) {
+            riskChecksPaused = false;
+            emit RiskChecksPauseSet(false);
+            emit EmergencyModeUpdated(riskChecksPaused, collateralValuationPaused, withdrawPreviewPaused);
+        }
+    }
+
+    /// @notice Emergency freeze of collateral valuation paths.
+    /// @dev Useful if oracle conversions on collateral become unreliable.
+    function pauseCollateralValuation() external onlyGuardianOrOwner {
+        if (!collateralValuationPaused) {
+            collateralValuationPaused = true;
+            emit CollateralValuationPauseSet(true);
+            emit EmergencyModeUpdated(riskChecksPaused, collateralValuationPaused, withdrawPreviewPaused);
+        }
+    }
+
+    function unpauseCollateralValuation() external onlyOwner {
+        if (collateralValuationPaused) {
+            collateralValuationPaused = false;
+            emit CollateralValuationPauseSet(false);
+            emit EmergencyModeUpdated(riskChecksPaused, collateralValuationPaused, withdrawPreviewPaused);
+        }
+    }
+
+    /// @notice Emergency freeze of withdraw preview / withdrawability paths.
+    function pauseWithdrawPreviews() external onlyGuardianOrOwner {
+        if (!withdrawPreviewPaused) {
+            withdrawPreviewPaused = true;
+            emit WithdrawPreviewPauseSet(true);
+            emit EmergencyModeUpdated(riskChecksPaused, collateralValuationPaused, withdrawPreviewPaused);
+        }
+    }
+
+    function unpauseWithdrawPreviews() external onlyOwner {
+        if (withdrawPreviewPaused) {
+            withdrawPreviewPaused = false;
+            emit WithdrawPreviewPauseSet(false);
+            emit EmergencyModeUpdated(riskChecksPaused, collateralValuationPaused, withdrawPreviewPaused);
+        }
+    }
+
+    /// @notice Sets all granular emergency flags at once.
+    /// @dev Useful for incident response playbooks.
+    function setEmergencyModes(
+        bool riskChecksPaused_,
+        bool collateralValuationPaused_,
+        bool withdrawPreviewPaused_
+    ) external onlyGuardianOrOwner {
+        _setEmergencyModes(riskChecksPaused_, collateralValuationPaused_, withdrawPreviewPaused_);
+    }
+
+    /// @notice Owner-only recovery helper to clear all granular flags in one tx.
+    function clearEmergencyModes() external onlyOwner {
+        _setEmergencyModes(false, false, false);
+    }
+
+    /*//////////////////////////////////////////////////////////////
                                 CONFIG
     //////////////////////////////////////////////////////////////*/
 

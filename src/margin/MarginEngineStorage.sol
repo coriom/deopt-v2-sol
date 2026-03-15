@@ -182,6 +182,8 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
 
         emit OwnershipTransferred(address(0), owner_);
         emit OracleSet(oracle_);
+        emit GuardianSet(address(0), address(0));
+        emit GlobalPauseSet(false);
         emit EmergencyModeUpdated(false, false, false, false);
     }
 
@@ -256,17 +258,33 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         bool settlementPaused_,
         bool collateralOpsPaused_
     ) internal {
-        tradingPaused = tradingPaused_;
-        liquidationPaused = liquidationPaused_;
-        settlementPaused = settlementPaused_;
-        collateralOpsPaused = collateralOpsPaused_;
+        if (tradingPaused != tradingPaused_) {
+            tradingPaused = tradingPaused_;
+            emit TradingPauseSet(tradingPaused_);
+        }
 
-        emit EmergencyModeUpdated(tradingPaused_, liquidationPaused_, settlementPaused_, collateralOpsPaused_);
+        if (liquidationPaused != liquidationPaused_) {
+            liquidationPaused = liquidationPaused_;
+            emit LiquidationPauseSet(liquidationPaused_);
+        }
+
+        if (settlementPaused != settlementPaused_) {
+            settlementPaused = settlementPaused_;
+            emit SettlementPauseSet(settlementPaused_);
+        }
+
+        if (collateralOpsPaused != collateralOpsPaused_) {
+            collateralOpsPaused = collateralOpsPaused_;
+            emit CollateralOpsPauseSet(collateralOpsPaused_);
+        }
+
+        emit EmergencyModeUpdated(tradingPaused, liquidationPaused, settlementPaused, collateralOpsPaused);
     }
 
     function _setGuardian(address guardian_) internal {
+        address oldGuardian = guardian;
         guardian = guardian_;
-        emit GuardianSet(guardian_);
+        emit GuardianSet(oldGuardian, guardian_);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -384,7 +402,8 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
 
     function _syncVaultBestEffort(address user, address token) internal {
         // best-effort: ignore failures to keep UX paths non-reverting
-        (bool ok,) = address(_collateralVault).call(abi.encodeWithSignature("syncAccountFor(address,address)", user, token));
+        (bool ok,) =
+            address(_collateralVault).call(abi.encodeWithSignature("syncAccountFor(address,address)", user, token));
         ok;
     }
 
@@ -406,10 +425,11 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     /// @dev
     ///  With contractSize locked to 1e8 (= 1 underlying), strike per contract is directly a 1e8 quote price.
     ///  Therefore notionalImplicit = quantity * strike, converted to settlement native units.
-    function _computeStrikeNotionalImplicit(
-        OptionProductRegistry.OptionSeries memory s,
-        uint256 quantity
-    ) internal view returns (uint256 notionalImplicit) {
+    function _computeStrikeNotionalImplicit(OptionProductRegistry.OptionSeries memory s, uint256 quantity)
+        internal
+        view
+        returns (uint256 notionalImplicit)
+    {
         _requireStandardContractSize(s);
         if (quantity == 0) return 0;
 
@@ -419,12 +439,11 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
 
     /// @notice Quotes the hybrid fee for a given trader/role using the configured FeesManager.
     /// @dev If no FeesManager is configured, returns a zeroed quote.
-    function _quoteHybridFee(
-        address trader,
-        bool isMaker,
-        uint256 premium,
-        uint256 notionalImplicit
-    ) internal view returns (IFeesManager.FeeQuote memory quote) {
+    function _quoteHybridFee(address trader, bool isMaker, uint256 premium, uint256 notionalImplicit)
+        internal
+        view
+        returns (IFeesManager.FeeQuote memory quote)
+    {
         IFeesManager fm = feesManager;
         if (address(fm) == address(0)) {
             return quote;
@@ -485,7 +504,6 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
             return (mul, true);
         } else {
             uint256 factor = _mePow10(uint256(baseDec - tokDec));
-            // ceil-div
             amtToken = (sameDec + (factor - 1)) / factor;
             return (amtToken, true);
         }
@@ -513,7 +531,6 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         uint8 baseDec = baseCfg.decimals;
         uint8 tokDec = tokCfg.decimals;
 
-        // num = tokenAmount * px / 1e8 (still scaled by token decimals vs base decimals)
         uint256 num = Math.mulDiv(tokenAmount, pxTokBase, _ME_PRICE_1E8, Math.Rounding.Down);
 
         if (tokDec == baseDec) return num;

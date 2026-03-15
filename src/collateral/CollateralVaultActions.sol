@@ -31,7 +31,11 @@ abstract contract CollateralVaultActions is CollateralVaultViews {
                             USER ACTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function deposit(address token, uint256 amount) external whenNotPaused nonReentrant {
+    function deposit(address token, uint256 amount)
+        external
+        whenDepositsNotPaused
+        nonReentrant
+    {
         if (amount == 0) revert AmountZero();
 
         CollateralTokenConfig memory cfg = _collateralConfigs[token];
@@ -54,8 +58,8 @@ abstract contract CollateralVaultActions is CollateralVaultViews {
 
     function depositFor(address user, address token, uint256 amount)
         external
-        whenNotPaused
         onlyMarginEngine
+        whenDepositsNotPaused
         nonReentrant
     {
         if (user == address(0)) revert ZeroAddress();
@@ -79,27 +83,39 @@ abstract contract CollateralVaultActions is CollateralVaultViews {
         _maybeMoveToStrategy(user, token, received);
     }
 
-    function withdraw(address token, uint256 amount) external nonReentrant {
+    function withdraw(address token, uint256 amount)
+        external
+        whenWithdrawalsNotPaused
+        nonReentrant
+    {
         _withdrawInternal(msg.sender, msg.sender, token, amount);
     }
 
     function withdrawFor(address user, address token, uint256 amount)
         external
         onlyMarginEngine
-        whenNotPaused
+        whenWithdrawalsNotPaused
         nonReentrant
     {
         if (user == address(0)) revert ZeroAddress();
         _withdrawInternal(user, user, token, amount);
     }
 
-    function moveToStrategy(address token, uint256 amount) external whenNotPaused nonReentrant {
+    function moveToStrategy(address token, uint256 amount)
+        external
+        whenYieldOpsNotPaused
+        nonReentrant
+    {
         _sync(msg.sender, token);
         _moveToStrategy(msg.sender, token, amount);
         _sync(msg.sender, token);
     }
 
-    function moveToIdle(address token, uint256 amount) external nonReentrant {
+    function moveToIdle(address token, uint256 amount)
+        external
+        whenYieldOpsNotPaused
+        nonReentrant
+    {
         if (amount == 0) revert AmountZero();
 
         CollateralTokenConfig memory cfg = _collateralConfigs[token];
@@ -135,7 +151,7 @@ abstract contract CollateralVaultActions is CollateralVaultViews {
     function transferBetweenAccounts(address token, address from, address to, uint256 amount)
         external
         onlyMarginEngine
-        whenNotPaused
+        whenInternalTransfersNotPaused
         nonReentrant
     {
         if (from == to) revert SameAccountTransfer();
