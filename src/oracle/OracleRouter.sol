@@ -20,6 +20,12 @@ import "./IPriceSource.sol";
 ///      * si le feed direct échoue, le router tente aussi le feed reverse si présent/actif
 ///  - Reverse support:
 ///      * si feed (base,quote) absent/inactif/indisponible, tente (quote,base) et inverse le prix
+///  - Emergency layer:
+///      * guardian opérationnel distinct de l’owner
+///      * pause globale legacy
+///      * pauses granulaires: read / config
+///      * getPriceSafe => best-effort, retourne false si lecture pausée
+///      * getPrice => revert si lecture pausée
 contract OracleRouter is IOracle {
     /*//////////////////////////////////////////////////////////////
                                 CONSTANTS
@@ -57,6 +63,16 @@ contract OracleRouter is IOracle {
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event OwnershipTransferStarted(address indexed previousOwner, address indexed pendingOwner);
 
+    event GuardianSet(address indexed guardian);
+
+    event Paused(address indexed account);
+    event Unpaused(address indexed account);
+
+    event GlobalPauseSet(bool isPaused);
+    event ReadPauseSet(bool isPaused);
+    event ConfigPauseSet(bool isPaused);
+    event EmergencyModeUpdated(bool readPaused, bool configPaused);
+
     event FeedConfigured(
         address indexed baseAsset,
         address indexed quoteAsset,
@@ -79,6 +95,16 @@ contract OracleRouter is IOracle {
     address public owner;
     address public pendingOwner;
 
+    /// @notice Emergency guardian allowed to trigger operational freezes.
+    address public guardian;
+
+    /// @notice Legacy global pause.
+    bool public paused;
+
+    /// @notice Granular emergency flags.
+    bool public readPaused;
+    bool public configPaused;
+
     /// @notice Garde de fraîcheur globale (0 = off). Défaut: 600s.
     uint32 public maxOracleDelay;
 
@@ -89,6 +115,7 @@ contract OracleRouter is IOracle {
     //////////////////////////////////////////////////////////////*/
 
     error NotAuthorized();
+    error GuardianNotAuthorized();
     error ZeroAddress();
     error FeedNotActive();
     error NoSource();
@@ -98,6 +125,8 @@ contract OracleRouter is IOracle {
     error DeviationOutOfRange();
     error DelayOutOfRange();
     error SameAssetPair();
+    error OraclePaused();
+    error ConfigPausedError();
 
     // ownership 2-step
     error OwnershipTransferNotInitiated();
@@ -108,6 +137,16 @@ contract OracleRouter is IOracle {
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert NotAuthorized();
+        _;
+    }
+
+    modifier onlyGuardianOrOwner() {
+        if (msg.sender != owner && msg.sender != guardian) revert GuardianNotAuthorized();
+        _;
+    }
+
+    modifier whenConfigNotPaused() {
+        if (_isConfigPaused()) revert ConfigPausedError();
         _;
     }
 
@@ -123,6 +162,8 @@ contract OracleRouter is IOracle {
         uint32 defaultDelay = 600;
         maxOracleDelay = defaultDelay;
         emit MaxOracleDelaySet(0, defaultDelay);
+
+        emit EmergencyModeUpdated(false, false);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -157,6 +198,82 @@ contract OracleRouter is IOracle {
     }
 
     /*//////////////////////////////////////////////////////////////
+                                GUARDIAN
+    //////////////////////////////////////////////////////////////*/
+
+    function setGuardian(address guardian_) external onlyOwner {
+        if (guardian_ == address(0)) revert ZeroAddress();
+        _setGuardian(guardian_);
+    }
+
+    function clearGuardian() external onlyOwner {
+        _setGuardian(address(0));
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                PAUSE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Legacy global pause.
+    function pause() external onlyGuardianOrOwner {
+        if (!paused) {
+            paused = true;
+            emit Paused(msg.sender);
+            emit GlobalPauseSet(true);
+        }
+    }
+
+    /// @notice Clears legacy global pause.
+    /// @dev Owner only, so guardian can escalate but not fully normalize alone.
+    function unpause() external onlyOwner {
+        if (paused) {
+            paused = false;
+            emit Unpaused(msg.sender);
+            emit GlobalPauseSet(false);
+        }
+    }
+
+    function pauseReads() external onlyGuardianOrOwner {
+        if (!readPaused) {
+            readPaused = true;
+            emit ReadPauseSet(true);
+            emit EmergencyModeUpdated(readPaused, configPaused);
+        }
+    }
+
+    function unpauseReads() external onlyOwner {
+        if (readPaused) {
+            readPaused = false;
+            emit ReadPauseSet(false);
+            emit EmergencyModeUpdated(readPaused, configPaused);
+        }
+    }
+
+    function pauseConfig() external onlyGuardianOrOwner {
+        if (!configPaused) {
+            configPaused = true;
+            emit ConfigPauseSet(true);
+            emit EmergencyModeUpdated(readPaused, configPaused);
+        }
+    }
+
+    function unpauseConfig() external onlyOwner {
+        if (configPaused) {
+            configPaused = false;
+            emit ConfigPauseSet(false);
+            emit EmergencyModeUpdated(readPaused, configPaused);
+        }
+    }
+
+    function setEmergencyModes(bool readPaused_, bool configPaused_) external onlyGuardianOrOwner {
+        _setEmergencyModes(readPaused_, configPaused_);
+    }
+
+    function clearEmergencyModes() external onlyOwner {
+        _setEmergencyModes(false, false);
+    }
+
+    /*//////////////////////////////////////////////////////////////
                             ADMIN CONFIG
     //////////////////////////////////////////////////////////////*/
 
@@ -172,7 +289,7 @@ contract OracleRouter is IOracle {
         uint32 maxDelay,
         uint16 maxDeviationBps,
         bool isActive
-    ) external onlyOwner {
+    ) external onlyOwner whenConfigNotPaused {
         if (baseAsset == address(0) || quoteAsset == address(0)) revert ZeroAddress();
         if (baseAsset == quoteAsset) revert SameAssetPair();
         if (maxDelay > MAX_ALLOWED_DELAY) revert DelayOutOfRange();
@@ -204,7 +321,11 @@ contract OracleRouter is IOracle {
         );
     }
 
-    function setFeedStatus(address baseAsset, address quoteAsset, bool isActive) external onlyOwner {
+    function setFeedStatus(address baseAsset, address quoteAsset, bool isActive)
+        external
+        onlyOwner
+        whenConfigNotPaused
+    {
         if (baseAsset == address(0) || quoteAsset == address(0)) revert ZeroAddress();
         if (baseAsset == quoteAsset) revert SameAssetPair();
 
@@ -221,7 +342,7 @@ contract OracleRouter is IOracle {
         emit FeedStatusSet(baseAsset, quoteAsset, isActive);
     }
 
-    function clearFeed(address baseAsset, address quoteAsset) external onlyOwner {
+    function clearFeed(address baseAsset, address quoteAsset) external onlyOwner whenConfigNotPaused {
         if (baseAsset == address(0) || quoteAsset == address(0)) revert ZeroAddress();
         if (baseAsset == quoteAsset) revert SameAssetPair();
 
@@ -231,7 +352,7 @@ contract OracleRouter is IOracle {
         emit FeedCleared(baseAsset, quoteAsset);
     }
 
-    function setMaxOracleDelay(uint32 _delay) external onlyOwner {
+    function setMaxOracleDelay(uint32 _delay) external onlyOwner whenConfigNotPaused {
         if (_delay > MAX_ALLOWED_DELAY) revert DelayOutOfRange();
         uint32 old = maxOracleDelay;
         maxOracleDelay = _delay;
@@ -254,11 +375,13 @@ contract OracleRouter is IOracle {
     }
 
     /// @notice Best-effort helper: renvoie (0,0,false) si aucun prix utilisable.
+    /// @dev Retourne aussi false si les lectures oracle sont pausées.
     function getPriceSafe(address baseAsset, address quoteAsset)
         external
         view
         returns (uint256 price, uint256 updatedAt, bool ok)
     {
+        if (_isReadPaused()) return (0, 0, false);
         if (baseAsset == address(0) || quoteAsset == address(0)) return (0, 0, false);
 
         if (baseAsset == quoteAsset) return (PRICE_SCALE, block.timestamp, true);
@@ -270,6 +393,37 @@ contract OracleRouter is IOracle {
         if (okRev) return (pRev, tRev, true);
 
         return (0, 0, false);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        INTERNAL EMERGENCY HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function _isReadPaused() internal view returns (bool) {
+        return paused || readPaused;
+    }
+
+    function _isConfigPaused() internal view returns (bool) {
+        return paused || configPaused;
+    }
+
+    function _setGuardian(address guardian_) internal {
+        guardian = guardian_;
+        emit GuardianSet(guardian_);
+    }
+
+    function _setEmergencyModes(bool readPaused_, bool configPaused_) internal {
+        if (readPaused != readPaused_) {
+            readPaused = readPaused_;
+            emit ReadPauseSet(readPaused_);
+        }
+
+        if (configPaused != configPaused_) {
+            configPaused = configPaused_;
+            emit ConfigPauseSet(configPaused_);
+        }
+
+        emit EmergencyModeUpdated(readPaused_, configPaused_);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -423,6 +577,7 @@ contract OracleRouter is IOracle {
         override
         returns (uint256 price, uint256 updatedAt)
     {
+        if (_isReadPaused()) revert OraclePaused();
         if (baseAsset == address(0) || quoteAsset == address(0)) revert ZeroAddress();
 
         if (baseAsset == quoteAsset) {

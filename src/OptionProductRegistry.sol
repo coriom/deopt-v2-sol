@@ -17,6 +17,15 @@ pragma solidity ^0.8.20;
 ///    - rend cohérent le calcul du notionnel implicite côté MarginEngine:
 ///         notional implicite 1e8 par contrat = strike
 ///      puis conversion en unités natives du settlement asset via CollateralVault.
+///
+///  Emergency layer:
+///    - guardian opérationnel distinct de l'owner
+///    - pause globale legacy
+///    - pauses granulaires:
+///        * creationPaused   => bloque création de nouvelles séries / strips
+///        * settlementPaused => bloque proposition/finalisation/cancel settlement
+///        * configPaused     => bloque admin config
+///    - owner seul peut normaliser complètement (unpause / clear granular flags)
 contract OptionProductRegistry {
     /*//////////////////////////////////////////////////////////////
                                 UNITS
@@ -78,6 +87,7 @@ contract OptionProductRegistry {
     error SeriesAlreadyExists();
     error UnknownSeries();
     error NotAuthorized();
+    error GuardianNotAuthorized();
     error SettlementPriceZero();
     error SettlementAlreadySet();
     error NotExpiredYet();
@@ -101,6 +111,12 @@ contract OptionProductRegistry {
     error IndexOutOfBounds();
     error EmptyStrikes();
 
+    // emergency
+    error RegistryPaused();
+    error CreationPaused();
+    error SettlementPaused();
+    error ConfigPausedError();
+
     /*//////////////////////////////////////////////////////////////
                               DEFENSIVE LIMITS
     //////////////////////////////////////////////////////////////*/
@@ -114,6 +130,17 @@ contract OptionProductRegistry {
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event OwnershipTransferStarted(address indexed previousOwner, address indexed pendingOwner);
+
+    event GuardianSet(address indexed guardian);
+
+    event Paused(address indexed account);
+    event Unpaused(address indexed account);
+
+    event GlobalPauseSet(bool isPaused);
+    event CreationPauseSet(bool isPaused);
+    event SettlementPauseSet(bool isPaused);
+    event ConfigPauseSet(bool isPaused);
+    event EmergencyModeUpdated(bool creationPaused, bool settlementPaused, bool configPaused);
 
     event SeriesCreated(
         uint256 indexed optionId,
@@ -163,6 +190,17 @@ contract OptionProductRegistry {
     address public owner;
     address public pendingOwner;
 
+    /// @notice Emergency guardian allowed to trigger operational freezes.
+    address public guardian;
+
+    /// @notice Legacy global pause.
+    bool public paused;
+
+    /// @notice Granular emergency flags.
+    bool public creationPaused;
+    bool public settlementPaused;
+    bool public configPaused;
+
     mapping(address => bool) public isSeriesCreator;
     mapping(address => UnderlyingConfig) public underlyingConfigs;
 
@@ -193,6 +231,11 @@ contract OptionProductRegistry {
         _;
     }
 
+    modifier onlyGuardianOrOwner() {
+        if (msg.sender != owner && msg.sender != guardian) revert GuardianNotAuthorized();
+        _;
+    }
+
     modifier onlySeriesCreator() {
         if (!isSeriesCreator[msg.sender]) revert NotAuthorized();
         _;
@@ -200,6 +243,21 @@ contract OptionProductRegistry {
 
     modifier onlyOwnerOrSettlementOperator() {
         if (msg.sender != owner && msg.sender != settlementOperator) revert NotAuthorized();
+        _;
+    }
+
+    modifier whenCreationNotPaused() {
+        if (_isCreationPaused()) revert CreationPaused();
+        _;
+    }
+
+    modifier whenSettlementNotPaused() {
+        if (_isSettlementPaused()) revert SettlementPaused();
+        _;
+    }
+
+    modifier whenConfigNotPaused() {
+        if (_isConfigPaused()) revert ConfigPausedError();
         _;
     }
 
@@ -218,6 +276,7 @@ contract OptionProductRegistry {
         emit OwnershipTransferred(address(0), _owner);
         emit SeriesCreatorSet(_owner, true);
         emit SettlementFinalityDelaySet(0, 0);
+        emit EmergencyModeUpdated(false, false, false);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -252,22 +311,121 @@ contract OptionProductRegistry {
     }
 
     /*//////////////////////////////////////////////////////////////
+                                GUARDIAN
+    //////////////////////////////////////////////////////////////*/
+
+    function setGuardian(address guardian_) external onlyOwner {
+        if (guardian_ == address(0)) revert ZeroAddress();
+        _setGuardian(guardian_);
+    }
+
+    function clearGuardian() external onlyOwner {
+        _setGuardian(address(0));
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                PAUSE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Legacy global pause.
+    function pause() external onlyGuardianOrOwner {
+        if (!paused) {
+            paused = true;
+            emit Paused(msg.sender);
+            emit GlobalPauseSet(true);
+        }
+    }
+
+    /// @notice Clears legacy global pause.
+    /// @dev Owner only, so guardian can escalate but not fully normalize alone.
+    function unpause() external onlyOwner {
+        if (paused) {
+            paused = false;
+            emit Unpaused(msg.sender);
+            emit GlobalPauseSet(false);
+        }
+    }
+
+    function pauseCreation() external onlyGuardianOrOwner {
+        if (!creationPaused) {
+            creationPaused = true;
+            emit CreationPauseSet(true);
+            emit EmergencyModeUpdated(creationPaused, settlementPaused, configPaused);
+        }
+    }
+
+    function unpauseCreation() external onlyOwner {
+        if (creationPaused) {
+            creationPaused = false;
+            emit CreationPauseSet(false);
+            emit EmergencyModeUpdated(creationPaused, settlementPaused, configPaused);
+        }
+    }
+
+    function pauseSettlement() external onlyGuardianOrOwner {
+        if (!settlementPaused) {
+            settlementPaused = true;
+            emit SettlementPauseSet(true);
+            emit EmergencyModeUpdated(creationPaused, settlementPaused, configPaused);
+        }
+    }
+
+    function unpauseSettlement() external onlyOwner {
+        if (settlementPaused) {
+            settlementPaused = false;
+            emit SettlementPauseSet(false);
+            emit EmergencyModeUpdated(creationPaused, settlementPaused, configPaused);
+        }
+    }
+
+    function pauseConfig() external onlyGuardianOrOwner {
+        if (!configPaused) {
+            configPaused = true;
+            emit ConfigPauseSet(true);
+            emit EmergencyModeUpdated(creationPaused, settlementPaused, configPaused);
+        }
+    }
+
+    function unpauseConfig() external onlyOwner {
+        if (configPaused) {
+            configPaused = false;
+            emit ConfigPauseSet(false);
+            emit EmergencyModeUpdated(creationPaused, settlementPaused, configPaused);
+        }
+    }
+
+    function setEmergencyModes(bool creationPaused_, bool settlementPaused_, bool configPaused_)
+        external
+        onlyGuardianOrOwner
+    {
+        _setEmergencyModes(creationPaused_, settlementPaused_, configPaused_);
+    }
+
+    function clearEmergencyModes() external onlyOwner {
+        _setEmergencyModes(false, false, false);
+    }
+
+    /*//////////////////////////////////////////////////////////////
                         EXTERNAL WRITE FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    function setSeriesCreator(address account, bool allowed) external onlyOwner {
+    function setSeriesCreator(address account, bool allowed) external onlyOwner whenConfigNotPaused {
         if (account == address(0)) revert ZeroAddress();
         isSeriesCreator[account] = allowed;
         emit SeriesCreatorSet(account, allowed);
     }
 
     /// @dev address(0) autorisé pour désactiver l’operator.
-    function setSettlementOperator(address account) external onlyOwner {
+    function setSettlementOperator(address account) external onlyOwner whenConfigNotPaused {
         settlementOperator = account;
         emit SettlementOperatorSet(account);
     }
 
-    function setUnderlyingConfig(address underlying, UnderlyingConfig calldata cfg) external onlyOwner {
+    function setUnderlyingConfig(address underlying, UnderlyingConfig calldata cfg)
+        external
+        onlyOwner
+        whenConfigNotPaused
+    {
         if (underlying == address(0)) revert UnderlyingZero();
 
         if (cfg.spotShockDownBps > MAX_SPOT_SHOCK_BPS || cfg.spotShockUpBps > MAX_SPOT_SHOCK_BPS) {
@@ -290,19 +448,19 @@ contract OptionProductRegistry {
         );
     }
 
-    function setSettlementAssetAllowed(address asset, bool allowed) external onlyOwner {
+    function setSettlementAssetAllowed(address asset, bool allowed) external onlyOwner whenConfigNotPaused {
         if (asset == address(0)) revert SettlementZero();
         isSettlementAssetAllowed[asset] = allowed;
         emit SettlementAssetConfigured(asset, allowed);
     }
 
-    function setMinExpiryDelay(uint256 _minExpiryDelay) external onlyOwner {
+    function setMinExpiryDelay(uint256 _minExpiryDelay) external onlyOwner whenConfigNotPaused {
         uint256 old = minExpiryDelay;
         minExpiryDelay = _minExpiryDelay;
         emit MinExpiryDelaySet(old, _minExpiryDelay);
     }
 
-    function setSettlementFinalityDelay(uint256 _delay) external onlyOwner {
+    function setSettlementFinalityDelay(uint256 _delay) external onlyOwner whenConfigNotPaused {
         if (_delay > 7 days) revert InvalidDelay();
         uint256 old = settlementFinalityDelay;
         settlementFinalityDelay = _delay;
@@ -321,7 +479,7 @@ contract OptionProductRegistry {
         uint64 strike,
         bool isCall,
         bool isEuropean
-    ) public onlySeriesCreator returns (uint256 optionId) {
+    ) public onlySeriesCreator whenCreationNotPaused returns (uint256 optionId) {
         optionId = _createSeries(
             underlying,
             settlementAsset,
@@ -343,7 +501,7 @@ contract OptionProductRegistry {
         uint128 contractSize1e8,
         bool isCall,
         bool isEuropean
-    ) public onlySeriesCreator returns (uint256 optionId) {
+    ) public onlySeriesCreator whenCreationNotPaused returns (uint256 optionId) {
         optionId = _createSeries(underlying, settlementAsset, expiry, strike, contractSize1e8, isCall, isEuropean);
     }
 
@@ -401,7 +559,7 @@ contract OptionProductRegistry {
         uint64 expiry,
         uint64[] calldata strikes,
         bool isEuropean
-    ) external onlySeriesCreator {
+    ) external onlySeriesCreator whenCreationNotPaused {
         uint256 len = strikes.length;
         if (len == 0) revert EmptyStrikes();
 
@@ -419,7 +577,7 @@ contract OptionProductRegistry {
         uint64[] calldata strikes,
         uint128 contractSize1e8,
         bool isEuropean
-    ) external onlySeriesCreator {
+    ) external onlySeriesCreator whenCreationNotPaused {
         uint256 len = strikes.length;
         if (len == 0) revert EmptyStrikes();
 
@@ -429,7 +587,7 @@ contract OptionProductRegistry {
         }
     }
 
-    function setSeriesActive(uint256 optionId, bool isActive) external onlyOwner {
+    function setSeriesActive(uint256 optionId, bool isActive) external onlyOwner whenConfigNotPaused {
         OptionSeries storage s = _series[optionId];
         if (!s.exists) revert UnknownSeries();
 
@@ -437,7 +595,7 @@ contract OptionProductRegistry {
         emit SeriesStatusUpdated(optionId, isActive);
     }
 
-    function setSeriesMetadata(uint256 optionId, bytes32 metadata) external onlyOwner {
+    function setSeriesMetadata(uint256 optionId, bytes32 metadata) external onlyOwner whenConfigNotPaused {
         if (!_series[optionId].exists) revert UnknownSeries();
         seriesMetadata[optionId] = metadata;
         emit SeriesMetadataSet(optionId, metadata);
@@ -447,7 +605,11 @@ contract OptionProductRegistry {
                         SETTLEMENT (2-phase)
     //////////////////////////////////////////////////////////////*/
 
-    function setSettlementPrice(uint256 optionId, uint256 settlementPrice) external onlyOwnerOrSettlementOperator {
+    function setSettlementPrice(uint256 optionId, uint256 settlementPrice)
+        external
+        onlyOwnerOrSettlementOperator
+        whenSettlementNotPaused
+    {
         OptionSeries memory s = _series[optionId];
         if (!s.exists) revert UnknownSeries();
         if (settlementPrice == 0) revert SettlementPriceZero();
@@ -474,7 +636,7 @@ contract OptionProductRegistry {
         emit SettlementPriceProposed(optionId, settlementPrice, block.timestamp);
     }
 
-    function finalizeSettlementPrice(uint256 optionId) external onlyOwnerOrSettlementOperator {
+    function finalizeSettlementPrice(uint256 optionId) external onlyOwnerOrSettlementOperator whenSettlementNotPaused {
         OptionSeries memory s = _series[optionId];
         if (!s.exists) revert UnknownSeries();
         if (_isSettled[optionId]) revert SettlementAlreadySet();
@@ -496,7 +658,7 @@ contract OptionProductRegistry {
         emit SettlementPriceFinalized(optionId, _settlementPrice[optionId], block.timestamp);
     }
 
-    function cancelSettlementProposal(uint256 optionId) external onlyOwner {
+    function cancelSettlementProposal(uint256 optionId) external onlyOwner whenSettlementNotPaused {
         if (!_series[optionId].exists) revert UnknownSeries();
         if (_isSettled[optionId]) revert SettlementAlreadySet();
 
@@ -696,6 +858,46 @@ contract OptionProductRegistry {
             isActive: true
         });
         return _computeOptionId(s);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        INTERNAL EMERGENCY HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function _isCreationPaused() internal view returns (bool) {
+        return paused || creationPaused;
+    }
+
+    function _isSettlementPaused() internal view returns (bool) {
+        return paused || settlementPaused;
+    }
+
+    function _isConfigPaused() internal view returns (bool) {
+        return paused || configPaused;
+    }
+
+    function _setGuardian(address guardian_) internal {
+        guardian = guardian_;
+        emit GuardianSet(guardian_);
+    }
+
+    function _setEmergencyModes(bool creationPaused_, bool settlementPaused_, bool configPaused_) internal {
+        if (creationPaused != creationPaused_) {
+            creationPaused = creationPaused_;
+            emit CreationPauseSet(creationPaused_);
+        }
+
+        if (settlementPaused != settlementPaused_) {
+            settlementPaused = settlementPaused_;
+            emit SettlementPauseSet(settlementPaused_);
+        }
+
+        if (configPaused != configPaused_) {
+            configPaused = configPaused_;
+            emit ConfigPauseSet(configPaused_);
+        }
+
+        emit EmergencyModeUpdated(creationPaused_, settlementPaused_, configPaused_);
     }
 
     /*//////////////////////////////////////////////////////////////
