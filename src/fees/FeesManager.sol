@@ -33,11 +33,7 @@ import {IFeesManager} from "./IFeesManager.sol";
 ///    - les vues restent lisibles même en pause
 ///    - owner peut être un Safe multisig
 contract FeesManager is IFeesManager {
-    /*//////////////////////////////////////////////////////////////
-                                CONSTANTS
-    //////////////////////////////////////////////////////////////*/
 
-    uint256 internal constant BPS = 10_000;
 
     /*//////////////////////////////////////////////////////////////
                                 ERRORS

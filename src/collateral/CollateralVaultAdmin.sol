@@ -83,7 +83,7 @@ abstract contract CollateralVaultAdmin is CollateralVaultStorage {
     function pauseDeposits() external onlyGuardianOrOwner {
         if (!depositsPaused) {
             depositsPaused = true;
-            emit DepositsPauseSet(true);
+            emit DepositPauseSet(true);
             emit EmergencyModeUpdated(depositsPaused, withdrawalsPaused, internalTransfersPaused, yieldOpsPaused);
         }
     }
@@ -91,7 +91,7 @@ abstract contract CollateralVaultAdmin is CollateralVaultStorage {
     function unpauseDeposits() external onlyOwner {
         if (depositsPaused) {
             depositsPaused = false;
-            emit DepositsPauseSet(false);
+            emit DepositPauseSet(false);
             emit EmergencyModeUpdated(depositsPaused, withdrawalsPaused, internalTransfersPaused, yieldOpsPaused);
         }
     }
@@ -100,7 +100,7 @@ abstract contract CollateralVaultAdmin is CollateralVaultStorage {
     function pauseWithdrawals() external onlyGuardianOrOwner {
         if (!withdrawalsPaused) {
             withdrawalsPaused = true;
-            emit WithdrawalsPauseSet(true);
+            emit WithdrawalPauseSet(true);
             emit EmergencyModeUpdated(depositsPaused, withdrawalsPaused, internalTransfersPaused, yieldOpsPaused);
         }
     }
@@ -108,7 +108,7 @@ abstract contract CollateralVaultAdmin is CollateralVaultStorage {
     function unpauseWithdrawals() external onlyOwner {
         if (withdrawalsPaused) {
             withdrawalsPaused = false;
-            emit WithdrawalsPauseSet(false);
+            emit WithdrawalPauseSet(false);
             emit EmergencyModeUpdated(depositsPaused, withdrawalsPaused, internalTransfersPaused, yieldOpsPaused);
         }
     }
@@ -117,7 +117,7 @@ abstract contract CollateralVaultAdmin is CollateralVaultStorage {
     function pauseInternalTransfers() external onlyGuardianOrOwner {
         if (!internalTransfersPaused) {
             internalTransfersPaused = true;
-            emit InternalTransfersPauseSet(true);
+            emit InternalTransferPauseSet(true);
             emit EmergencyModeUpdated(depositsPaused, withdrawalsPaused, internalTransfersPaused, yieldOpsPaused);
         }
     }
@@ -125,7 +125,7 @@ abstract contract CollateralVaultAdmin is CollateralVaultStorage {
     function unpauseInternalTransfers() external onlyOwner {
         if (internalTransfersPaused) {
             internalTransfersPaused = false;
-            emit InternalTransfersPauseSet(false);
+            emit InternalTransferPauseSet(false);
             emit EmergencyModeUpdated(depositsPaused, withdrawalsPaused, internalTransfersPaused, yieldOpsPaused);
         }
     }

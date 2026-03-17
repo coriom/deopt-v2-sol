@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "../CollateralVault.sol";
+import "../collateral/CollateralVault.sol";
 import "../OptionProductRegistry.sol";
 import "../oracle/IOracle.sol";
 import "./IMarginEngineState.sol";

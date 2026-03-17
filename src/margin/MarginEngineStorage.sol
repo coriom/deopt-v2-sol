@@ -6,7 +6,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 import {OptionProductRegistry} from "../OptionProductRegistry.sol";
-import {CollateralVault} from "../CollateralVault.sol";
+import {CollateralVault} from "../collateral/CollateralVault.sol";
 import {IOracle} from "../oracle/IOracle.sol";
 import {IRiskModule} from "../risk/IRiskModule.sol";
 import {IMarginEngineState} from "../risk/IMarginEngineState.sol";
