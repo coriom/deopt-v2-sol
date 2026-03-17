@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+
 import "./IOracle.sol";
 import "./IPriceSource.sol";
 
@@ -156,6 +157,7 @@ contract OracleRouter is IOracle {
 
     constructor(address _owner) {
         if (_owner == address(0)) revert ZeroAddress();
+
         owner = _owner;
         emit OwnershipTransferred(address(0), _owner);
 
@@ -179,9 +181,11 @@ contract OracleRouter is IOracle {
     function acceptOwnership() external {
         address po = pendingOwner;
         if (msg.sender != po) revert NotAuthorized();
+
         address old = owner;
         owner = po;
         pendingOwner = address(0);
+
         emit OwnershipTransferred(old, po);
     }
 
@@ -192,8 +196,10 @@ contract OracleRouter is IOracle {
 
     function renounceOwnership() external onlyOwner {
         if (pendingOwner != address(0)) revert NotAuthorized();
+
         address old = owner;
         owner = address(0);
+
         emit OwnershipTransferred(old, address(0));
     }
 
@@ -354,8 +360,10 @@ contract OracleRouter is IOracle {
 
     function setMaxOracleDelay(uint32 _delay) external onlyOwner whenConfigNotPaused {
         if (_delay > MAX_ALLOWED_DELAY) revert DelayOutOfRange();
+
         uint32 old = maxOracleDelay;
         maxOracleDelay = _delay;
+
         emit MaxOracleDelaySet(old, _delay);
     }
 
@@ -379,6 +387,7 @@ contract OracleRouter is IOracle {
     function getPriceSafe(address baseAsset, address quoteAsset)
         external
         view
+        override
         returns (uint256 price, uint256 updatedAt, bool ok)
     {
         if (_isReadPaused()) return (0, 0, false);
@@ -465,6 +474,7 @@ contract OracleRouter is IOracle {
     function _deviationBps(uint256 p1, uint256 p2) internal pure returns (uint256 bps_) {
         uint256 minP = p1 < p2 ? p1 : p2;
         if (minP == 0) return type(uint256).max;
+
         uint256 diff = p1 > p2 ? (p1 - p2) : (p2 - p1);
         return Math.mulDiv(diff, BPS, minP, Math.Rounding.Down);
     }

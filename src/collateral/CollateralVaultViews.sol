@@ -33,10 +33,13 @@ abstract contract CollateralVaultViews is CollateralVaultYield {
                                 VIEWS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Vue économique réelle: idle + valeur des shares dans la stratégie.
+    /// @dev Safe-view: si previewRedeem revert, retourne uniquement idle.
     function balanceWithYield(address user, address token) external view returns (uint256) {
         uint256 idle = idleBalances[user][token];
         uint256 shares = strategyShares[user][token];
         address adapter = tokenStrategy[token];
+
         if (shares == 0 || adapter == address(0)) return idle;
 
         try IYieldAdapter(adapter).previewRedeem(shares) returns (uint256 assetsFromShares) {
@@ -46,6 +49,13 @@ abstract contract CollateralVaultViews is CollateralVaultYield {
         }
     }
 
+    /// @notice Diagnostic d’invariant utile pour tests / monitoring.
+    /// @dev
+    ///  - balanceClaimable = valeur comptable syncée
+    ///  - idle = part liquide locale
+    ///  - shares = parts détenues dans l’adapter
+    ///  - assetsFromShares = valeur preview des shares
+    ///  - effective = idle + assetsFromShares
     function checkInvariant(address user, address token)
         external
         view

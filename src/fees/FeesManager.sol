@@ -25,17 +25,34 @@ import {IFeesManager} from "./IFeesManager.sol";
 ///    - claim Merkle lié à l'epoch courant
 ///    - expiry optionnelle sur tiers et overrides
 ///    - ownership en 2-step
+///
+///  Emergency layer:
+///    - guardian opérationnel distinct de l’owner possible
+///    - pause globale legacy
+///    - pauses granulaires: config / claims
+///    - les vues restent lisibles même en pause
+///    - owner peut être un Safe multisig
 contract FeesManager is IFeesManager {
+    /*//////////////////////////////////////////////////////////////
+                                CONSTANTS
+    //////////////////////////////////////////////////////////////*/
+
+    uint256 internal constant BPS = 10_000;
+
     /*//////////////////////////////////////////////////////////////
                                 ERRORS
     //////////////////////////////////////////////////////////////*/
 
     error NotAuthorized();
+    error GuardianNotAuthorized();
     error ZeroAddress();
     error InvalidBps();
     error ProofInvalid();
     error Expired();
     error OwnershipTransferNotInitiated();
+    error PausedError();
+    error ConfigPausedError();
+    error ClaimsPausedError();
 
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
@@ -43,6 +60,16 @@ contract FeesManager is IFeesManager {
 
     address public override owner;
     address public override pendingOwner;
+
+    /// @notice Emergency guardian allowed to trigger operational freezes.
+    address public guardian;
+
+    /// @notice Legacy global pause.
+    bool public paused;
+
+    /// @notice Granular emergency flags.
+    bool public configPaused;
+    bool public claimsPaused;
 
     bytes32 public override merkleRoot;
     uint64 public override epoch;
@@ -59,11 +86,74 @@ contract FeesManager is IFeesManager {
     mapping(address => OverrideFee) internal _overrides;
 
     /*//////////////////////////////////////////////////////////////
+                                EVENTS
+    //////////////////////////////////////////////////////////////*/
+
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event OwnershipTransferStarted(address indexed previousOwner, address indexed pendingOwner);
+
+    event GuardianSet(address indexed oldGuardian, address indexed newGuardian);
+
+    event Paused(address indexed account);
+    event Unpaused(address indexed account);
+
+    event GlobalPauseSet(bool isPaused);
+    event ConfigPauseSet(bool isPaused);
+    event ClaimsPauseSet(bool isPaused);
+    event EmergencyModeUpdated(bool configPaused, bool claimsPaused);
+
+    event FeeBpsCapSet(uint16 oldCap, uint16 newCap);
+
+    event DefaultFeesSet(
+        uint16 makerNotionalFeeBps,
+        uint16 makerPremiumCapBps,
+        uint16 takerNotionalFeeBps,
+        uint16 takerPremiumCapBps
+    );
+
+    event MerkleRootSet(bytes32 indexed oldRoot, bytes32 indexed newRoot, uint64 indexed epoch);
+
+    event OverrideSet(
+        address indexed trader,
+        uint16 makerNotionalFeeBps,
+        uint16 makerPremiumCapBps,
+        uint16 takerNotionalFeeBps,
+        uint16 takerPremiumCapBps,
+        uint64 expiry,
+        bool enabled
+    );
+
+    event TierClaimed(
+        address indexed trader,
+        uint16 makerNotionalFeeBps,
+        uint16 makerPremiumCapBps,
+        uint16 takerNotionalFeeBps,
+        uint16 takerPremiumCapBps,
+        uint64 expiry,
+        uint64 epoch
+    );
+
+    /*//////////////////////////////////////////////////////////////
                                 MODIFIERS
     //////////////////////////////////////////////////////////////*/
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert NotAuthorized();
+        _;
+    }
+
+    modifier onlyGuardianOrOwner() {
+        if (msg.sender != owner && msg.sender != guardian) revert GuardianNotAuthorized();
+        _;
+    }
+
+    modifier whenConfigNotPaused() {
+        if (_isConfigPaused()) revert ConfigPausedError();
+        _;
+    }
+
+    modifier whenClaimsNotPaused() {
+        if (_isClaimsPaused()) revert ClaimsPausedError();
         _;
     }
 
@@ -91,6 +181,8 @@ contract FeesManager is IFeesManager {
             _defaultTakerNotionalFeeBps,
             _defaultTakerPremiumCapBps
         );
+
+        emit EmergencyModeUpdated(false, false);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -129,10 +221,84 @@ contract FeesManager is IFeesManager {
     }
 
     /*//////////////////////////////////////////////////////////////
+                                GUARDIAN
+    //////////////////////////////////////////////////////////////*/
+
+    /// @dev address(0) allowed to disable guardian.
+    function setGuardian(address newGuardian) external onlyOwner {
+        address old = guardian;
+        guardian = newGuardian;
+        emit GuardianSet(old, newGuardian);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                PAUSE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Legacy global pause.
+    function pause() external onlyGuardianOrOwner {
+        if (!paused) {
+            paused = true;
+            emit Paused(msg.sender);
+            emit GlobalPauseSet(true);
+        }
+    }
+
+    /// @notice Clears legacy global pause.
+    /// @dev Owner only, so guardian can escalate but not fully normalize alone.
+    function unpause() external onlyOwner {
+        if (paused) {
+            paused = false;
+            emit Unpaused(msg.sender);
+            emit GlobalPauseSet(false);
+        }
+    }
+
+    function pauseConfig() external onlyGuardianOrOwner {
+        if (!configPaused) {
+            configPaused = true;
+            emit ConfigPauseSet(true);
+            emit EmergencyModeUpdated(configPaused, claimsPaused);
+        }
+    }
+
+    function unpauseConfig() external onlyOwner {
+        if (configPaused) {
+            configPaused = false;
+            emit ConfigPauseSet(false);
+            emit EmergencyModeUpdated(configPaused, claimsPaused);
+        }
+    }
+
+    function pauseClaims() external onlyGuardianOrOwner {
+        if (!claimsPaused) {
+            claimsPaused = true;
+            emit ClaimsPauseSet(true);
+            emit EmergencyModeUpdated(configPaused, claimsPaused);
+        }
+    }
+
+    function unpauseClaims() external onlyOwner {
+        if (claimsPaused) {
+            claimsPaused = false;
+            emit ClaimsPauseSet(false);
+            emit EmergencyModeUpdated(configPaused, claimsPaused);
+        }
+    }
+
+    function setEmergencyModes(bool configPaused_, bool claimsPaused_) external onlyGuardianOrOwner {
+        _setEmergencyModes(configPaused_, claimsPaused_);
+    }
+
+    function clearEmergencyModes() external onlyOwner {
+        _setEmergencyModes(false, false);
+    }
+
+    /*//////////////////////////////////////////////////////////////
                                 ADMIN
     //////////////////////////////////////////////////////////////*/
 
-    function setFeeBpsCap(uint16 newCap) external onlyOwner {
+    function setFeeBpsCap(uint16 newCap) external onlyOwner whenConfigNotPaused {
         _setFeeBpsCap(newCap);
     }
 
@@ -141,12 +307,12 @@ contract FeesManager is IFeesManager {
         uint16 makerPremiumCapBps,
         uint16 takerNotionalFeeBps,
         uint16 takerPremiumCapBps
-    ) external onlyOwner {
+    ) external onlyOwner whenConfigNotPaused {
         _setDefaultFees(makerNotionalFeeBps, makerPremiumCapBps, takerNotionalFeeBps, takerPremiumCapBps);
     }
 
     /// @notice Set Merkle root and auto-increment epoch.
-    function setMerkleRoot(bytes32 newRoot) external onlyOwner {
+    function setMerkleRoot(bytes32 newRoot) external onlyOwner whenConfigNotPaused {
         bytes32 old = merkleRoot;
         merkleRoot = newRoot;
 
@@ -158,7 +324,7 @@ contract FeesManager is IFeesManager {
     }
 
     /// @notice Set Merkle root with explicit epoch.
-    function setMerkleRootWithEpoch(bytes32 newRoot, uint64 newEpoch) external onlyOwner {
+    function setMerkleRootWithEpoch(bytes32 newRoot, uint64 newEpoch) external onlyOwner whenConfigNotPaused {
         bytes32 old = merkleRoot;
         merkleRoot = newRoot;
         epoch = newEpoch;
@@ -176,7 +342,7 @@ contract FeesManager is IFeesManager {
         uint16 takerPremiumCapBps,
         uint64 expiry,
         bool enabled
-    ) external onlyOwner {
+    ) external onlyOwner whenConfigNotPaused {
         if (trader == address(0)) revert ZeroAddress();
 
         FeeProfile memory profile = _buildCappedProfile(
@@ -196,7 +362,7 @@ contract FeesManager is IFeesManager {
         );
     }
 
-    function disableOverride(address trader) external onlyOwner {
+    function disableOverride(address trader) external onlyOwner whenConfigNotPaused {
         if (trader == address(0)) revert ZeroAddress();
 
         OverrideFee storage o = _overrides[trader];
@@ -226,7 +392,7 @@ contract FeesManager is IFeesManager {
         uint16 takerPremiumCapBps,
         uint64 expiry,
         bytes32[] calldata proof
-    ) external override {
+    ) external override whenClaimsNotPaused {
         if (trader == address(0)) revert ZeroAddress();
         if (msg.sender != trader) revert NotAuthorized();
         if (expiry != 0 && block.timestamp > expiry) revert Expired();
@@ -359,6 +525,32 @@ contract FeesManager is IFeesManager {
         returns (uint256 fee)
     {
         return quoteFee(trader, isMaker, premium, notionalImplicit).appliedFee;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                          INTERNAL EMERGENCY HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function _isConfigPaused() internal view returns (bool) {
+        return paused || configPaused;
+    }
+
+    function _isClaimsPaused() internal view returns (bool) {
+        return paused || claimsPaused;
+    }
+
+    function _setEmergencyModes(bool configPaused_, bool claimsPaused_) internal {
+        if (configPaused != configPaused_) {
+            configPaused = configPaused_;
+            emit ConfigPauseSet(configPaused_);
+        }
+
+        if (claimsPaused != claimsPaused_) {
+            claimsPaused = claimsPaused_;
+            emit ClaimsPauseSet(claimsPaused_);
+        }
+
+        emit EmergencyModeUpdated(configPaused_, claimsPaused_);
     }
 
     /*//////////////////////////////////////////////////////////////
