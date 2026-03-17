@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
-import "../CollateralVault.sol";
+import "../collateral/CollateralVault.sol";
 import "../oracle/IOracle.sol";
 import "./ICollateralSeizer.sol";
 
