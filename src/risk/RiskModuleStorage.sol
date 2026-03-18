@@ -59,20 +59,25 @@ abstract contract RiskModuleStorage is IRiskModule {
                             EMERGENCY EVENTS
     //////////////////////////////////////////////////////////////*/
 
+    event Paused(address indexed account);
+    event Unpaused(address indexed account);
+
     /// @notice Legacy global pause.
     /// @dev Coexists with granular pause flags for incident management.
     event GlobalPauseSet(bool isPaused);
 
     /// @notice Freeze of risk computation paths.
     /// @dev Intended for severe oracle / valuation incidents.
-    event RiskComputationPauseSet(bool isPaused);
+    event RiskChecksPauseSet(bool isPaused);
+
+    /// @notice Freeze of collateral valuation dependent paths.
+    event CollateralValuationPauseSet(bool isPaused);
 
     /// @notice Freeze of withdraw preview / withdrawability related paths.
-    /// @dev Lets governance freeze collateral outflows while keeping some views alive if desired.
     event WithdrawPreviewPauseSet(bool isPaused);
 
     /// @notice Snapshot event for the full emergency mode state.
-    event EmergencyModeUpdated(bool globalPaused, bool riskComputationPaused, bool withdrawPreviewPaused);
+    event EmergencyModeUpdated(bool riskChecksPaused, bool collateralValuationPaused, bool withdrawPreviewPaused);
 
     /*//////////////////////////////////////////////////////////////
                                 ERRORS
@@ -104,7 +109,8 @@ abstract contract RiskModuleStorage is IRiskModule {
     //////////////////////////////////////////////////////////////*/
 
     error PausedError();
-    error RiskComputationPaused();
+    error RiskChecksPaused();
+    error CollateralValuationPaused();
     error WithdrawPreviewPaused();
 
     /*//////////////////////////////////////////////////////////////
@@ -150,8 +156,11 @@ abstract contract RiskModuleStorage is IRiskModule {
     /// @notice Legacy global pause.
     bool public paused;
 
-    /// @notice Granular pause for core risk computation.
-    bool public riskComputationPaused;
+    /// @notice Granular pause for core risk checks.
+    bool public riskChecksPaused;
+
+    /// @notice Granular pause for collateral valuation dependent paths.
+    bool public collateralValuationPaused;
 
     /// @notice Granular pause for withdraw preview / withdrawability views.
     bool public withdrawPreviewPaused;
@@ -175,8 +184,13 @@ abstract contract RiskModuleStorage is IRiskModule {
         _;
     }
 
-    modifier whenRiskComputationNotPaused() {
-        if (_isRiskComputationPaused()) revert RiskComputationPaused();
+    modifier whenRiskChecksNotPaused() {
+        if (_isRiskChecksPaused()) revert RiskChecksPaused();
+        _;
+    }
+
+    modifier whenCollateralValuationNotPaused() {
+        if (_isCollateralValuationPaused()) revert CollateralValuationPaused();
         _;
     }
 
@@ -212,7 +226,8 @@ abstract contract RiskModuleStorage is IRiskModule {
         oracle = IOracle(oracle_);
 
         paused = false;
-        riskComputationPaused = false;
+        riskChecksPaused = false;
+        collateralValuationPaused = false;
         withdrawPreviewPaused = false;
 
         emit OwnershipTransferred(address(0), owner_);
@@ -226,8 +241,12 @@ abstract contract RiskModuleStorage is IRiskModule {
         return paused;
     }
 
-    function _isRiskComputationPaused() internal view returns (bool) {
-        return paused || riskComputationPaused;
+    function _isRiskChecksPaused() internal view returns (bool) {
+        return paused || riskChecksPaused;
+    }
+
+    function _isCollateralValuationPaused() internal view returns (bool) {
+        return paused || collateralValuationPaused;
     }
 
     function _isWithdrawPreviewPaused() internal view returns (bool) {
@@ -239,11 +258,24 @@ abstract contract RiskModuleStorage is IRiskModule {
         emit GuardianSet(guardian_);
     }
 
-    function _setEmergencyModes(bool globalPaused_, bool riskComputationPaused_, bool withdrawPreviewPaused_) internal {
-        paused = globalPaused_;
-        riskComputationPaused = riskComputationPaused_;
-        withdrawPreviewPaused = withdrawPreviewPaused_;
+    function _setEmergencyModes(bool riskChecksPaused_, bool collateralValuationPaused_, bool withdrawPreviewPaused_)
+        internal
+    {
+        if (riskChecksPaused != riskChecksPaused_) {
+            riskChecksPaused = riskChecksPaused_;
+            emit RiskChecksPauseSet(riskChecksPaused_);
+        }
 
-        emit EmergencyModeUpdated(globalPaused_, riskComputationPaused_, withdrawPreviewPaused_);
+        if (collateralValuationPaused != collateralValuationPaused_) {
+            collateralValuationPaused = collateralValuationPaused_;
+            emit CollateralValuationPauseSet(collateralValuationPaused_);
+        }
+
+        if (withdrawPreviewPaused != withdrawPreviewPaused_) {
+            withdrawPreviewPaused = withdrawPreviewPaused_;
+            emit WithdrawPreviewPauseSet(withdrawPreviewPaused_);
+        }
+
+        emit EmergencyModeUpdated(riskChecksPaused_, collateralValuationPaused_, withdrawPreviewPaused_);
     }
 }

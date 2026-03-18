@@ -64,6 +64,7 @@ abstract contract RiskModuleCollateral is RiskModuleOracle {
     function _computeCollateralEquityBase(address trader, address base, uint8 baseDec)
         internal
         view
+        whenCollateralValuationNotPaused
         returns (uint256 totalEquityBase)
     {
         CollateralConfig memory baseRiskCfg = collateralConfigs[base];
