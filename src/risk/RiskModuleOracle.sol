@@ -4,6 +4,12 @@ pragma solidity ^0.8.20;
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import "./RiskModuleUtils.sol";
 
+/// @notice Oracle helper layer for RiskModule.
+/// @dev
+///  - Best-effort reads:
+///      1) try getPriceSafe(base, quote) => (price, updatedAt, ok)
+///      2) fallback to getPrice(base, quote) => (price, updatedAt)
+///  - Freshness is enforced locally through maxOracleDelay.
 abstract contract RiskModuleOracle is RiskModuleUtils {
     function _isOracleDataFresh(uint256 updatedAt) internal view returns (bool) {
         uint256 d = maxOracleDelay;

@@ -33,7 +33,13 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
         return cfg.decimals;
     }
 
-    function computeAccountRisk(address trader) public view override returns (AccountRisk memory risk) {
+    function computeAccountRisk(address trader)
+        public
+        view
+        override
+        whenRiskChecksNotPaused
+        returns (AccountRisk memory risk)
+    {
         address base = baseCollateralToken;
         if (base == address(0)) return risk;
 
@@ -85,7 +91,13 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
             (mm > 0 && imFactorBps > 0) ? Math.mulDiv(mm, imFactorBps, BPS_U, Math.Rounding.Ceil) : 0;
     }
 
-    function computeFreeCollateral(address trader) public view override returns (int256 freeCollateral) {
+    function computeFreeCollateral(address trader)
+        public
+        view
+        override
+        whenRiskChecksNotPaused
+        returns (int256 freeCollateral)
+    {
         AccountRisk memory risk = computeAccountRisk(trader);
         if (risk.initialMargin == 0) return risk.equity;
 
@@ -93,7 +105,13 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
         return _subInt256Sat(risk.equity, im);
     }
 
-    function getWithdrawableAmount(address trader, address token) public view override returns (uint256 withdrawable) {
+    function getWithdrawableAmount(address trader, address token)
+        public
+        view
+        override
+        whenWithdrawPreviewNotPaused
+        returns (uint256 withdrawable)
+    {
         uint256 avail = _effectiveBalanceOf(trader, token);
         if (avail == 0) return 0;
 
@@ -135,7 +153,13 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
         withdrawable = maxToken < avail ? maxToken : avail;
     }
 
-    function computeMarginRatioBps(address trader) external view override returns (uint256) {
+    function computeMarginRatioBps(address trader)
+        external
+        view
+        override
+        whenRiskChecksNotPaused
+        returns (uint256)
+    {
         if (baseCollateralToken == address(0)) return type(uint256).max;
 
         AccountRisk memory risk = computeAccountRisk(trader);
@@ -150,6 +174,7 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
         external
         view
         override
+        whenWithdrawPreviewNotPaused
         returns (IRiskModule.WithdrawPreview memory preview)
     {
         preview.requestedAmount = amount;
@@ -198,9 +223,7 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
                 } else {
                     (uint256 price, bool ok) = _tryGetPrice(token, base);
                     if (ok) {
-                        uint256 valueBase = _baseValueToTokenAmount(token, effectiveAmount, price);
-                        // Correction: token -> base value, then haircut.
-                        valueBase = _tokenAmountToBaseValue(token, effectiveAmount, price);
+                        uint256 valueBase = _tokenAmountToBaseValue(token, effectiveAmount, price);
                         deltaEquityBase = Math.mulDiv(valueBase, uint256(rcfg.weightBps), BPS_U, Math.Rounding.Floor);
                     } else {
                         // Unknown conversion => worst-case preview.

@@ -33,8 +33,6 @@ import {IFeesManager} from "./IFeesManager.sol";
 ///    - les vues restent lisibles même en pause
 ///    - owner peut être un Safe multisig
 contract FeesManager is IFeesManager {
-
-
     /*//////////////////////////////////////////////////////////////
                                 ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -85,9 +83,6 @@ contract FeesManager is IFeesManager {
                                 EVENTS
     //////////////////////////////////////////////////////////////*/
 
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-    event OwnershipTransferStarted(address indexed previousOwner, address indexed pendingOwner);
-
     event GuardianSet(address indexed oldGuardian, address indexed newGuardian);
 
     event Paused(address indexed account);
@@ -97,37 +92,6 @@ contract FeesManager is IFeesManager {
     event ConfigPauseSet(bool isPaused);
     event ClaimsPauseSet(bool isPaused);
     event EmergencyModeUpdated(bool configPaused, bool claimsPaused);
-
-    event FeeBpsCapSet(uint16 oldCap, uint16 newCap);
-
-    event DefaultFeesSet(
-        uint16 makerNotionalFeeBps,
-        uint16 makerPremiumCapBps,
-        uint16 takerNotionalFeeBps,
-        uint16 takerPremiumCapBps
-    );
-
-    event MerkleRootSet(bytes32 indexed oldRoot, bytes32 indexed newRoot, uint64 indexed epoch);
-
-    event OverrideSet(
-        address indexed trader,
-        uint16 makerNotionalFeeBps,
-        uint16 makerPremiumCapBps,
-        uint16 takerNotionalFeeBps,
-        uint16 takerPremiumCapBps,
-        uint64 expiry,
-        bool enabled
-    );
-
-    event TierClaimed(
-        address indexed trader,
-        uint16 makerNotionalFeeBps,
-        uint16 makerPremiumCapBps,
-        uint16 takerNotionalFeeBps,
-        uint16 takerPremiumCapBps,
-        uint64 expiry,
-        uint64 epoch
-    );
 
     /*//////////////////////////////////////////////////////////////
                                 MODIFIERS
@@ -225,6 +189,12 @@ contract FeesManager is IFeesManager {
         address old = guardian;
         guardian = newGuardian;
         emit GuardianSet(old, newGuardian);
+    }
+
+    function clearGuardian() external onlyOwner {
+        address old = guardian;
+        guardian = address(0);
+        emit GuardianSet(old, address(0));
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -457,7 +427,7 @@ contract FeesManager is IFeesManager {
         }
 
         Tier memory t = _tiers[trader];
-        if (t.epoch != 0 && t.epoch == epoch && _isActive(t.expiry)) {
+        if (t.epoch == epoch && _isActive(t.expiry)) {
             return t.profile;
         }
 
@@ -485,11 +455,11 @@ contract FeesManager is IFeesManager {
         }
 
         if (params.notionalFeeBps != 0 && notionalImplicit != 0) {
-            quote.notionalFee = (notionalImplicit * uint256(params.notionalFeeBps)) / uint256(BPS);
+            quote.notionalFee = (notionalImplicit * uint256(params.notionalFeeBps)) / BPS;
         }
 
         if (params.premiumCapBps != 0 && premium != 0) {
-            quote.premiumCapFee = (premium * uint256(params.premiumCapBps)) / uint256(BPS);
+            quote.premiumCapFee = (premium * uint256(params.premiumCapBps)) / BPS;
         }
 
         if (params.notionalFeeBps == 0) {
