@@ -1,4 +1,3 @@
-// PythPriceSource.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
@@ -55,18 +54,15 @@ contract PythPriceSource is IPriceSource {
         IPyth.Price memory p = pyth.getPriceUnsafe(priceId);
 
         if (p.publishTime == 0) revert InvalidTimestamp();
+        if (p.publishTime > block.timestamp) revert InvalidTimestamp();
         if (p.price <= 0) revert InvalidPrice();
 
-        // target exponent to 1e8
-        // expTo1e8 = expo + 8
         int32 expTo1e8 = p.expo + 8;
 
-        // borne défensive: on exige |expTo1e8| <= 77 (10**77 max safe en uint256)
-        if (expTo1e8 > int32(int256(MAX_POW10_EXP)) || expTo1e8 < -int32(int256(MAX_POW10_EXP))) {
+        if (expTo1e8 > int32(uint32(MAX_POW10_EXP)) || expTo1e8 < -int32(uint32(MAX_POW10_EXP))) {
             revert ExpoOutOfRange();
         }
 
-        // p.price int64 > 0 => cast sûr après check
         uint256 mantissa = uint256(uint64(p.price));
 
         if (expTo1e8 == 0) {
@@ -74,7 +70,7 @@ contract PythPriceSource is IPriceSource {
         } else if (expTo1e8 < 0) {
             uint256 diff = uint256(uint32(-expTo1e8));
             uint256 factor = _pow10(diff);
-            price = mantissa / factor; // floor
+            price = mantissa / factor;
         } else {
             uint256 diff = uint256(uint32(expTo1e8));
             uint256 factor = _pow10(diff);

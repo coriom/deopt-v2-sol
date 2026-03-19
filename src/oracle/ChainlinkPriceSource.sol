@@ -1,4 +1,3 @@
-// ChainlinkPriceSource.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
@@ -42,8 +41,7 @@ contract ChainlinkPriceSource is IPriceSource {
         aggregator = AggregatorV3Interface(_aggregator);
 
         uint8 dec = aggregator.decimals();
-        // Défensif: Chainlink typiquement <= 18, mais on borne proprement pour éviter 10**k dangereux
-        if (dec > 36) revert InvalidDecimals(); // borne large, mais réaliste
+        if (dec > 36) revert InvalidDecimals();
         aggregatorDecimals = dec;
     }
 
@@ -56,11 +54,11 @@ contract ChainlinkPriceSource is IPriceSource {
     function getLatestPrice() external view override returns (uint256 price, uint256 updatedAt) {
         (uint80 roundId, int256 answer,, uint256 updatedAt_, uint80 answeredInRound) = aggregator.latestRoundData();
 
-        // Round sanity (Chainlink best practice)
         if (roundId == 0) revert InvalidRound();
         if (answeredInRound < roundId) revert InvalidRound();
 
         if (updatedAt_ == 0) revert InvalidTimestamp();
+        if (updatedAt_ > block.timestamp) revert InvalidTimestamp();
         if (answer <= 0) revert InvalidAnswer();
 
         uint256 raw = uint256(answer);
@@ -71,7 +69,7 @@ contract ChainlinkPriceSource is IPriceSource {
         } else if (dec > TARGET_DECIMALS) {
             uint256 diff = uint256(dec - TARGET_DECIMALS);
             uint256 factor = _pow10(diff);
-            price = raw / factor; // floor (ok)
+            price = raw / factor;
         } else {
             uint256 diff = uint256(TARGET_DECIMALS - dec);
             uint256 factor = _pow10(diff);

@@ -129,7 +129,6 @@ contract OracleRouter is IOracle {
     error OraclePaused();
     error ConfigPausedError();
 
-    // ownership 2-step
     error OwnershipTransferNotInitiated();
 
     /*//////////////////////////////////////////////////////////////
