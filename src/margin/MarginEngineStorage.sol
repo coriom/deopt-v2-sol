@@ -1,4 +1,3 @@
-// contracts/margin/MarginEngineStorage.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
@@ -38,6 +37,7 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     //////////////////////////////////////////////////////////////*/
 
     address public owner;
+    address public pendingOwner;
     address public matchingEngine;
 
     /// @notice Emergency guardian allowed to trigger protocol emergency actions.
@@ -181,8 +181,9 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         collateralOpsPaused = false;
 
         emit OwnershipTransferred(address(0), owner_);
+        emit OwnershipTransferStarted(address(0), address(0));
         emit OracleSet(oracle_);
-        emit GuardianSet(address(0), address(0));
+        emit GuardianSet(address(0));
         emit GlobalPauseSet(false);
         emit EmergencyModeUpdated(false, false, false, false);
     }
@@ -282,9 +283,8 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     }
 
     function _setGuardian(address guardian_) internal {
-        address oldGuardian = guardian;
         guardian = guardian_;
-        emit GuardianSet(oldGuardian, guardian_);
+        emit GuardianSet(guardian_);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -454,7 +454,11 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     /// @dev Convertit une valeur "base token units" en amount de `token` (token units) arrondi UP (conservateur).
     ///      Utilise oracle.getPrice(token, base) (1e8). Si oracle indispo/stale => (0,false).
     ///      Best-effort: ne doit pas revert sur overflow (chemin liquidation).
-    function _baseValueToTokenAmountUp(address token, uint256 baseValue) internal view returns (uint256 amtToken, bool ok) {
+    function _baseValueToTokenAmountUp(address token, uint256 baseValue)
+        internal
+        view
+        returns (uint256 amtToken, bool ok)
+    {
         if (baseValue == 0) return (0, true);
         if (token == address(0)) return (0, false);
 

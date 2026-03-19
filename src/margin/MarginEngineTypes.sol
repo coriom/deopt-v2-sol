@@ -1,10 +1,9 @@
-// contracts/margin/MarginEngineTypes.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
 import {OptionProductRegistry} from "../OptionProductRegistry.sol";
 
-/// @notice Types/Constants/Errors/Events + helpers purs (no storage)
+/// @notice Types / constants / errors / events + pure helpers (no storage)
 abstract contract MarginEngineTypes {
     /*//////////////////////////////////////////////////////////////
                                 CONSTANTS
@@ -33,8 +32,11 @@ abstract contract MarginEngineTypes {
     error AmountZero();
     error PausedError();
 
-    // Emergency / guardian
+    // ownership / guardian
+    error OwnershipTransferNotInitiated();
     error GuardianNotAuthorized();
+
+    // Emergency
     error TradingPaused();
     error LiquidationPaused();
     error SettlementPaused();
@@ -72,7 +74,7 @@ abstract contract MarginEngineTypes {
 
     // Safety / casting
     error QuantityTooLarge();
-    error QuantityMinNotAllowed(); // forbid int128.min (DoS/negation edge-case)
+    error QuantityMinNotAllowed(); // forbid int128.min (DoS / negation edge-case)
     error PnlOverflow();
     error MathOverflow();
     error MarginRequirementBreached(address trader);
@@ -83,7 +85,7 @@ abstract contract MarginEngineTypes {
     // Risk params strictness
     error RiskParamsMismatch();
 
-    // Vault deposit/withdraw wrapper hardening
+    // Vault deposit / withdraw wrapper hardening
     error VaultDepositForNotSupported();
     error VaultWithdrawForNotSupported();
 
@@ -97,6 +99,8 @@ abstract contract MarginEngineTypes {
     //////////////////////////////////////////////////////////////*/
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event OwnershipTransferStarted(address indexed previousOwner, address indexed pendingOwner);
+
     event MatchingEngineSet(address indexed newMatchingEngine);
 
     event TradeExecuted(
