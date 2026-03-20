@@ -8,6 +8,8 @@ contract CollateralVault is CollateralVaultActions {
         if (_owner == address(0)) revert ZeroAddress();
 
         owner = _owner;
+
         emit OwnershipTransferred(address(0), _owner);
+        emit EmergencyModeUpdated(false, false, false, false);
     }
 }

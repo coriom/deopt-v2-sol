@@ -4,14 +4,6 @@ pragma solidity ^0.8.20;
 import "./CollateralVaultStorage.sol";
 
 abstract contract CollateralVaultAdmin is CollateralVaultStorage {
-    /*//////////////////////////////////////////////////////////////
-                                MODIFIERS
-    //////////////////////////////////////////////////////////////*/
-
-    modifier onlyGuardianOrOwner() {
-        if (msg.sender != owner && msg.sender != guardian) revert NotAuthorized();
-        _;
-    }
 
     /*//////////////////////////////////////////////////////////////
                         INTERNAL EMERGENCY HELPERS

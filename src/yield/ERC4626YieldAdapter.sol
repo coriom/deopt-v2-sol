@@ -1,4 +1,3 @@
-// contracts/yield/ERC4626YieldAdapter.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
@@ -144,7 +143,6 @@ contract ERC4626YieldAdapter is IYieldAdapter, ReentrancyGuard {
     }
 
     function assetDecimals() external view override returns (uint8) {
-        // best-effort: certains tokens non-standards peuvent revert
         try IERC20Metadata(underlying).decimals() returns (uint8 d) {
             return d;
         } catch {
@@ -153,7 +151,6 @@ contract ERC4626YieldAdapter is IYieldAdapter, ReentrancyGuard {
     }
 
     function totalShares() public view override returns (uint256) {
-        // ERC-4626 shares token = l’ERC20 du vault ERC-4626 lui-même
         return IERC20(address(erc4626)).balanceOf(address(this));
     }
 
@@ -178,12 +175,10 @@ contract ERC4626YieldAdapter is IYieldAdapter, ReentrancyGuard {
     }
 
     function convertToShares(uint256 assets_) external view override returns (uint256 shares_) {
-        // floor
         return erc4626.convertToShares(assets_);
     }
 
     function convertToAssets(uint256 shares_) external view override returns (uint256 assets_) {
-        // floor
         return erc4626.convertToAssets(shares_);
     }
 
@@ -194,14 +189,10 @@ contract ERC4626YieldAdapter is IYieldAdapter, ReentrancyGuard {
     function deposit(uint256 assets_) external override onlyVault nonReentrant returns (uint256 sharesMinted) {
         if (assets_ == 0) revert AmountZero();
 
-        // Expected shares (strict)
         uint256 expected = erc4626.previewDeposit(assets_);
         if (expected == 0) revert ZeroSharesMinted();
 
-        // Pull assets depuis CollateralVault
         IERC20(underlying).safeTransferFrom(msg.sender, address(this), assets_);
-
-        // Approve vers le vault ERC-4626 et deposit au profit de l’adapter
         IERC20(underlying).forceApprove(address(erc4626), assets_);
         sharesMinted = erc4626.deposit(assets_, address(this));
 
@@ -222,7 +213,6 @@ contract ERC4626YieldAdapter is IYieldAdapter, ReentrancyGuard {
         uint256 expected = erc4626.previewWithdraw(assets_);
         if (expected == 0) revert ZeroSharesBurned();
 
-        // owner = address(this) (adapter) car les shares sont détenues ici
         sharesBurned = erc4626.withdraw(assets_, to, address(this));
 
         if (sharesBurned == 0) revert ZeroSharesBurned();
@@ -264,6 +254,7 @@ contract ERC4626YieldAdapter is IYieldAdapter, ReentrancyGuard {
     /// @dev Interdit de rescue l'underlying ou le share token ERC-4626 (fonds utilisateurs).
     function rescue(address token, address to, uint256 amount) external onlyOwner {
         if (to == address(0)) revert ZeroAddress();
+        if (amount == 0) revert AmountZero();
         if (token == underlying) revert RescueForbidden();
         if (token == address(erc4626)) revert RescueForbidden();
 

@@ -1,4 +1,3 @@
-// contracts/yield/IYieldAdapter.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
@@ -6,21 +5,21 @@ pragma solidity ^0.8.20;
 /// @notice Interface standardisée pour une stratégie de rendement utilisée par CollateralVault.
 /// @dev Invariants et conventions de rounding:
 ///  - totalAssets() : quantité totale d'assets sous gestion (principal + intérêts), en unités de `asset()`.
-///  - totalShares(): supply interne de shares de l'adapter (comptabilité).
+///  - totalShares() : supply interne de shares de l'adapter (comptabilité).
 ///
 ///  - previewDeposit(assets)  -> sharesMinted : arrondi DOWN (floor)
-///  - previewWithdraw(assets) -> sharesBurned : arrondi UP   (ceil)  (pour garantir que l'adapter brûle assez)
+///  - previewWithdraw(assets) -> sharesBurned : arrondi UP   (ceil)
 ///  - previewRedeem(shares)   -> assetsOut    : arrondi DOWN (floor)
 ///  - previewMint(shares)     -> assetsIn     : arrondi UP   (ceil)
 ///
 ///  - convertToShares / convertToAssets sont conservées pour compatibilité,
 ///    et DOIVENT être cohérentes avec previewDeposit/previewRedeem (floor).
-///    Ne PAS utiliser convertToShares pour estimer un withdraw (il faut previewWithdraw).
+///    Ne PAS utiliser convertToShares pour estimer un withdraw.
 interface IYieldAdapter {
     /// @notice L'asset sous-jacent géré par l'adapter (ex: USDC).
     function asset() external view returns (address);
 
-    /// @notice Décimales de l’asset (ex: 6 pour USDC). OPTIONNEL mais utile pour sanity-check.
+    /// @notice Décimales de l’asset (ex: 6 pour USDC).
     function assetDecimals() external view returns (uint8);
 
     /// @notice Total d'assets actuellement sous gestion (principal + intérêts), en unités de l'asset.
@@ -59,19 +58,19 @@ interface IYieldAdapter {
                                 ACTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Le Vault appelle deposit() après avoir fait transfer/approve selon le modèle de l'adapter.
-    /// @return sharesMinted Shares effectivement mintées (DOIT matcher previewDeposit).
+    /// @dev Le Vault appelle deposit() après avoir fait approve/transfert selon le modèle de l'adapter.
+    /// @return sharesMinted Shares effectivement mintées. DOIT matcher previewDeposit.
     function deposit(uint256 assets) external returns (uint256 sharesMinted);
 
     /// @dev Retire exactement `assets` et envoie les tokens à `to`.
-    /// @return sharesBurned Shares effectivement brûlées (DOIT matcher previewWithdraw).
+    /// @return sharesBurned Shares effectivement brûlées. DOIT matcher previewWithdraw.
     function withdraw(uint256 assets, address to) external returns (uint256 sharesBurned);
 
     /*//////////////////////////////////////////////////////////////
                               OPTIONAL ADMIN
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Emergency pull (optionnel) pour récupérer des fonds au Vault (ex: pause Aave).
-    /// @dev Si non supporté, l’impl peut revert.
+    /// @notice Emergency pull optionnel pour récupérer des fonds vers `to`.
+    /// @dev Si non supporté, l’implémentation peut revert.
     function emergencyWithdrawTo(address to, uint256 assets) external returns (uint256 sharesBurned);
 }
