@@ -82,9 +82,9 @@ abstract contract CollateralVaultYield is CollateralVaultAdmin {
         uint256 idle = idleBalances[user][token];
         if (idle < amount) revert NotEnoughIdle();
 
-        idleBalances[user][token] = idle - amount;
-
         uint256 expectedShares = _previewDeposit(adapter, amount);
+
+        idleBalances[user][token] = idle - amount;
 
         IERC20(token).forceApprove(adapter, amount);
         uint256 sharesMinted = IYieldAdapter(adapter).deposit(amount);

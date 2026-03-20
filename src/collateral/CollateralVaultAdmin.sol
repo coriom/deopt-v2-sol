@@ -5,6 +5,48 @@ import "./CollateralVaultStorage.sol";
 
 abstract contract CollateralVaultAdmin is CollateralVaultStorage {
     /*//////////////////////////////////////////////////////////////
+                                MODIFIERS
+    //////////////////////////////////////////////////////////////*/
+
+    modifier onlyGuardianOrOwner() {
+        if (msg.sender != owner && msg.sender != guardian) revert NotAuthorized();
+        _;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        INTERNAL EMERGENCY HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function _setEmergencyModes(
+        bool depositsPaused_,
+        bool withdrawalsPaused_,
+        bool internalTransfersPaused_,
+        bool yieldOpsPaused_
+    ) internal {
+        if (depositsPaused != depositsPaused_) {
+            depositsPaused = depositsPaused_;
+            emit DepositPauseSet(depositsPaused_);
+        }
+
+        if (withdrawalsPaused != withdrawalsPaused_) {
+            withdrawalsPaused = withdrawalsPaused_;
+            emit WithdrawalPauseSet(withdrawalsPaused_);
+        }
+
+        if (internalTransfersPaused != internalTransfersPaused_) {
+            internalTransfersPaused = internalTransfersPaused_;
+            emit InternalTransferPauseSet(internalTransfersPaused_);
+        }
+
+        if (yieldOpsPaused != yieldOpsPaused_) {
+            yieldOpsPaused = yieldOpsPaused_;
+            emit YieldOpsPauseSet(yieldOpsPaused_);
+        }
+
+        emit EmergencyModeUpdated(depositsPaused, withdrawalsPaused, internalTransfersPaused, yieldOpsPaused);
+    }
+
+    /*//////////////////////////////////////////////////////////////
                         OWNERSHIP MANAGEMENT (2-step)
     //////////////////////////////////////////////////////////////*/
 
@@ -22,7 +64,7 @@ abstract contract CollateralVaultAdmin is CollateralVaultStorage {
         owner = po;
         pendingOwner = address(0);
 
-        emit OwnershipTransferred(oldOwner, owner);
+        emit OwnershipTransferred(oldOwner, po);
     }
 
     function cancelOwnershipTransfer() external onlyOwner {

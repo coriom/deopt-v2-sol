@@ -1,4 +1,3 @@
-// contracts/margin/MarginEngineOps.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
@@ -75,7 +74,6 @@ abstract contract MarginEngineOps is MarginEngineTrading {
     }
 
     function getPositionQuantity(address trader, uint256 optionId) external view override returns (int128) {
-        // invariant: jamais int128.min (enforced by state transitions)
         return _positions[trader][optionId].quantity;
     }
 
@@ -162,28 +160,20 @@ abstract contract MarginEngineOps is MarginEngineTrading {
     //////////////////////////////////////////////////////////////*/
 
     /// @dev Dépôt correct via CollateralVault.depositFor(user, token, amount).
-    ///      Si non implémenté dans CollateralVault => revert (évite créditer le mauvais compte).
-    function depositCollateral(address token, uint256 amount)
-        external
-        whenCollateralOpsNotPaused
-        nonReentrant
-    {
+    ///      Si non implémenté dans CollateralVault => revert.
+    function depositCollateral(address token, uint256 amount) external whenCollateralOpsNotPaused nonReentrant {
         if (amount == 0) revert AmountZero();
 
-        (bool ok,) = address(_collateralVault)
-            .call(abi.encodeWithSignature("depositFor(address,address,uint256)", msg.sender, token, amount));
+        (bool ok,) =
+            address(_collateralVault).call(abi.encodeWithSignature("depositFor(address,address,uint256)", msg.sender, token, amount));
         if (!ok) revert VaultDepositForNotSupported();
 
         emit CollateralDeposited(msg.sender, token, amount);
     }
 
-    /// @dev IMPORTANT: ne jamais appeler collateralVault.withdraw() ici (msg.sender=MarginEngine).
+    /// @dev IMPORTANT: ne jamais appeler collateralVault.withdraw() ici (msg.sender = MarginEngine).
     ///      On force withdrawFor(user, token, amount). Si non supporté => revert.
-    function withdrawCollateral(address token, uint256 amount)
-        external
-        whenCollateralOpsNotPaused
-        nonReentrant
-    {
+    function withdrawCollateral(address token, uint256 amount) external whenCollateralOpsNotPaused nonReentrant {
         if (address(_riskModule) == address(0)) revert RiskModuleNotSet();
         if (amount == 0) revert AmountZero();
 
@@ -192,8 +182,8 @@ abstract contract MarginEngineOps is MarginEngineTrading {
         if (amount > preview.maxWithdrawable) revert WithdrawTooLarge();
         if (preview.marginRatioAfterBps < liquidationThresholdBps) revert WithdrawWouldBreachMargin();
 
-        (bool ok,) = address(_collateralVault)
-            .call(abi.encodeWithSignature("withdrawFor(address,address,uint256)", msg.sender, token, amount));
+        (bool ok,) =
+            address(_collateralVault).call(abi.encodeWithSignature("withdrawFor(address,address,uint256)", msg.sender, token, amount));
         if (!ok) revert VaultWithdrawForNotSupported();
 
         emit CollateralWithdrawn(msg.sender, token, amount, preview.marginRatioAfterBps);
@@ -214,15 +204,12 @@ abstract contract MarginEngineOps is MarginEngineTrading {
 
         uint256 intrinsicPrice1e8;
         if (series.isCall) {
-            intrinsicPrice1e8 =
-                settlementPrice > uint256(series.strike) ? (settlementPrice - uint256(series.strike)) : 0;
+            intrinsicPrice1e8 = settlementPrice > uint256(series.strike) ? (settlementPrice - uint256(series.strike)) : 0;
         } else {
-            intrinsicPrice1e8 =
-                uint256(series.strike) > settlementPrice ? (uint256(series.strike) - settlementPrice) : 0;
+            intrinsicPrice1e8 = uint256(series.strike) > settlementPrice ? (uint256(series.strike) - settlementPrice) : 0;
         }
 
         if (intrinsicPrice1e8 == 0) return 0;
-
         payoffPerContract = _price1e8ToSettlementUnits(series.settlementAsset, intrinsicPrice1e8);
     }
 
@@ -292,7 +279,7 @@ abstract contract MarginEngineOps is MarginEngineTrading {
             _collateralVault.transferBetweenAccounts(asset, insuranceFund, trader, amountPay);
 
             paidToTrader = amountPay;
-            seriesPaid[optionId] += amountPay;
+            seriesPaid[optionId] = _addChecked(seriesPaid[optionId], amountPay);
         } else if (pnl < 0) {
             uint256 amountOwed = uint256(-pnl);
 
@@ -302,12 +289,12 @@ abstract contract MarginEngineOps is MarginEngineTrading {
             if (amountToCollect > 0) {
                 _collateralVault.transferBetweenAccounts(asset, trader, insuranceFund, amountToCollect);
                 collectedFromTrader = amountToCollect;
-                seriesCollected[optionId] += amountToCollect;
+                seriesCollected[optionId] = _addChecked(seriesCollected[optionId], amountToCollect);
             }
 
             if (amountToCollect < amountOwed) {
                 badDebt = amountOwed - amountToCollect;
-                seriesBadDebt[optionId] += badDebt;
+                seriesBadDebt[optionId] = _addChecked(seriesBadDebt[optionId], badDebt);
             }
         }
 
@@ -318,19 +305,11 @@ abstract contract MarginEngineOps is MarginEngineTrading {
         );
     }
 
-    function settleAccount(uint256 optionId, address trader)
-        public
-        whenSettlementNotPaused
-        nonReentrant
-    {
+    function settleAccount(uint256 optionId, address trader) public whenSettlementNotPaused nonReentrant {
         _settleAccount(optionId, trader);
     }
 
-    function settleAccounts(uint256 optionId, address[] calldata traders)
-        external
-        whenSettlementNotPaused
-        nonReentrant
-    {
+    function settleAccounts(uint256 optionId, address[] calldata traders) external whenSettlementNotPaused nonReentrant {
         uint256 len = traders.length;
         for (uint256 i = 0; i < len; i++) {
             _settleAccount(optionId, traders[i]);
@@ -442,7 +421,6 @@ abstract contract MarginEngineOps is MarginEngineTrading {
             _requireStandardContractSize(s);
 
             if (block.timestamp >= s.expiry) continue;
-
             _requireSettlementAssetConfigured(s.settlementAsset);
 
             IMarginEngineState.Position storage traderPos = _positions[trader][optionId];
@@ -471,7 +449,6 @@ abstract contract MarginEngineOps is MarginEngineTrading {
             uint256 liqPricePerContract = _computeLiquidationPricePerContract(s);
             uint256 req = _mulChecked(liqPricePerContract, uint256(liqQty));
 
-            // accumulate req per settlementAsset
             {
                 bool found;
                 for (uint256 k = 0; k < assetsCount; k++) {
@@ -488,7 +465,6 @@ abstract contract MarginEngineOps is MarginEngineTrading {
                 }
             }
 
-            // track touched assets unique (for penalty fallback seize: settlement assets touched by the liquidation)
             {
                 bool tfound;
                 for (uint256 k2 = 0; k2 < touchedCount; k2++) {
@@ -556,7 +532,7 @@ abstract contract MarginEngineOps is MarginEngineTrading {
 
             if (seizeBaseTokenAmt > 0) {
                 _collateralVault.transferBetweenAccounts(baseCollateralToken, trader, liquidator, seizeBaseTokenAmt);
-                seizedBaseValueTotal += seizeBaseTokenAmt;
+                seizedBaseValueTotal = _addChecked(seizedBaseValueTotal, seizeBaseTokenAmt);
                 remainingBase -= seizeBaseTokenAmt;
 
                 emit LiquidationSeize(liquidator, trader, baseCollateralToken, seizeBaseTokenAmt, seizeBaseTokenAmt);
@@ -589,7 +565,7 @@ abstract contract MarginEngineOps is MarginEngineTrading {
                 _collateralVault.transferBetweenAccounts(tok, trader, liquidator, seizeTok);
 
                 uint256 applied = seizedBaseValueApprox <= remainingBase ? seizedBaseValueApprox : remainingBase;
-                seizedBaseValueTotal += applied;
+                seizedBaseValueTotal = _addChecked(seizedBaseValueTotal, applied);
                 remainingBase -= applied;
 
                 emit LiquidationSeize(liquidator, trader, tok, seizeTok, applied);

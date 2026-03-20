@@ -1,4 +1,3 @@
-// contracts/matching/IMarginEngineTrade.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
@@ -7,15 +6,15 @@ pragma solidity ^0.8.20;
 /// @dev Aligné avec MarginEngineTrading.applyTrade(IMarginEngineTrade.Trade).
 ///      Conventions DeOpt v2:
 ///       - price est le premium par contrat, exprimé en unités natives du settlementAsset
-///         (ex: USDC 6 decimals -> 1 USDC = 1e6).
-///       - quantity = nb de contrats.
-///       - contractSize est hard-locked à 1e8 côté registry.
-///       - buyer prend +quantity, seller prend -quantity.
+///         (ex: USDC 6 decimals -> 1 USDC = 1e6)
+///       - quantity = nb de contrats
+///       - contractSize est hard-locked à 1e8 côté registry
+///       - buyer prend +quantity, seller prend -quantity
 ///       - buyerIsMaker permet d’appliquer un vrai modèle maker/taker côté MarginEngine
-///         sans convention implicite fragile.
+///         sans convention implicite fragile
 interface IMarginEngineTrade {
     /// @notice Scale canonique historique des prix du protocole.
-    /// @dev Conservé pour compatibilité documentaire / offchain helpers.
+    /// @dev Conservé pour compatibilité documentaire / helpers offchain.
     uint256 constant PRICE_SCALE = 1e8;
 
     /// @notice Trade atomique appliqué par le MarginEngine.
@@ -43,6 +42,6 @@ interface IMarginEngineTrade {
     /// @notice Owner du MarginEngine.
     function owner() external view returns (address);
 
-    /// @notice Pause globale du moteur.
+    /// @notice Pause globale legacy du moteur.
     function paused() external view returns (bool);
 }

@@ -54,6 +54,8 @@ contract CollateralSeizer is ICollateralSeizer {
     error SpreadOutOfRange();
     error DelayOutOfRange();
 
+    error OwnershipTransferNotInitiated();
+
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
     //////////////////////////////////////////////////////////////*/
@@ -81,7 +83,7 @@ contract CollateralSeizer is ICollateralSeizer {
     IOracle public oracle;
     IRiskModuleConfigView public riskModule;
 
-    /// @notice Si oracleMaxDelay>0: prix stale => ignoré (ok=false).
+    /// @notice Si oracleMaxDelay > 0: prix stale => ignoré (ok=false).
     uint32 public oracleMaxDelay = 600;
 
     struct SeizeTokenConfig {
@@ -140,14 +142,26 @@ contract CollateralSeizer is ICollateralSeizer {
     function acceptOwnership() external {
         address po = pendingOwner;
         if (msg.sender != po) revert NotAuthorized();
+
         address old = owner;
         owner = po;
         pendingOwner = address(0);
+
         emit OwnershipTransferred(old, po);
     }
 
     function cancelOwnershipTransfer() external onlyOwner {
+        if (pendingOwner == address(0)) revert OwnershipTransferNotInitiated();
         pendingOwner = address(0);
+    }
+
+    function renounceOwnership() external onlyOwner {
+        if (pendingOwner != address(0)) revert NotAuthorized();
+
+        address old = owner;
+        owner = address(0);
+
+        emit OwnershipTransferred(old, address(0));
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -244,12 +258,8 @@ contract CollateralSeizer is ICollateralSeizer {
         if (scfg.isSet) {
             if (!scfg.isEnabled) return 0;
             spread = uint256(scfg.spreadBps);
-        } else {
-            // default: enabled + spread=0
-            spread = 0;
         }
 
-        // disc = weight * (1 - spread)
         uint256 w = uint256(weightBps);
         uint256 wAfterSpread = Math.mulDiv(w, (BPS - spread), BPS, Math.Rounding.Floor);
         return wAfterSpread;
@@ -261,7 +271,6 @@ contract CollateralSeizer is ICollateralSeizer {
     }
 
     function _safeBalanceWithYield(address user, address token) internal view returns (uint256 bal) {
-        // balanceWithYield est safe-view côté Vault, mais on garde un try/catch défensif.
         try collateralVault.balanceWithYield(user, token) returns (uint256 b) {
             return b;
         } catch {
@@ -311,7 +320,7 @@ contract CollateralSeizer is ICollateralSeizer {
         if (tokenDec > baseDec) {
             uint256 factor = _pow10(token, uint256(tokenDec - baseDec));
             uint256 tmp = Math.mulDiv(amountToken, price, PRICE_SCALE, Math.Rounding.Floor);
-            valueBase = tmp / factor; // floor
+            valueBase = tmp / factor;
             return (valueBase, true);
         } else {
             uint256 factor = _pow10(token, uint256(baseDec - tokenDec));
@@ -368,7 +377,6 @@ contract CollateralSeizer is ICollateralSeizer {
         (uint256 price, bool okPx) = _tryPrice(token, base);
         if (!okPx) return (0, false);
 
-        // temp = ceil(valueBase * 1e8 / price) in "base-decimals token units"
         uint256 temp = Math.mulDiv(valueBase, PRICE_SCALE, price, Math.Rounding.Ceil);
 
         if (tokenDec == baseDec) {
@@ -382,7 +390,6 @@ contract CollateralSeizer is ICollateralSeizer {
             return (scaled, true);
         } else {
             uint256 factor = _pow10(token, uint256(baseDec - tokenDec));
-            // amountToken = ceil(temp / factor)
             amountToken = Math.mulDiv(temp, 1, factor, Math.Rounding.Ceil);
             return (amountToken, true);
         }
@@ -423,7 +430,7 @@ contract CollateralSeizer is ICollateralSeizer {
                 uint256 avail = _safeBalanceWithYield(trader, base);
                 if (avail != 0) {
                     uint256 needValueBase = _requiredValueBaseCeil(remaining, disc);
-                    uint256 want = needValueBase; // base => amount == valueBase
+                    uint256 want = needValueBase;
                     uint256 seizeAmt = want <= avail ? want : avail;
 
                     (uint256 covered, bool okCov) = _effectiveBaseFromTokenFloor(base, seizeAmt);
@@ -478,7 +485,6 @@ contract CollateralSeizer is ICollateralSeizer {
             }
         }
 
-        // trim arrays
         assembly {
             mstore(tokensOut, n)
             mstore(amountsOut, n)

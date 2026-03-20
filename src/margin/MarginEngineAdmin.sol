@@ -1,4 +1,3 @@
-// contracts/margin/MarginEngineAdmin.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
@@ -8,71 +7,41 @@ import {IFeesManager} from "../fees/IFeesManager.sol";
 
 import {MarginEngineStorage} from "./MarginEngineStorage.sol";
 
-/// @notice Owner/guardian configuration & emergency surface
+/// @notice Owner / guardian configuration & emergency surface
 /// @dev Assumes constants/errors/events are declared in MarginEngineTypes (via MarginEngineStorage).
 abstract contract MarginEngineAdmin is MarginEngineStorage {
     /*//////////////////////////////////////////////////////////////
-                                MODIFIERS
-    //////////////////////////////////////////////////////////////*/
-
-    modifier onlyGuardianOrOwner() {
-        if (msg.sender != guardian && msg.sender != owner) revert NotAuthorized();
-        _;
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                              INTERNAL HELPERS
-    //////////////////////////////////////////////////////////////*/
-
-    function _setGuardian(address guardian_) internal {
-        address old = guardian;
-        guardian = guardian_;
-        emit GuardianSet(old, guardian_);
-    }
-
-    function _setEmergencyModes(
-        bool tradingPaused_,
-        bool liquidationPaused_,
-        bool settlementPaused_,
-        bool collateralOpsPaused_
-    ) internal {
-        if (tradingPaused != tradingPaused_) {
-            tradingPaused = tradingPaused_;
-            emit TradingPauseSet(tradingPaused_);
-        }
-
-        if (liquidationPaused != liquidationPaused_) {
-            liquidationPaused = liquidationPaused_;
-            emit LiquidationPauseSet(liquidationPaused_);
-        }
-
-        if (settlementPaused != settlementPaused_) {
-            settlementPaused = settlementPaused_;
-            emit SettlementPauseSet(settlementPaused_);
-        }
-
-        if (collateralOpsPaused != collateralOpsPaused_) {
-            collateralOpsPaused = collateralOpsPaused_;
-            emit CollateralOpsPauseSet(collateralOpsPaused_);
-        }
-
-        emit EmergencyModeUpdated(tradingPaused, liquidationPaused, settlementPaused, collateralOpsPaused);
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                              OWNERSHIP
+                              OWNERSHIP (2-step)
     //////////////////////////////////////////////////////////////*/
 
     function transferOwnership(address newOwner) external onlyOwner {
         if (newOwner == address(0)) revert ZeroAddress();
+        pendingOwner = newOwner;
+        emit OwnershipTransferStarted(owner, newOwner);
+    }
+
+    function acceptOwnership() external {
+        address po = pendingOwner;
+        if (msg.sender != po) revert NotAuthorized();
+
         address oldOwner = owner;
-        owner = newOwner;
-        emit OwnershipTransferred(oldOwner, newOwner);
+        owner = po;
+        pendingOwner = address(0);
+
+        emit OwnershipTransferred(oldOwner, po);
+    }
+
+    function cancelOwnershipTransfer() external onlyOwner {
+        if (pendingOwner == address(0)) revert OwnershipTransferNotInitiated();
+        pendingOwner = address(0);
     }
 
     function renounceOwnership() external onlyOwner {
+        if (pendingOwner != address(0)) revert NotAuthorized();
+
         address oldOwner = owner;
         owner = address(0);
+
         emit OwnershipTransferred(oldOwner, address(0));
     }
 
@@ -81,7 +50,7 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Sets the emergency guardian.
-    /// @dev Guardian is expected to be an operational actor, distinct from governance/timelock owner.
+    /// @dev Guardian is expected to be an operational actor, distinct from governance / timelock owner.
     function setGuardian(address guardian_) external onlyOwner {
         if (guardian_ == address(0)) revert ZeroAddress();
         _setGuardian(guardian_);
@@ -262,7 +231,7 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
                           RISK PARAMS CACHE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Configure le cache risk params côté MarginEngine, en vérifiant qu'ils MATCHENT RiskModule.
+    /// @notice Configure le cache risk params côté MarginEngine, en vérifiant qu'ils matchent RiskModule.
     /// @dev Source of truth = RiskModule.
     function setRiskParams(address baseToken_, uint256 baseMMPerContract_, uint256 imFactorBps_) external onlyOwner {
         if (baseToken_ == address(0)) revert ZeroAddress();

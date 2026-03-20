@@ -63,7 +63,6 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
     error DeadlineExpired();
     error BadNonce();
     error InvalidSignature();
-
     error OwnershipTransferNotInitiated();
 
     /*//////////////////////////////////////////////////////////////

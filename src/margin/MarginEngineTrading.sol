@@ -1,4 +1,3 @@
-// contracts/margin/MarginEngineTrading.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
@@ -66,11 +65,12 @@ abstract contract MarginEngineTrading is MarginEngineAdmin {
         external
         override
         onlyMatchingEngine
-        whenNotPaused
+        whenTradingNotPaused
         nonReentrant
     {
         // Basic validation
-        if (t.buyer == address(0) || t.seller == address(0) || t.buyer == t.seller || t.quantity == 0 || t.price == 0) {
+        if (t.buyer == address(0) || t.seller == address(0) || t.buyer == t.seller || t.quantity == 0 || t.price == 0)
+        {
             revert InvalidTrade();
         }
 
@@ -86,7 +86,7 @@ abstract contract MarginEngineTrading is MarginEngineAdmin {
         // Expiry guard
         if (block.timestamp >= series.expiry) revert SeriesExpired();
 
-        // Settlement asset must be vault-supported (premium/payoff ledger)
+        // Settlement asset must be vault-supported (premium / payoff ledger)
         _requireSettlementAssetConfigured(series.settlementAsset);
 
         // Read positions
