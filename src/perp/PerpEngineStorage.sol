@@ -1,0 +1,511 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
+import {CollateralVault} from "../collateral/CollateralVault.sol";
+import {IOracle} from "../oracle/IOracle.sol";
+import {IFeesManager} from "../fees/IFeesManager.sol";
+
+import {PerpMarketRegistry} from "./PerpMarketRegistry.sol";
+import {PerpEngineTypes} from "./PerpEngineTypes.sol";
+
+/// @notice Minimal risk-module surface expected by PerpEngine.
+/// @dev
+///  This stays intentionally narrow so the perp stack can evolve independently
+///  from the options RiskModule.
+interface IPerpRiskModule {
+    struct AccountRisk {
+        int256 equity1e8;
+        uint256 maintenanceMargin1e8;
+        uint256 initialMargin1e8;
+    }
+
+    struct WithdrawPreview {
+        uint256 requestedAmount;
+        uint256 maxWithdrawable;
+        uint256 marginRatioBeforeBps;
+        uint256 marginRatioAfterBps;
+        bool wouldBreachMargin;
+    }
+
+    function computeAccountRisk(address trader) external view returns (AccountRisk memory risk);
+    function computeFreeCollateral(address trader) external view returns (int256 freeCollateral);
+    function previewWithdrawImpact(address trader, address token, uint256 amount)
+        external
+        view
+        returns (WithdrawPreview memory preview);
+    function getWithdrawableAmount(address trader, address token) external view returns (uint256 amount);
+}
+
+/// @notice Minimal read view for market registry config coherence checks.
+interface IPerpMarketRegistryView {
+    function getMarket(uint256 marketId) external view returns (PerpMarketRegistry.Market memory);
+    function getRiskConfig(uint256 marketId) external view returns (PerpMarketRegistry.RiskConfig memory);
+    function getFundingConfig(uint256 marketId) external view returns (PerpMarketRegistry.FundingConfig memory);
+}
+
+/// @notice Storage root for the perpetual engine.
+/// @dev
+///  Responsibilities:
+///   - declare all persistent state
+///   - define shared modifiers
+///   - define shared emergency helpers
+///   - keep state helpers centralized before Admin / Trading / Views layers
+///
+///  Architecture:
+///   - one signed Position per (trader, marketId)
+///   - one MarketState per marketId
+///   - open-market tracking per trader for bounded scans
+///   - funding state stored per market
+///   - collateral stays in shared CollateralVault
+abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
+    /*//////////////////////////////////////////////////////////////
+                                STORAGE
+    //////////////////////////////////////////////////////////////*/
+
+    address public owner;
+    address public pendingOwner;
+
+    /// @notice Authorized matching engine for perp trades.
+    address public matchingEngine;
+
+    /// @notice Emergency operator.
+    address public guardian;
+
+    PerpMarketRegistry internal _marketRegistry;
+    CollateralVault internal _collateralVault;
+    IOracle internal _oracle;
+    IPerpRiskModule internal _riskModule;
+    IFeesManager public feesManager;
+
+    /// @notice Insurance fund / backstop.
+    address public insuranceFund;
+
+    /// @notice Explicit fee recipient. Fallback may use insuranceFund.
+    address public feeRecipient;
+
+    /// @notice Net position per trader per market.
+    mapping(address => mapping(uint256 => Position)) internal _positions;
+
+    /// @notice Runtime market state.
+    mapping(uint256 => MarketState) internal _marketStates;
+
+    /// @notice Number of markets with non-zero position for trader.
+    mapping(address => uint256[]) internal traderMarkets;
+    mapping(address => mapping(uint256 => uint256)) internal traderMarketIndexPlus1;
+
+    /// @notice Optional aggregate exposure helpers.
+    mapping(address => uint256) public totalAbsLongSize1e8;
+    mapping(address => uint256) public totalAbsShortSize1e8;
+
+    /// @notice Legacy global pause.
+    bool public paused;
+
+    /// @notice Granular emergency flags.
+    bool public tradingPaused;
+    bool public liquidationPaused;
+    bool public fundingPaused;
+    bool public collateralOpsPaused;
+
+    /*//////////////////////////////////////////////////////////////
+                                MODIFIERS
+    //////////////////////////////////////////////////////////////*/
+
+    modifier onlyOwner() {
+        if (msg.sender != owner) revert NotAuthorized();
+        _;
+    }
+
+    modifier onlyGuardianOrOwner() {
+        if (msg.sender != owner && msg.sender != guardian) revert GuardianNotAuthorized();
+        _;
+    }
+
+    modifier onlyMatchingEngine() {
+        if (msg.sender != matchingEngine) revert NotAuthorized();
+        _;
+    }
+
+    modifier whenNotPaused() {
+        if (_isAnyPauseActive()) revert PausedError();
+        _;
+    }
+
+    modifier whenTradingNotPaused() {
+        if (_isTradingPaused()) revert TradingPaused();
+        _;
+    }
+
+    modifier whenLiquidationNotPaused() {
+        if (_isLiquidationPaused()) revert LiquidationPaused();
+        _;
+    }
+
+    modifier whenFundingNotPaused() {
+        if (_isFundingPaused()) revert FundingPaused();
+        _;
+    }
+
+    modifier whenCollateralOpsNotPaused() {
+        if (_isCollateralOpsPaused()) revert CollateralOpsPaused();
+        _;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                          INTERNAL INITIALIZER
+    //////////////////////////////////////////////////////////////*/
+
+    function _initPerpEngineStorage(
+        address owner_,
+        address registry_,
+        address vault_,
+        address oracle_
+    ) internal {
+        if (owner != address(0)) revert NotAuthorized();
+        if (owner_ == address(0) || registry_ == address(0) || vault_ == address(0) || oracle_ == address(0)) {
+            revert ZeroAddress();
+        }
+
+        owner = owner_;
+        _marketRegistry = PerpMarketRegistry(registry_);
+        _collateralVault = CollateralVault(vault_);
+        _oracle = IOracle(oracle_);
+
+        paused = false;
+        tradingPaused = false;
+        liquidationPaused = false;
+        fundingPaused = false;
+        collateralOpsPaused = false;
+
+        emit OwnershipTransferred(address(0), owner_);
+        emit OracleSet(oracle_);
+        emit GuardianSet(address(0), address(0));
+        emit GlobalPauseSet(false);
+        emit EmergencyModeUpdated(false, false, false, false);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                          INTERNAL EMERGENCY HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function _isAnyPauseActive() internal view returns (bool) {
+        return paused || tradingPaused || liquidationPaused || fundingPaused || collateralOpsPaused;
+    }
+
+    function _isTradingPaused() internal view returns (bool) {
+        return paused || tradingPaused;
+    }
+
+    function _isLiquidationPaused() internal view returns (bool) {
+        return paused || liquidationPaused;
+    }
+
+    function _isFundingPaused() internal view returns (bool) {
+        return paused || fundingPaused;
+    }
+
+    function _isCollateralOpsPaused() internal view returns (bool) {
+        return paused || collateralOpsPaused;
+    }
+
+    function _setEmergencyModes(
+        bool tradingPaused_,
+        bool liquidationPaused_,
+        bool fundingPaused_,
+        bool collateralOpsPaused_
+    ) internal {
+        if (tradingPaused != tradingPaused_) {
+            tradingPaused = tradingPaused_;
+            emit TradingPauseSet(tradingPaused_);
+        }
+
+        if (liquidationPaused != liquidationPaused_) {
+            liquidationPaused = liquidationPaused_;
+            emit LiquidationPauseSet(liquidationPaused_);
+        }
+
+        if (fundingPaused != fundingPaused_) {
+            fundingPaused = fundingPaused_;
+            emit FundingPauseSet(fundingPaused_);
+        }
+
+        if (collateralOpsPaused != collateralOpsPaused_) {
+            collateralOpsPaused = collateralOpsPaused_;
+            emit CollateralOpsPauseSet(collateralOpsPaused_);
+        }
+
+        emit EmergencyModeUpdated(tradingPaused, liquidationPaused, fundingPaused, collateralOpsPaused);
+    }
+
+    function _setGuardian(address guardian_) internal {
+        address old = guardian;
+        guardian = guardian_;
+        emit GuardianSet(old, guardian_);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                          INTERNAL DEPENDENCY HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function _resolvedFeeRecipient() internal view returns (address recipient) {
+        recipient = feeRecipient;
+        if (recipient == address(0)) recipient = insuranceFund;
+    }
+
+    function _hasFeeRecipient() internal view returns (bool) {
+        return _resolvedFeeRecipient() != address(0);
+    }
+
+    function _requireRiskModuleSet() internal view {
+        if (address(_riskModule) == address(0)) revert RiskModuleNotSet();
+    }
+
+    function _requireMarketExists(uint256 marketId)
+        internal
+        view
+        returns (PerpMarketRegistry.Market memory m)
+    {
+        m = _marketRegistry.getMarket(marketId);
+        if (!m.exists) revert UnknownMarket();
+    }
+
+    function _getRiskConfig(uint256 marketId)
+        internal
+        view
+        returns (PerpMarketRegistry.RiskConfig memory cfg)
+    {
+        cfg = _marketRegistry.getRiskConfig(marketId);
+    }
+
+    function _getFundingConfig(uint256 marketId)
+        internal
+        view
+        returns (PerpMarketRegistry.FundingConfig memory cfg)
+    {
+        cfg = _marketRegistry.getFundingConfig(marketId);
+    }
+
+    function _marketOracle(PerpMarketRegistry.Market memory m) internal view returns (IOracle) {
+        if (m.oracle == address(0)) return _oracle;
+        return IOracle(m.oracle);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                          INTERNAL POSITION HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function _addOpenMarket(address trader, uint256 marketId) internal {
+        if (traderMarketIndexPlus1[trader][marketId] != 0) return;
+        traderMarkets[trader].push(marketId);
+        traderMarketIndexPlus1[trader][marketId] = traderMarkets[trader].length;
+    }
+
+    function _removeOpenMarket(address trader, uint256 marketId) internal {
+        uint256 idxPlus1 = traderMarketIndexPlus1[trader][marketId];
+        if (idxPlus1 == 0) return;
+
+        uint256 idx = idxPlus1 - 1;
+        uint256 lastIdx = traderMarkets[trader].length - 1;
+
+        if (idx != lastIdx) {
+            uint256 lastId = traderMarkets[trader][lastIdx];
+            traderMarkets[trader][idx] = lastId;
+            traderMarketIndexPlus1[trader][lastId] = idx + 1;
+        }
+
+        traderMarkets[trader].pop();
+        traderMarketIndexPlus1[trader][marketId] = 0;
+    }
+
+    function _updateOpenMarketsOnChange(address trader, uint256 marketId, int256 oldSize1e8, int256 newSize1e8) internal {
+        _ensureInt256Allowed(oldSize1e8);
+        _ensureInt256Allowed(newSize1e8);
+
+        if (oldSize1e8 == 0 && newSize1e8 != 0) {
+            _addOpenMarket(trader, marketId);
+        } else if (oldSize1e8 != 0 && newSize1e8 == 0) {
+            _removeOpenMarket(trader, marketId);
+        }
+    }
+
+    function _updateAggregateTraderExposure(address trader, int256 oldSize1e8, int256 newSize1e8) internal {
+        _ensureInt256Allowed(oldSize1e8);
+        _ensureInt256Allowed(newSize1e8);
+
+        uint256 oldLong = oldSize1e8 > 0 ? uint256(oldSize1e8) : 0;
+        uint256 newLong = newSize1e8 > 0 ? uint256(newSize1e8) : 0;
+
+        uint256 oldShort = oldSize1e8 < 0 ? uint256(-oldSize1e8) : 0;
+        uint256 newShort = newSize1e8 < 0 ? uint256(-newSize1e8) : 0;
+
+        uint256 curLong = totalAbsLongSize1e8[trader];
+        uint256 curShort = totalAbsShortSize1e8[trader];
+
+        if (newLong >= oldLong) {
+            totalAbsLongSize1e8[trader] = _addChecked(curLong, newLong - oldLong);
+        } else {
+            totalAbsLongSize1e8[trader] = _subChecked(curLong, oldLong - newLong);
+        }
+
+        if (newShort >= oldShort) {
+            totalAbsShortSize1e8[trader] = _addChecked(curShort, newShort - oldShort);
+        } else {
+            totalAbsShortSize1e8[trader] = _subChecked(curShort, oldShort - newShort);
+        }
+    }
+
+    function _syncPositionIndexing(address trader, uint256 marketId, int256 oldSize1e8, int256 newSize1e8) internal {
+        _updateOpenMarketsOnChange(trader, marketId, oldSize1e8, newSize1e8);
+        _updateAggregateTraderExposure(trader, oldSize1e8, newSize1e8);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                          INTERNAL MARKET-STATE HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function _marketState(uint256 marketId) internal view returns (MarketState memory s) {
+        s = _marketStates[marketId];
+    }
+
+    function _updateMarketOpenInterest(uint256 marketId, int256 oldSize1e8, int256 newSize1e8) internal {
+        MarketState storage s = _marketStates[marketId];
+
+        uint256 oldLong = oldSize1e8 > 0 ? uint256(oldSize1e8) : 0;
+        uint256 newLong = newSize1e8 > 0 ? uint256(newSize1e8) : 0;
+
+        uint256 oldShort = oldSize1e8 < 0 ? uint256(-oldSize1e8) : 0;
+        uint256 newShort = newSize1e8 < 0 ? uint256(-newSize1e8) : 0;
+
+        if (newLong >= oldLong) {
+            s.longOpenInterest1e8 = _addChecked(s.longOpenInterest1e8, newLong - oldLong);
+        } else {
+            s.longOpenInterest1e8 = _subChecked(s.longOpenInterest1e8, oldLong - newLong);
+        }
+
+        if (newShort >= oldShort) {
+            s.shortOpenInterest1e8 = _addChecked(s.shortOpenInterest1e8, newShort - oldShort);
+        } else {
+            s.shortOpenInterest1e8 = _subChecked(s.shortOpenInterest1e8, oldShort - newShort);
+        }
+    }
+
+    function _recordFundingUpdate(
+        uint256 marketId,
+        int256 fundingRateDelta1e18,
+        int256 nextCumulativeFundingRate1e18,
+        uint64 effectiveTimestamp
+    ) internal {
+        MarketState storage s = _marketStates[marketId];
+        s.cumulativeFundingRate1e18 = nextCumulativeFundingRate1e18;
+        s.lastFundingTimestamp = effectiveTimestamp;
+
+        emit FundingUpdated(marketId, fundingRateDelta1e18, nextCumulativeFundingRate1e18, effectiveTimestamp);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                          INTERNAL ORACLE HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function _getMarkPrice1e8(uint256 marketId) internal view returns (uint256 price1e8) {
+        PerpMarketRegistry.Market memory m = _requireMarketExists(marketId);
+        IOracle o = _marketOracle(m);
+
+        (uint256 px,) = o.getPrice(m.underlying, m.settlementAsset);
+        if (px == 0) revert OraclePriceUnavailable();
+        return px;
+    }
+
+    function _tryGetMarkPrice1e8(uint256 marketId) internal view returns (uint256 price1e8, bool ok) {
+        PerpMarketRegistry.Market memory m = _requireMarketExists(marketId);
+        IOracle o = _marketOracle(m);
+
+        {
+            (bool success, bytes memory data) = address(o).staticcall(
+                abi.encodeWithSignature("getPriceSafe(address,address)", m.underlying, m.settlementAsset)
+            );
+
+            if (success && data.length >= 96) {
+                (uint256 px,, bool safeOk) = abi.decode(data, (uint256, uint256, bool));
+                if (safeOk && px != 0) return (px, true);
+            }
+        }
+
+        try o.getPrice(m.underlying, m.settlementAsset) returns (uint256 px, uint256) {
+            if (px == 0) return (0, false);
+            return (px, true);
+        } catch {
+            return (0, false);
+        }
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                          INTERNAL ACCOUNTING HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function _positionUnrealizedPnl1e8(address trader, uint256 marketId, uint256 markPrice1e8)
+        internal
+        view
+        returns (int256 pnl1e8)
+    {
+        Position memory p = _positions[trader][marketId];
+        if (p.size1e8 == 0) return 0;
+        return _unrealizedPnl1e8(p.size1e8, p.openNotional1e8, markPrice1e8);
+    }
+
+    function _positionFundingAccrued1e8(address trader, uint256 marketId) internal view returns (int256 funding1e8) {
+        Position memory p = _positions[trader][marketId];
+        if (p.size1e8 == 0) return 0;
+
+        MarketState memory s = _marketStates[marketId];
+        return _fundingPayment1e8(p.size1e8, s.cumulativeFundingRate1e18, p.lastCumulativeFundingRate1e18);
+    }
+
+    function _settleFundingSnapshot(address trader, uint256 marketId) internal returns (int256 fundingPayment1e8) {
+        Position storage p = _positions[trader][marketId];
+        if (p.size1e8 == 0) {
+            p.lastCumulativeFundingRate1e18 = _marketStates[marketId].cumulativeFundingRate1e18;
+            return 0;
+        }
+
+        int256 cumNow = _marketStates[marketId].cumulativeFundingRate1e18;
+        fundingPayment1e8 = _fundingPayment1e8(p.size1e8, cumNow, p.lastCumulativeFundingRate1e18);
+        p.lastCumulativeFundingRate1e18 = cumNow;
+
+        emit PositionFundingSettled(trader, marketId, fundingPayment1e8, cumNow);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                          OPTIONAL COLLATERAL HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function _syncVaultBestEffort(address user, address token) internal {
+        (bool ok,) =
+            address(_collateralVault).call(abi.encodeWithSignature("syncAccountFor(address,address)", user, token));
+        ok;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                READ HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function _position(address trader, uint256 marketId) internal view returns (Position memory p) {
+        p = _positions[trader][marketId];
+    }
+
+    function _marketRegistryAddress() internal view returns (address) {
+        return address(_marketRegistry);
+    }
+
+    function _collateralVaultAddress() internal view returns (address) {
+        return address(_collateralVault);
+    }
+
+    function _oracleAddress() internal view returns (address) {
+        return address(_oracle);
+    }
+
+    function _riskModuleAddress() internal view returns (address) {
+        return address(_riskModule);
+    }
+}
