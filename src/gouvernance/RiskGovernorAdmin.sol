@@ -98,4 +98,18 @@ abstract contract RiskGovernorAdmin is RiskGovernorStorage {
         insuranceFund = newTarget;
         emit InsuranceFundSet(old, newTarget);
     }
+
+    function setPerpMarketRegistryTarget(address newTarget) external onlyOwner {
+        if (newTarget == address(0)) revert ZeroAddress();
+        address old = perpMarketRegistry;
+        perpMarketRegistry = newTarget;
+        emit PerpMarketRegistrySet(old, newTarget);
+    }
+
+    function setPerpEngineTarget(address newTarget) external onlyOwner {
+        if (newTarget == address(0)) revert ZeroAddress();
+        address old = perpEngine;
+        perpEngine = newTarget;
+        emit PerpEngineSet(old, newTarget);
+    }
 }

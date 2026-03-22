@@ -97,3 +97,74 @@ interface IInsuranceFundGov {
     function setOperator(address operator, bool allowed) external;
     function setTokenAllowed(address token, bool allowed) external;
 }
+
+/*//////////////////////////////////////////////////////////////
+                        PERP GOVERNANCE
+//////////////////////////////////////////////////////////////*/
+
+interface IPerpMarketRegistryGov {
+    struct RiskConfig {
+        uint32 initialMarginBps;
+        uint32 maintenanceMarginBps;
+        uint32 liquidationPenaltyBps;
+        uint128 maxPositionSize1e8;
+        uint128 maxOpenInterest1e8;
+        bool reduceOnlyDuringCloseOnly;
+    }
+
+    struct FundingConfig {
+        bool isEnabled;
+        uint32 fundingInterval;
+        uint32 maxFundingRateBps;
+        uint32 maxSkewFundingBps;
+        uint32 oracleClampBps;
+    }
+
+    function setMarketCreator(address account, bool allowed) external;
+    function setSettlementAssetAllowed(address asset, bool allowed) external;
+    function setMarketOracle(uint256 marketId, address oracle_) external;
+    function setMarketStatus(uint256 marketId, bool isActive, bool isCloseOnly) external;
+    function setRiskConfig(uint256 marketId, RiskConfig calldata cfg) external;
+    function setFundingConfig(uint256 marketId, FundingConfig calldata cfg) external;
+    function setMarketMetadata(uint256 marketId, bytes32 metadata) external;
+}
+
+interface IPerpEngineGov {
+    function setGuardian(address guardian_) external;
+    function clearGuardian() external;
+
+    function pause() external;
+    function unpause() external;
+
+    function pauseTrading() external;
+    function unpauseTrading() external;
+
+    function pauseLiquidation() external;
+    function unpauseLiquidation() external;
+
+    function pauseFunding() external;
+    function unpauseFunding() external;
+
+    function pauseCollateralOps() external;
+    function unpauseCollateralOps() external;
+
+    function setEmergencyModes(
+        bool tradingPaused_,
+        bool liquidationPaused_,
+        bool fundingPaused_,
+        bool collateralOpsPaused_
+    ) external;
+
+    function clearEmergencyModes() external;
+
+    function setMatchingEngine(address matchingEngine_) external;
+    function setOracle(address oracle_) external;
+    function setRiskModule(address riskModule_) external;
+    function setInsuranceFund(address insuranceFund_) external;
+    function setFeesManager(address feesManager_) external;
+    function clearFeesManager() external;
+    function setFeeRecipient(address feeRecipient_) external;
+    function clearFeeRecipient() external;
+    function setMarketRegistry(address registry_) external;
+    function setCollateralVault(address vault_) external;
+}
