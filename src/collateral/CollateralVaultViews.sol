@@ -30,11 +30,34 @@ abstract contract CollateralVaultViews is CollateralVaultYield {
     }
 
     /*//////////////////////////////////////////////////////////////
+                        AUTHORIZED ENGINE VIEWS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Returns the legacy primary engine pointer.
+    /// @dev Kept for backward compatibility with existing integrations.
+    function getPrimaryMarginEngine() external view returns (address) {
+        return marginEngine;
+    }
+
+    /// @notice Returns whether an engine is authorized to call privileged vault hooks.
+    function isEngineAuthorized(address engine) external view returns (bool) {
+        return _isAuthorizedEngine(engine);
+    }
+
+    /// @notice Returns the list of engines that have been allowlisted at least once.
+    /// @dev
+    ///  Some returned engines may currently be disabled in `isAuthorizedEngine`.
+    ///  This list is still useful for governance / monitoring / tests.
+    function getAuthorizedEngines() external view returns (address[] memory) {
+        return _getAuthorizedEngines();
+    }
+
+    /*//////////////////////////////////////////////////////////////
                                 VIEWS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Vue économique réelle: idle + valeur des shares dans la stratégie.
-    /// @dev Safe-view: si previewRedeem revert, retourne uniquement idle.
+    /// @notice Economic balance view: idle + strategy-backed assets value.
+    /// @dev Safe-view: if previewRedeem reverts, returns idle only.
     function balanceWithYield(address user, address token) external view returns (uint256) {
         uint256 idle = idleBalances[user][token];
         uint256 shares = strategyShares[user][token];
@@ -49,12 +72,12 @@ abstract contract CollateralVaultViews is CollateralVaultYield {
         }
     }
 
-    /// @notice Diagnostic d’invariant utile pour tests / monitoring.
+    /// @notice Invariant diagnostic helper for tests / monitoring.
     /// @dev
-    ///  - balanceClaimable = valeur comptable syncée
-    ///  - idle = part liquide locale
-    ///  - shares = parts détenues dans l’adapter
-    ///  - assetsFromShares = valeur preview des shares
+    ///  - balanceClaimable = synced accounting value
+    ///  - idle = liquid local part
+    ///  - shares = shares held in the adapter
+    ///  - assetsFromShares = preview value of shares
     ///  - effective = idle + assetsFromShares
     function checkInvariant(address user, address token)
         external

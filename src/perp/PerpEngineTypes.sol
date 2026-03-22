@@ -103,7 +103,7 @@ abstract contract PerpEngineTypes {
     /*//////////////////////////////////////////////////////////////
                                 ERRORS
     //////////////////////////////////////////////////////////////*/
-
+    error OwnershipTransferNotInitiated();
     error NotAuthorized();
     error GuardianNotAuthorized();
     error ZeroAddress();
@@ -157,6 +157,7 @@ abstract contract PerpEngineTypes {
     //////////////////////////////////////////////////////////////*/
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event OwnershipTransferStarted(address indexed previousOwner, address indexed pendingOwner);
 
     event GuardianSet(address indexed oldGuardian, address indexed newGuardian);
 
