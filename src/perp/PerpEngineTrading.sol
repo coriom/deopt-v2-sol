@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
+import "../matching/IPerpEngineTrade.sol";
 import "./PerpEngineViews.sol";
 
 /// @title PerpEngineTrading
@@ -20,7 +21,7 @@ import "./PerpEngineViews.sol";
 ///       netToBuyer = buyerRealizedPnl - sellerRealizedPnl
 ///   - this is sufficient to keep one-sided reductions economically meaningful,
 ///     but a future dedicated mark/funding settlement layer can refine the model further.
-abstract contract PerpEngineTrading is PerpEngineViews {
+abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
     /*//////////////////////////////////////////////////////////////
                             INTERNAL HELPERS
     //////////////////////////////////////////////////////////////*/
@@ -108,8 +109,7 @@ abstract contract PerpEngineTrading is PerpEngineViews {
 
         int256 closeSizeSigned = oldSize > 0 ? _toInt256(closeAbs) : -_toInt256(closeAbs);
 
-        int256 removedBasis1e8 =
-            (oldOpenNotional * _toInt256(closeAbs)) / _toInt256(absOld);
+        int256 removedBasis1e8 = (oldOpenNotional * _toInt256(closeAbs)) / _toInt256(absOld);
 
         int256 closedMarkValue1e8 = _signedMarkValue1e8(closeSizeSigned, executionPrice1e8);
         realizedPnl1e8 = _checkedSubInt256(closedMarkValue1e8, removedBasis1e8);
@@ -159,6 +159,7 @@ abstract contract PerpEngineTrading is PerpEngineViews {
         _collateralVault.transferBetweenAccounts(settlementAsset, trader, recipient, fee);
 
         emit CollateralWithdrawn(trader, settlementAsset, fee, 0);
+        marketId;
     }
 
     function _enforcePostTradeRisk(address trader) internal view {
@@ -200,6 +201,7 @@ abstract contract PerpEngineTrading is PerpEngineViews {
     ///  - seller gains -sizeDelta1e8
     function applyTrade(Trade calldata t)
         external
+        override
         onlyMatchingEngine
         whenTradingNotPaused
         nonReentrant
@@ -270,10 +272,7 @@ abstract contract PerpEngineTrading is PerpEngineViews {
             if (recipient == t.buyer || recipient == t.seller) revert InvalidTrade();
 
             uint256 notional1e8 = Math.mulDiv(
-                uint256(t.sizeDelta1e8),
-                uint256(t.executionPrice1e8),
-                PRICE_1E8,
-                Math.Rounding.Down
+                uint256(t.sizeDelta1e8), uint256(t.executionPrice1e8), PRICE_1E8, Math.Rounding.Down
             );
 
             uint256 notionalNative = _value1e8ToSettlementNative(m.settlementAsset, notional1e8);

@@ -75,14 +75,6 @@ abstract contract PerpEngineTypes {
     ///      seller gains -size
     ///  - executionPrice1e8 is quote/base in 1e8
     ///  - buyerIsMaker allows true maker/taker fee modeling
-    struct Trade {
-        address buyer;
-        address seller;
-        uint256 marketId;
-        uint128 sizeDelta1e8;
-        uint128 executionPrice1e8;
-        bool buyerIsMaker;
-    }
 
     /// @notice Margin snapshot for one account on one market or globally.
     struct MarginState {
