@@ -62,7 +62,13 @@ abstract contract CollateralVaultStorage is ReentrancyGuard {
 
     event GuardianSet(address indexed oldGuardian, address indexed newGuardian);
 
+    /// @notice Legacy primary protocol engine.
+    /// @dev Conserved for backward compatibility with the existing codebase.
     event MarginEngineSet(address indexed newMarginEngine);
+
+    /// @notice Engine allowlist update.
+    event AuthorizedEngineSet(address indexed engine, bool allowed);
+
     event RiskModuleSet(address indexed newRiskModule);
 
     event CollateralTokenConfigured(
@@ -109,7 +115,18 @@ abstract contract CollateralVaultStorage is ReentrancyGuard {
     /// @dev Intended owner != guardian in production. Owner = governance/timelock, guardian = operational multisig.
     address public guardian;
 
+    /// @notice Legacy primary engine pointer kept for backward compatibility.
+    /// @dev Historically this was the only authorized engine.
     address public marginEngine;
+
+    /// @notice Protocol engines authorized to call privileged vault hooks.
+    /// @dev Supports options engine + perp engine + future product engines.
+    mapping(address => bool) public isAuthorizedEngine;
+
+    /// @notice Optional list of engines for views / admin sync.
+    address[] internal authorizedEngines;
+    mapping(address => bool) internal isAuthorizedEngineListed;
+
     IRiskModule public riskModule;
 
     mapping(address => mapping(address => uint256)) public balances;
@@ -148,8 +165,15 @@ abstract contract CollateralVaultStorage is ReentrancyGuard {
         _;
     }
 
+    /// @dev Legacy modifier name preserved so existing actions/admin files
+    ///      do not need immediate signature changes.
     modifier onlyMarginEngine() {
-        if (msg.sender != marginEngine) revert NotAuthorized();
+        if (!_isAuthorizedEngine(msg.sender)) revert NotAuthorized();
+        _;
+    }
+
+    modifier onlyAuthorizedEngine() {
+        if (!_isAuthorizedEngine(msg.sender)) revert NotAuthorized();
         _;
     }
 
@@ -176,6 +200,41 @@ abstract contract CollateralVaultStorage is ReentrancyGuard {
     modifier whenYieldOpsNotPaused() {
         if (_isYieldOpsPaused()) revert YieldOperationsPaused();
         _;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        INTERNAL AUTHORIZED ENGINE HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function _isAuthorizedEngine(address engine) internal view returns (bool) {
+        return engine != address(0) && (engine == marginEngine || isAuthorizedEngine[engine]);
+    }
+
+    function _setAuthorizedEngine(address engine, bool allowed) internal {
+        if (engine == address(0)) revert ZeroAddress();
+
+        isAuthorizedEngine[engine] = allowed;
+
+        if (allowed && !isAuthorizedEngineListed[engine]) {
+            isAuthorizedEngineListed[engine] = true;
+            authorizedEngines.push(engine);
+        }
+
+        emit AuthorizedEngineSet(engine, allowed);
+    }
+
+    /// @dev Sets the legacy primary engine and auto-authorizes it.
+    function _setPrimaryMarginEngine(address engine) internal {
+        if (engine == address(0)) revert ZeroAddress();
+
+        marginEngine = engine;
+        _setAuthorizedEngine(engine, true);
+
+        emit MarginEngineSet(engine);
+    }
+
+    function _getAuthorizedEngines() internal view returns (address[] memory) {
+        return authorizedEngines;
     }
 
     /*//////////////////////////////////////////////////////////////

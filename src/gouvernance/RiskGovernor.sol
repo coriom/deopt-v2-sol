@@ -11,6 +11,7 @@ import "./RiskGovernorQueue.sol";
 ///   - RiskGovernor is authorized as proposer + executor on the timelock
 ///   - RiskGovernor owner is the protocol multisig / admin
 ///   - RiskGovernor guardian can cancel queued ops through the timelock
+///   - supports both options and perps stacks
 contract RiskGovernor is RiskGovernorQueue {
     constructor(
         address _owner,
@@ -22,7 +23,9 @@ contract RiskGovernor is RiskGovernorQueue {
         address _feesManager,
         address _optionRegistry,
         address _collateralVault,
-        address _insuranceFund
+        address _insuranceFund,
+        address _perpMarketRegistry,
+        address _perpEngine
     )
         RiskGovernorStorage(
             _owner,
@@ -34,7 +37,9 @@ contract RiskGovernor is RiskGovernorQueue {
             _feesManager,
             _optionRegistry,
             _collateralVault,
-            _insuranceFund
+            _insuranceFund,
+            _perpMarketRegistry,
+            _perpEngine
         )
     {}
 }

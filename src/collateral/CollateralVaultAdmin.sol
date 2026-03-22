@@ -4,40 +4,6 @@ pragma solidity ^0.8.20;
 import "./CollateralVaultStorage.sol";
 
 abstract contract CollateralVaultAdmin is CollateralVaultStorage {
-
-    /*//////////////////////////////////////////////////////////////
-                        INTERNAL EMERGENCY HELPERS
-    //////////////////////////////////////////////////////////////*/
-
-    function _setEmergencyModes(
-        bool depositsPaused_,
-        bool withdrawalsPaused_,
-        bool internalTransfersPaused_,
-        bool yieldOpsPaused_
-    ) internal {
-        if (depositsPaused != depositsPaused_) {
-            depositsPaused = depositsPaused_;
-            emit DepositPauseSet(depositsPaused_);
-        }
-
-        if (withdrawalsPaused != withdrawalsPaused_) {
-            withdrawalsPaused = withdrawalsPaused_;
-            emit WithdrawalPauseSet(withdrawalsPaused_);
-        }
-
-        if (internalTransfersPaused != internalTransfersPaused_) {
-            internalTransfersPaused = internalTransfersPaused_;
-            emit InternalTransferPauseSet(internalTransfersPaused_);
-        }
-
-        if (yieldOpsPaused != yieldOpsPaused_) {
-            yieldOpsPaused = yieldOpsPaused_;
-            emit YieldOpsPauseSet(yieldOpsPaused_);
-        }
-
-        emit EmergencyModeUpdated(depositsPaused, withdrawalsPaused, internalTransfersPaused, yieldOpsPaused);
-    }
-
     /*//////////////////////////////////////////////////////////////
                         OWNERSHIP MANAGEMENT (2-step)
     //////////////////////////////////////////////////////////////*/
@@ -80,9 +46,7 @@ abstract contract CollateralVaultAdmin is CollateralVaultStorage {
     /// @notice Sets the emergency guardian.
     /// @dev address(0) is allowed to disable the guardian.
     function setGuardian(address newGuardian) external onlyOwner {
-        address oldGuardian = guardian;
-        guardian = newGuardian;
-        emit GuardianSet(oldGuardian, newGuardian);
+        _setGuardian(newGuardian);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -197,20 +161,34 @@ abstract contract CollateralVaultAdmin is CollateralVaultStorage {
     }
 
     /*//////////////////////////////////////////////////////////////
-                        ADMIN / CONFIG
+                        ADMIN / ENGINE CONFIG
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Sets the legacy primary engine and auto-authorizes it.
+    /// @dev Backward-compatible entrypoint preserved for existing governance/integration.
     function setMarginEngine(address _marginEngine) external onlyOwner {
-        if (_marginEngine == address(0)) revert ZeroAddress();
-        marginEngine = _marginEngine;
-        emit MarginEngineSet(_marginEngine);
+        _setPrimaryMarginEngine(_marginEngine);
     }
+
+    /// @notice Authorize or deauthorize an engine contract.
+    /// @dev Supports multi-product setup: options engine + perp engine + future engines.
+    function setAuthorizedEngine(address engine, bool allowed) external onlyOwner {
+        _setAuthorizedEngine(engine, allowed);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                            ADMIN / RISK
+    //////////////////////////////////////////////////////////////*/
 
     function setRiskModule(address _riskModule) external onlyOwner {
         if (_riskModule == address(0)) revert ZeroAddress();
         riskModule = IRiskModule(_riskModule);
         emit RiskModuleSet(_riskModule);
     }
+
+    /*//////////////////////////////////////////////////////////////
+                        ADMIN / COLLATERAL CONFIG
+    //////////////////////////////////////////////////////////////*/
 
     function setCollateralToken(address token, bool isSupported, uint8 decimals, uint16 collateralFactorBps)
         external
@@ -234,11 +212,15 @@ abstract contract CollateralVaultAdmin is CollateralVaultStorage {
         emit CollateralTokenConfigured(token, isSupported, decimals, collateralFactorBps);
     }
 
-    /// @notice Configure un adapter de rendement pour un token.
+    /*//////////////////////////////////////////////////////////////
+                        ADMIN / YIELD STRATEGY
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Configure a yield adapter for a token.
     /// @dev
-    ///  - interdit de changer d’adapter si des shares sont encore actives
-    ///  - autorise adapter = address(0) pour désactiver la stratégie
-    ///  - si adapter != 0, l’asset de l’adapter doit matcher le token
+    ///  - forbids changing adapter while strategy shares are still active
+    ///  - allows adapter = address(0) to disable the strategy
+    ///  - if adapter != 0, adapter.asset() must match token
     function setTokenStrategy(address token, address adapter) external onlyOwner {
         if (token == address(0)) revert ZeroAddress();
 
