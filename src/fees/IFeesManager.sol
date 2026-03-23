@@ -2,18 +2,17 @@
 pragma solidity ^0.8.20;
 
 /// @title IFeesManager
-/// @notice Interface du module de fees hybride de DeOpt v2.
+/// @notice Interface du module de fees de DeOpt v2.
 /// @dev
 ///  Modèle cible:
 ///    fee = min(notionalImplicit * notionalFeeBps / 10_000, premium * premiumCapBps / 10_000)
 ///
 ///  - "premium" = cash effectivement échangé au trade (quantity * price), en unités natives du settlementAsset.
-///  - "notionalImplicit" = notionnel implicite de référence, calculé côté caller selon la convention du protocole
-///    (ex: strike * quantity, ou autre formule déterministe retenue).
+///  - "notionalImplicit" = notionnel implicite de référence, calculé côté caller selon la convention du protocole.
 ///  - Ce module NE déplace PAS de fonds. Il retourne des paramètres / quotes / montants.
-///  - La priorité des paramètres est:
-///      override actif > tier actif > defaults.
-///  - Les tiers peuvent être poussés offchain puis claim onchain via Merkle root.
+///  - Priorité:
+///      override actif > tier claimé actif > defaults.
+///  - Les tiers sont représentés par une classe de volume explicite, poussée offchain puis claimée onchain.
 ///  - Les overrides permettent les exceptions MM / VIP avec expiration optionnelle.
 interface IFeesManager {
     /*//////////////////////////////////////////////////////////////
@@ -41,9 +40,20 @@ interface IFeesManager {
         FeeParams taker;
     }
 
+    /// @notice Classes de volume standard V1.
+    /// @dev
+    ///  Tier0:   0 – 5M
+    ///  Tier1:   5M – 25M
+    ///  Tier2:   25M – 100M
+    enum VolumeTierClass {
+        Tier0,
+        Tier1,
+        Tier2
+    }
+
     /// @notice Tier claimé onchain depuis une Merkle root.
     struct Tier {
-        FeeProfile profile;
+        VolumeTierClass tierClass;
         uint64 expiry; // 0 = no expiry
         uint64 epoch; // epoch du root ayant produit ce tier
     }
@@ -84,6 +94,9 @@ interface IFeesManager {
     function tiers(address trader) external view returns (Tier memory);
     function overrides(address trader) external view returns (OverrideFee memory);
 
+    /// @notice Retourne le profil standard associé à une classe de volume.
+    function getTierClassProfile(VolumeTierClass tierClass) external view returns (FeeProfile memory profile);
+
     /// @notice Retourne le profil effectif (override > tier > defaults).
     function getFeeProfile(address trader) external view returns (FeeProfile memory profile);
 
@@ -117,23 +130,12 @@ interface IFeesManager {
     ///  keccak256(
     ///      abi.encode(
     ///          trader,
-    ///          makerNotionalFeeBps,
-    ///          makerPremiumCapBps,
-    ///          takerNotionalFeeBps,
-    ///          takerPremiumCapBps,
+    ///          tierClass,
     ///          expiry,
     ///          epoch
     ///      )
     ///  )
-    function claimTier(
-        address trader,
-        uint16 makerNotionalFeeBps,
-        uint16 makerPremiumCapBps,
-        uint16 takerNotionalFeeBps,
-        uint16 takerPremiumCapBps,
-        uint64 expiry,
-        bytes32[] calldata proof
-    ) external;
+    function claimTier(address trader, VolumeTierClass tierClass, uint64 expiry, bytes32[] calldata proof) external;
 
     /*//////////////////////////////////////////////////////////////
                                   EVENTS
@@ -153,15 +155,7 @@ interface IFeesManager {
 
     event MerkleRootSet(bytes32 indexed oldRoot, bytes32 indexed newRoot, uint64 indexed newEpoch);
 
-    event TierClaimed(
-        address indexed trader,
-        uint16 makerNotionalFeeBps,
-        uint16 makerPremiumCapBps,
-        uint16 takerNotionalFeeBps,
-        uint16 takerPremiumCapBps,
-        uint64 expiry,
-        uint64 epoch
-    );
+    event TierClaimed(address indexed trader, VolumeTierClass tierClass, uint64 expiry, uint64 epoch);
 
     event OverrideSet(
         address indexed trader,

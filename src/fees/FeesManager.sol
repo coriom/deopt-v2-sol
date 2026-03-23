@@ -13,7 +13,7 @@ import {IFeesManager} from "./IFeesManager.sol";
 ///    fee = min(notionalImplicit * notionalFeeBps / 10_000, premium * premiumCapBps / 10_000)
 ///
 ///  Le contrat NE déplace PAS de fonds.
-///  Le caller (MarginEngine) fournit:
+///  Le caller (MarginEngine / PerpEngine) fournit:
 ///    - premium effectivement échangé
 ///    - notionnel implicite retenu par le protocole
 ///
@@ -44,7 +44,6 @@ contract FeesManager is IFeesManager {
     error ProofInvalid();
     error Expired();
     error OwnershipTransferNotInitiated();
-    error PausedError();
     error ConfigPausedError();
     error ClaimsPausedError();
 
@@ -350,15 +349,11 @@ contract FeesManager is IFeesManager {
     //////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IFeesManager
-    function claimTier(
-        address trader,
-        uint16 makerNotionalFeeBps,
-        uint16 makerPremiumCapBps,
-        uint16 takerNotionalFeeBps,
-        uint16 takerPremiumCapBps,
-        uint64 expiry,
-        bytes32[] calldata proof
-    ) external override whenClaimsNotPaused {
+    function claimTier(address trader, VolumeTierClass tierClass, uint64 expiry, bytes32[] calldata proof)
+        external
+        override
+        whenClaimsNotPaused
+    {
         if (trader == address(0)) revert ZeroAddress();
         if (msg.sender != trader) revert NotAuthorized();
         if (expiry != 0 && block.timestamp > expiry) revert Expired();
@@ -366,43 +361,16 @@ contract FeesManager is IFeesManager {
         bytes32 root = merkleRoot;
         if (root == bytes32(0)) revert ProofInvalid();
 
-        _validateBps(makerNotionalFeeBps);
-        _validateBps(makerPremiumCapBps);
-        _validateBps(takerNotionalFeeBps);
-        _validateBps(takerPremiumCapBps);
-
         uint64 currentEpoch = epoch;
 
-        bytes32 leaf = keccak256(
-            abi.encode(
-                trader,
-                makerNotionalFeeBps,
-                makerPremiumCapBps,
-                takerNotionalFeeBps,
-                takerPremiumCapBps,
-                expiry,
-                currentEpoch
-            )
-        );
+        bytes32 leaf = keccak256(abi.encode(trader, tierClass, expiry, currentEpoch));
 
         bool ok = MerkleProof.verifyCalldata(proof, root, leaf);
         if (!ok) revert ProofInvalid();
 
-        FeeProfile memory profile = _buildCappedProfile(
-            makerNotionalFeeBps, makerPremiumCapBps, takerNotionalFeeBps, takerPremiumCapBps
-        );
+        _tiers[trader] = Tier({tierClass: tierClass, expiry: expiry, epoch: currentEpoch});
 
-        _tiers[trader] = Tier({profile: profile, expiry: expiry, epoch: currentEpoch});
-
-        emit TierClaimed(
-            trader,
-            profile.maker.notionalFeeBps,
-            profile.maker.premiumCapBps,
-            profile.taker.notionalFeeBps,
-            profile.taker.premiumCapBps,
-            expiry,
-            currentEpoch
-        );
+        emit TierClaimed(trader, tierClass, expiry, currentEpoch);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -418,6 +386,36 @@ contract FeesManager is IFeesManager {
     }
 
     /// @inheritdoc IFeesManager
+    function getTierClassProfile(VolumeTierClass tierClass)
+        public
+        view
+        override
+        returns (FeeProfile memory profile)
+    {
+        if (tierClass == VolumeTierClass.Tier0) {
+            // 0 – 5M : maker 0.01% ; taker 0.03%
+            profile.maker = FeeParams({notionalFeeBps: _cap(1), premiumCapBps: _cap(1)});
+            profile.taker = FeeParams({notionalFeeBps: _cap(3), premiumCapBps: _cap(3)});
+            return profile;
+        }
+
+        if (tierClass == VolumeTierClass.Tier1) {
+            // 5M – 25M : maker 0.005% ; taker 0.02%
+            // uint16 bps can't represent 0.5 bps. We floor to 0 for V1 integer-bps model.
+            // Taker = 2 bps.
+            profile.maker = FeeParams({notionalFeeBps: _cap(0), premiumCapBps: _cap(0)});
+            profile.taker = FeeParams({notionalFeeBps: _cap(2), premiumCapBps: _cap(2)});
+            return profile;
+        }
+
+        // Tier2
+        // 25M – 100M : maker 0% ; taker 0.015%
+        // uint16 bps can't represent 1.5 bps. We floor to 1 bps for V1 integer-bps model.
+        profile.maker = FeeParams({notionalFeeBps: _cap(0), premiumCapBps: _cap(0)});
+        profile.taker = FeeParams({notionalFeeBps: _cap(1), premiumCapBps: _cap(1)});
+    }
+
+    /// @inheritdoc IFeesManager
     function getFeeProfile(address trader) public view override returns (FeeProfile memory profile) {
         if (trader == address(0)) revert ZeroAddress();
 
@@ -427,8 +425,8 @@ contract FeesManager is IFeesManager {
         }
 
         Tier memory t = _tiers[trader];
-        if (t.epoch == epoch && _isActive(t.expiry)) {
-            return t.profile;
+        if (t.epoch != 0 && t.epoch == epoch && _isActive(t.expiry)) {
+            return getTierClassProfile(t.tierClass);
         }
 
         return _defaultProfile();
@@ -455,11 +453,11 @@ contract FeesManager is IFeesManager {
         }
 
         if (params.notionalFeeBps != 0 && notionalImplicit != 0) {
-            quote.notionalFee = (notionalImplicit * uint256(params.notionalFeeBps)) / BPS;
+            quote.notionalFee = (notionalImplicit * uint256(params.notionalFeeBps)) / uint256(BPS);
         }
 
         if (params.premiumCapBps != 0 && premium != 0) {
-            quote.premiumCapFee = (premium * uint256(params.premiumCapBps)) / BPS;
+            quote.premiumCapFee = (premium * uint256(params.premiumCapBps)) / uint256(BPS);
         }
 
         if (params.notionalFeeBps == 0) {

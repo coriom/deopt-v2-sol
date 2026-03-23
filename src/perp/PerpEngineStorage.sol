@@ -91,11 +91,11 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
     /// @notice Runtime market state.
     mapping(uint256 => MarketState) internal _marketStates;
 
-    /// @notice Number of markets with non-zero position for trader.
+    /// @notice List of markets with non-zero position for trader.
     mapping(address => uint256[]) internal traderMarkets;
     mapping(address => mapping(uint256 => uint256)) internal traderMarketIndexPlus1;
 
-    /// @notice Optional aggregate exposure helpers.
+    /// @notice Aggregate exposure helpers.
     mapping(address => uint256) public totalAbsLongSize1e8;
     mapping(address => uint256) public totalAbsShortSize1e8;
 
@@ -156,12 +156,7 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
                           INTERNAL INITIALIZER
     //////////////////////////////////////////////////////////////*/
 
-    function _initPerpEngineStorage(
-        address owner_,
-        address registry_,
-        address vault_,
-        address oracle_
-    ) internal {
+    function _initPerpEngineStorage(address owner_, address registry_, address vault_, address oracle_) internal {
         if (owner != address(0)) revert NotAuthorized();
         if (owner_ == address(0) || registry_ == address(0) || vault_ == address(0) || oracle_ == address(0)) {
             revert ZeroAddress();
@@ -261,28 +256,16 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         if (address(_riskModule) == address(0)) revert RiskModuleNotSet();
     }
 
-    function _requireMarketExists(uint256 marketId)
-        internal
-        view
-        returns (PerpMarketRegistry.Market memory m)
-    {
+    function _requireMarketExists(uint256 marketId) internal view returns (PerpMarketRegistry.Market memory m) {
         m = _marketRegistry.getMarket(marketId);
         if (!m.exists) revert UnknownMarket();
     }
 
-    function _getRiskConfig(uint256 marketId)
-        internal
-        view
-        returns (PerpMarketRegistry.RiskConfig memory cfg)
-    {
+    function _getRiskConfig(uint256 marketId) internal view returns (PerpMarketRegistry.RiskConfig memory cfg) {
         cfg = _marketRegistry.getRiskConfig(marketId);
     }
 
-    function _getFundingConfig(uint256 marketId)
-        internal
-        view
-        returns (PerpMarketRegistry.FundingConfig memory cfg)
-    {
+    function _getFundingConfig(uint256 marketId) internal view returns (PerpMarketRegistry.FundingConfig memory cfg) {
         cfg = _marketRegistry.getFundingConfig(marketId);
     }
 
@@ -318,7 +301,9 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         traderMarketIndexPlus1[trader][marketId] = 0;
     }
 
-    function _updateOpenMarketsOnChange(address trader, uint256 marketId, int256 oldSize1e8, int256 newSize1e8) internal {
+    function _updateOpenMarketsOnChange(address trader, uint256 marketId, int256 oldSize1e8, int256 newSize1e8)
+        internal
+    {
         _ensureInt256Allowed(oldSize1e8);
         _ensureInt256Allowed(newSize1e8);
 
@@ -403,10 +388,29 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         emit FundingUpdated(marketId, fundingRateDelta1e18, nextCumulativeFundingRate1e18, effectiveTimestamp);
     }
 
+    /// @dev Returns the funding anchor timestamp to use for the next update.
+    function _effectiveFundingTimestamp(uint256 marketId) internal view returns (uint64 ts) {
+        uint64 lastTs = _marketStates[marketId].lastFundingTimestamp;
+        if (lastTs != 0) return lastTs;
+        ts = uint64(block.timestamp);
+    }
+
+    /// @dev Returns elapsed seconds since the last funding update anchor.
+    function _fundingElapsed(uint256 marketId) internal view returns (uint256 elapsed) {
+        uint64 anchor = _effectiveFundingTimestamp(marketId);
+        if (block.timestamp <= uint256(anchor)) return 0;
+        return block.timestamp - uint256(anchor);
+    }
+
     /*//////////////////////////////////////////////////////////////
                           INTERNAL ORACLE HELPERS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice V1 mark price helper.
+    /// @dev
+    ///  For the current V1 funding rollout, mark price defaults to oracle price.
+    ///  This keeps funding infrastructure correct even if economic funding remains near zero
+    ///  until a richer mark-price model is introduced.
     function _getMarkPrice1e8(uint256 marketId) internal view returns (uint256 price1e8) {
         PerpMarketRegistry.Market memory m = _requireMarketExists(marketId);
         IOracle o = _marketOracle(m);
@@ -421,9 +425,8 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         IOracle o = _marketOracle(m);
 
         {
-            (bool success, bytes memory data) = address(o).staticcall(
-                abi.encodeWithSignature("getPriceSafe(address,address)", m.underlying, m.settlementAsset)
-            );
+            (bool success, bytes memory data) =
+                address(o).staticcall(abi.encodeWithSignature("getPriceSafe(address,address)", m.underlying, m.settlementAsset));
 
             if (success && data.length >= 96) {
                 (uint256 px,, bool safeOk) = abi.decode(data, (uint256, uint256, bool));
@@ -437,6 +440,16 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         } catch {
             return (0, false);
         }
+    }
+
+    /// @notice Index price helper.
+    /// @dev V1 keeps mark and index identical. The split exists now so mark logic can evolve later.
+    function _getIndexPrice1e8(uint256 marketId) internal view returns (uint256 price1e8) {
+        return _getMarkPrice1e8(marketId);
+    }
+
+    function _tryGetIndexPrice1e8(uint256 marketId) internal view returns (uint256 price1e8, bool ok) {
+        return _tryGetMarkPrice1e8(marketId);
     }
 
     /*//////////////////////////////////////////////////////////////
