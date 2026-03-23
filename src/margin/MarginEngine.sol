@@ -1,11 +1,10 @@
-// contracts/margin/MarginEngine.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
 import {MarginEngineOps} from "./MarginEngineOps.sol";
 
 /// @title MarginEngine
-/// @notice Façade finale (hérite MarginEngineOps -> Trading/Admin/Storage/Types)
+/// @notice Façade finale (hérite MarginEngineOps -> Trading / Admin / Storage / Types)
 /// @dev
 ///  Le constructeur ne câble que les dépendances "core".
 ///  Le reste est configuré via les fonctions d’admin:
@@ -26,9 +25,7 @@ contract MarginEngine is MarginEngineOps {
         // and guardian rotated to a dedicated emergency operator.
         _setGuardian(_owner);
 
-        // defaults explicitement émis au déploiement
+        // explicit bootstrap emission for liquidation config only.
         emit LiquidationOracleMaxDelaySet(0, liquidationOracleMaxDelay);
-        emit GlobalPauseSet(false);
-        emit EmergencyModeUpdated(tradingPaused, liquidationPaused, settlementPaused, collateralOpsPaused);
     }
 }

@@ -390,4 +390,225 @@ abstract contract RiskGovernorQueue is RiskGovernorAdmin {
         bytes memory data = abi.encodeCall(IInsuranceFundGov.setTokenAllowed, (token, allowed));
         return queueOperation(insuranceFund, 0, data, eta);
     }
+
+    /*//////////////////////////////////////////////////////////////
+                        PERP MARKET REGISTRY HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function queuePerpRegistrySetMarketCreator(address account, bool allowed, uint256 eta)
+        external
+        returns (bytes32)
+    {
+        bytes memory data = abi.encodeCall(IPerpMarketRegistryGov.setMarketCreator, (account, allowed));
+        return queueOperation(perpMarketRegistry, 0, data, eta);
+    }
+
+    function queuePerpRegistrySetSettlementAssetAllowed(address asset, bool allowed, uint256 eta)
+        external
+        returns (bytes32)
+    {
+        bytes memory data = abi.encodeCall(IPerpMarketRegistryGov.setSettlementAssetAllowed, (asset, allowed));
+        return queueOperation(perpMarketRegistry, 0, data, eta);
+    }
+
+    function queuePerpRegistrySetMarketOracle(uint256 marketId, address oracle_, uint256 eta)
+        external
+        returns (bytes32)
+    {
+        bytes memory data = abi.encodeCall(IPerpMarketRegistryGov.setMarketOracle, (marketId, oracle_));
+        return queueOperation(perpMarketRegistry, 0, data, eta);
+    }
+
+    function queuePerpRegistrySetMarketStatus(uint256 marketId, bool isActive, bool isCloseOnly, uint256 eta)
+        external
+        returns (bytes32)
+    {
+        bytes memory data = abi.encodeCall(IPerpMarketRegistryGov.setMarketStatus, (marketId, isActive, isCloseOnly));
+        return queueOperation(perpMarketRegistry, 0, data, eta);
+    }
+
+    function queuePerpRegistrySetRiskConfig(
+        uint256 marketId,
+        uint32 initialMarginBps,
+        uint32 maintenanceMarginBps,
+        uint32 liquidationPenaltyBps,
+        uint128 maxPositionSize1e8,
+        uint128 maxOpenInterest1e8,
+        bool reduceOnlyDuringCloseOnly,
+        uint256 eta
+    ) external returns (bytes32) {
+        IPerpMarketRegistryGov.RiskConfig memory cfg = IPerpMarketRegistryGov.RiskConfig({
+            initialMarginBps: initialMarginBps,
+            maintenanceMarginBps: maintenanceMarginBps,
+            liquidationPenaltyBps: liquidationPenaltyBps,
+            maxPositionSize1e8: maxPositionSize1e8,
+            maxOpenInterest1e8: maxOpenInterest1e8,
+            reduceOnlyDuringCloseOnly: reduceOnlyDuringCloseOnly
+        });
+
+        bytes memory data = abi.encodeCall(IPerpMarketRegistryGov.setRiskConfig, (marketId, cfg));
+        return queueOperation(perpMarketRegistry, 0, data, eta);
+    }
+
+    function queuePerpRegistrySetFundingConfig(
+        uint256 marketId,
+        bool isEnabled,
+        uint32 fundingInterval,
+        uint32 maxFundingRateBps,
+        uint32 maxSkewFundingBps,
+        uint32 oracleClampBps,
+        uint256 eta
+    ) external returns (bytes32) {
+        IPerpMarketRegistryGov.FundingConfig memory cfg = IPerpMarketRegistryGov.FundingConfig({
+            isEnabled: isEnabled,
+            fundingInterval: fundingInterval,
+            maxFundingRateBps: maxFundingRateBps,
+            maxSkewFundingBps: maxSkewFundingBps,
+            oracleClampBps: oracleClampBps
+        });
+
+        bytes memory data = abi.encodeCall(IPerpMarketRegistryGov.setFundingConfig, (marketId, cfg));
+        return queueOperation(perpMarketRegistry, 0, data, eta);
+    }
+
+    function queuePerpRegistrySetMarketMetadata(uint256 marketId, bytes32 metadata, uint256 eta)
+        external
+        returns (bytes32)
+    {
+        bytes memory data = abi.encodeCall(IPerpMarketRegistryGov.setMarketMetadata, (marketId, metadata));
+        return queueOperation(perpMarketRegistry, 0, data, eta);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                            PERP ENGINE HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function queuePerpEngineSetGuardian(address newGuardian, uint256 eta) external returns (bytes32) {
+        bytes memory data = abi.encodeCall(IPerpEngineGov.setGuardian, (newGuardian));
+        return queueOperation(perpEngine, 0, data, eta);
+    }
+
+    function queuePerpEngineClearGuardian(uint256 eta) external returns (bytes32) {
+        bytes memory data = abi.encodeCall(IPerpEngineGov.clearGuardian, ());
+        return queueOperation(perpEngine, 0, data, eta);
+    }
+
+    function queuePerpEnginePause(uint256 eta) external returns (bytes32) {
+        bytes memory data = abi.encodeCall(IPerpEngineGov.pause, ());
+        return queueOperation(perpEngine, 0, data, eta);
+    }
+
+    function queuePerpEngineUnpause(uint256 eta) external returns (bytes32) {
+        bytes memory data = abi.encodeCall(IPerpEngineGov.unpause, ());
+        return queueOperation(perpEngine, 0, data, eta);
+    }
+
+    function queuePerpEnginePauseTrading(uint256 eta) external returns (bytes32) {
+        bytes memory data = abi.encodeCall(IPerpEngineGov.pauseTrading, ());
+        return queueOperation(perpEngine, 0, data, eta);
+    }
+
+    function queuePerpEngineUnpauseTrading(uint256 eta) external returns (bytes32) {
+        bytes memory data = abi.encodeCall(IPerpEngineGov.unpauseTrading, ());
+        return queueOperation(perpEngine, 0, data, eta);
+    }
+
+    function queuePerpEnginePauseLiquidation(uint256 eta) external returns (bytes32) {
+        bytes memory data = abi.encodeCall(IPerpEngineGov.pauseLiquidation, ());
+        return queueOperation(perpEngine, 0, data, eta);
+    }
+
+    function queuePerpEngineUnpauseLiquidation(uint256 eta) external returns (bytes32) {
+        bytes memory data = abi.encodeCall(IPerpEngineGov.unpauseLiquidation, ());
+        return queueOperation(perpEngine, 0, data, eta);
+    }
+
+    function queuePerpEnginePauseFunding(uint256 eta) external returns (bytes32) {
+        bytes memory data = abi.encodeCall(IPerpEngineGov.pauseFunding, ());
+        return queueOperation(perpEngine, 0, data, eta);
+    }
+
+    function queuePerpEngineUnpauseFunding(uint256 eta) external returns (bytes32) {
+        bytes memory data = abi.encodeCall(IPerpEngineGov.unpauseFunding, ());
+        return queueOperation(perpEngine, 0, data, eta);
+    }
+
+    function queuePerpEnginePauseCollateralOps(uint256 eta) external returns (bytes32) {
+        bytes memory data = abi.encodeCall(IPerpEngineGov.pauseCollateralOps, ());
+        return queueOperation(perpEngine, 0, data, eta);
+    }
+
+    function queuePerpEngineUnpauseCollateralOps(uint256 eta) external returns (bytes32) {
+        bytes memory data = abi.encodeCall(IPerpEngineGov.unpauseCollateralOps, ());
+        return queueOperation(perpEngine, 0, data, eta);
+    }
+
+    function queuePerpEngineSetEmergencyModes(
+        bool tradingPaused_,
+        bool liquidationPaused_,
+        bool fundingPaused_,
+        bool collateralOpsPaused_,
+        uint256 eta
+    ) external returns (bytes32) {
+        bytes memory data = abi.encodeCall(
+            IPerpEngineGov.setEmergencyModes,
+            (tradingPaused_, liquidationPaused_, fundingPaused_, collateralOpsPaused_)
+        );
+        return queueOperation(perpEngine, 0, data, eta);
+    }
+
+    function queuePerpEngineClearEmergencyModes(uint256 eta) external returns (bytes32) {
+        bytes memory data = abi.encodeCall(IPerpEngineGov.clearEmergencyModes, ());
+        return queueOperation(perpEngine, 0, data, eta);
+    }
+
+    function queuePerpEngineSetMatchingEngine(address matchingEngine_, uint256 eta) external returns (bytes32) {
+        bytes memory data = abi.encodeCall(IPerpEngineGov.setMatchingEngine, (matchingEngine_));
+        return queueOperation(perpEngine, 0, data, eta);
+    }
+
+    function queuePerpEngineSetOracle(address oracle_, uint256 eta) external returns (bytes32) {
+        bytes memory data = abi.encodeCall(IPerpEngineGov.setOracle, (oracle_));
+        return queueOperation(perpEngine, 0, data, eta);
+    }
+
+    function queuePerpEngineSetRiskModule(address riskModule_, uint256 eta) external returns (bytes32) {
+        bytes memory data = abi.encodeCall(IPerpEngineGov.setRiskModule, (riskModule_));
+        return queueOperation(perpEngine, 0, data, eta);
+    }
+
+    function queuePerpEngineSetInsuranceFund(address insuranceFund_, uint256 eta) external returns (bytes32) {
+        bytes memory data = abi.encodeCall(IPerpEngineGov.setInsuranceFund, (insuranceFund_));
+        return queueOperation(perpEngine, 0, data, eta);
+    }
+
+    function queuePerpEngineSetFeesManager(address feesManager_, uint256 eta) external returns (bytes32) {
+        bytes memory data = abi.encodeCall(IPerpEngineGov.setFeesManager, (feesManager_));
+        return queueOperation(perpEngine, 0, data, eta);
+    }
+
+    function queuePerpEngineClearFeesManager(uint256 eta) external returns (bytes32) {
+        bytes memory data = abi.encodeCall(IPerpEngineGov.clearFeesManager, ());
+        return queueOperation(perpEngine, 0, data, eta);
+    }
+
+    function queuePerpEngineSetFeeRecipient(address feeRecipient_, uint256 eta) external returns (bytes32) {
+        bytes memory data = abi.encodeCall(IPerpEngineGov.setFeeRecipient, (feeRecipient_));
+        return queueOperation(perpEngine, 0, data, eta);
+    }
+
+    function queuePerpEngineClearFeeRecipient(uint256 eta) external returns (bytes32) {
+        bytes memory data = abi.encodeCall(IPerpEngineGov.clearFeeRecipient, ());
+        return queueOperation(perpEngine, 0, data, eta);
+    }
+
+    function queuePerpEngineSetMarketRegistry(address registry_, uint256 eta) external returns (bytes32) {
+        bytes memory data = abi.encodeCall(IPerpEngineGov.setMarketRegistry, (registry_));
+        return queueOperation(perpEngine, 0, data, eta);
+    }
+
+    function queuePerpEngineSetCollateralVault(address vault_, uint256 eta) external returns (bytes32) {
+        bytes memory data = abi.encodeCall(IPerpEngineGov.setCollateralVault, (vault_));
+        return queueOperation(perpEngine, 0, data, eta);
+    }
 }

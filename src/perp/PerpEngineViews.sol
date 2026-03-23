@@ -352,4 +352,4 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
 
         return (oi * BPS) / uint256(rcfg.maxOpenInterest1e8);
     }
-}
+}   

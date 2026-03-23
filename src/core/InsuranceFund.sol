@@ -27,6 +27,7 @@ import {CollateralVault} from "../collateral/CollateralVault.sol";
 ///   - ownership 2-step
 ///   - allowlist stricte (TokenNotAllowed)
 ///   - helpers depositAllToVault / sweepUnexpectedToken
+///   - guardian + emergency pauses compatibles Safe multisig
 contract InsuranceFund is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -35,14 +36,19 @@ contract InsuranceFund is ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     error NotAuthorized();
+    error GuardianNotAuthorized();
     error ZeroAddress();
     error TokenNotAllowed();
     error AmountZero();
     error InsufficientBalance();
     error RescueForbidden();
 
-    // ownership 2-step
     error OwnershipTransferNotInitiated();
+
+    error PausedError();
+    error FundingPaused();
+    error WithdrawPaused();
+    error YieldOpsPaused();
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
@@ -51,10 +57,21 @@ contract InsuranceFund is ReentrancyGuard {
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event OwnershipTransferStarted(address indexed previousOwner, address indexed pendingOwner);
 
+    event GuardianSet(address indexed oldGuardian, address indexed newGuardian);
+
     event OperatorSet(address indexed operator, bool allowed);
     event TokenAllowed(address indexed token, bool allowed);
 
     event VaultSet(address indexed vault);
+
+    event Paused(address indexed account);
+    event Unpaused(address indexed account);
+
+    event GlobalPauseSet(bool isPaused);
+    event FundingPauseSet(bool isPaused);
+    event WithdrawPauseSet(bool isPaused);
+    event YieldOpsPauseSet(bool isPaused);
+    event EmergencyModeUpdated(bool fundingPaused, bool withdrawPaused, bool yieldOpsPaused);
 
     event FundedFromOwner(address indexed token, address indexed from, uint256 amount);
     event DepositedToVault(address indexed token, uint256 amount);
@@ -73,6 +90,15 @@ contract InsuranceFund is ReentrancyGuard {
 
     address public owner;
     address public pendingOwner;
+    address public guardian;
+
+    /// @notice Legacy global pause.
+    bool public paused;
+
+    /// @notice Granular emergency flags.
+    bool public fundingPaused;
+    bool public withdrawPaused;
+    bool public yieldOpsPaused;
 
     /// @notice Opérateurs autorisés (optionnel): keepers / ops / etc.
     mapping(address => bool) public isOperator;
@@ -96,6 +122,26 @@ contract InsuranceFund is ReentrancyGuard {
         _;
     }
 
+    modifier onlyGuardianOrOwner() {
+        if (msg.sender != owner && msg.sender != guardian) revert GuardianNotAuthorized();
+        _;
+    }
+
+    modifier whenFundingNotPaused() {
+        if (_isFundingPaused()) revert FundingPaused();
+        _;
+    }
+
+    modifier whenWithdrawNotPaused() {
+        if (_isWithdrawPaused()) revert WithdrawPaused();
+        _;
+    }
+
+    modifier whenYieldOpsNotPaused() {
+        if (_isYieldOpsPaused()) revert YieldOpsPaused();
+        _;
+    }
+
     /*//////////////////////////////////////////////////////////////
                                 CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -109,9 +155,10 @@ contract InsuranceFund is ReentrancyGuard {
         emit OwnershipTransferred(address(0), _owner);
         emit VaultSet(_vault);
 
-        // bootstrap
         isOperator[_owner] = true;
         emit OperatorSet(_owner, true);
+
+        emit EmergencyModeUpdated(false, false, false);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -150,6 +197,102 @@ contract InsuranceFund is ReentrancyGuard {
     }
 
     /*//////////////////////////////////////////////////////////////
+                                GUARDIAN
+    //////////////////////////////////////////////////////////////*/
+
+    function setGuardian(address newGuardian) external onlyOwner {
+        if (newGuardian == address(0)) revert ZeroAddress();
+        address old = guardian;
+        guardian = newGuardian;
+        emit GuardianSet(old, newGuardian);
+    }
+
+    function clearGuardian() external onlyOwner {
+        address old = guardian;
+        guardian = address(0);
+        emit GuardianSet(old, address(0));
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                PAUSE
+    //////////////////////////////////////////////////////////////*/
+
+    function pause() external onlyGuardianOrOwner {
+        if (!paused) {
+            paused = true;
+            emit Paused(msg.sender);
+            emit GlobalPauseSet(true);
+        }
+    }
+
+    function unpause() external onlyOwner {
+        if (paused) {
+            paused = false;
+            emit Unpaused(msg.sender);
+            emit GlobalPauseSet(false);
+        }
+    }
+
+    function pauseFunding() external onlyGuardianOrOwner {
+        if (!fundingPaused) {
+            fundingPaused = true;
+            emit FundingPauseSet(true);
+            emit EmergencyModeUpdated(fundingPaused, withdrawPaused, yieldOpsPaused);
+        }
+    }
+
+    function unpauseFunding() external onlyOwner {
+        if (fundingPaused) {
+            fundingPaused = false;
+            emit FundingPauseSet(false);
+            emit EmergencyModeUpdated(fundingPaused, withdrawPaused, yieldOpsPaused);
+        }
+    }
+
+    function pauseWithdraws() external onlyGuardianOrOwner {
+        if (!withdrawPaused) {
+            withdrawPaused = true;
+            emit WithdrawPauseSet(true);
+            emit EmergencyModeUpdated(fundingPaused, withdrawPaused, yieldOpsPaused);
+        }
+    }
+
+    function unpauseWithdraws() external onlyOwner {
+        if (withdrawPaused) {
+            withdrawPaused = false;
+            emit WithdrawPauseSet(false);
+            emit EmergencyModeUpdated(fundingPaused, withdrawPaused, yieldOpsPaused);
+        }
+    }
+
+    function pauseYieldOps() external onlyGuardianOrOwner {
+        if (!yieldOpsPaused) {
+            yieldOpsPaused = true;
+            emit YieldOpsPauseSet(true);
+            emit EmergencyModeUpdated(fundingPaused, withdrawPaused, yieldOpsPaused);
+        }
+    }
+
+    function unpauseYieldOps() external onlyOwner {
+        if (yieldOpsPaused) {
+            yieldOpsPaused = false;
+            emit YieldOpsPauseSet(false);
+            emit EmergencyModeUpdated(fundingPaused, withdrawPaused, yieldOpsPaused);
+        }
+    }
+
+    function setEmergencyModes(bool fundingPaused_, bool withdrawPaused_, bool yieldOpsPaused_)
+        external
+        onlyGuardianOrOwner
+    {
+        _setEmergencyModes(fundingPaused_, withdrawPaused_, yieldOpsPaused_);
+    }
+
+    function clearEmergencyModes() external onlyOwner {
+        _setEmergencyModes(false, false, false);
+    }
+
+    /*//////////////////////////////////////////////////////////////
                                 ADMIN
     //////////////////////////////////////////////////////////////*/
 
@@ -171,7 +314,12 @@ contract InsuranceFund is ReentrancyGuard {
 
     /// @notice Pull des tokens depuis l’owner, puis dépôt dans le CollateralVault au nom de ce fund.
     /// @dev Owner doit approve ce contrat.
-    function fundAndDepositToVault(address token, uint256 amount) external onlyOwner nonReentrant {
+    function fundAndDepositToVault(address token, uint256 amount)
+        external
+        onlyOwner
+        whenFundingNotPaused
+        nonReentrant
+    {
         if (!isTokenAllowed[token]) revert TokenNotAllowed();
         if (amount == 0) revert AmountZero();
 
@@ -182,7 +330,12 @@ contract InsuranceFund is ReentrancyGuard {
     }
 
     /// @notice Dépôt de tokens déjà détenus par le fund vers le CollateralVault.
-    function depositToVault(address token, uint256 amount) external onlyOwnerOrOperator nonReentrant {
+    function depositToVault(address token, uint256 amount)
+        external
+        onlyOwnerOrOperator
+        whenFundingNotPaused
+        nonReentrant
+    {
         if (!isTokenAllowed[token]) revert TokenNotAllowed();
         if (amount == 0) revert AmountZero();
 
@@ -193,7 +346,13 @@ contract InsuranceFund is ReentrancyGuard {
     }
 
     /// @notice Dépose 100% du solde local détenu par le fund dans le CollateralVault.
-    function depositAllToVault(address token) external onlyOwnerOrOperator nonReentrant returns (uint256 amount) {
+    function depositAllToVault(address token)
+        external
+        onlyOwnerOrOperator
+        whenFundingNotPaused
+        nonReentrant
+        returns (uint256 amount)
+    {
         if (!isTokenAllowed[token]) revert TokenNotAllowed();
 
         amount = IERC20(token).balanceOf(address(this));
@@ -203,7 +362,7 @@ contract InsuranceFund is ReentrancyGuard {
     }
 
     function _depositToVault(address token, uint256 amount) internal {
-        // approve vault, puis vault.safeTransferFrom(this -> vault) dans deposit()
+        IERC20(token).forceApprove(address(collateralVault), 0);
         IERC20(token).forceApprove(address(collateralVault), amount);
         collateralVault.deposit(token, amount);
 
@@ -212,15 +371,17 @@ contract InsuranceFund is ReentrancyGuard {
 
     /// @notice Retire des tokens du CollateralVault (depuis le balance interne du fund) et les envoie à `to`.
     /// @dev Ici, on sort des actifs du vault (on-chain transfer). À utiliser pour ops/gestion.
-    function withdrawFromVault(address token, address to, uint256 amount) external onlyOwner nonReentrant {
+    function withdrawFromVault(address token, address to, uint256 amount)
+        external
+        onlyOwner
+        whenWithdrawNotPaused
+        nonReentrant
+    {
         if (!isTokenAllowed[token]) revert TokenNotAllowed();
         if (to == address(0)) revert ZeroAddress();
         if (amount == 0) revert AmountZero();
 
-        // CollateralVault.withdraw envoie à msg.sender (ici: InsuranceFund).
         collateralVault.withdraw(token, amount);
-
-        // Puis on forward à `to`.
         IERC20(token).safeTransfer(to, amount);
 
         emit WithdrawnFromVault(token, to, amount);
@@ -230,13 +391,18 @@ contract InsuranceFund is ReentrancyGuard {
                             YIELD WRAPPERS (OPTIONNEL)
     //////////////////////////////////////////////////////////////*/
 
-    function setYieldOptIn(address token, bool optedIn) external onlyOwner {
+    function setYieldOptIn(address token, bool optedIn) external onlyOwner whenYieldOpsNotPaused {
         if (!isTokenAllowed[token]) revert TokenNotAllowed();
         collateralVault.setYieldOptIn(token, optedIn);
         emit YieldOptInSet(token, optedIn);
     }
 
-    function moveToStrategy(address token, uint256 amount) external onlyOwner nonReentrant {
+    function moveToStrategy(address token, uint256 amount)
+        external
+        onlyOwner
+        whenYieldOpsNotPaused
+        nonReentrant
+    {
         if (!isTokenAllowed[token]) revert TokenNotAllowed();
         if (amount == 0) revert AmountZero();
 
@@ -244,7 +410,12 @@ contract InsuranceFund is ReentrancyGuard {
         emit MovedToStrategy(token, amount);
     }
 
-    function moveToIdle(address token, uint256 amount) external onlyOwner nonReentrant {
+    function moveToIdle(address token, uint256 amount)
+        external
+        onlyOwner
+        whenYieldOpsNotPaused
+        nonReentrant
+    {
         if (!isTokenAllowed[token]) revert TokenNotAllowed();
         if (amount == 0) revert AmountZero();
 
@@ -252,7 +423,7 @@ contract InsuranceFund is ReentrancyGuard {
         emit MovedToIdle(token, amount);
     }
 
-    function syncVaultAccount(address token) external onlyOwnerOrOperator nonReentrant {
+    function syncVaultAccount(address token) external onlyOwnerOrOperator whenYieldOpsNotPaused nonReentrant {
         if (!isTokenAllowed[token]) revert TokenNotAllowed();
         collateralVault.syncAccount(token);
         emit Synced(token);
@@ -280,13 +451,10 @@ contract InsuranceFund is ReentrancyGuard {
                                 VIEWS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Balance interne vault de ce fund pour `token`.
-    /// @dev Inclut les crédits reçus via MarginEngine.transferBetweenAccounts, y compris les trading fees.
     function vaultBalance(address token) external view returns (uint256) {
         return collateralVault.balances(address(this), token);
     }
 
-    /// @notice Balance économique du fund dans le vault, yield inclus si applicable.
     function vaultBalanceWithYield(address token) external view returns (uint256) {
         try collateralVault.balanceWithYield(address(this), token) returns (uint256 b) {
             return b;
@@ -295,15 +463,48 @@ contract InsuranceFund is ReentrancyGuard {
         }
     }
 
-    /// @notice Solde local on-chain détenu directement par ce contrat (hors vault).
     function localBalance(address token) external view returns (uint256) {
         return IERC20(token).balanceOf(address(this));
     }
 
-    /// @notice True si le token est à la fois allowlisté côté fund et supporté côté vault.
     function isUsableToken(address token) external view returns (bool) {
         if (!isTokenAllowed[token]) return false;
         CollateralVault.CollateralTokenConfig memory cfg = collateralVault.getCollateralConfig(token);
         return cfg.isSupported;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                            INTERNAL HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function _isFundingPaused() internal view returns (bool) {
+        return paused || fundingPaused;
+    }
+
+    function _isWithdrawPaused() internal view returns (bool) {
+        return paused || withdrawPaused;
+    }
+
+    function _isYieldOpsPaused() internal view returns (bool) {
+        return paused || yieldOpsPaused;
+    }
+
+    function _setEmergencyModes(bool fundingPaused_, bool withdrawPaused_, bool yieldOpsPaused_) internal {
+        if (fundingPaused != fundingPaused_) {
+            fundingPaused = fundingPaused_;
+            emit FundingPauseSet(fundingPaused_);
+        }
+
+        if (withdrawPaused != withdrawPaused_) {
+            withdrawPaused = withdrawPaused_;
+            emit WithdrawPauseSet(withdrawPaused_);
+        }
+
+        if (yieldOpsPaused != yieldOpsPaused_) {
+            yieldOpsPaused = yieldOpsPaused_;
+            emit YieldOpsPauseSet(yieldOpsPaused_);
+        }
+
+        emit EmergencyModeUpdated(fundingPaused_, withdrawPaused_, yieldOpsPaused_);
     }
 }
