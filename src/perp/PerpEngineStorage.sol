@@ -46,19 +46,6 @@ interface IPerpMarketRegistryView {
 }
 
 /// @notice Storage root for the perpetual engine.
-/// @dev
-///  Responsibilities:
-///   - declare all persistent state
-///   - define shared modifiers
-///   - define shared emergency helpers
-///   - keep state helpers centralized before Admin / Trading / Views layers
-///
-///  Architecture:
-///   - one signed Position per (trader, marketId)
-///   - one MarketState per marketId
-///   - open-market tracking per trader for bounded scans
-///   - funding state stored per market
-///   - collateral stays in shared CollateralVault
 abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
@@ -107,6 +94,22 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
     bool public liquidationPaused;
     bool public fundingPaused;
     bool public collateralOpsPaused;
+
+    /// @notice Max fraction of a position closable in one liquidation.
+    /// @dev 5000 = 50%
+    uint256 public liquidationCloseFactorBps = 5000;
+
+    /// @notice Penalty paid by the liquidated account to the liquidator.
+    /// @dev 75 = 0.75%
+    uint256 public liquidationPenaltyBps = 75;
+
+    /// @notice Conservative spread applied to mark for liquidation execution.
+    /// @dev 50 = 0.50%
+    uint256 public liquidationPriceSpreadBps = 50;
+
+    /// @notice Minimum required improvement in margin ratio after liquidation.
+    /// @dev In bps of margin ratio.
+    uint256 public minLiquidationImprovementBps = 1;
 
     /*//////////////////////////////////////////////////////////////
                                 MODIFIERS
@@ -388,14 +391,12 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         emit FundingUpdated(marketId, fundingRateDelta1e18, nextCumulativeFundingRate1e18, effectiveTimestamp);
     }
 
-    /// @dev Returns the funding anchor timestamp to use for the next update.
     function _effectiveFundingTimestamp(uint256 marketId) internal view returns (uint64 ts) {
         uint64 lastTs = _marketStates[marketId].lastFundingTimestamp;
         if (lastTs != 0) return lastTs;
         ts = uint64(block.timestamp);
     }
 
-    /// @dev Returns elapsed seconds since the last funding update anchor.
     function _fundingElapsed(uint256 marketId) internal view returns (uint256 elapsed) {
         uint64 anchor = _effectiveFundingTimestamp(marketId);
         if (block.timestamp <= uint256(anchor)) return 0;
@@ -403,14 +404,26 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
     }
 
     /*//////////////////////////////////////////////////////////////
+                          INTERNAL LIQUIDATION HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function _validateLiquidationParams(
+        uint256 closeFactorBps_,
+        uint256 penaltyBps_,
+        uint256 priceSpreadBps_,
+        uint256 minImprovementBps_
+    ) internal pure {
+        if (closeFactorBps_ == 0) revert LiquidationCloseFactorZero();
+        if (closeFactorBps_ > BPS) revert LiquidationParamsInvalid();
+        if (penaltyBps_ > BPS) revert LiquidationPenaltyTooLarge();
+        if (priceSpreadBps_ > BPS) revert LiquidationParamsInvalid();
+        minImprovementBps_;
+    }
+
+    /*//////////////////////////////////////////////////////////////
                           INTERNAL ORACLE HELPERS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice V1 mark price helper.
-    /// @dev
-    ///  For the current V1 funding rollout, mark price defaults to oracle price.
-    ///  This keeps funding infrastructure correct even if economic funding remains near zero
-    ///  until a richer mark-price model is introduced.
     function _getMarkPrice1e8(uint256 marketId) internal view returns (uint256 price1e8) {
         PerpMarketRegistry.Market memory m = _requireMarketExists(marketId);
         IOracle o = _marketOracle(m);
@@ -442,8 +455,6 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         }
     }
 
-    /// @notice Index price helper.
-    /// @dev V1 keeps mark and index identical. The split exists now so mark logic can evolve later.
     function _getIndexPrice1e8(uint256 marketId) internal view returns (uint256 price1e8) {
         return _getMarkPrice1e8(marketId);
     }

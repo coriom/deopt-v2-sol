@@ -222,6 +222,69 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
     }
 
     /*//////////////////////////////////////////////////////////////
+                        LIQUIDATION CONFIG
+    //////////////////////////////////////////////////////////////*/
+
+    function setLiquidationParams(
+        uint256 liquidationCloseFactorBps_,
+        uint256 liquidationPenaltyBps_,
+        uint256 liquidationPriceSpreadBps_,
+        uint256 minLiquidationImprovementBps_
+    ) external onlyOwner {
+        _validateLiquidationParams(
+            liquidationCloseFactorBps_,
+            liquidationPenaltyBps_,
+            liquidationPriceSpreadBps_,
+            minLiquidationImprovementBps_
+        );
+
+        liquidationCloseFactorBps = liquidationCloseFactorBps_;
+        liquidationPenaltyBps = liquidationPenaltyBps_;
+        liquidationPriceSpreadBps = liquidationPriceSpreadBps_;
+        minLiquidationImprovementBps = minLiquidationImprovementBps_;
+    }
+
+    function setLiquidationCloseFactorBps(uint256 newCloseFactorBps) external onlyOwner {
+        _validateLiquidationParams(
+            newCloseFactorBps,
+            liquidationPenaltyBps,
+            liquidationPriceSpreadBps,
+            minLiquidationImprovementBps
+        );
+        liquidationCloseFactorBps = newCloseFactorBps;
+    }
+
+    function setLiquidationPenaltyBps(uint256 newPenaltyBps) external onlyOwner {
+        _validateLiquidationParams(
+            liquidationCloseFactorBps,
+            newPenaltyBps,
+            liquidationPriceSpreadBps,
+            minLiquidationImprovementBps
+        );
+        liquidationPenaltyBps = newPenaltyBps;
+    }
+
+    function setLiquidationPriceSpreadBps(uint256 newSpreadBps) external onlyOwner {
+        _validateLiquidationParams(
+            liquidationCloseFactorBps,
+            liquidationPenaltyBps,
+            newSpreadBps,
+            minLiquidationImprovementBps
+        );
+        liquidationPriceSpreadBps = newSpreadBps;
+    }
+
+    function setMinLiquidationImprovementBps(uint256 newMinImprovementBps) external onlyOwner {
+        _validateLiquidationParams(
+            liquidationCloseFactorBps,
+            liquidationPenaltyBps,
+            liquidationPriceSpreadBps,
+            newMinImprovementBps
+        );
+        minLiquidationImprovementBps = newMinImprovementBps;
+    }
+
+    /*//////////////////////////////////////////////////////////////
                             REGISTRY / VAULT TARGETS
     //////////////////////////////////////////////////////////////*/
 

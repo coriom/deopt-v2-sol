@@ -68,14 +68,6 @@ abstract contract PerpEngineTypes {
         uint64 lastFundingTimestamp;
     }
 
-    /// @notice Trade payload applied by the future PerpEngine.
-    /// @dev
-    ///  - sizeDelta1e8 is unsigned because side is encoded by buyer/seller semantics:
-    ///      buyer gains +size
-    ///      seller gains -size
-    ///  - executionPrice1e8 is quote/base in 1e8
-    ///  - buyerIsMaker allows true maker/taker fee modeling
-
     /// @notice Margin snapshot for one account on one market or globally.
     struct MarginState {
         int256 equity1e8;
@@ -92,9 +84,22 @@ abstract contract PerpEngineTypes {
         uint64 effectiveTimestamp;
     }
 
+    /// @notice Pure liquidation preview helper.
+    /// @dev Used to reason about the liquidation clip before touching state.
+    struct LiquidationPreview {
+        bool isLiquidatable;
+        uint128 maxClosableSize1e8;
+        uint128 requestedCloseSize1e8;
+        uint128 executedCloseSize1e8;
+        uint256 liquidationPrice1e8;
+        uint256 notionalClosed1e8;
+        uint256 penaltyBaseValue;
+    }
+
     /*//////////////////////////////////////////////////////////////
                                 ERRORS
     //////////////////////////////////////////////////////////////*/
+
     error OwnershipTransferNotInitiated();
     error NotAuthorized();
     error GuardianNotAuthorized();
@@ -123,6 +128,11 @@ abstract contract PerpEngineTypes {
     error LiquidationNothingToDo();
     error LiquidationNotImproving();
     error LiquidationParamsInvalid();
+    error LiquidationSelfNotAllowed();
+    error LiquidatorWouldBreachMargin(address liquidator);
+    error LiquidationPriceInvalid();
+    error LiquidationPenaltyTooLarge();
+    error LiquidationCloseFactorZero();
 
     error OraclePriceUnavailable();
     error OraclePriceStale();
@@ -206,6 +216,13 @@ abstract contract PerpEngineTypes {
         uint128 sizeClosed1e8,
         uint256 executionPrice1e8,
         uint256 collateralSeizedBaseValue
+    );
+
+    event LiquidationPenaltyPaid(
+        address indexed liquidator,
+        address indexed trader,
+        uint256 indexed marketId,
+        uint256 penaltyBaseValue
     );
 
     event CollateralDeposited(address indexed trader, address indexed token, uint256 amount);
@@ -372,5 +389,93 @@ abstract contract PerpEngineTypes {
         if (oldPos != newPos) return false;
 
         return _absInt256(newSize1e8) <= _absInt256(oldSize1e8);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        LIQUIDATION PURE HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Returns the maximum closeable size under a close factor.
+    /// @dev Ensures at least 1 unit is closeable if absSize != 0 and closeFactorBps != 0.
+    function _maxLiquidatableSize1e8(int256 positionSize1e8, uint256 closeFactorBps)
+        internal
+        pure
+        returns (uint128 maxCloseSize1e8)
+    {
+        if (closeFactorBps == 0) revert LiquidationCloseFactorZero();
+        if (closeFactorBps > BPS) revert LiquidationParamsInvalid();
+
+        uint256 absSize = _absInt256(positionSize1e8);
+        if (absSize == 0) return 0;
+
+        uint256 raw = (absSize * closeFactorBps) / BPS;
+        if (raw == 0) raw = 1;
+
+        if (raw > uint256(type(uint128).max)) revert SizeTooLarge();
+        return uint128(raw);
+    }
+
+    /// @notice Clamps a requested liquidation clip to the protocol maximum.
+    function _boundedLiquidationSize1e8(
+        int256 positionSize1e8,
+        uint128 requestedCloseSize1e8,
+        uint256 closeFactorBps
+    ) internal pure returns (uint128 executedCloseSize1e8) {
+        uint128 maxClose = _maxLiquidatableSize1e8(positionSize1e8, closeFactorBps);
+        if (maxClose == 0) return 0;
+        if (requestedCloseSize1e8 == 0) return maxClose;
+        return requestedCloseSize1e8 < maxClose ? requestedCloseSize1e8 : maxClose;
+    }
+
+    /// @notice Computes a liquidation execution price from mark price and spread.
+    /// @dev
+    ///  - liquidating a long means seller-side close, so worse price = mark * (1 - spread)
+    ///  - liquidating a short means buyer-side close, so worse price = mark * (1 + spread)
+    function _liquidationPrice1e8FromMark(int256 liquidatedPositionSize1e8, uint256 markPrice1e8, uint256 spreadBps)
+        internal
+        pure
+        returns (uint256 liqPrice1e8)
+    {
+        if (markPrice1e8 == 0) revert LiquidationPriceInvalid();
+        if (spreadBps > BPS) revert LiquidationParamsInvalid();
+        if (liquidatedPositionSize1e8 == 0) revert LiquidationNothingToDo();
+
+        if (liquidatedPositionSize1e8 > 0) {
+            liqPrice1e8 = (markPrice1e8 * (BPS - spreadBps)) / BPS;
+        } else {
+            liqPrice1e8 = (markPrice1e8 * (BPS + spreadBps)) / BPS;
+        }
+
+        if (liqPrice1e8 == 0) revert LiquidationPriceInvalid();
+    }
+
+    /// @notice Computes liquidation penalty in base-value units.
+    /// @dev penalty = closedNotionalBase * penaltyBps / 10_000
+    function _liquidationPenaltyBaseValue(uint256 closedNotionalBaseValue, uint256 penaltyBps)
+        internal
+        pure
+        returns (uint256 penaltyBaseValue)
+    {
+        if (penaltyBps > BPS) revert LiquidationPenaltyTooLarge();
+        if (closedNotionalBaseValue == 0 || penaltyBps == 0) return 0;
+        penaltyBaseValue = (closedNotionalBaseValue * penaltyBps) / BPS;
+    }
+
+    /// @notice Checks that liquidation improved the margin ratio by at least minImprovementBps.
+    function _liquidationImproved(
+        int256 equityBefore1e8,
+        uint256 maintenanceMarginBefore1e8,
+        int256 equityAfter1e8,
+        uint256 maintenanceMarginAfter1e8,
+        uint256 minImprovementBps
+    ) internal pure returns (bool) {
+        uint256 beforeRatio = _marginRatioBpsFromState(equityBefore1e8, maintenanceMarginBefore1e8);
+        uint256 afterRatio = _marginRatioBpsFromState(equityAfter1e8, maintenanceMarginAfter1e8);
+
+        if (equityBefore1e8 > 0) {
+            return afterRatio >= beforeRatio + minImprovementBps;
+        }
+
+        return (maintenanceMarginAfter1e8 < maintenanceMarginBefore1e8) || (equityAfter1e8 > equityBefore1e8);
     }
 }
