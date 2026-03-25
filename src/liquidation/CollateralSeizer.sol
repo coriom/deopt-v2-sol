@@ -18,7 +18,7 @@ interface IRiskModuleConfigView {
 /// @title CollateralSeizer
 /// @notice Planner: construit un plan de saisie multi-collat valorisé en base avec haircuts+spread.
 /// @dev
-///  - Ne déplace pas les fonds. MarginEngine exécute via CollateralVault.transferBetweenAccounts().
+///  - Ne déplace pas les fonds. MarginEngine / PerpEngine exécute via CollateralVault.transferBetweenAccounts().
 ///  - Valorisation conservative:
 ///      * conversion token->base via oracle (1e8) avec staleness check optionnel
 ///      * décimales via CollateralVault configs
@@ -217,7 +217,7 @@ contract CollateralSeizer is ICollateralSeizer {
     }
 
     function _vaultCfg(address token) internal view returns (CollateralVault.CollateralTokenConfig memory cfg) {
-        cfg = collateralVault.collateralConfigs(token);
+        cfg = collateralVault.getCollateralConfig(token);
     }
 
     function _requireVaultToken(address token) internal view returns (uint8 dec) {
@@ -413,7 +413,6 @@ contract CollateralSeizer is ICollateralSeizer {
         _requireSetup();
 
         address base = _baseToken();
-
         address[] memory all = collateralVault.getCollateralTokens();
         uint256 maxOut = all.length + 1;
 
@@ -430,17 +429,17 @@ contract CollateralSeizer is ICollateralSeizer {
                 uint256 avail = _safeBalanceWithYield(trader, base);
                 if (avail != 0) {
                     uint256 needValueBase = _requiredValueBaseCeil(remaining, disc);
-                    uint256 want = needValueBase;
-                    uint256 seizeAmt = want <= avail ? want : avail;
+                    uint256 seizeAmt = needValueBase <= avail ? needValueBase : avail;
 
                     (uint256 covered, bool okCov) = _effectiveBaseFromTokenFloor(base, seizeAmt);
                     if (okCov && covered != 0) {
                         tokensOut[n] = base;
                         amountsOut[n] = seizeAmt;
-                        n++;
+                        unchecked {
+                            ++n;
+                        }
 
                         baseCovered += covered;
-
                         if (covered >= remaining) remaining = 0;
                         else remaining -= covered;
                     }
@@ -472,7 +471,9 @@ contract CollateralSeizer is ICollateralSeizer {
 
                 tokensOut[n] = token;
                 amountsOut[n] = seizeAmt;
-                n++;
+                unchecked {
+                    ++n;
+                }
 
                 baseCovered += covered;
 
