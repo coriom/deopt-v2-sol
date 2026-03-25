@@ -7,6 +7,12 @@ import "../matching/IPerpEngineTrade.sol";
 import "../liquidation/ICollateralSeizer.sol";
 import "./PerpEngineViews.sol";
 
+interface IInsuranceFundPerpBackstop {
+    function coverVaultShortfall(address token, address toAccount, uint256 requestedAmount)
+        external
+        returns (uint256 paidAmount);
+}
+
 /// @title PerpEngineTrading
 /// @notice Matching-engine entrypoint for perpetual trades + liquidation logic.
 abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
@@ -182,13 +188,9 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
     }
 
     function _tryResolveCollateralSeizer() internal view returns (ICollateralSeizer seizer, bool ok) {
-        (bool success, bytes memory data) = address(this).staticcall(abi.encodeWithSignature("collateralSeizer()"));
-        if (!success || data.length < 32) return (ICollateralSeizer(address(0)), false);
-
-        address seizerAddr = abi.decode(data, (address));
-        if (seizerAddr == address(0)) return (ICollateralSeizer(address(0)), false);
-
-        return (ICollateralSeizer(seizerAddr), true);
+        seizer = _collateralSeizer;
+        if (address(seizer) == address(0)) return (ICollateralSeizer(address(0)), false);
+        return (seizer, true);
     }
 
     function _trySeizeViaPlan(address trader, address liquidator, uint256 targetBaseValue)
@@ -288,6 +290,67 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
 
         if (paidPenaltyBaseValue > penaltyBaseValue) {
             paidPenaltyBaseValue = penaltyBaseValue;
+        }
+    }
+
+    function _tryCoverShortfallWithInsurance(address liquidator, uint256 requestedBaseValue)
+        internal
+        returns (uint256 paidBaseValue)
+    {
+        if (requestedBaseValue == 0) return 0;
+        _requireInsuranceFund();
+
+        address baseToken = _baseToken();
+
+        try IInsuranceFundPerpBackstop(insuranceFund).coverVaultShortfall(baseToken, liquidator, requestedBaseValue)
+        returns (uint256 paid) {
+            paidBaseValue = paid <= requestedBaseValue ? paid : requestedBaseValue;
+        } catch {
+            revert InsuranceFundCoverageFailed();
+        }
+    }
+
+    function _resolveLiquidationShortfall(
+        address liquidator,
+        address trader,
+        uint256 marketId,
+        uint256 penaltyTargetBaseValue,
+        uint256 seizedPenaltyBaseValue
+    ) internal returns (LiquidationResolution memory res) {
+        res.penaltyTargetBaseValue = penaltyTargetBaseValue;
+        res.seizedPenaltyBaseValue = seizedPenaltyBaseValue;
+
+        uint256 remainingAfterSeizure = _remainingShortfall(penaltyTargetBaseValue, seizedPenaltyBaseValue);
+
+        if (remainingAfterSeizure != 0) {
+            emit LiquidationShortfall(
+                liquidator,
+                trader,
+                marketId,
+                penaltyTargetBaseValue,
+                seizedPenaltyBaseValue,
+                remainingAfterSeizure
+            );
+
+            uint256 insurancePaid = _tryCoverShortfallWithInsurance(liquidator, remainingAfterSeizure);
+            res.insurancePaidBaseValue = insurancePaid;
+
+            if (insurancePaid != 0) {
+                emit LiquidationInsuranceCoverage(
+                    liquidator,
+                    trader,
+                    marketId,
+                    remainingAfterSeizure,
+                    insurancePaid
+                );
+            }
+
+            uint256 residual = _remainingShortfall(remainingAfterSeizure, insurancePaid);
+            res.residualShortfallBaseValue = residual;
+
+            if (residual != 0) {
+                emit LiquidationBadDebtRecorded(liquidator, trader, marketId, residual);
+            }
         }
     }
 
@@ -679,7 +742,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
     }
 
     /*//////////////////////////////////////////////////////////////
-                            LIQUIDATION V2-READY
+                            LIQUIDATION V2-CLOSED
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Permissionless partial liquidation.
@@ -731,7 +794,9 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         Position memory newLiqPos =
             _applyLiquidationLegToLiquidator(liquidator, marketId, sizeClosed1e8, liqPrice1e8, currentFunding, traderWasLong);
 
-        if (_absInt256(newLiqPos.size1e8) > uint256(rcfg.maxPositionSize1e8)) revert LiquidatorWouldBreachMargin(liquidator);
+        if (_absInt256(newLiqPos.size1e8) > uint256(rcfg.maxPositionSize1e8)) {
+            revert LiquidatorWouldBreachMargin(liquidator);
+        }
 
         // Realized cashflow of the closed portion:
         // trader's realized PnL is settled against the liquidator.
@@ -756,7 +821,11 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
 
         uint256 closedNotionalBaseValue = _settlementAmount1e8ToBaseValue(m.settlementAsset, closedNotional1e8);
         uint256 penaltyBaseValue = _liquidationPenaltyBaseValue(closedNotionalBaseValue, liquidationPenaltyBps);
-        uint256 paidPenaltyBaseValue = _seizePenaltyToLiquidator(trader, liquidator, m.settlementAsset, penaltyBaseValue);
+
+        uint256 seizedPenaltyBaseValue = _seizePenaltyToLiquidator(trader, liquidator, m.settlementAsset, penaltyBaseValue);
+
+        LiquidationResolution memory resolution =
+            _resolveLiquidationShortfall(liquidator, trader, marketId, penaltyBaseValue, seizedPenaltyBaseValue);
 
         // Improvement check on trader after state mutation.
         IPerpRiskModule.AccountRisk memory traderAfter = _marginState(trader);
@@ -769,10 +838,12 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         );
         if (!improved) revert LiquidationNotImproving();
 
-        // Liquidator must remain healthy after taking the clip.
+        // Liquidator must remain healthy after taking the clip + any insurance-paid penalty top-up.
         _enforcePostTradeRisk(liquidator);
 
-        emit Liquidation(liquidator, trader, marketId, sizeClosed1e8, liqPrice1e8, paidPenaltyBaseValue);
-        emit LiquidationPenaltyPaid(liquidator, trader, marketId, paidPenaltyBaseValue);
+        uint256 totalPenaltyPaidBaseValue = resolution.seizedPenaltyBaseValue + resolution.insurancePaidBaseValue;
+
+        emit Liquidation(liquidator, trader, marketId, sizeClosed1e8, liqPrice1e8, totalPenaltyPaidBaseValue);
+        emit LiquidationPenaltyPaid(liquidator, trader, marketId, totalPenaltyPaidBaseValue);
     }
 }

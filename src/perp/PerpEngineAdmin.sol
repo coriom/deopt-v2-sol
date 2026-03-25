@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {CollateralVault} from "../collateral/CollateralVault.sol";
 import {IOracle} from "../oracle/IOracle.sol";
 import {IFeesManager} from "../fees/IFeesManager.sol";
+import {ICollateralSeizer} from "../liquidation/ICollateralSeizer.sol";
 
 import "./PerpEngineStorage.sol";
 
@@ -71,6 +73,7 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
             paused = true;
             emit Paused(msg.sender);
             emit GlobalPauseSet(true);
+            emit EmergencyModeUpdated(tradingPaused, liquidationPaused, fundingPaused, collateralOpsPaused);
         }
     }
 
@@ -81,6 +84,7 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
             paused = false;
             emit Unpaused(msg.sender);
             emit GlobalPauseSet(false);
+            emit EmergencyModeUpdated(tradingPaused, liquidationPaused, fundingPaused, collateralOpsPaused);
         }
     }
 
@@ -187,11 +191,30 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
         emit RiskModuleSet(riskModule_);
     }
 
+    /// @notice Sets the multi-collateral seizure planner used by liquidation.
+    /// @dev This dependency is optional at architecture level, but explicit wiring is preferred.
+    function setCollateralSeizer(address collateralSeizer_) external onlyOwner {
+        if (collateralSeizer_ == address(0)) revert ZeroAddress();
+        _collateralSeizer = ICollateralSeizer(collateralSeizer_);
+    }
+
+    /// @notice Clears the configured collateral seizer.
+    /// @dev Kept available for emergency rollback / migration.
+    function clearCollateralSeizer() external onlyOwner {
+        _collateralSeizer = ICollateralSeizer(address(0));
+    }
+
     function setInsuranceFund(address insuranceFund_) external onlyOwner {
         if (insuranceFund_ == address(0)) revert ZeroAddress();
         address old = insuranceFund;
         insuranceFund = insuranceFund_;
         emit InsuranceFundSet(old, insuranceFund_);
+    }
+
+    function clearInsuranceFund() external onlyOwner {
+        address old = insuranceFund;
+        insuranceFund = address(0);
+        emit InsuranceFundSet(old, address(0));
     }
 
     function setFeesManager(address feesManager_) external onlyOwner {

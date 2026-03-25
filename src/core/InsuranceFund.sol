@@ -8,26 +8,34 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {CollateralVault} from "../collateral/CollateralVault.sol";
 
 /// @title InsuranceFund
-/// @notice Trésorerie de backstop (multi-token) destinée à être utilisée COMME "account" dans CollateralVault.
+/// @notice Multi-token backstop treasury designed to operate as an account inside CollateralVault.
 /// @dev
-///  Rôles dans DeOpt v2:
-///   - backstop de règlement / bad debt via CollateralVault.transferBetweenAccounts(from=address(this), ...),
-///   - réceptacle possible des trading fees si MarginEngine choisit insuranceFund comme feeRecipient fallback.
+///  Roles in DeOpt v2:
+///   - protocol backstop for liquidation shortfall / bad debt resolution through internal vault transfers
+///   - optional fee recipient fallback if trading engines route fees to insuranceFund
+///   - treasury operations for funding, withdrawals, and optional yield management
 ///
-///  Important:
-///   - Les fees reçues via MarginEngine NE transitent pas onchain par ce contrat.
-///     Elles arrivent comme crédit interne dans CollateralVault sous l’adresse `address(this)`.
-///   - Ce contrat sert donc à:
-///       * gérer l’allowlist de tokens,
-///       * déposer / retirer des fonds dans le CollateralVault sous l’adresse de ce contrat,
-///       * (optionnel) activer le yield côté vault (moveToStrategy/moveToIdle),
-///       * exposer des vues utilitaires sur les balances locales / vault.
+///  Important design notes:
+///   - fees routed by engines to `address(this)` generally arrive as internal credits in CollateralVault,
+///     not necessarily as ERC20 balances held by this contract
+///   - this contract therefore serves to:
+///       * manage token allowlist
+///       * fund the vault under this account
+///       * withdraw from the vault for treasury ops
+///       * expose authorized backstop payout methods to protocol engines
+///       * optionally manage yield through the vault
+///
+///  Backstop policy at this layer:
+///   - this contract does NOT decide whether a shortfall should be covered
+///   - it only exposes bounded payout primitives to authorized callers
+///   - payout is capped to actually available vault balance
+///   - the caller remains responsible for accounting any residual shortfall / bad debt
 ///
 ///  Hardenings:
 ///   - ownership 2-step
-///   - allowlist stricte (TokenNotAllowed)
-///   - helpers depositAllToVault / sweepUnexpectedToken
-///   - guardian + emergency pauses compatibles Safe multisig
+///   - strict token allowlist
+///   - guardian + granular pauses
+///   - explicit authorized backstop callers
 contract InsuranceFund is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -42,6 +50,7 @@ contract InsuranceFund is ReentrancyGuard {
     error AmountZero();
     error InsufficientBalance();
     error RescueForbidden();
+    error BackstopCallerNotAuthorized();
 
     error OwnershipTransferNotInitiated();
 
@@ -61,6 +70,7 @@ contract InsuranceFund is ReentrancyGuard {
 
     event OperatorSet(address indexed operator, bool allowed);
     event TokenAllowed(address indexed token, bool allowed);
+    event BackstopCallerSet(address indexed caller, bool allowed);
 
     event VaultSet(address indexed vault);
 
@@ -82,6 +92,14 @@ contract InsuranceFund is ReentrancyGuard {
     event MovedToIdle(address indexed token, uint256 assets);
     event Synced(address indexed token);
 
+    event VaultBackstopPaid(
+        address indexed caller,
+        address indexed token,
+        address indexed toAccount,
+        uint256 requestedAmount,
+        uint256 paidAmount
+    );
+
     event Swept(address indexed token, address indexed to, uint256 amount);
 
     /*//////////////////////////////////////////////////////////////
@@ -100,11 +118,14 @@ contract InsuranceFund is ReentrancyGuard {
     bool public withdrawPaused;
     bool public yieldOpsPaused;
 
-    /// @notice Opérateurs autorisés (optionnel): keepers / ops / etc.
+    /// @notice Optional ops accounts.
     mapping(address => bool) public isOperator;
 
-    /// @notice Allowlist multi-token (USDC, WETH, WBTC, etc.)
+    /// @notice Allowlist of supported treasury/backstop tokens.
     mapping(address => bool) public isTokenAllowed;
+
+    /// @notice Protocol engines/modules allowed to consume this fund as a vault backstop.
+    mapping(address => bool) public isBackstopCaller;
 
     CollateralVault public immutable collateralVault;
 
@@ -124,6 +145,11 @@ contract InsuranceFund is ReentrancyGuard {
 
     modifier onlyGuardianOrOwner() {
         if (msg.sender != owner && msg.sender != guardian) revert GuardianNotAuthorized();
+        _;
+    }
+
+    modifier onlyBackstopCaller() {
+        if (!isBackstopCaller[msg.sender]) revert BackstopCallerNotAuthorized();
         _;
     }
 
@@ -308,12 +334,20 @@ contract InsuranceFund is ReentrancyGuard {
         emit TokenAllowed(token, allowed);
     }
 
+    /// @notice Authorize or revoke a protocol caller allowed to consume the fund as a vault backstop.
+    /// @dev Intended for PerpEngine / future liquidation engines.
+    function setBackstopCaller(address caller, bool allowed) external onlyOwner {
+        if (caller == address(0)) revert ZeroAddress();
+        isBackstopCaller[caller] = allowed;
+        emit BackstopCallerSet(caller, allowed);
+    }
+
     /*//////////////////////////////////////////////////////////////
                         VAULT FUNDING / MANAGEMENT
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Pull des tokens depuis l’owner, puis dépôt dans le CollateralVault au nom de ce fund.
-    /// @dev Owner doit approve ce contrat.
+    /// @notice Pull tokens from owner, then deposit them into CollateralVault under this fund account.
+    /// @dev Owner must approve this contract beforehand.
     function fundAndDepositToVault(address token, uint256 amount)
         external
         onlyOwner
@@ -329,7 +363,7 @@ contract InsuranceFund is ReentrancyGuard {
         _depositToVault(token, amount);
     }
 
-    /// @notice Dépôt de tokens déjà détenus par le fund vers le CollateralVault.
+    /// @notice Deposit tokens already held locally by this contract into CollateralVault.
     function depositToVault(address token, uint256 amount)
         external
         onlyOwnerOrOperator
@@ -345,7 +379,7 @@ contract InsuranceFund is ReentrancyGuard {
         _depositToVault(token, amount);
     }
 
-    /// @notice Dépose 100% du solde local détenu par le fund dans le CollateralVault.
+    /// @notice Deposit 100% of local ERC20 balance into CollateralVault.
     function depositAllToVault(address token)
         external
         onlyOwnerOrOperator
@@ -369,8 +403,8 @@ contract InsuranceFund is ReentrancyGuard {
         emit DepositedToVault(token, amount);
     }
 
-    /// @notice Retire des tokens du CollateralVault (depuis le balance interne du fund) et les envoie à `to`.
-    /// @dev Ici, on sort des actifs du vault (on-chain transfer). À utiliser pour ops/gestion.
+    /// @notice Withdraw tokens from CollateralVault and send them on-chain to `to`.
+    /// @dev Treasury management path, distinct from in-vault backstop payouts.
     function withdrawFromVault(address token, address to, uint256 amount)
         external
         onlyOwner
@@ -388,7 +422,52 @@ contract InsuranceFund is ReentrancyGuard {
     }
 
     /*//////////////////////////////////////////////////////////////
-                            YIELD WRAPPERS (OPTIONNEL)
+                        BACKSTOP PAYOUTS (IN-VAULT)
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Cover a shortfall by transferring internal vault balance from this fund to `toAccount`.
+    /// @dev
+    ///  - bounded to what is actually available for this fund in the vault
+    ///  - returns the effective amount paid
+    ///  - does not revert if balance is insufficient; caller must account residual shortfall
+    ///  - intended for liquidation engines / protocol backstop logic
+    function coverVaultShortfall(address token, address toAccount, uint256 requestedAmount)
+        external
+        onlyBackstopCaller
+        whenWithdrawNotPaused
+        nonReentrant
+        returns (uint256 paidAmount)
+    {
+        if (!isTokenAllowed[token]) revert TokenNotAllowed();
+        if (toAccount == address(0)) revert ZeroAddress();
+        if (requestedAmount == 0) revert AmountZero();
+
+        _syncVaultAccountBestEffort(token);
+
+        uint256 avail = _vaultBalanceWithYield(token);
+        paidAmount = requestedAmount <= avail ? requestedAmount : avail;
+
+        if (paidAmount == 0) {
+            emit VaultBackstopPaid(msg.sender, token, toAccount, requestedAmount, 0);
+            return 0;
+        }
+
+        collateralVault.transferBetweenAccounts(token, address(this), toAccount, paidAmount);
+
+        emit VaultBackstopPaid(msg.sender, token, toAccount, requestedAmount, paidAmount);
+    }
+
+    /// @notice Preview how much this fund could currently pay from its vault balance.
+    function previewVaultCoverage(address token, uint256 requestedAmount) external view returns (uint256 payableAmount) {
+        if (requestedAmount == 0) return 0;
+        if (!isTokenAllowed[token]) return 0;
+
+        uint256 avail = _vaultBalanceWithYield(token);
+        return requestedAmount <= avail ? requestedAmount : avail;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                            YIELD WRAPPERS (OPTIONAL)
     //////////////////////////////////////////////////////////////*/
 
     function setYieldOptIn(address token, bool optedIn) external onlyOwner whenYieldOpsNotPaused {
@@ -433,11 +512,8 @@ contract InsuranceFund is ReentrancyGuard {
                                 RESCUE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Récupère des tokens envoyés par erreur AU CONTRAT (pas dans le vault).
-    /// @dev Interdit de "sweep" un token allowlisté (fonds de backstop / fees protocolaires).
-    ///      Pour ces tokens:
-    ///        - déposer via depositToVault(), ou
-    ///        - retirer via withdrawFromVault().
+    /// @notice Recover tokens mistakenly sent to this contract directly, not stored in vault.
+    /// @dev Allowed treasury tokens cannot be swept through this path.
     function sweepUnexpectedToken(address token, address to, uint256 amount) external onlyOwner nonReentrant {
         if (to == address(0)) revert ZeroAddress();
         if (amount == 0) revert AmountZero();
@@ -456,11 +532,7 @@ contract InsuranceFund is ReentrancyGuard {
     }
 
     function vaultBalanceWithYield(address token) external view returns (uint256) {
-        try collateralVault.balanceWithYield(address(this), token) returns (uint256 b) {
-            return b;
-        } catch {
-            return collateralVault.balances(address(this), token);
-        }
+        return _vaultBalanceWithYield(token);
     }
 
     function localBalance(address token) external view returns (uint256) {
@@ -476,6 +548,20 @@ contract InsuranceFund is ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////
                             INTERNAL HELPERS
     //////////////////////////////////////////////////////////////*/
+
+    function _vaultBalanceWithYield(address token) internal view returns (uint256) {
+        try collateralVault.balanceWithYield(address(this), token) returns (uint256 b) {
+            return b;
+        } catch {
+            return collateralVault.balances(address(this), token);
+        }
+    }
+
+    function _syncVaultAccountBestEffort(address token) internal {
+        try collateralVault.syncAccount(token) {
+            emit Synced(token);
+        } catch {}
+    }
 
     function _isFundingPaused() internal view returns (bool) {
         return paused || fundingPaused;

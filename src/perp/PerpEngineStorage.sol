@@ -6,6 +6,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {CollateralVault} from "../collateral/CollateralVault.sol";
 import {IOracle} from "../oracle/IOracle.sol";
 import {IFeesManager} from "../fees/IFeesManager.sol";
+import {ICollateralSeizer} from "../liquidation/ICollateralSeizer.sol";
 
 import {PerpMarketRegistry} from "./PerpMarketRegistry.sol";
 import {PerpEngineTypes} from "./PerpEngineTypes.sol";
@@ -64,6 +65,7 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
     CollateralVault internal _collateralVault;
     IOracle internal _oracle;
     IPerpRiskModule internal _riskModule;
+    ICollateralSeizer internal _collateralSeizer;
     IFeesManager public feesManager;
 
     /// @notice Insurance fund / backstop.
@@ -85,6 +87,18 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
     /// @notice Aggregate exposure helpers.
     mapping(address => uint256) public totalAbsLongSize1e8;
     mapping(address => uint256) public totalAbsShortSize1e8;
+
+    /// @notice Residual bad debt per trader, denominated in native base token units.
+    /// @dev
+    ///  This tracks liquidation leftovers not covered by:
+    ///   - collateral seizure
+    ///   - insurance fund top-up
+    ///
+    ///  It is protocol-visible economic debt and must be consumed by risk views.
+    mapping(address => uint256) internal _residualBadDebtBase;
+
+    /// @notice Aggregate residual bad debt across all traders, in native base token units.
+    uint256 public totalResidualBadDebtBase;
 
     /// @notice Legacy global pause.
     bool public paused;
@@ -420,6 +434,45 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         minImprovementBps_;
     }
 
+    function _recordResidualBadDebt(address trader, uint256 amountBase) internal {
+        if (trader == address(0)) revert ZeroAddress();
+        if (amountBase == 0) return;
+
+        uint256 oldDebt = _residualBadDebtBase[trader];
+        uint256 newDebt = _addChecked(oldDebt, amountBase);
+
+        _residualBadDebtBase[trader] = newDebt;
+        totalResidualBadDebtBase = _addChecked(totalResidualBadDebtBase, amountBase);
+    }
+
+    function _reduceResidualBadDebt(address trader, uint256 amountBase) internal returns (uint256 repaidBase) {
+        if (trader == address(0)) revert ZeroAddress();
+        if (amountBase == 0) return 0;
+
+        uint256 oldDebt = _residualBadDebtBase[trader];
+        if (oldDebt == 0) return 0;
+
+        repaidBase = amountBase < oldDebt ? amountBase : oldDebt;
+        uint256 newDebt = oldDebt - repaidBase;
+
+        _residualBadDebtBase[trader] = newDebt;
+        totalResidualBadDebtBase = _subChecked(totalResidualBadDebtBase, repaidBase);
+    }
+
+    function _clearResidualBadDebt(address trader) internal returns (uint256 clearedBase) {
+        if (trader == address(0)) revert ZeroAddress();
+
+        clearedBase = _residualBadDebtBase[trader];
+        if (clearedBase == 0) return 0;
+
+        _residualBadDebtBase[trader] = 0;
+        totalResidualBadDebtBase = _subChecked(totalResidualBadDebtBase, clearedBase);
+    }
+
+    function _residualBadDebtOf(address trader) internal view returns (uint256) {
+        return _residualBadDebtBase[trader];
+    }
+
     /*//////////////////////////////////////////////////////////////
                           INTERNAL ORACLE HELPERS
     //////////////////////////////////////////////////////////////*/
@@ -438,8 +491,9 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         IOracle o = _marketOracle(m);
 
         {
-            (bool success, bytes memory data) =
-                address(o).staticcall(abi.encodeWithSignature("getPriceSafe(address,address)", m.underlying, m.settlementAsset));
+            (bool success, bytes memory data) = address(o).staticcall(
+                abi.encodeWithSignature("getPriceSafe(address,address)", m.underlying, m.settlementAsset)
+            );
 
             if (success && data.length >= 96) {
                 (uint256 px,, bool safeOk) = abi.decode(data, (uint256, uint256, bool));
@@ -504,8 +558,9 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     function _syncVaultBestEffort(address user, address token) internal {
-        (bool ok,) =
-            address(_collateralVault).call(abi.encodeWithSignature("syncAccountFor(address,address)", user, token));
+        (bool ok,) = address(_collateralVault).call(
+            abi.encodeWithSignature("syncAccountFor(address,address)", user, token)
+        );
         ok;
     }
 
@@ -531,5 +586,9 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
 
     function _riskModuleAddress() internal view returns (address) {
         return address(_riskModule);
+    }
+
+    function _collateralSeizerAddress() internal view returns (address) {
+        return address(_collateralSeizer);
     }
 }

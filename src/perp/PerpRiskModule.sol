@@ -36,19 +36,40 @@ interface IPerpEngineRiskView {
     function getPositionFundingAccrued(address trader, uint256 marketId) external view returns (int256 funding1e8);
 }
 
+/// @dev Optional extension used via best-effort runtime calls.
+///      If the engine does not expose this function yet, the risk module
+///      falls back to assuming quote numeraire == base collateral token.
+interface IPerpEngineSettlementAssetView {
+    function getSettlementAsset(uint256 marketId) external view returns (address);
+}
+
+/// @dev Optional extension for explicit residual bad debt accounting.
+///      If missing, residual bad debt is assumed to be zero for backward compatibility.
+interface IPerpEngineBadDebtView {
+    function getResidualBadDebt(address trader) external view returns (uint256);
+}
+
 /// @title PerpRiskModule
 /// @notice Risk module dedicated to the perpetual engine.
 /// @dev
 ///  Conventions:
 ///   - prices normalized in 1e8
-///   - equity / IM / MM expressed in base collateral token native units
+///   - risk outputs are expressed in base collateral token native units
 ///   - collateral valuation uses CollateralVault.collateralFactorBps as haircut
-///   - account equity = adjusted collateral + unrealized PnL - accrued funding
+///   - account equity = adjusted collateral + unrealized PnL - accrued funding - residual bad debt
 ///
 ///  Design:
 ///   - collateral universe is read directly from CollateralVault
 ///   - open markets are paginated through PerpEngine
-///   - best-effort oracle reads for collateral conversions
+///   - collateral valuation is conservative:
+///       * unsupported token => ignored
+///       * zero CF token => ignored for margin equity
+///       * stale / unavailable oracle on non-base token => ignored
+///   - perp quote amounts are converted to base token units:
+///       * directly if settlement asset == base collateral token
+///       * otherwise through oracle best-effort if market settlement asset is exposed
+///       * otherwise fallback assumes quote numeraire == base collateral token
+///   - residual bad debt is consumed from PerpEngine when exposed
 contract PerpRiskModule {
     /*//////////////////////////////////////////////////////////////
                                 CONSTANTS
@@ -76,6 +97,15 @@ contract PerpRiskModule {
         uint256 marginRatioBeforeBps;
         uint256 marginRatioAfterBps;
         bool wouldBreachMargin;
+    }
+
+    struct PerpAggregate {
+        uint256 maintenanceMarginBase;
+        uint256 initialMarginBase;
+        int256 unrealizedPnlBase;
+        int256 fundingAccruedBase;
+        int256 netPerpPnlBase;
+        uint256 residualBadDebtBase;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -447,6 +477,16 @@ contract PerpRiskModule {
         return tmp / factor2;
     }
 
+    function _quote1e8ToTokenNative(address token, uint256 amount1e8) internal view returns (uint256 amountNative) {
+        ICollateralVaultPerpRiskView.CollateralTokenConfig memory cfg = _vaultCfg(token);
+        if (!cfg.isSupported) revert TokenNotSupported(token);
+        if (cfg.decimals == 0) revert TokenDecimalsMissing(token);
+        if (uint256(cfg.decimals) > MAX_POW10_EXP) revert TokenDecimalsOverflow(token);
+
+        uint256 scale = _pow10(uint256(cfg.decimals));
+        amountNative = Math.mulDiv(amount1e8, scale, PRICE_SCALE, Math.Rounding.Down);
+    }
+
     function _toInt256(uint256 x) internal pure returns (int256 y) {
         if (x > uint256(type(int256).max)) revert MathOverflow();
         y = int256(x);
@@ -474,8 +514,60 @@ contract PerpRiskModule {
         return (uint256(equityBase) * BPS) / maintenanceMarginBase;
     }
 
+    function _tryGetSettlementAsset(uint256 marketId) internal view returns (address settlementAsset, bool ok) {
+        try IPerpEngineSettlementAssetView(address(perpEngine)).getSettlementAsset(marketId) returns (address asset) {
+            if (asset == address(0)) return (address(0), false);
+            return (asset, true);
+        } catch {
+            return (address(0), false);
+        }
+    }
+
+    function _tryGetResidualBadDebtBase(address trader) internal view returns (uint256 badDebtBase, bool ok) {
+        try IPerpEngineBadDebtView(address(perpEngine)).getResidualBadDebt(trader) returns (uint256 debt) {
+            return (debt, true);
+        } catch {
+            return (0, false);
+        }
+    }
+
+    function _convertQuote1e8ToBaseWithSettlement(uint256 amount1e8, address settlementAsset)
+        internal
+        view
+        returns (uint256 valueBase)
+    {
+        if (amount1e8 == 0) return 0;
+
+        address base = baseCollateralToken;
+        if (base == address(0)) revert BaseTokenNotConfigured();
+
+        if (settlementAsset == address(0) || settlementAsset == base) {
+            return _convertQuote1e8ToBase(amount1e8);
+        }
+
+        uint256 settlementNative = _quote1e8ToTokenNative(settlementAsset, amount1e8);
+
+        (uint256 px, bool okPx) = _tryGetPrice(settlementAsset, base);
+        if (!okPx || px == 0) revert InvalidParams();
+
+        valueBase = _tokenAmountToBaseValue(settlementAsset, settlementNative, px);
+    }
+
+    function _convertSignedQuote1e8ToBaseWithSettlement(int256 amount1e8, address settlementAsset)
+        internal
+        view
+        returns (int256 valueBase)
+    {
+        if (amount1e8 == 0) return 0;
+
+        uint256 absAmt = amount1e8 >= 0 ? uint256(amount1e8) : uint256(-amount1e8);
+        int256 absBase = _toInt256(_convertQuote1e8ToBaseWithSettlement(absAmt, settlementAsset));
+
+        return amount1e8 >= 0 ? absBase : -absBase;
+    }
+
     function _computeCollateralEquityBase(address trader) internal view returns (uint256 totalEquityBase) {
-        (, uint8 baseDec,) = _loadBase();
+        _loadBase();
         address[] memory tokens = collateralVault.getCollateralTokens();
 
         for (uint256 i = 0; i < tokens.length; i++) {
@@ -495,7 +587,7 @@ contract PerpRiskModule {
                 valueBase = bal;
             } else {
                 (uint256 px, bool okPx) = _tryGetPrice(token, baseCollateralToken);
-                if (!okPx) continue;
+                if (!okPx || px == 0) continue;
                 valueBase = _tokenAmountToBaseValue(token, bal, px);
             }
 
@@ -504,17 +596,10 @@ contract PerpRiskModule {
 
             totalEquityBase += adjusted;
         }
-
-        baseDec; // silence possible future ref usage
     }
 
-    function _computePerpMargins(address trader)
-        internal
-        view
-        returns (uint256 maintenanceMarginBase, uint256 initialMarginBase, int256 pnlBase)
-    {
+    function _computePerpAggregate(address trader) internal view returns (PerpAggregate memory agg) {
         uint256 len = perpEngine.getTraderMarketsLength(trader);
-        address base = baseCollateralToken;
 
         for (uint256 start = 0; start < len; start += SERIES_PAGE) {
             uint256 end = start + SERIES_PAGE;
@@ -524,6 +609,7 @@ contract PerpRiskModule {
 
             for (uint256 i = 0; i < marketIds.length; i++) {
                 uint256 marketId = marketIds[i];
+
                 int256 size1e8 = perpEngine.getPositionSize(trader, marketId);
                 if (size1e8 == 0) continue;
 
@@ -540,44 +626,37 @@ contract PerpRiskModule {
                 uint256 im1e8 =
                     Math.mulDiv(notional1e8, uint256(rcfg.initialMarginBps), BPS, Math.Rounding.Ceil);
 
-                uint256 mmBase;
-                uint256 imBase;
+                (address settlementAsset, bool hasSettlementAsset) = _tryGetSettlementAsset(marketId);
+                address effectiveSettlement = hasSettlementAsset ? settlementAsset : baseCollateralToken;
 
-                if (base == address(0)) revert BaseTokenNotConfigured();
+                uint256 mmBase = _convertQuote1e8ToBaseWithSettlement(mm1e8, effectiveSettlement);
+                uint256 imBase = _convertQuote1e8ToBaseWithSettlement(im1e8, effectiveSettlement);
 
-                if (base == baseCollateralToken) {
-                    // noop for readability
-                }
-
-                if (base == baseCollateralToken) {
-                    // convert from quote 1e8 to base native units
-                    // assumes perpEngine mark price is underlying/settlement and risk/pnl are quote 1e8 units.
-                    // base collateral should be same as quote settlement economic unit through oracle if needed.
-                }
-
-                mmBase = _convertQuote1e8ToBase(mm1e8);
-                imBase = _convertQuote1e8ToBase(im1e8);
-
-                maintenanceMarginBase += mmBase;
-                initialMarginBase += imBase;
+                agg.maintenanceMarginBase += mmBase;
+                agg.initialMarginBase += imBase;
 
                 int256 upnl1e8 = perpEngine.getUnrealizedPnl(trader, marketId);
                 int256 funding1e8 = perpEngine.getPositionFundingAccrued(trader, marketId);
 
-                int256 net1e8 = _checkedSubInt256(upnl1e8, funding1e8);
-                int256 netBase = _convertSignedQuote1e8ToBase(net1e8);
+                int256 upnlBase = _convertSignedQuote1e8ToBaseWithSettlement(upnl1e8, effectiveSettlement);
+                int256 fundingBase = _convertSignedQuote1e8ToBaseWithSettlement(funding1e8, effectiveSettlement);
 
-                pnlBase = _checkedAddInt256(pnlBase, netBase);
+                agg.unrealizedPnlBase = _checkedAddInt256(agg.unrealizedPnlBase, upnlBase);
+                agg.fundingAccruedBase = _checkedAddInt256(agg.fundingAccruedBase, fundingBase);
             }
+        }
+
+        agg.netPerpPnlBase = _checkedSubInt256(agg.unrealizedPnlBase, agg.fundingAccruedBase);
+
+        (uint256 badDebt, bool okBadDebt) = _tryGetResidualBadDebtBase(trader);
+        if (okBadDebt) {
+            agg.residualBadDebtBase = badDebt;
         }
     }
 
     function _convertQuote1e8ToBase(uint256 amount1e8) internal view returns (uint256 valueBase) {
-        (address base,, uint256 baseScale) = _loadBase();
-
-        // If base collateral is economically the quote numeraire, this is direct scaling.
-        // If not, governance should choose the quote-like base collateral token for the perp module.
-        base;
+        (, uint8 baseDec, uint256 baseScale) = _loadBase();
+        baseDec;
         valueBase = Math.mulDiv(amount1e8, baseScale, PRICE_SCALE, Math.Rounding.Down);
     }
 
@@ -588,6 +667,26 @@ contract PerpRiskModule {
         int256 absBase = _toInt256(_convertQuote1e8ToBase(absAmt));
 
         return amount1e8 >= 0 ? absBase : -absBase;
+    }
+
+    function _withdrawDeltaEquityBase(address token, uint256 amount) internal view returns (uint256 deltaEquityBase) {
+        if (amount == 0) return 0;
+
+        ICollateralVaultPerpRiskView.CollateralTokenConfig memory cfg = _vaultCfg(token);
+        if (!cfg.isSupported || cfg.collateralFactorBps == 0) return 0;
+        if (cfg.decimals == 0) revert TokenDecimalsMissing(token);
+        if (uint256(cfg.decimals) > MAX_POW10_EXP) revert TokenDecimalsOverflow(token);
+
+        uint256 valueBase;
+        if (token == baseCollateralToken) {
+            valueBase = amount;
+        } else {
+            (uint256 px, bool okPx) = _tryGetPrice(token, baseCollateralToken);
+            if (!okPx || px == 0) return type(uint256).max;
+            valueBase = _tokenAmountToBaseValue(token, amount, px);
+        }
+
+        deltaEquityBase = Math.mulDiv(valueBase, uint256(cfg.collateralFactorBps), BPS, Math.Rounding.Floor);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -603,13 +702,17 @@ contract PerpRiskModule {
         _loadBase();
 
         uint256 collateralEquityBase = _computeCollateralEquityBase(trader);
-        (uint256 mmBase, uint256 imBase, int256 pnlBase) = _computePerpMargins(trader);
+        PerpAggregate memory agg = _computePerpAggregate(trader);
 
-        int256 equity = _checkedAddInt256(_toInt256(collateralEquityBase), pnlBase);
+        int256 equity = _checkedAddInt256(_toInt256(collateralEquityBase), agg.netPerpPnlBase);
+
+        if (agg.residualBadDebtBase != 0) {
+            equity = _checkedSubInt256(equity, _toInt256(agg.residualBadDebtBase));
+        }
 
         risk.equity1e8 = equity;
-        risk.maintenanceMargin1e8 = mmBase;
-        risk.initialMargin1e8 = imBase;
+        risk.maintenanceMargin1e8 = agg.maintenanceMarginBase;
+        risk.initialMargin1e8 = agg.initialMarginBase;
     }
 
     function computeFreeCollateral(address trader)
@@ -651,9 +754,7 @@ contract PerpRiskModule {
         ICollateralVaultPerpRiskView.CollateralTokenConfig memory cfg = _vaultCfg(token);
         if (!cfg.isSupported) revert TokenNotSupported(token);
 
-        // Non-margin token => unrestricted
         if (cfg.collateralFactorBps == 0) return avail;
-
         if (cfg.decimals == 0) revert TokenDecimalsMissing(token);
         if (uint256(cfg.decimals) > MAX_POW10_EXP) revert TokenDecimalsOverflow(token);
 
@@ -664,7 +765,6 @@ contract PerpRiskModule {
             : _checkedSubInt256(risk.equity1e8, _toInt256(risk.initialMargin1e8));
 
         if (free <= 0) return 0;
-        if (risk.maintenanceMargin1e8 == 0) return avail;
 
         uint256 freeBase = uint256(free);
         uint256 valueBaseMax =
@@ -675,7 +775,7 @@ contract PerpRiskModule {
             maxToken = valueBaseMax;
         } else {
             (uint256 px, bool okPx) = _tryGetPrice(token, baseCollateralToken);
-            if (!okPx) return 0;
+            if (!okPx || px == 0) return 0;
             maxToken = _baseValueToTokenAmount(token, valueBaseMax, px);
         }
 
@@ -702,31 +802,15 @@ contract PerpRiskModule {
         uint256 cappedReq = amount > avail ? avail : amount;
         uint256 effectiveAmount = cappedReq > maxAllowed ? maxAllowed : cappedReq;
 
-        uint256 deltaEquityBase = 0;
+        uint256 deltaEquityBase = _withdrawDeltaEquityBase(token, effectiveAmount);
 
-        if (effectiveAmount > 0) {
-            ICollateralVaultPerpRiskView.CollateralTokenConfig memory cfg = _vaultCfg(token);
-            if (cfg.isSupported && cfg.collateralFactorBps > 0) {
-                uint256 valueBase;
-                if (token == baseCollateralToken) {
-                    valueBase = effectiveAmount;
-                } else {
-                    (uint256 px, bool okPx) = _tryGetPrice(token, baseCollateralToken);
-                    if (!okPx) {
-                        deltaEquityBase = uint256(type(int256).max);
-                    } else {
-                        valueBase = _tokenAmountToBaseValue(token, effectiveAmount, px);
-                    }
-                }
-
-                if (deltaEquityBase == 0) {
-                    deltaEquityBase =
-                        Math.mulDiv(valueBase, uint256(cfg.collateralFactorBps), BPS, Math.Rounding.Floor);
-                }
-            }
+        int256 equityAfter;
+        if (deltaEquityBase == type(uint256).max) {
+            equityAfter = type(int256).min;
+        } else {
+            equityAfter = _checkedSubInt256(riskBefore.equity1e8, _toInt256(deltaEquityBase));
         }
 
-        int256 equityAfter = _checkedSubInt256(riskBefore.equity1e8, _toInt256(deltaEquityBase));
         uint256 mrAfter = _marginRatioBps(equityAfter, riskBefore.maintenanceMargin1e8);
 
         bool breach = amount > maxAllowed;

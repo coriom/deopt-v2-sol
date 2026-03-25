@@ -19,6 +19,10 @@ pragma solidity ^0.8.20;
 ///       lastCumulativeFundingRate1e18
 ///   - this is more robust than storing only an entry price,
 ///     especially for partial closes / flips / funding settlement.
+///
+///  Liquidation design note:
+///   - liquidation is intended to become economically closed:
+///       reduction -> penalty seizure -> shortfall resolution -> residual bad debt accounting
 abstract contract PerpEngineTypes {
     /*//////////////////////////////////////////////////////////////
                                 CONSTANTS
@@ -96,6 +100,28 @@ abstract contract PerpEngineTypes {
         uint256 penaltyBaseValue;
     }
 
+    /// @notice Resolution detail for the economic tail of a liquidation.
+    /// @dev
+    ///  penaltyTargetBaseValue  = target incentive intended for liquidator
+    ///  seizedPenaltyBaseValue  = value actually seized from trader collateral
+    ///  insurancePaidBaseValue  = value covered by insurance fund
+    ///  residualShortfallBaseValue = uncovered remainder after insurance
+    struct LiquidationResolution {
+        uint256 penaltyTargetBaseValue;
+        uint256 seizedPenaltyBaseValue;
+        uint256 insurancePaidBaseValue;
+        uint256 residualShortfallBaseValue;
+    }
+
+    /// @notice Aggregated shortfall accounting helper.
+    struct ShortfallState {
+        uint256 requestedBaseValue;
+        uint256 seizedBaseValue;
+        uint256 remainingAfterSeizureBaseValue;
+        uint256 insurancePaidBaseValue;
+        uint256 residualBadDebtBaseValue;
+    }
+
     /*//////////////////////////////////////////////////////////////
                                 ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -148,6 +174,10 @@ abstract contract PerpEngineTypes {
     error CollateralVaultNotSet();
     error InsuranceFundNotSet();
     error FeesManagerNotSet();
+    error CollateralSeizerNotSet();
+
+    error InsuranceFundCoverageFailed();
+    error BadDebtOutstanding(address trader, uint256 residualBaseValue);
 
     error MathOverflow();
     error SignedMathOverflow();
@@ -166,6 +196,7 @@ abstract contract PerpEngineTypes {
     event MatchingEngineSet(address indexed newMatchingEngine);
     event OracleSet(address indexed newOracle);
     event RiskModuleSet(address indexed newRiskModule);
+    event CollateralSeizerSet(address indexed oldSeizer, address indexed newSeizer);
     event InsuranceFundSet(address indexed oldFund, address indexed newFund);
     event FeesManagerSet(address indexed newFeesManager);
     event FeeRecipientSet(address indexed oldRecipient, address indexed newRecipient);
@@ -223,6 +254,33 @@ abstract contract PerpEngineTypes {
         address indexed trader,
         uint256 indexed marketId,
         uint256 penaltyBaseValue
+    );
+
+    /// @notice Emitted when the trader collateral does not fully cover the penalty target.
+    event LiquidationShortfall(
+        address indexed liquidator,
+        address indexed trader,
+        uint256 indexed marketId,
+        uint256 requestedBaseValue,
+        uint256 seizedBaseValue,
+        uint256 shortfallBaseValue
+    );
+
+    /// @notice Emitted when InsuranceFund contributes to resolve a liquidation shortfall.
+    event LiquidationInsuranceCoverage(
+        address indexed liquidator,
+        address indexed trader,
+        uint256 indexed marketId,
+        uint256 requestedBaseValue,
+        uint256 paidBaseValue
+    );
+
+    /// @notice Emitted when liquidation still leaves an uncovered bad debt / residual shortfall.
+    event LiquidationBadDebtRecorded(
+        address indexed liquidator,
+        address indexed trader,
+        uint256 indexed marketId,
+        uint256 residualBaseValue
     );
 
     event CollateralDeposited(address indexed trader, address indexed token, uint256 amount);
@@ -459,6 +517,16 @@ abstract contract PerpEngineTypes {
         if (penaltyBps > BPS) revert LiquidationPenaltyTooLarge();
         if (closedNotionalBaseValue == 0 || penaltyBps == 0) return 0;
         penaltyBaseValue = (closedNotionalBaseValue * penaltyBps) / BPS;
+    }
+
+    /// @notice Computes remaining shortfall after a first recovery leg.
+    function _remainingShortfall(uint256 targetBaseValue, uint256 recoveredBaseValue)
+        internal
+        pure
+        returns (uint256 remainingBaseValue)
+    {
+        if (recoveredBaseValue >= targetBaseValue) return 0;
+        return targetBaseValue - recoveredBaseValue;
     }
 
     /// @notice Checks that liquidation improved the margin ratio by at least minImprovementBps.
