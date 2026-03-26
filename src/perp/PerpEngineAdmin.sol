@@ -50,14 +50,11 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
                                 GUARDIAN
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Sets the emergency guardian.
-    /// @dev Guardian is expected to be an operational actor, distinct from governance/timelock owner.
     function setGuardian(address guardian_) external onlyOwner {
         if (guardian_ == address(0)) revert ZeroAddress();
         _setGuardian(guardian_);
     }
 
-    /// @notice Clears the emergency guardian.
     function clearGuardian() external onlyOwner {
         _setGuardian(address(0));
     }
@@ -66,8 +63,6 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
                                 PAUSE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Legacy global pause.
-    /// @dev Guardian or owner may trigger emergency freeze.
     function pause() external onlyGuardianOrOwner {
         if (!paused) {
             paused = true;
@@ -77,8 +72,6 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
         }
     }
 
-    /// @notice Clears legacy global pause.
-    /// @dev Owner only.
     function unpause() external onlyOwner {
         if (paused) {
             paused = false;
@@ -191,17 +184,17 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
         emit RiskModuleSet(riskModule_);
     }
 
-    /// @notice Sets the multi-collateral seizure planner used by liquidation.
-    /// @dev This dependency is optional at architecture level, but explicit wiring is preferred.
     function setCollateralSeizer(address collateralSeizer_) external onlyOwner {
         if (collateralSeizer_ == address(0)) revert ZeroAddress();
+        address old = address(_collateralSeizer);
         _collateralSeizer = ICollateralSeizer(collateralSeizer_);
+        emit CollateralSeizerSet(old, collateralSeizer_);
     }
 
-    /// @notice Clears the configured collateral seizer.
-    /// @dev Kept available for emergency rollback / migration.
     function clearCollateralSeizer() external onlyOwner {
+        address old = address(_collateralSeizer);
         _collateralSeizer = ICollateralSeizer(address(0));
+        emit CollateralSeizerSet(old, address(0));
     }
 
     function setInsuranceFund(address insuranceFund_) external onlyOwner {
@@ -228,8 +221,6 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
         emit FeesManagerSet(address(0));
     }
 
-    /// @notice Explicit fee recipient.
-    /// @dev If unset, integration code may fallback to insuranceFund.
     function setFeeRecipient(address feeRecipient_) external onlyOwner {
         if (feeRecipient_ == address(0)) revert ZeroAddress();
         address old = feeRecipient;
@@ -237,7 +228,6 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
         emit FeeRecipientSet(old, feeRecipient_);
     }
 
-    /// @notice Clear explicit fee recipient and fallback to insuranceFund if the integration uses it.
     function clearFeeRecipient() external onlyOwner {
         address old = feeRecipient;
         feeRecipient = address(0);
@@ -305,6 +295,40 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
             newMinImprovementBps
         );
         minLiquidationImprovementBps = newMinImprovementBps;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        BAD DEBT ADMIN SURFACE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Manually records additional residual bad debt on an account.
+    /// @dev Emergency/governance tool. Prefer protocol-native liquidation path whenever possible.
+    function recordResidualBadDebt(address trader, uint256 amountBase) external onlyOwner {
+        if (trader == address(0)) revert ZeroAddress();
+        if (amountBase == 0) revert AmountZero();
+
+        _recordResidualBadDebt(trader, amountBase);
+    }
+
+    /// @notice Reduces residual bad debt on an account by up to `amountBase`.
+    /// @dev Returns the actual amount reduced.
+    function reduceResidualBadDebt(address trader, uint256 amountBase)
+        external
+        onlyOwner
+        returns (uint256 reducedBase)
+    {
+        if (trader == address(0)) revert ZeroAddress();
+        if (amountBase == 0) revert AmountZero();
+
+        reducedBase = _reduceResidualBadDebt(trader, amountBase);
+    }
+
+    /// @notice Clears all recorded residual bad debt for an account.
+    /// @dev Returns the amount cleared.
+    function clearResidualBadDebt(address trader) external onlyOwner returns (uint256 clearedBase) {
+        if (trader == address(0)) revert ZeroAddress();
+
+        clearedBase = _clearResidualBadDebt(trader);
     }
 
     /*//////////////////////////////////////////////////////////////

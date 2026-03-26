@@ -50,6 +50,8 @@ abstract contract CollateralVaultActions is CollateralVaultViews {
         emit Deposited(msg.sender, token, received);
 
         _maybeMoveToStrategy(msg.sender, token, received);
+
+        _afterCollateralCredit(msg.sender, token, received, false);
     }
 
     function depositFor(address user, address token, uint256 amount)
@@ -77,6 +79,8 @@ abstract contract CollateralVaultActions is CollateralVaultViews {
         emit Deposited(user, token, received);
 
         _maybeMoveToStrategy(user, token, received);
+
+        _afterCollateralCredit(user, token, received, false);
     }
 
     function withdraw(address token, uint256 amount) external whenWithdrawalsNotPaused nonReentrant {
@@ -188,7 +192,36 @@ abstract contract CollateralVaultActions is CollateralVaultViews {
 
         emit InternalTransfer(token, from, to, amount);
 
+        _afterCollateralCredit(to, token, amount, true);
+
         _sync(from, token);
         _sync(to, token);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        INTERNAL EXTENSION HOOKS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Generic post-credit hook.
+    /// @dev
+    ///  Purpose:
+    ///   - preserve CollateralVault product-agnostic
+    ///   - allow future extension layers to react to new collateral credits
+    ///   - suitable for debt-first accounting in a product-specific wrapper,
+    ///     without coupling the shared vault directly to PerpEngine state
+    ///
+    ///  `fromInternalTransfer`:
+    ///   - false => external deposit-style credit
+    ///   - true  => protocol internal transfer credit
+    ///
+    ///  Default implementation is a no-op.
+    function _afterCollateralCredit(address account, address token, uint256 amount, bool fromInternalTransfer)
+        internal
+        virtual
+    {
+        account;
+        token;
+        amount;
+        fromInternalTransfer;
     }
 }
