@@ -55,7 +55,11 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         return traderMarkets[trader].length;
     }
 
-    function getTraderMarketsSlice(address trader, uint256 start, uint256 end) external view returns (uint256[] memory out) {
+    function getTraderMarketsSlice(address trader, uint256 start, uint256 end)
+        external
+        view
+        returns (uint256[] memory out)
+    {
         uint256 len = traderMarkets[trader].length;
 
         if (start >= len || start >= end) {
@@ -74,6 +78,61 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
 
     function isOpenMarket(address trader, uint256 marketId) external view returns (bool) {
         return traderMarketIndexPlus1[trader][marketId] != 0;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        BAD DEBT / SOLVENCY READS
+    //////////////////////////////////////////////////////////////*/
+
+    function getResidualBadDebt(address trader) external view returns (uint256) {
+        return _residualBadDebtOf(trader);
+    }
+
+    function hasResidualBadDebt(address trader) public view returns (bool) {
+        return _residualBadDebtOf(trader) != 0;
+    }
+
+    /// @notice Current post-insolvency trading policy for an account.
+    /// @dev If account has residual bad debt, engine enforces strict reduce-only.
+    function isReduceOnlyByBadDebt(address trader) external view returns (bool) {
+        return hasResidualBadDebt(trader);
+    }
+
+    /// @notice Whether the account is currently allowed to increase/open exposure.
+    function canIncreaseExposure(address trader) external view returns (bool) {
+        return !hasResidualBadDebt(trader);
+    }
+
+    function getPerpSolvencyState(address trader)
+        external
+        view
+        returns (
+            uint256 residualBadDebtBase,
+            bool hasOpenPositions,
+            bool liquidatable
+        )
+    {
+        residualBadDebtBase = _residualBadDebtOf(trader);
+        hasOpenPositions = traderMarkets[trader].length != 0;
+        liquidatable = isLiquidatable(trader);
+    }
+
+    function getPerpAccountStatus(address trader)
+        external
+        view
+        returns (
+            uint256 residualBadDebtBase,
+            bool hasOpenPositions,
+            bool liquidatable,
+            bool reduceOnly,
+            bool canIncrease
+        )
+    {
+        residualBadDebtBase = _residualBadDebtOf(trader);
+        hasOpenPositions = traderMarkets[trader].length != 0;
+        liquidatable = isLiquidatable(trader);
+        reduceOnly = residualBadDebtBase != 0;
+        canIncrease = residualBadDebtBase == 0;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -151,17 +210,9 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
 
         uint256 mark = _getMarkPrice1e8(marketId);
 
-        uint256 liqPrice = _liquidationPrice1e8FromMark(
-            p.size1e8,
-            mark,
-            liquidationPriceSpreadBps
-        );
+        uint256 liqPrice = _liquidationPrice1e8FromMark(p.size1e8, mark, liquidationPriceSpreadBps);
 
-        uint128 size = _boundedLiquidationSize1e8(
-            p.size1e8,
-            requestedCloseSize1e8,
-            liquidationCloseFactorBps
-        );
+        uint128 size = _boundedLiquidationSize1e8(p.size1e8, requestedCloseSize1e8, liquidationCloseFactorBps);
 
         if (size == 0) return (0, 0, 0, 0, false);
 
@@ -170,22 +221,14 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         Position memory next;
         int256 realized;
 
-        (next, realized) = _computeNextPosition(
-            p,
-            delta,
-            liqPrice,
-            _marketStates[marketId].cumulativeFundingRate1e18
-        );
+        (next, realized) = _computeNextPosition(p, delta, liqPrice, _marketStates[marketId].cumulativeFundingRate1e18);
         next;
 
-        uint256 closedNotional1e8 =
-            Math.mulDiv(uint256(size), liqPrice, PRICE_1E8, Math.Rounding.Down);
+        uint256 closedNotional1e8 = Math.mulDiv(uint256(size), liqPrice, PRICE_1E8, Math.Rounding.Down);
 
-        uint256 closedNotionalBaseValue =
-            _settlementAmount1e8ToBaseValue(m.settlementAsset, closedNotional1e8);
+        uint256 closedNotionalBaseValue = _settlementAmount1e8ToBaseValue(m.settlementAsset, closedNotional1e8);
 
-        uint256 penalty =
-            _liquidationPenaltyBaseValue(closedNotionalBaseValue, liquidationPenaltyBps);
+        uint256 penalty = _liquidationPenaltyBaseValue(closedNotionalBaseValue, liquidationPenaltyBps);
 
         return (size, liqPrice, realized, penalty, true);
     }
@@ -198,23 +241,11 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         return _getMarkPrice1e8(marketId);
     }
 
-    function getUnrealizedPnl(address trader, uint256 marketId)
-        public
-        view
-        returns (int256)
-    {
-        return _positionUnrealizedPnl1e8(
-            trader,
-            marketId,
-            _getMarkPrice1e8(marketId)
-        );
+    function getUnrealizedPnl(address trader, uint256 marketId) public view returns (int256) {
+        return _positionUnrealizedPnl1e8(trader, marketId, _getMarkPrice1e8(marketId));
     }
 
-    function getPositionFundingAccrued(address trader, uint256 marketId)
-        public
-        view
-        returns (int256)
-    {
+    function getPositionFundingAccrued(address trader, uint256 marketId) public view returns (int256) {
         return _positionFundingAccrued1e8(trader, marketId);
     }
 
@@ -222,11 +253,7 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
                         ACCOUNT AGGREGATION
     //////////////////////////////////////////////////////////////*/
 
-    function getAccountUnrealizedPnl(address trader)
-        public
-        view
-        returns (int256 total)
-    {
+    function getAccountUnrealizedPnl(address trader) public view returns (int256 total) {
         uint256[] memory markets = traderMarkets[trader];
 
         for (uint256 i = 0; i < markets.length; i++) {
@@ -234,11 +261,7 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         }
     }
 
-    function getAccountFunding(address trader)
-        public
-        view
-        returns (int256 total)
-    {
+    function getAccountFunding(address trader) public view returns (int256 total) {
         uint256[] memory markets = traderMarkets[trader];
 
         for (uint256 i = 0; i < markets.length; i++) {
@@ -246,11 +269,7 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         }
     }
 
-    function getAccountNetPnl(address trader)
-        external
-        view
-        returns (int256)
-    {
+    function getAccountNetPnl(address trader) external view returns (int256) {
         return getAccountUnrealizedPnl(trader) - getAccountFunding(trader);
     }
 
@@ -258,11 +277,7 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
                         RISK PASSTHROUGH
     //////////////////////////////////////////////////////////////*/
 
-    function getAccountRisk(address trader)
-        external
-        view
-        returns (IPerpRiskModule.AccountRisk memory)
-    {
+    function getAccountRisk(address trader) external view returns (IPerpRiskModule.AccountRisk memory) {
         if (address(_riskModule) == address(0)) {
             return IPerpRiskModule.AccountRisk(0, 0, 0);
         }
@@ -270,40 +285,24 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         return _riskModule.computeAccountRisk(trader);
     }
 
-    function getMarginRatioBps(address trader)
-        external
-        view
-        returns (uint256)
-    {
+    function getMarginRatioBps(address trader) external view returns (uint256) {
         if (address(_riskModule) == address(0)) return type(uint256).max;
 
-        IPerpRiskModule.AccountRisk memory r =
-            _riskModule.computeAccountRisk(trader);
+        IPerpRiskModule.AccountRisk memory r = _riskModule.computeAccountRisk(trader);
 
-        return _marginRatioBpsFromState(
-            r.equity1e8,
-            r.maintenanceMargin1e8
-        );
+        return _marginRatioBpsFromState(r.equity1e8, r.maintenanceMargin1e8);
     }
 
     /*//////////////////////////////////////////////////////////////
                         MARKET METRICS
     //////////////////////////////////////////////////////////////*/
 
-    function getMarketOpenInterest(uint256 marketId)
-        external
-        view
-        returns (uint256 longOI, uint256 shortOI)
-    {
+    function getMarketOpenInterest(uint256 marketId) external view returns (uint256 longOI, uint256 shortOI) {
         MarketState memory s = _marketStates[marketId];
         return (s.longOpenInterest1e8, s.shortOpenInterest1e8);
     }
 
-    function getMarketSkew(uint256 marketId)
-        external
-        view
-        returns (int256)
-    {
+    function getMarketSkew(uint256 marketId) external view returns (int256) {
         MarketState memory s = _marketStates[marketId];
 
         if (s.longOpenInterest1e8 >= s.shortOpenInterest1e8) {

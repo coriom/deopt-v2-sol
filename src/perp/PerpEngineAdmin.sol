@@ -331,6 +331,65 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
         clearedBase = _clearResidualBadDebt(trader);
     }
 
+    /// @notice Repays residual bad debt in base token units by moving vault collateral from `payer` to protocol recipient.
+    /// @dev
+    ///  - repayment asset is strictly the protocol base collateral token
+    ///  - recipient priority:
+    ///      1. insuranceFund
+    ///      2. feeRecipient
+    ///  - effective repayment is bounded by:
+    ///      * requestedAmountBase
+    ///      * outstanding debt
+    ///      * payer base-token vault balance
+    function repayResidualBadDebt(address payer, address trader, uint256 requestedAmountBase)
+        external
+        onlyOwner
+        returns (BadDebtRepayment memory repayment)
+    {
+        if (payer == address(0) || trader == address(0)) revert ZeroAddress();
+        if (requestedAmountBase == 0) revert AmountZero();
+
+        address recipient = _resolvedBadDebtRepaymentRecipient();
+        address baseToken = _baseCollateralToken();
+
+        _syncVaultBestEffort(payer, baseToken);
+        if (payer != recipient) {
+            _syncVaultBestEffort(recipient, baseToken);
+        }
+
+        repayment.requestedBaseValue = requestedAmountBase;
+        repayment.outstandingBaseValue = _residualBadDebtOf(trader);
+
+        if (repayment.outstandingBaseValue == 0) {
+            emit ResidualBadDebtRepaid(payer, trader, recipient, requestedAmountBase, 0, 0);
+            return repayment;
+        }
+
+        uint256 payerBal = _collateralVault.balances(payer, baseToken);
+
+        uint256 cappedToDebt = requestedAmountBase < repayment.outstandingBaseValue
+            ? requestedAmountBase
+            : repayment.outstandingBaseValue;
+
+        repayment.repaidBaseValue = payerBal < cappedToDebt ? payerBal : cappedToDebt;
+
+        if (repayment.repaidBaseValue != 0) {
+            _collateralVault.transferBetweenAccounts(baseToken, payer, recipient, repayment.repaidBaseValue);
+            _reduceResidualBadDebt(trader, repayment.repaidBaseValue);
+        }
+
+        repayment.remainingBaseValue = _residualBadDebtOf(trader);
+
+        emit ResidualBadDebtRepaid(
+            payer,
+            trader,
+            recipient,
+            requestedAmountBase,
+            repayment.repaidBaseValue,
+            repayment.remainingBaseValue
+        );
+    }
+
     /*//////////////////////////////////////////////////////////////
                             REGISTRY / VAULT TARGETS
     //////////////////////////////////////////////////////////////*/
@@ -343,5 +402,24 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
     function setCollateralVault(address vault_) external onlyOwner {
         if (vault_ == address(0)) revert ZeroAddress();
         _collateralVault = CollateralVault(vault_);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                            INTERNAL HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function _baseCollateralToken() internal view returns (address token) {
+        token = _marketRegistry.baseCollateralToken();
+        if (token == address(0)) revert InvalidMarket();
+    }
+
+    function _resolvedBadDebtRepaymentRecipient() internal view returns (address recipient) {
+        recipient = insuranceFund;
+        if (recipient != address(0)) return recipient;
+
+        recipient = feeRecipient;
+        if (recipient != address(0)) return recipient;
+
+        revert InsuranceFundNotSet();
     }
 }

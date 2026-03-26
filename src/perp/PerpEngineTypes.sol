@@ -23,6 +23,10 @@ pragma solidity ^0.8.20;
 ///  Liquidation design note:
 ///   - liquidation is intended to become economically closed:
 ///       reduction -> penalty seizure -> shortfall resolution -> residual bad debt accounting
+///
+///  Debt lifecycle note:
+///   - residual bad debt may later be repaid through explicit protocol paths
+///   - repayment is intended to reduce stored residual debt in base-token units
 abstract contract PerpEngineTypes {
     /*//////////////////////////////////////////////////////////////
                                 CONSTANTS
@@ -102,10 +106,10 @@ abstract contract PerpEngineTypes {
 
     /// @notice Resolution detail for the economic tail of a liquidation.
     /// @dev
-    ///  penaltyTargetBaseValue  = target incentive intended for liquidator
-    ///  seizedPenaltyBaseValue  = value actually seized from trader collateral
-    ///  insurancePaidBaseValue  = value covered by insurance fund
-    ///  residualShortfallBaseValue = uncovered remainder after insurance
+    ///  penaltyTargetBaseValue      = target incentive intended for liquidator
+    ///  seizedPenaltyBaseValue      = value actually seized from trader collateral
+    ///  insurancePaidBaseValue      = value covered by insurance fund
+    ///  residualShortfallBaseValue  = uncovered remainder after insurance
     struct LiquidationResolution {
         uint256 penaltyTargetBaseValue;
         uint256 seizedPenaltyBaseValue;
@@ -120,6 +124,19 @@ abstract contract PerpEngineTypes {
         uint256 remainingAfterSeizureBaseValue;
         uint256 insurancePaidBaseValue;
         uint256 residualBadDebtBaseValue;
+    }
+
+    /// @notice Repayment preview / accounting helper for residual bad debt.
+    /// @dev
+    ///  requestedBaseValue = amount user/admin intends to repay
+    ///  outstandingBaseValue = debt before repayment
+    ///  repaidBaseValue = effective amount actually applied
+    ///  remainingBaseValue = debt left after repayment
+    struct BadDebtRepayment {
+        uint256 requestedBaseValue;
+        uint256 outstandingBaseValue;
+        uint256 repaidBaseValue;
+        uint256 remainingBaseValue;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -281,6 +298,20 @@ abstract contract PerpEngineTypes {
         address indexed trader,
         uint256 indexed marketId,
         uint256 residualBaseValue
+    );
+
+    /// @notice Emitted when residual bad debt is repaid through an explicit protocol path.
+    /// @dev
+    ///  - `payer` = actor providing funds / initiating repayment
+    ///  - `trader` = account whose debt is reduced
+    ///  - `recipient` = protocol destination receiving repayment funds, if applicable
+    event ResidualBadDebtRepaid(
+        address indexed payer,
+        address indexed trader,
+        address indexed recipient,
+        uint256 requestedBaseValue,
+        uint256 repaidBaseValue,
+        uint256 remainingBaseValue
     );
 
     event CollateralDeposited(address indexed trader, address indexed token, uint256 amount);
