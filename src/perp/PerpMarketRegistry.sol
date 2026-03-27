@@ -2,32 +2,31 @@
 pragma solidity ^0.8.20;
 
 /// @title PerpMarketRegistry
-/// @notice Registre central des marchés perpétuels de DeOpt v2.
+/// @notice Central registry for DeOpt v2 perpetual markets.
 /// @dev
-///  Objectif:
-///   - définir les marchés perp (sans expiration)
-///   - stocker leur config de risque / funding / oracle
-///   - ne PAS gérer les positions, le funding runtime, ni la marge utilisateur
+///  Responsibilities:
+///   - define perp markets (no expiry)
+///   - store market risk / funding / oracle configuration
+///   - NOT handle positions, runtime funding accrual, or user margin
 ///
 ///  Conventions:
-///   - prix en 1e8
-///   - taille de position cible future: size1e8 (1e8 = 1 underlying)
-///   - caps de position / OI en 1e8 underlying units
+///   - prices in 1e8
+///   - position sizing in size1e8 (1e8 = 1 underlying)
+///   - position / OI caps expressed in 1e8 underlying units
 ///
-///  Architecture visée:
-///   - PerpEngine lira ce registre
-///   - CollateralVault / OracleRouter / FeesManager restent mutualisés
-///   - oracle peut être:
-///       * address(0) => utiliser l’oracle global du futur PerpEngine
-///       * non-zero   => override par marché
+///  Architecture:
+///   - PerpEngine reads this registry
+///   - CollateralVault / OracleRouter / FeesManager stay shared
+///   - oracle may be:
+///       * address(0) => use PerpEngine global oracle
+///       * non-zero   => per-market override
 ///
 ///  Emergency layer:
-///   - guardian distinct de l’owner
-///   - pause globale legacy
-///   - pauses granulaires:
-///       * creationPaused => bloque création
-///       * configPaused   => bloque updates admin/config
-///   - owner seul peut normaliser complètement
+///   - guardian distinct from owner
+///   - legacy global pause
+///   - granular pauses:
+///       * creationPaused => blocks market creation
+///       * configPaused   => blocks admin/config updates
 contract PerpMarketRegistry {
     /*//////////////////////////////////////////////////////////////
                                 CONSTANTS
@@ -38,7 +37,9 @@ contract PerpMarketRegistry {
 
     uint32 public constant MAX_FUNDING_INTERVAL = 7 days;
     uint32 public constant MAX_CLAMP_BPS = 5_000; // 50%
-    uint32 public constant MAX_MARGIN_BPS = 100_000; // 1000% for defensive upper bound
+    uint32 public constant MAX_MARGIN_BPS = 100_000; // 1000% defensive upper bound
+    uint32 public constant MIN_INITIAL_MARGIN_BPS = 1;
+    uint32 public constant MIN_MAINTENANCE_MARGIN_BPS = 1;
 
     /*//////////////////////////////////////////////////////////////
                                 TYPES
@@ -83,6 +84,7 @@ contract PerpMarketRegistry {
     error GuardianNotAuthorized();
 
     error SettlementAssetNotAllowed();
+    error InvalidMarketParams();
 
     error InvalidRiskConfig();
     error InvalidFundingConfig();
@@ -102,7 +104,7 @@ contract PerpMarketRegistry {
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event OwnershipTransferStarted(address indexed previousOwner, address indexed pendingOwner);
 
-    event GuardianSet(address indexed guardian);
+    event GuardianSet(address indexed oldGuardian, address indexed newGuardian);
 
     event Paused(address indexed account);
     event Unpaused(address indexed account);
@@ -124,7 +126,7 @@ contract PerpMarketRegistry {
     );
 
     event MarketStatusUpdated(uint256 indexed marketId, bool isActive, bool isCloseOnly);
-    event MarketOracleSet(uint256 indexed marketId, address indexed oracle);
+    event MarketOracleSet(uint256 indexed marketId, address indexed oldOracle, address indexed newOracle);
 
     event RiskConfigSet(
         uint256 indexed marketId,
@@ -159,7 +161,6 @@ contract PerpMarketRegistry {
     mapping(address => uint256[]) private _marketsByUnderlying;
 
     mapping(bytes32 => uint256) public marketIdByKey;
-
     mapping(uint256 => bytes32) public marketMetadata;
 
     address public owner;
@@ -347,8 +348,10 @@ contract PerpMarketRegistry {
         Market storage m = _markets[marketId];
         if (!m.exists) revert UnknownMarket();
 
+        address oldOracle = m.oracle;
         m.oracle = oracle_;
-        emit MarketOracleSet(marketId, oracle_);
+
+        emit MarketOracleSet(marketId, oldOracle, oracle_);
     }
 
     function setMarketStatus(uint256 marketId, bool isActive, bool isCloseOnly) external onlyOwner whenConfigNotPaused {
@@ -412,8 +415,7 @@ contract PerpMarketRegistry {
         RiskConfig calldata riskCfg,
         FundingConfig calldata fundingCfg
     ) external onlyMarketCreator whenCreationNotPaused returns (uint256 marketId) {
-        if (underlying == address(0) || settlementAsset == address(0)) revert ZeroAddress();
-        if (symbol == bytes32(0)) revert EmptySymbol();
+        _validateMarketParams(underlying, settlementAsset, symbol);
         if (!isSettlementAssetAllowed[settlementAsset]) revert SettlementAssetNotAllowed();
 
         _validateRiskConfig(riskCfg);
@@ -481,6 +483,18 @@ contract PerpMarketRegistry {
 
     function marketExists(uint256 marketId) external view returns (bool) {
         return _markets[marketId].exists;
+    }
+
+    function isMarketActive(uint256 marketId) external view returns (bool) {
+        Market memory m = _markets[marketId];
+        if (!m.exists) revert UnknownMarket();
+        return m.isActive;
+    }
+
+    function isMarketCloseOnly(uint256 marketId) external view returns (bool) {
+        Market memory m = _markets[marketId];
+        if (!m.exists) revert UnknownMarket();
+        return m.isCloseOnly;
     }
 
     function getRiskConfig(uint256 marketId) external view returns (RiskConfig memory cfg) {
@@ -591,15 +605,26 @@ contract PerpMarketRegistry {
         return keccak256(abi.encode(underlying, settlementAsset, symbol));
     }
 
+    function _validateMarketParams(address underlying, address settlementAsset, bytes32 symbol) internal pure {
+        if (underlying == address(0) || settlementAsset == address(0)) revert ZeroAddress();
+        if (symbol == bytes32(0)) revert EmptySymbol();
+        if (underlying == settlementAsset) revert InvalidMarketParams();
+    }
+
     function _validateRiskConfig(RiskConfig calldata cfg) internal pure {
-        if (cfg.initialMarginBps == 0) revert InvalidRiskConfig();
-        if (cfg.maintenanceMarginBps == 0) revert InvalidRiskConfig();
+        if (cfg.initialMarginBps < MIN_INITIAL_MARGIN_BPS) revert InvalidRiskConfig();
+        if (cfg.maintenanceMarginBps < MIN_MAINTENANCE_MARGIN_BPS) revert InvalidRiskConfig();
+
         if (cfg.initialMarginBps > MAX_MARGIN_BPS) revert InvalidRiskConfig();
         if (cfg.maintenanceMarginBps > MAX_MARGIN_BPS) revert InvalidRiskConfig();
-        if (cfg.maintenanceMarginBps > cfg.initialMarginBps) revert InvalidRiskConfig();
+
+        if (cfg.maintenanceMarginBps >= cfg.initialMarginBps) revert InvalidRiskConfig();
         if (cfg.liquidationPenaltyBps > uint32(BPS)) revert InvalidRiskConfig();
+
         if (cfg.maxPositionSize1e8 == 0) revert InvalidRiskConfig();
         if (cfg.maxOpenInterest1e8 == 0) revert InvalidRiskConfig();
+
+        if (cfg.maxOpenInterest1e8 < cfg.maxPositionSize1e8) revert InvalidRiskConfig();
     }
 
     function _validateFundingConfig(FundingConfig calldata cfg) internal pure {
@@ -614,6 +639,7 @@ contract PerpMarketRegistry {
         if (cfg.fundingInterval == 0 || cfg.fundingInterval > MAX_FUNDING_INTERVAL) {
             revert InvalidFundingConfig();
         }
+
         if (cfg.maxFundingRateBps > uint32(BPS)) revert InvalidFundingConfig();
         if (cfg.maxSkewFundingBps > uint32(BPS)) revert InvalidFundingConfig();
         if (cfg.oracleClampBps > MAX_CLAMP_BPS) revert InvalidFundingConfig();
@@ -628,8 +654,9 @@ contract PerpMarketRegistry {
     }
 
     function _setGuardian(address guardian_) internal {
+        address old = guardian;
         guardian = guardian_;
-        emit GuardianSet(guardian_);
+        emit GuardianSet(old, guardian_);
     }
 
     function _setEmergencyModes(bool creationPaused_, bool configPaused_) internal {

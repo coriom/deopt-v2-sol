@@ -360,6 +360,80 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         }
     }
 
+    function _routeIncomingCashflowWithDebtFirst(
+        address settlementAsset,
+        address payer,
+        address receiver,
+        uint256 incomingNative
+    ) internal {
+        if (incomingNative == 0) return;
+        if (!_hasResidualBadDebt(receiver) || payer == receiver) {
+            _collateralVault.transferBetweenAccounts(settlementAsset, payer, receiver, incomingNative);
+            return;
+        }
+
+        address recipient = _resolvedBadDebtRepaymentRecipient();
+        uint256 outstandingBase = _residualBadDebtOf(receiver);
+        if (outstandingBase == 0 || recipient == address(0) || recipient == receiver) {
+            _collateralVault.transferBetweenAccounts(settlementAsset, payer, receiver, incomingNative);
+            return;
+        }
+
+        uint256 incomingBase = _settlementNativeToBaseValue(settlementAsset, incomingNative);
+        if (incomingBase == 0) {
+            _collateralVault.transferBetweenAccounts(settlementAsset, payer, receiver, incomingNative);
+            return;
+        }
+
+        uint256 requestedRepayBase = outstandingBase < incomingBase ? outstandingBase : incomingBase;
+        if (requestedRepayBase == 0) {
+            _collateralVault.transferBetweenAccounts(settlementAsset, payer, receiver, incomingNative);
+            return;
+        }
+
+        uint256 repayNative;
+        if (settlementAsset == _baseToken()) {
+            repayNative = requestedRepayBase <= incomingNative ? requestedRepayBase : incomingNative;
+        } else {
+            repayNative = _penaltySettlementNative(settlementAsset, requestedRepayBase);
+            if (repayNative > incomingNative) {
+                repayNative = incomingNative;
+            }
+        }
+
+        if (repayNative == 0) {
+            _collateralVault.transferBetweenAccounts(settlementAsset, payer, receiver, incomingNative);
+            return;
+        }
+
+        uint256 actualRepaidBase = _settlementNativeToBaseValue(settlementAsset, repayNative);
+        if (actualRepaidBase > outstandingBase) {
+            actualRepaidBase = outstandingBase;
+        }
+
+        if (actualRepaidBase == 0) {
+            _collateralVault.transferBetweenAccounts(settlementAsset, payer, receiver, incomingNative);
+            return;
+        }
+
+        _collateralVault.transferBetweenAccounts(settlementAsset, payer, recipient, repayNative);
+        _reduceResidualBadDebt(receiver, actualRepaidBase);
+
+        uint256 remainingNative = incomingNative - repayNative;
+        if (remainingNative != 0) {
+            _collateralVault.transferBetweenAccounts(settlementAsset, payer, receiver, remainingNative);
+        }
+
+        emit ResidualBadDebtRepaid(
+            payer,
+            receiver,
+            recipient,
+            requestedRepayBase,
+            actualRepaidBase,
+            _residualBadDebtOf(receiver)
+        );
+    }
+
     /*//////////////////////////////////////////////////////////////
                             FUNDING: CORE LOGIC
     //////////////////////////////////////////////////////////////*/
@@ -599,9 +673,9 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         if (absNetNative == 0) return;
 
         if (netToBuyer1e8 > 0) {
-            _collateralVault.transferBetweenAccounts(settlementAsset, seller, buyer, absNetNative);
+            _routeIncomingCashflowWithDebtFirst(settlementAsset, seller, buyer, absNetNative);
         } else {
-            _collateralVault.transferBetweenAccounts(settlementAsset, buyer, seller, absNetNative);
+            _routeIncomingCashflowWithDebtFirst(settlementAsset, buyer, seller, absNetNative);
         }
     }
 
