@@ -84,8 +84,12 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
                         BAD DEBT / SOLVENCY READS
     //////////////////////////////////////////////////////////////*/
 
-    function getResidualBadDebt(address trader) external view returns (uint256) {
+    function getResidualBadDebt(address trader) public view returns (uint256) {
         return _residualBadDebtOf(trader);
+    }
+
+    function getTotalResidualBadDebt() external view returns (uint256) {
+        return totalResidualBadDebtBase;
     }
 
     function hasResidualBadDebt(address trader) public view returns (bool) {
@@ -106,11 +110,7 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
     function getPerpSolvencyState(address trader)
         external
         view
-        returns (
-            uint256 residualBadDebtBase,
-            bool hasOpenPositions,
-            bool liquidatable
-        )
+        returns (uint256 residualBadDebtBase, bool hasOpenPositions, bool liquidatable)
     {
         residualBadDebtBase = _residualBadDebtOf(trader);
         hasOpenPositions = traderMarkets[trader].length != 0;
@@ -133,6 +133,34 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         liquidatable = isLiquidatable(trader);
         reduceOnly = residualBadDebtBase != 0;
         canIncrease = residualBadDebtBase == 0;
+    }
+
+    function previewResidualBadDebtRepayment(address payer, address trader, uint256 requestedAmountBase)
+        external
+        view
+        returns (BadDebtRepayment memory repayment)
+    {
+        repayment.requestedBaseValue = requestedAmountBase;
+        repayment.outstandingBaseValue = _residualBadDebtOf(trader);
+
+        if (requestedAmountBase == 0 || repayment.outstandingBaseValue == 0 || payer == address(0)) {
+            repayment.remainingBaseValue = repayment.outstandingBaseValue;
+            return repayment;
+        }
+
+        address baseToken = _baseCollateralToken();
+        uint256 payerBal = _collateralVault.balances(payer, baseToken);
+
+        uint256 cappedToDebt = requestedAmountBase < repayment.outstandingBaseValue
+            ? requestedAmountBase
+            : repayment.outstandingBaseValue;
+
+        repayment.repaidBaseValue = payerBal < cappedToDebt ? payerBal : cappedToDebt;
+        repayment.remainingBaseValue = repayment.outstandingBaseValue - repayment.repaidBaseValue;
+    }
+
+    function getBadDebtRepaymentRecipient() external view returns (address) {
+        return _resolvedBadDebtRepaymentRecipient();
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -209,9 +237,7 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         PerpMarketRegistry.Market memory m = _requireMarketExists(marketId);
 
         uint256 mark = _getMarkPrice1e8(marketId);
-
         uint256 liqPrice = _liquidationPrice1e8FromMark(p.size1e8, mark, liquidationPriceSpreadBps);
-
         uint128 size = _boundedLiquidationSize1e8(p.size1e8, requestedCloseSize1e8, liquidationCloseFactorBps);
 
         if (size == 0) return (0, 0, 0, 0, false);
@@ -225,9 +251,7 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         next;
 
         uint256 closedNotional1e8 = Math.mulDiv(uint256(size), liqPrice, PRICE_1E8, Math.Rounding.Down);
-
         uint256 closedNotionalBaseValue = _settlementAmount1e8ToBaseValue(m.settlementAsset, closedNotional1e8);
-
         uint256 penalty = _liquidationPenaltyBaseValue(closedNotionalBaseValue, liquidationPenaltyBps);
 
         return (size, liqPrice, realized, penalty, true);
@@ -289,7 +313,6 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         if (address(_riskModule) == address(0)) return type(uint256).max;
 
         IPerpRiskModule.AccountRisk memory r = _riskModule.computeAccountRisk(trader);
-
         return _marginRatioBpsFromState(r.equity1e8, r.maintenanceMargin1e8);
     }
 
