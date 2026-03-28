@@ -11,11 +11,13 @@ import "./RiskModuleAdmin.sol";
 ///   - expose collateral token universe
 ///   - compute account risk / free collateral / withdraw previews
 ///   - expose margin ratio and oracle helper views
+///   - expose decomposed collateral / product risk state
 ///
 ///  Design notes:
 ///   - conservative valuation: short intrinsic liability is included, longs ignored
 ///   - pagination over trader series avoids unbounded memory growth
 ///   - if base collateral is not configured, views degrade gracefully
+///   - residual bad debt is currently 0 at the options RiskModule layer
 abstract contract RiskModuleViews is RiskModuleAdmin {
     /*//////////////////////////////////////////////////////////////
                                 VIEWS
@@ -33,26 +35,55 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
         return cfg.decimals;
     }
 
-    function computeAccountRisk(address trader)
+    function computeCollateralState(address trader)
         public
         view
         override
         whenRiskChecksNotPaused
-        returns (AccountRisk memory risk)
+        returns (CollateralState memory state)
     {
         address base = baseCollateralToken;
-        if (base == address(0)) return risk;
+        if (base == address(0)) return state;
+
+        (, uint8 baseDec,) = _loadBase();
+
+        uint256 adjusted = _computeCollateralEquityBase(trader, base, baseDec);
+        state.adjustedCollateralValue = adjusted;
+
+        uint256 len = collateralTokens.length;
+        for (uint256 i = 0; i < len; i++) {
+            address token = collateralTokens[i];
+            CollateralConfig memory rcfg = collateralConfigs[token];
+
+            if (!rcfg.isEnabled) continue;
+
+            uint256 bal = _effectiveBalanceOf(trader, token);
+            if (bal == 0) continue;
+
+            uint256 valueBase;
+            if (token == base) {
+                valueBase = bal;
+            } else {
+                (uint256 price, bool okPrice) = _tryGetPrice(token, base);
+                if (!okPrice) continue;
+                valueBase = _tokenAmountToBaseValue(token, bal, price);
+            }
+
+            state.grossCollateralValue = _addChecked(state.grossCollateralValue, valueBase);
+        }
+    }
+
+    function computeProductRiskState(address trader)
+        public
+        view
+        override
+        whenRiskChecksNotPaused
+        returns (ProductRiskState memory state)
+    {
+        address base = baseCollateralToken;
+        if (base == address(0)) return state;
 
         (, uint8 baseDec, uint256 baseScale) = _loadBase();
-
-        uint256 collatEquityBase = _computeCollateralEquityBase(trader, base, baseDec);
-        uint256 shortLiabilityBase = _computeShortLiabilityBase(trader, base, baseScale);
-
-        if (shortLiabilityBase >= collatEquityBase) {
-            risk.equity = _negUintToInt256Sat(shortLiabilityBase - collatEquityBase);
-        } else {
-            risk.equity = _uintToInt256Sat(collatEquityBase - shortLiabilityBase);
-        }
 
         uint256 mm;
         uint256 len = marginEngine.getTraderSeriesLength(trader);
@@ -86,9 +117,66 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
             }
         }
 
-        risk.maintenanceMargin = mm;
-        risk.initialMargin =
+        state.optionsMaintenanceMargin = mm;
+        state.optionsInitialMargin =
             (mm > 0 && imFactorBps > 0) ? Math.mulDiv(mm, imFactorBps, BPS_U, Math.Rounding.Ceil) : 0;
+
+        baseDec;
+        state.unrealizedPnl = 0;
+        state.fundingAccrued = 0;
+        state.perpsInitialMargin = 0;
+        state.perpsMaintenanceMargin = 0;
+        state.residualBadDebt = 0;
+    }
+
+    function computeAccountRiskBreakdown(address trader)
+        public
+        view
+        override
+        whenRiskChecksNotPaused
+        returns (AccountRiskBreakdown memory breakdown)
+    {
+        address base = baseCollateralToken;
+        if (base == address(0)) return breakdown;
+
+        breakdown.collateral = computeCollateralState(trader);
+        breakdown.products = computeProductRiskState(trader);
+
+        uint256 shortLiabilityBase = _computeShortLiabilityBase(trader, base, _pow10(_vaultCfg(base).decimals));
+
+        if (shortLiabilityBase >= breakdown.collateral.adjustedCollateralValue) {
+            breakdown.equity = _negUintToInt256Sat(shortLiabilityBase - breakdown.collateral.adjustedCollateralValue);
+        } else {
+            breakdown.equity = _uintToInt256Sat(breakdown.collateral.adjustedCollateralValue - shortLiabilityBase);
+        }
+
+        breakdown.maintenanceMargin = _addChecked(
+            breakdown.products.optionsMaintenanceMargin,
+            breakdown.products.perpsMaintenanceMargin
+        );
+
+        breakdown.initialMargin = _addChecked(
+            breakdown.products.optionsInitialMargin,
+            breakdown.products.perpsInitialMargin
+        );
+
+        if (breakdown.products.residualBadDebt != 0) {
+            breakdown.equity =
+                _subInt256Sat(breakdown.equity, _uintToInt256Sat(breakdown.products.residualBadDebt));
+        }
+    }
+
+    function computeAccountRisk(address trader)
+        public
+        view
+        override
+        whenRiskChecksNotPaused
+        returns (AccountRisk memory risk)
+    {
+        AccountRiskBreakdown memory b = computeAccountRiskBreakdown(trader);
+        risk.equity = b.equity;
+        risk.maintenanceMargin = b.maintenanceMargin;
+        risk.initialMargin = b.initialMargin;
     }
 
     function computeFreeCollateral(address trader)
@@ -103,6 +191,15 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
 
         int256 im = _uintToInt256Sat(risk.initialMargin);
         return _subInt256Sat(risk.equity, im);
+    }
+
+    function getResidualBadDebt(address)
+        external
+        pure
+        override
+        returns (uint256 amount)
+    {
+        amount = 0;
     }
 
     function getWithdrawableAmount(address trader, address token)
@@ -174,8 +271,8 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
         external
         view
         override
-        whenWithdrawPreviewNotPaused
         returns (IRiskModule.WithdrawPreview memory preview)
+        whenWithdrawPreviewNotPaused
     {
         preview.requestedAmount = amount;
 

@@ -4,7 +4,25 @@ pragma solidity ^0.8.20;
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import "./RiskModuleStorage.sol";
 
+/// @notice Low-level shared helpers for RiskModule.
+/// @dev
+///  Responsibilities:
+///   - collateral token listing helpers
+///   - vault config reads
+///   - decimal / base-token validation
+///   - safe arithmetic helpers
+///   - signed saturation helpers
+///   - option product config loading
+///
+///  Design notes:
+///   - this layer is intentionally generic and reusable by oracle / collateral / margin submodules
+///   - saturating helpers are kept because upper layers currently rely on conservative non-reverting views
+///   - strict config validation stays here to centralize base-token / decimals invariants
 abstract contract RiskModuleUtils is RiskModuleStorage {
+    /*//////////////////////////////////////////////////////////////
+                            TOKEN / CONFIG HELPERS
+    //////////////////////////////////////////////////////////////*/
+
     function _listTokenIfNeeded(address token) internal {
         if (!isCollateralTokenListed[token]) {
             collateralTokens.push(token);
@@ -35,6 +53,8 @@ abstract contract RiskModuleUtils is RiskModuleStorage {
         baseScale = _pow10(uint256(baseDec));
     }
 
+    /// @notice Ensures an enabled token is fully usable for valuation against the configured base token.
+    /// @dev Disabled tokens are ignored upstream and therefore pass through.
     function _requireTokenConfiguredIfEnabled(address token, uint8 baseDec) internal view {
         CollateralConfig memory rcfg = collateralConfigs[token];
         if (!rcfg.isEnabled) return;
@@ -71,10 +91,31 @@ abstract contract RiskModuleUtils is RiskModuleStorage {
         if (s.contractSize1e8 != uint128(PRICE_SCALE_U)) revert InvalidContractSize();
     }
 
+    /*//////////////////////////////////////////////////////////////
+                            UINT MATH HELPERS
+    //////////////////////////////////////////////////////////////*/
+
     function _addChecked(uint256 a, uint256 b) internal pure returns (uint256 c) {
         c = a + b;
         if (c < a) revert MathOverflow();
     }
+
+    function _subChecked(uint256 a, uint256 b) internal pure returns (uint256 c) {
+        if (b > a) revert MathOverflow();
+        unchecked {
+            c = a - b;
+        }
+    }
+
+    function _mulChecked(uint256 a, uint256 b) internal pure returns (uint256 c) {
+        if (a == 0 || b == 0) return 0;
+        c = a * b;
+        if (c / a != b) revert MathOverflow();
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        SIGNED / SATURATING HELPERS
+    //////////////////////////////////////////////////////////////*/
 
     function _uintToInt256Sat(uint256 x) internal pure returns (int256) {
         uint256 m = uint256(type(int256).max);
@@ -95,6 +136,24 @@ abstract contract RiskModuleUtils is RiskModuleStorage {
             if (b < 0 && r < a) return type(int256).max;
         }
     }
+
+    function _addInt256Sat(int256 a, int256 b) internal pure returns (int256 r) {
+        unchecked {
+            r = a + b;
+            if (b > 0 && r < a) return type(int256).max;
+            if (b < 0 && r > a) return type(int256).min;
+        }
+    }
+
+    function _absInt256ToUint(int256 x) internal pure returns (uint256) {
+        if (x >= 0) return uint256(x);
+        if (x == type(int256).min) revert MathOverflow();
+        return uint256(-x);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                            QUANTITY HELPERS
+    //////////////////////////////////////////////////////////////*/
 
     function _absQuantityU(int128 q) internal pure returns (uint256) {
         if (q >= 0) return uint256(int256(q));

@@ -9,11 +9,17 @@ import "./IMarginEngineState.sol";
 
 /// @notice Storage root for RiskModule.
 /// @dev
-///  - Centralizes all state / shared constants / shared events / shared errors.
-///  - Includes an emergency layer compatible with a future Safe multisig:
-///      * owner = governance / timelock / Safe
-///      * guardian = operational emergency actor
-///  - Granular pauses are defined here, then enforced in child layers where relevant.
+///  - Centralizes all shared state / constants / events / errors
+///  - Includes emergency controls compatible with governance + guardian separation
+///  - Serves as the common base for:
+///      * oracle helpers
+///      * collateral valuation
+///      * options margin aggregation
+///      * unified risk views
+///
+///  Current scope:
+///   - options-side risk source of truth
+///   - prepared for richer unified decomposition surfaces
 abstract contract RiskModuleStorage is IRiskModule {
     /*//////////////////////////////////////////////////////////////
                                 CONSTANTS
@@ -39,21 +45,21 @@ abstract contract RiskModuleStorage is IRiskModule {
 
     /// @notice Emergency guardian updated.
     /// @dev address(0) is allowed to disable guardian mode.
-    event GuardianSet(address indexed newGuardian);
+    event GuardianSet(address indexed oldGuardian, address indexed newGuardian);
 
     event RiskParamsSet(address baseCollateralToken, uint256 baseMaintenanceMarginPerContract, uint256 imFactorBps);
 
-    event OracleSet(address indexed newOracle);
-    event MarginEngineSet(address indexed newMarginEngine);
+    event OracleSet(address indexed oldOracle, address indexed newOracle);
+    event MarginEngineSet(address indexed oldMarginEngine, address indexed newMarginEngine);
 
     event CollateralConfigSet(address indexed token, uint64 weightBps, bool isEnabled);
     event CollateralTokensSyncedFromVault(uint256 added);
 
-    event MaxOracleDelaySet(uint256 maxOracleDelay);
+    event MaxOracleDelaySet(uint256 oldMaxOracleDelay, uint256 newMaxOracleDelay);
 
     /// @notice Multiplier used when settlement->base conversion fails.
     /// @dev Example: 20_000 = 2x.
-    event OracleDownMmMultiplierSet(uint256 multiplierBps);
+    event OracleDownMmMultiplierSet(uint256 oldMultiplierBps, uint256 newMultiplierBps);
 
     /*//////////////////////////////////////////////////////////////
                             EMERGENCY EVENTS
@@ -93,6 +99,7 @@ abstract contract RiskModuleStorage is IRiskModule {
     error TokenNotConfigured(address token);
     error TokenDecimalsNotConfigured(address token);
     error TokenNotSupportedInVault(address token);
+    error OracleUnavailable(address base, address quote);
 
     error DecimalsOverflow(address token);
     error DecimalsDiffOverflow(address token);
@@ -231,9 +238,9 @@ abstract contract RiskModuleStorage is IRiskModule {
         withdrawPreviewPaused = false;
 
         emit OwnershipTransferred(address(0), owner_);
-        emit MarginEngineSet(marginEngine_);
-        emit OracleSet(oracle_);
-        emit OracleDownMmMultiplierSet(oracleDownMmMultiplierBps);
+        emit MarginEngineSet(address(0), marginEngine_);
+        emit OracleSet(address(0), oracle_);
+        emit OracleDownMmMultiplierSet(0, oracleDownMmMultiplierBps);
         emit EmergencyModeUpdated(false, false, false);
     }
 
@@ -254,8 +261,9 @@ abstract contract RiskModuleStorage is IRiskModule {
     }
 
     function _setGuardian(address guardian_) internal {
+        address old = guardian;
         guardian = guardian_;
-        emit GuardianSet(guardian_);
+        emit GuardianSet(old, guardian_);
     }
 
     function _setEmergencyModes(bool riskChecksPaused_, bool collateralValuationPaused_, bool withdrawPreviewPaused_)

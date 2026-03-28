@@ -21,14 +21,18 @@ interface IRiskParamsView {
     function imFactorBps() external view returns (uint256);
 }
 
-/// @notice Storage + helpers stateful (only file that declares MarginEngine state)
-/// @dev Keep this file state-oriented. Pure helpers are namespaced here to avoid collisions.
+/// @notice Storage + stateful helpers for MarginEngine.
+/// @dev
+///  This file is the single source of truth for MarginEngine state.
+///  It also hosts the low-level stateful helpers that maintain invariants:
+///   - position quantity must never be int128.min
+///   - open-series list must only contain non-zero positions
+///   - totalShortContracts must remain consistent with positions
 abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMarginEngineState, IMarginEngineTrade {
     /*//////////////////////////////////////////////////////////////
                                 LOCAL CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    // Defensive local mirrors (avoid relying on whether Types defines them).
     uint256 internal constant _ME_PRICE_1E8 = 1e8;
     uint256 internal constant _ME_MAX_POW10_EXP = 77;
 
@@ -40,18 +44,15 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     address public pendingOwner;
     address public matchingEngine;
 
-    /// @notice Emergency guardian allowed to trigger protocol emergency actions.
-    /// @dev Intended owner != guardian in production. Guardian is operational, owner is governance/timelock.
+    /// @notice Emergency guardian allowed to trigger emergency protections.
     address public guardian;
 
-    // renamed to avoid getter conflicts with IMarginEngineState optional helpers
     OptionProductRegistry internal _optionRegistry;
     CollateralVault internal _collateralVault;
     IOracle internal _oracle;
     IRiskModule internal _riskModule;
 
     /// @notice Hybrid fee engine (defaults + tiers + overrides).
-    /// @dev Read-only dependency from MarginEngine perspective.
     IFeesManager public feesManager;
 
     /// @notice Recipient of collected trading fees.
@@ -60,25 +61,24 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
 
     mapping(address => mapping(uint256 => IMarginEngineState.Position)) internal _positions;
 
-    /// @notice Nombre total de contrats shorts (toutes séries confondues) par trader
+    /// @notice Total absolute short quantity across all open series.
     mapping(address => uint256) public totalShortContracts;
 
     /// -----------------------------------------------------------------------
-    /// OPEN SERIES TRACKING (anti-DoS gaz)
+    /// OPEN SERIES TRACKING
     /// -----------------------------------------------------------------------
-    /// @notice Liste des séries sur lesquelles un trader a une position NON NULLE (open only).
+    /// @notice List of series with NON-ZERO position for a trader.
     mapping(address => uint256[]) internal traderSeries;
 
-    /// @notice Index+1 dans traderSeries (0 = absent). Permet remove O(1).
+    /// @notice Index+1 inside traderSeries (0 = absent) for O(1) removal.
     mapping(address => mapping(uint256 => uint256)) internal traderSeriesIndexPlus1;
 
-    /// @notice Cache local (doit matcher RiskModule) : baseCollateralToken / baseMM / IM factor.
+    /// @notice Local cached risk params expected to match RiskModule.
     address public baseCollateralToken;
     uint256 public baseMaintenanceMarginPerContract;
     uint256 public imFactorBps;
 
     /// @notice Legacy global pause.
-    /// @dev Kept for backward compatibility. Effective pause checks should use granular flags below.
     bool public paused;
 
     /// @notice Granular emergency flags.
@@ -90,20 +90,20 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     uint256 public liquidationThresholdBps = 10050;
     uint256 public liquidationPenaltyBps = 500;
 
-    // ===================== Liquidation hardening (A-1) =====================
+    // ===================== Liquidation hardening =====================
 
     uint256 public liquidationCloseFactorBps = 5000;
     uint256 public minLiquidationImprovementBps = 1;
 
-    // ===================== Liquidation pricing (A-1) =====================
+    // ===================== Liquidation pricing =====================
 
     uint256 public liquidationPriceSpreadBps = 500;
     uint256 public minLiquidationPriceBpsOfIntrinsic = 0;
 
-    /// @notice Fraîcheur exigée côté liquidation. 0 = off.
+    /// @notice Required oracle freshness for liquidation. 0 = disabled.
     uint32 public liquidationOracleMaxDelay = 600;
 
-    // ===================== Settlement (per-account) =====================
+    // ===================== Settlement =====================
 
     address public insuranceFund;
 
@@ -158,13 +158,11 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     }
 
     /*//////////////////////////////////////////////////////////////
-                          INTERNAL INITIALIZER (optional)
+                          INTERNAL INITIALIZER
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Optional initializer helper for a concrete MarginEngine constructor.
-    /// Call once from the concrete contract constructor.
     function _initMarginEngineStorage(address owner_, address registry_, address vault_, address oracle_) internal {
-        if (owner != address(0)) revert NotAuthorized(); // already initialized (cheap sentinel)
+        if (owner != address(0)) revert NotAuthorized();
         if (owner_ == address(0) || registry_ == address(0) || vault_ == address(0) || oracle_ == address(0)) {
             revert ZeroAddress();
         }
@@ -181,19 +179,84 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         collateralOpsPaused = false;
 
         emit OwnershipTransferred(address(0), owner_);
-        emit OwnershipTransferStarted(address(0), address(0));
         emit OracleSet(oracle_);
-        emit GuardianSet(address(0));
+        emit GuardianSet(address(0), address(0));
         emit GlobalPauseSet(false);
         emit EmergencyModeUpdated(false, false, false, false);
     }
 
     /*//////////////////////////////////////////////////////////////
-                          INTERNAL PURE HELPERS (NAMESPACED)
+                          IMarginEngineState READS
+    //////////////////////////////////////////////////////////////*/
+
+    function positions(address trader, uint256 optionId)
+        external
+        view
+        override
+        returns (IMarginEngineState.Position memory)
+    {
+        return _positions[trader][optionId];
+    }
+
+    function getTraderSeries(address trader) external view override returns (uint256[] memory) {
+        return traderSeries[trader];
+    }
+
+    function getTraderSeriesLength(address trader) external view override returns (uint256) {
+        return traderSeries[trader].length;
+    }
+
+    function getTraderSeriesSlice(address trader, uint256 start, uint256 end)
+        external
+        view
+        override
+        returns (uint256[] memory slice)
+    {
+        uint256 len = traderSeries[trader].length;
+
+        if (start >= len || start >= end) {
+            return new uint256;
+        }
+
+        if (end > len) end = len;
+
+        uint256 outLen = end - start;
+        slice = new uint256[](outLen);
+
+        for (uint256 i = 0; i < outLen; i++) {
+            slice[i] = traderSeries[trader][start + i];
+        }
+    }
+
+    function optionRegistry() external view override returns (address) {
+        return address(_optionRegistry);
+    }
+
+    function collateralVault() external view override returns (address) {
+        return address(_collateralVault);
+    }
+
+    function oracle() external view override returns (address) {
+        return address(_oracle);
+    }
+
+    function riskModule() external view override returns (address) {
+        return address(_riskModule);
+    }
+
+    function getPositionQuantity(address trader, uint256 optionId) external view override returns (int128) {
+        return _positions[trader][optionId].quantity;
+    }
+
+    function isOpenSeries(address trader, uint256 optionId) external view override returns (bool) {
+        return traderSeriesIndexPlus1[trader][optionId] != 0;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                          INTERNAL PURE HELPERS
     //////////////////////////////////////////////////////////////*/
 
     function _meEnsureQtyAllowed(int128 q) internal pure {
-        // hard rule: never allow int128.min (abs/negation overflow)
         if (q == type(int128).min) revert QuantityMinNotAllowed();
     }
 
@@ -283,12 +346,13 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     }
 
     function _setGuardian(address guardian_) internal {
+        address old = guardian;
         guardian = guardian_;
-        emit GuardianSet(guardian_);
+        emit GuardianSet(old, guardian_);
     }
 
     /*//////////////////////////////////////////////////////////////
-                          INTERNAL (STATEFUL) HELPERS
+                          INTERNAL STATE HELPERS
     //////////////////////////////////////////////////////////////*/
 
     function _enforceInitialMargin(address trader) internal view {
@@ -300,7 +364,7 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     function _addOpenSeries(address trader, uint256 optionId) internal {
         if (traderSeriesIndexPlus1[trader][optionId] != 0) return;
         traderSeries[trader].push(optionId);
-        traderSeriesIndexPlus1[trader][optionId] = traderSeries[trader].length; // index+1
+        traderSeriesIndexPlus1[trader][optionId] = traderSeries[trader].length;
     }
 
     function _removeOpenSeries(address trader, uint256 optionId) internal {
@@ -341,12 +405,16 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         uint256 cur = totalShortContracts[trader];
 
         if (newShort >= oldShort) {
-            uint256 delta = newShort - oldShort;
-            totalShortContracts[trader] = _meAddChecked(cur, delta);
+            totalShortContracts[trader] = _meAddChecked(cur, newShort - oldShort);
         } else {
-            uint256 delta = oldShort - newShort;
-            totalShortContracts[trader] = _meSubChecked(cur, delta);
+            totalShortContracts[trader] = _meSubChecked(cur, oldShort - newShort);
         }
+    }
+
+    /// @dev Canonical helper to maintain all open-series / short aggregates on a position mutation.
+    function _syncPositionIndexes(address trader, uint256 optionId, int128 oldQty, int128 newQty) internal {
+        _updateOpenSeriesOnChange(trader, optionId, oldQty, newQty);
+        _updateTotalShortContracts(trader, oldQty, newQty);
     }
 
     function _vaultCfg(address token) internal view returns (CollateralVault.CollateralTokenConfig memory cfg) {
@@ -401,14 +469,11 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     }
 
     function _syncVaultBestEffort(address user, address token) internal {
-        // best-effort: ignore failures to keep UX paths non-reverting
         (bool ok,) =
             address(_collateralVault).call(abi.encodeWithSignature("syncAccountFor(address,address)", user, token));
         ok;
     }
 
-    /// @notice Resolve fee recipient.
-    /// @dev Preferred target is explicit `feeRecipient`; fallback is `insuranceFund`.
     function _resolvedFeeRecipient() internal view returns (address recipient) {
         recipient = feeRecipient;
         if (recipient == address(0)) {
@@ -416,15 +481,12 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         }
     }
 
-    /// @notice Returns true if a fee recipient is configured directly or via insuranceFund fallback.
     function _hasFeeRecipient() internal view returns (bool) {
         return _resolvedFeeRecipient() != address(0);
     }
 
-    /// @notice Computes the strike-based implicit notional in native settlement units.
-    /// @dev
-    ///  With contractSize locked to 1e8 (= 1 underlying), strike per contract is directly a 1e8 quote price.
-    ///  Therefore notionalImplicit = quantity * strike, converted to settlement native units.
+    /// @notice Computes strike-based implicit notional in native settlement units.
+    /// @dev With contractSize locked to 1e8 (= 1 underlying), strike per contract is directly a 1e8 quote price.
     function _computeStrikeNotionalImplicit(OptionProductRegistry.OptionSeries memory s, uint256 quantity)
         internal
         view
@@ -437,8 +499,6 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         notionalImplicit = _meMulChecked(quantity, strikePerContractNative);
     }
 
-    /// @notice Quotes the hybrid fee for a given trader/role using the configured FeesManager.
-    /// @dev If no FeesManager is configured, returns a zeroed quote.
     function _quoteHybridFee(address trader, bool isMaker, uint256 premium, uint256 notionalImplicit)
         internal
         view
@@ -451,9 +511,8 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         return fm.quoteFee(trader, isMaker, premium, notionalImplicit);
     }
 
-    /// @dev Convertit une valeur "base token units" en amount de `token` (token units) arrondi UP (conservateur).
-    ///      Utilise oracle.getPrice(token, base) (1e8). Si oracle indispo/stale => (0,false).
-    ///      Best-effort: ne doit pas revert sur overflow (chemin liquidation).
+    /// @dev Converts a value in base token native units into `token` native units, rounding up conservatively.
+    ///      Best-effort helper intended for liquidation paths. Returns (0,false) on unavailable price path.
     function _baseValueToTokenAmountUp(address token, uint256 baseValue)
         internal
         view
@@ -494,7 +553,6 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         uint8 baseDec = baseCfg.decimals;
         uint8 tokDec = tokCfg.decimals;
 
-        // Step 1 (same decimals): ceil(baseValue * 1e8 / px)
         uint256 sameDec = Math.mulDiv(baseValue, _ME_PRICE_1E8, px, Math.Rounding.Ceil);
 
         if (tokDec == baseDec) {
@@ -506,15 +564,14 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
             (uint256 mul, bool okMul) = _meTryMul(sameDec, factor);
             if (!okMul) return (0, false);
             return (mul, true);
-        } else {
-            uint256 factor = _mePow10(uint256(baseDec - tokDec));
-            amtToken = (sameDec + (factor - 1)) / factor;
-            return (amtToken, true);
         }
+
+        uint256 factor2 = _mePow10(uint256(baseDec - tokDec));
+        amtToken = (sameDec + (factor2 - 1)) / factor2;
+        return (amtToken, true);
     }
 
-    /// @dev Approx base value (DOWN) de `tokenAmount` à un prix `pxTokBase` (token->base, 1e8).
-    ///      Best-effort: si config invalide/overflow, renvoie 0 (conservateur, évite revert en liquidation).
+    /// @dev Approximate conservative DOWN conversion of `tokenAmount` into base token native units.
     function _tokenAmountToBaseValueDown(address token, uint256 tokenAmount, uint256 pxTokBase)
         internal
         view
@@ -544,9 +601,9 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
             (uint256 mul, bool okMul) = _meTryMul(num, factor);
             if (!okMul) return 0;
             return mul;
-        } else {
-            uint256 factor = _mePow10(uint256(tokDec - baseDec));
-            return num / factor;
         }
+
+        uint256 factor2 = _mePow10(uint256(tokDec - baseDec));
+        return num / factor2;
     }
 }

@@ -42,12 +42,16 @@ abstract contract MarginEngineOps is MarginEngineTrading {
         returns (uint256[] memory slice)
     {
         uint256 len = traderSeries[trader].length;
-        if (start > len) start = len;
+
+        if (start >= len || start >= end) {
+            return new uint256;
+        }
+
         if (end > len) end = len;
-        if (end < start) end = start;
 
         uint256 outLen = end - start;
         slice = new uint256[](outLen);
+
         for (uint256 i = 0; i < outLen; i++) {
             slice[i] = traderSeries[trader][start + i];
         }
@@ -164,8 +168,9 @@ abstract contract MarginEngineOps is MarginEngineTrading {
     function depositCollateral(address token, uint256 amount) external whenCollateralOpsNotPaused nonReentrant {
         if (amount == 0) revert AmountZero();
 
-        (bool ok,) =
-            address(_collateralVault).call(abi.encodeWithSignature("depositFor(address,address,uint256)", msg.sender, token, amount));
+        (bool ok,) = address(_collateralVault).call(
+            abi.encodeWithSignature("depositFor(address,address,uint256)", msg.sender, token, amount)
+        );
         if (!ok) revert VaultDepositForNotSupported();
 
         emit CollateralDeposited(msg.sender, token, amount);
@@ -182,8 +187,9 @@ abstract contract MarginEngineOps is MarginEngineTrading {
         if (amount > preview.maxWithdrawable) revert WithdrawTooLarge();
         if (preview.marginRatioAfterBps < liquidationThresholdBps) revert WithdrawWouldBreachMargin();
 
-        (bool ok,) =
-            address(_collateralVault).call(abi.encodeWithSignature("withdrawFor(address,address,uint256)", msg.sender, token, amount));
+        (bool ok,) = address(_collateralVault).call(
+            abi.encodeWithSignature("withdrawFor(address,address,uint256)", msg.sender, token, amount)
+        );
         if (!ok) revert VaultWithdrawForNotSupported();
 
         emit CollateralWithdrawn(msg.sender, token, amount, preview.marginRatioAfterBps);
@@ -257,8 +263,7 @@ abstract contract MarginEngineOps is MarginEngineTrading {
 
         // close
         pos.quantity = 0;
-        _updateTotalShortContracts(trader, oldQty, 0);
-        _updateOpenSeriesOnChange(trader, optionId, oldQty, 0);
+        _syncPositionIndexes(trader, optionId, oldQty, 0);
 
         uint256 collectedFromTrader = 0;
         uint256 paidToTrader = 0;
@@ -486,11 +491,8 @@ abstract contract MarginEngineOps is MarginEngineTrading {
             int128 newTraderQty = traderPos.quantity;
             int128 newLiqQty = liqPos.quantity;
 
-            _updateTotalShortContracts(trader, oldTraderQty, newTraderQty);
-            _updateTotalShortContracts(liquidator, oldLiqQty, newLiqQty);
-
-            _updateOpenSeriesOnChange(trader, optionId, oldTraderQty, newTraderQty);
-            _updateOpenSeriesOnChange(liquidator, optionId, oldLiqQty, newLiqQty);
+            _syncPositionIndexes(trader, optionId, oldTraderQty, newTraderQty);
+            _syncPositionIndexes(liquidator, optionId, oldLiqQty, newLiqQty);
 
             executed[i] = liqQty;
             totalContractsClosed += uint256(liqQty);
