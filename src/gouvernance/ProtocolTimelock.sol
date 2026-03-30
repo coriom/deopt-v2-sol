@@ -314,6 +314,8 @@ contract ProtocolTimelock {
         onlyGuardianOrOwner
         returns (bytes32 txHash)
     {
+        if (target == address(0)) revert ZeroAddress();
+
         txHash = _hashOperation(target, value, data, eta);
         if (!queuedTransactions[txHash]) revert TransactionNotQueued();
 
@@ -328,6 +330,7 @@ contract ProtocolTimelock {
         onlyExecutor
         returns (bytes memory returnData)
     {
+        if (target == address(0)) revert ZeroAddress();
         if (msg.value != value) revert InvalidMsgValue();
 
         bytes32 txHash = _hashOperation(target, value, data, eta);

@@ -36,6 +36,31 @@ abstract contract RiskGovernorStorage {
     error ZeroAddress();
     error OwnershipTransferNotInitiated();
     error TimelockValueMismatch();
+    error OperationAlreadyQueued();
+    error OperationNotQueued();
+    error OperationAlreadyExecuted();
+    error OperationAlreadyCancelled();
+    error InvalidOperationState();
+    error InvalidTarget();
+
+    /*//////////////////////////////////////////////////////////////
+                                TYPES
+    //////////////////////////////////////////////////////////////*/
+
+    enum OperationState {
+        None,
+        Queued,
+        Executed,
+        Cancelled
+    }
+
+    struct QueuedOperation {
+        address target;
+        uint256 value;
+        uint256 eta;
+        bytes data;
+        OperationState state;
+    }
 
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
@@ -57,6 +82,9 @@ abstract contract RiskGovernorStorage {
 
     address public perpMarketRegistry;
     address public perpEngine;
+
+    /// @notice Bookkeeping layer for operations queued through the governor.
+    mapping(bytes32 => QueuedOperation) internal queuedOperations;
 
     /*//////////////////////////////////////////////////////////////
                                 MODIFIERS
@@ -120,5 +148,106 @@ abstract contract RiskGovernorStorage {
 
         emit PerpMarketRegistrySet(address(0), _perpMarketRegistry);
         emit PerpEngineSet(address(0), _perpEngine);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                            INTERNAL HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function _setGuardian(address newGuardian) internal {
+        address old = guardian;
+        guardian = newGuardian;
+        emit GuardianSet(old, newGuardian);
+    }
+
+    function _setRiskModule(address newTarget) internal {
+        address old = riskModule;
+        riskModule = newTarget;
+        emit RiskModuleSet(old, newTarget);
+    }
+
+    function _setMarginEngine(address newTarget) internal {
+        address old = marginEngine;
+        marginEngine = newTarget;
+        emit MarginEngineSet(old, newTarget);
+    }
+
+    function _setOracleRouter(address newTarget) internal {
+        address old = oracleRouter;
+        oracleRouter = newTarget;
+        emit OracleRouterSet(old, newTarget);
+    }
+
+    function _setFeesManager(address newTarget) internal {
+        address old = feesManager;
+        feesManager = newTarget;
+        emit FeesManagerSet(old, newTarget);
+    }
+
+    function _setOptionRegistry(address newTarget) internal {
+        address old = optionRegistry;
+        optionRegistry = newTarget;
+        emit OptionRegistrySet(old, newTarget);
+    }
+
+    function _setCollateralVault(address newTarget) internal {
+        address old = collateralVault;
+        collateralVault = newTarget;
+        emit CollateralVaultSet(old, newTarget);
+    }
+
+    function _setInsuranceFund(address newTarget) internal {
+        address old = insuranceFund;
+        insuranceFund = newTarget;
+        emit InsuranceFundSet(old, newTarget);
+    }
+
+    function _setPerpMarketRegistry(address newTarget) internal {
+        address old = perpMarketRegistry;
+        perpMarketRegistry = newTarget;
+        emit PerpMarketRegistrySet(old, newTarget);
+    }
+
+    function _setPerpEngine(address newTarget) internal {
+        address old = perpEngine;
+        perpEngine = newTarget;
+        emit PerpEngineSet(old, newTarget);
+    }
+
+    function _validateTarget(address target) internal pure {
+        if (target == address(0)) revert InvalidTarget();
+    }
+
+    function _storeQueuedOperation(bytes32 txHash, address target, uint256 value, uint256 eta, bytes memory data)
+        internal
+    {
+        QueuedOperation storage op = queuedOperations[txHash];
+        if (op.state == OperationState.Queued) revert OperationAlreadyQueued();
+        if (op.state == OperationState.Executed) revert OperationAlreadyExecuted();
+        if (op.state == OperationState.Cancelled) revert OperationAlreadyCancelled();
+
+        queuedOperations[txHash] = QueuedOperation({
+            target: target,
+            value: value,
+            eta: eta,
+            data: data,
+            state: OperationState.Queued
+        });
+    }
+
+    function _markOperationCancelled(bytes32 txHash) internal {
+        QueuedOperation storage op = queuedOperations[txHash];
+        if (op.state != OperationState.Queued) revert OperationNotQueued();
+        op.state = OperationState.Cancelled;
+    }
+
+    function _markOperationExecuted(bytes32 txHash) internal {
+        QueuedOperation storage op = queuedOperations[txHash];
+        if (op.state != OperationState.Queued) revert OperationNotQueued();
+        op.state = OperationState.Executed;
+    }
+
+    function _getQueuedOperation(bytes32 txHash) internal view returns (QueuedOperation memory op) {
+        op = queuedOperations[txHash];
     }
 }

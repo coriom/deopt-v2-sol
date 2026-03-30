@@ -129,6 +129,8 @@ abstract contract CollateralVaultStorage is ReentrancyGuard {
 
     IRiskModule public riskModule;
 
+    /// @notice User accounting balance in token native units.
+    /// @dev This balance is intended to reflect the effective account balance after sync.
     mapping(address => mapping(address => uint256)) public balances;
 
     mapping(address => CollateralTokenConfig) internal _collateralConfigs;
@@ -145,10 +147,20 @@ abstract contract CollateralVaultStorage is ReentrancyGuard {
     bool public internalTransfersPaused;
     bool public yieldOpsPaused;
 
+    /// @notice Strategy adapter configured per token.
     mapping(address => address) public tokenStrategy;
+
+    /// @notice User opt-in for yield deployment per token.
     mapping(address => mapping(address => bool)) public yieldOptIn;
+
+    /// @notice User strategy shares per token.
     mapping(address => mapping(address => uint256)) public strategyShares;
+
+    /// @notice Total strategy shares per token.
     mapping(address => uint256) public tokenTotalStrategyShares;
+
+    /// @notice Idle portion of each user balance per token.
+    /// @dev The sum of idle + strategy-backed balance should match effective account balance after sync.
     mapping(address => mapping(address => uint256)) public idleBalances;
 
     /*//////////////////////////////////////////////////////////////
@@ -235,6 +247,46 @@ abstract contract CollateralVaultStorage is ReentrancyGuard {
 
     function _getAuthorizedEngines() internal view returns (address[] memory) {
         return authorizedEngines;
+    }
+
+    function _isProtocolAccount(address account) internal view returns (bool) {
+        return account != address(0) && _isAuthorizedEngine(account);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        INTERNAL TOKEN / CONFIG HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function _getCollateralConfig(address token) internal view returns (CollateralTokenConfig memory cfg) {
+        cfg = _collateralConfigs[token];
+    }
+
+    function _requireSupportedToken(address token) internal view returns (CollateralTokenConfig memory cfg) {
+        cfg = _collateralConfigs[token];
+        if (!cfg.isSupported) revert TokenNotSupported();
+    }
+
+    function _listCollateralTokenIfNeeded(address token) internal {
+        if (!isCollateralTokenListed[token]) {
+            isCollateralTokenListed[token] = true;
+            collateralTokens.push(token);
+        }
+    }
+
+    function _setRiskModule(address newRiskModule) internal {
+        if (newRiskModule == address(0)) revert ZeroAddress();
+        riskModule = IRiskModule(newRiskModule);
+        emit RiskModuleSet(newRiskModule);
+    }
+
+    function _requireYieldAllowed(address user) internal view {
+        if (_isProtocolAccount(user)) revert YieldNotAllowedForProtocolAccount();
+    }
+
+    function _requireStrategySet(address token) internal view returns (IYieldAdapter adapter) {
+        address strategy = tokenStrategy[token];
+        if (strategy == address(0)) revert StrategyNotSet();
+        adapter = IYieldAdapter(strategy);
     }
 
     /*//////////////////////////////////////////////////////////////
