@@ -9,7 +9,7 @@ abstract contract CollateralVaultActions is CollateralVaultViews {
     //////////////////////////////////////////////////////////////*/
 
     function setYieldOptIn(address token, bool optedIn) external {
-        if (_isAuthorizedEngine(msg.sender)) revert YieldNotAllowedForProtocolAccount();
+        _requireYieldAllowed(msg.sender);
 
         CollateralTokenConfig memory cfg = _collateralConfigs[token];
         if (!cfg.isSupported) revert TokenNotSupported();
@@ -22,7 +22,9 @@ abstract contract CollateralVaultActions is CollateralVaultViews {
         _sync(msg.sender, token);
     }
 
-    function syncAccountFor(address user, address token) external nonReentrant {
+    /// @notice Best-effort sync hook for authorized protocol engines.
+    /// @dev Used by risk / margin / perp / insurance flows to keep balances current before critical accounting.
+    function syncAccountFor(address user, address token) external onlyAuthorizedEngine nonReentrant {
         if (user == address(0)) revert ZeroAddress();
         _sync(user, token);
     }
@@ -98,12 +100,14 @@ abstract contract CollateralVaultActions is CollateralVaultViews {
     }
 
     function moveToStrategy(address token, uint256 amount) external whenYieldOpsNotPaused nonReentrant {
+        _requireYieldAllowed(msg.sender);
         _sync(msg.sender, token);
         _moveToStrategy(msg.sender, token, amount);
         _sync(msg.sender, token);
     }
 
     function moveToIdle(address token, uint256 amount) external whenYieldOpsNotPaused nonReentrant {
+        _requireYieldAllowed(msg.sender);
         if (amount == 0) revert AmountZero();
 
         CollateralTokenConfig memory cfg = _collateralConfigs[token];
