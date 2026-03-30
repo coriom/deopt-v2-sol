@@ -402,7 +402,6 @@ contract FeesManager is IFeesManager {
         if (tierClass == VolumeTierClass.Tier1) {
             // 5M – 25M : maker 0.005% ; taker 0.02%
             // uint16 bps can't represent 0.5 bps. We floor to 0 for V1 integer-bps model.
-            // Taker = 2 bps.
             profile.maker = FeeParams({notionalFeeBps: _cap(0), premiumCapBps: _cap(0)});
             profile.taker = FeeParams({notionalFeeBps: _cap(2), premiumCapBps: _cap(2)});
             return profile;

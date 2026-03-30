@@ -117,7 +117,7 @@ abstract contract MarginEngineTypes {
     event Unpaused(address indexed account);
 
     // Emergency / guardian events
-    event GuardianSet(address indexed guardian);
+    event GuardianSet(address indexed oldGuardian, address indexed newGuardian);
     event GlobalPauseSet(bool paused);
 
     event TradingPauseSet(bool paused);

@@ -184,6 +184,11 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
         emit MatchingEngineSet(matchingEngine_);
     }
 
+    function clearMatchingEngine() external onlyOwner {
+        matchingEngine = address(0);
+        emit MatchingEngineSet(address(0));
+    }
+
     function setOracle(address oracle_) external onlyOwner {
         if (oracle_ == address(0)) revert ZeroAddress();
         _oracle = IOracle(oracle_);
@@ -196,11 +201,22 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
         emit RiskModuleSet(riskModule_);
     }
 
+    function clearRiskModule() external onlyOwner {
+        _riskModule = IRiskModule(address(0));
+        emit RiskModuleSet(address(0));
+    }
+
     function setInsuranceFund(address insuranceFund_) external onlyOwner {
         if (insuranceFund_ == address(0)) revert ZeroAddress();
         address old = insuranceFund;
         insuranceFund = insuranceFund_;
         emit InsuranceFundSet(old, insuranceFund_);
+    }
+
+    function clearInsuranceFund() external onlyOwner {
+        address old = insuranceFund;
+        insuranceFund = address(0);
+        emit InsuranceFundSet(old, address(0));
     }
 
     /// @notice Set hybrid fees manager.
@@ -209,6 +225,11 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
         if (feesManager_ == address(0)) revert ZeroAddress();
         feesManager = IFeesManager(feesManager_);
         emit FeesManagerSet(feesManager_);
+    }
+
+    function clearFeesManager() external onlyOwner {
+        feesManager = IFeesManager(address(0));
+        emit FeesManagerSet(address(0));
     }
 
     /// @notice Explicit fee recipient.
@@ -235,12 +256,36 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
     /// @dev Source of truth = RiskModule.
     function setRiskParams(address baseToken_, uint256 baseMMPerContract_, uint256 imFactorBps_) external onlyOwner {
         if (baseToken_ == address(0)) revert ZeroAddress();
+        if (baseMMPerContract_ == 0) revert InvalidLiquidationParams();
         if (imFactorBps_ < BPS) revert InvalidLiquidationParams();
         if (address(_riskModule) == address(0)) revert RiskModuleNotSet();
 
         if (_riskModule.baseCollateralToken() != baseToken_) revert RiskParamsMismatch();
         if (_riskModule.baseMaintenanceMarginPerContract() != baseMMPerContract_) revert RiskParamsMismatch();
         if (_riskModule.imFactorBps() != imFactorBps_) revert RiskParamsMismatch();
+
+        _requireSettlementAssetConfigured(baseToken_);
+
+        baseCollateralToken = baseToken_;
+        baseMaintenanceMarginPerContract = baseMMPerContract_;
+        imFactorBps = imFactorBps_;
+
+        emit RiskParamsSet(baseToken_, baseMMPerContract_, imFactorBps_);
+    }
+
+    /// @notice Re-check the locally cached risk params against the current RiskModule.
+    function syncRiskParamsFromRiskModule() external onlyOwner {
+        if (address(_riskModule) == address(0)) revert RiskModuleNotSet();
+
+        address baseToken_ = _riskModule.baseCollateralToken();
+        uint256 baseMMPerContract_ = _riskModule.baseMaintenanceMarginPerContract();
+        uint256 imFactorBps_ = _riskModule.imFactorBps();
+
+        if (baseToken_ == address(0)) revert ZeroAddress();
+        if (baseMMPerContract_ == 0) revert RiskParamsMismatch();
+        if (imFactorBps_ < BPS) revert RiskParamsMismatch();
+
+        _requireSettlementAssetConfigured(baseToken_);
 
         baseCollateralToken = baseToken_;
         baseMaintenanceMarginPerContract = baseMMPerContract_;

@@ -47,6 +47,8 @@ contract InsuranceFund is ReentrancyGuard {
     error GuardianNotAuthorized();
     error ZeroAddress();
     error TokenNotAllowed();
+    error TokenNotSupportedInVault(address token);
+    error TokenDecimalsNotConfigured(address token);
     error AmountZero();
     error InsufficientBalance();
     error RescueForbidden();
@@ -330,6 +332,11 @@ contract InsuranceFund is ReentrancyGuard {
 
     function setTokenAllowed(address token, bool allowed) external onlyOwner {
         if (token == address(0)) revert ZeroAddress();
+
+        if (allowed) {
+            _requireVaultSupportedToken(token);
+        }
+
         isTokenAllowed[token] = allowed;
         emit TokenAllowed(token, allowed);
     }
@@ -354,7 +361,7 @@ contract InsuranceFund is ReentrancyGuard {
         whenFundingNotPaused
         nonReentrant
     {
-        if (!isTokenAllowed[token]) revert TokenNotAllowed();
+        _requireAllowedAndSupportedToken(token);
         if (amount == 0) revert AmountZero();
 
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
@@ -370,7 +377,7 @@ contract InsuranceFund is ReentrancyGuard {
         whenFundingNotPaused
         nonReentrant
     {
-        if (!isTokenAllowed[token]) revert TokenNotAllowed();
+        _requireAllowedAndSupportedToken(token);
         if (amount == 0) revert AmountZero();
 
         uint256 bal = IERC20(token).balanceOf(address(this));
@@ -387,7 +394,7 @@ contract InsuranceFund is ReentrancyGuard {
         nonReentrant
         returns (uint256 amount)
     {
-        if (!isTokenAllowed[token]) revert TokenNotAllowed();
+        _requireAllowedAndSupportedToken(token);
 
         amount = IERC20(token).balanceOf(address(this));
         if (amount == 0) revert AmountZero();
@@ -411,7 +418,7 @@ contract InsuranceFund is ReentrancyGuard {
         whenWithdrawNotPaused
         nonReentrant
     {
-        if (!isTokenAllowed[token]) revert TokenNotAllowed();
+        _requireAllowedAndSupportedToken(token);
         if (to == address(0)) revert ZeroAddress();
         if (amount == 0) revert AmountZero();
 
@@ -438,7 +445,7 @@ contract InsuranceFund is ReentrancyGuard {
         nonReentrant
         returns (uint256 paidAmount)
     {
-        if (!isTokenAllowed[token]) revert TokenNotAllowed();
+        _requireAllowedAndSupportedToken(token);
         if (toAccount == address(0)) revert ZeroAddress();
         if (requestedAmount == 0) revert AmountZero();
 
@@ -462,6 +469,9 @@ contract InsuranceFund is ReentrancyGuard {
         if (requestedAmount == 0) return 0;
         if (!isTokenAllowed[token]) return 0;
 
+        CollateralVault.CollateralTokenConfig memory cfg = collateralVault.getCollateralConfig(token);
+        if (!cfg.isSupported || cfg.decimals == 0) return 0;
+
         uint256 avail = _vaultBalanceWithYield(token);
         return requestedAmount <= avail ? requestedAmount : avail;
     }
@@ -471,7 +481,7 @@ contract InsuranceFund is ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     function setYieldOptIn(address token, bool optedIn) external onlyOwner whenYieldOpsNotPaused {
-        if (!isTokenAllowed[token]) revert TokenNotAllowed();
+        _requireAllowedAndSupportedToken(token);
         collateralVault.setYieldOptIn(token, optedIn);
         emit YieldOptInSet(token, optedIn);
     }
@@ -482,7 +492,7 @@ contract InsuranceFund is ReentrancyGuard {
         whenYieldOpsNotPaused
         nonReentrant
     {
-        if (!isTokenAllowed[token]) revert TokenNotAllowed();
+        _requireAllowedAndSupportedToken(token);
         if (amount == 0) revert AmountZero();
 
         collateralVault.moveToStrategy(token, amount);
@@ -495,7 +505,7 @@ contract InsuranceFund is ReentrancyGuard {
         whenYieldOpsNotPaused
         nonReentrant
     {
-        if (!isTokenAllowed[token]) revert TokenNotAllowed();
+        _requireAllowedAndSupportedToken(token);
         if (amount == 0) revert AmountZero();
 
         collateralVault.moveToIdle(token, amount);
@@ -503,7 +513,7 @@ contract InsuranceFund is ReentrancyGuard {
     }
 
     function syncVaultAccount(address token) external onlyOwnerOrOperator whenYieldOpsNotPaused nonReentrant {
-        if (!isTokenAllowed[token]) revert TokenNotAllowed();
+        _requireAllowedAndSupportedToken(token);
         collateralVault.syncAccount(token);
         emit Synced(token);
     }
@@ -542,12 +552,23 @@ contract InsuranceFund is ReentrancyGuard {
     function isUsableToken(address token) external view returns (bool) {
         if (!isTokenAllowed[token]) return false;
         CollateralVault.CollateralTokenConfig memory cfg = collateralVault.getCollateralConfig(token);
-        return cfg.isSupported;
+        return cfg.isSupported && cfg.decimals != 0;
     }
 
     /*//////////////////////////////////////////////////////////////
                             INTERNAL HELPERS
     //////////////////////////////////////////////////////////////*/
+
+    function _requireVaultSupportedToken(address token) internal view {
+        CollateralVault.CollateralTokenConfig memory cfg = collateralVault.getCollateralConfig(token);
+        if (!cfg.isSupported) revert TokenNotSupportedInVault(token);
+        if (cfg.decimals == 0) revert TokenDecimalsNotConfigured(token);
+    }
+
+    function _requireAllowedAndSupportedToken(address token) internal view {
+        if (!isTokenAllowed[token]) revert TokenNotAllowed();
+        _requireVaultSupportedToken(token);
+    }
 
     function _vaultBalanceWithYield(address token) internal view returns (uint256) {
         try collateralVault.balanceWithYield(address(this), token) returns (uint256 b) {

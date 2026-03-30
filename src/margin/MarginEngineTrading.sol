@@ -105,6 +105,9 @@ abstract contract MarginEngineTrading is MarginEngineAdmin {
         int128 newBuyerQty = _checkedAddInt128(oldBuyerQty, delta);
         int128 newSellerQty = _checkedSubInt128(oldSellerQty, delta);
 
+        _ensureQtyAllowed(newBuyerQty);
+        _ensureQtyAllowed(newSellerQty);
+
         // Close-only when series inactive (no opening / no flip / no abs increase)
         if (!series.isActive) {
             bool okBuyer = _isCloseOnlyTransition(oldBuyerQty, newBuyerQty);
@@ -116,12 +119,9 @@ abstract contract MarginEngineTrading is MarginEngineAdmin {
         buyerPos.quantity = newBuyerQty;
         sellerPos.quantity = newSellerQty;
 
-        // Maintain short counters + open-series tracking
-        _updateTotalShortContracts(t.buyer, oldBuyerQty, newBuyerQty);
-        _updateTotalShortContracts(t.seller, oldSellerQty, newSellerQty);
-
-        _updateOpenSeriesOnChange(t.buyer, t.optionId, oldBuyerQty, newBuyerQty);
-        _updateOpenSeriesOnChange(t.seller, t.optionId, oldSellerQty, newSellerQty);
+        // Maintain canonical open-series tracking + short aggregates
+        _syncPositionIndexes(t.buyer, t.optionId, oldBuyerQty, newBuyerQty);
+        _syncPositionIndexes(t.seller, t.optionId, oldSellerQty, newSellerQty);
 
         // Premium cashflow: settlement asset native units
         // premium = quantity * pricePerContract

@@ -14,6 +14,11 @@ pragma solidity ^0.8.20;
 ///      override actif > tier claimé actif > defaults.
 ///  - Les tiers sont représentés par une classe de volume explicite, poussée offchain puis claimée onchain.
 ///  - Les overrides permettent les exceptions MM / VIP avec expiration optionnelle.
+///
+///  Alignment notes:
+///  - this interface intentionally exposes only stable fee surfaces consumed by engines
+///  - emergency pause state is internal to the implementation and does not block read quoting
+///  - feeBpsCap is an individual-field cap, not a direct applied fee cap
 interface IFeesManager {
     /*//////////////////////////////////////////////////////////////
                                 CONSTANTS
