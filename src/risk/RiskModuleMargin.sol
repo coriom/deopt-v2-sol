@@ -220,4 +220,19 @@ abstract contract RiskModuleMargin is RiskModuleCollateral {
         snap.initialMarginBase =
             Math.mulDiv(snap.maintenanceMarginBase, imFactorBps, BPS_U, Math.Rounding.Ceil);
     }
+
+    /*//////////////////////////////////////////////////////////////
+                    INTERNAL CONSOLIDATED OPTION HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @dev Convenience helper used by upper view layers that only need
+    ///      the options-side MM/IM pair without rebuilding the full snapshot manually.
+    function _computeOptionsMargins(address trader, address base, uint256 baseScale)
+        internal
+        view
+        returns (uint256 maintenanceMarginBase, uint256 initialMarginBase)
+    {
+        OptionsMarginSnapshot memory snap = _computeOptionsMarginSnapshot(trader, base, baseScale);
+        return (snap.maintenanceMarginBase, snap.initialMarginBase);
+    }
 }
