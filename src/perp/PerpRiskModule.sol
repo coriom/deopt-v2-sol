@@ -108,6 +108,12 @@ contract PerpRiskModule {
         uint256 residualBadDebtBase;
     }
 
+    struct AccountComponents {
+        uint256 collateralEquityBase;
+        PerpAggregate perp;
+        int256 equityBase;
+    }
+
     /*//////////////////////////////////////////////////////////////
                                 ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -654,6 +660,19 @@ contract PerpRiskModule {
         }
     }
 
+    function _computeAccountComponents(address trader) internal view returns (AccountComponents memory comps) {
+        comps.collateralEquityBase = _computeCollateralEquityBase(trader);
+        comps.perp = _computePerpAggregate(trader);
+
+        int256 equity = _checkedAddInt256(_toInt256(comps.collateralEquityBase), comps.perp.netPerpPnlBase);
+
+        if (comps.perp.residualBadDebtBase != 0) {
+            equity = _checkedSubInt256(equity, _toInt256(comps.perp.residualBadDebtBase));
+        }
+
+        comps.equityBase = equity;
+    }
+
     function _convertQuote1e8ToBase(uint256 amount1e8) internal view returns (uint256 valueBase) {
         (, uint8 baseDec, uint256 baseScale) = _loadBase();
         baseDec;
@@ -701,18 +720,26 @@ contract PerpRiskModule {
     {
         _loadBase();
 
-        uint256 collateralEquityBase = _computeCollateralEquityBase(trader);
-        PerpAggregate memory agg = _computePerpAggregate(trader);
+        AccountComponents memory comps = _computeAccountComponents(trader);
 
-        int256 equity = _checkedAddInt256(_toInt256(collateralEquityBase), agg.netPerpPnlBase);
+        risk.equity1e8 = comps.equityBase;
+        risk.maintenanceMargin1e8 = comps.perp.maintenanceMarginBase;
+        risk.initialMargin1e8 = comps.perp.initialMarginBase;
+    }
 
-        if (agg.residualBadDebtBase != 0) {
-            equity = _checkedSubInt256(equity, _toInt256(agg.residualBadDebtBase));
-        }
+    function computeCollateralEquity(address trader) external view whenRiskComputationNotPaused returns (uint256) {
+        _loadBase();
+        return _computeCollateralEquityBase(trader);
+    }
 
-        risk.equity1e8 = equity;
-        risk.maintenanceMargin1e8 = agg.maintenanceMarginBase;
-        risk.initialMargin1e8 = agg.initialMarginBase;
+    function computePerpAggregate(address trader)
+        external
+        view
+        whenRiskComputationNotPaused
+        returns (PerpAggregate memory agg)
+    {
+        _loadBase();
+        return _computePerpAggregate(trader);
     }
 
     function computeFreeCollateral(address trader)

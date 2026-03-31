@@ -265,8 +265,19 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         if (recipient == address(0)) recipient = insuranceFund;
     }
 
+    function _resolvedBadDebtRepaymentRecipient() internal view returns (address recipient) {
+        recipient = insuranceFund;
+        if (recipient == address(0)) {
+            recipient = feeRecipient;
+        }
+    }
+
     function _hasFeeRecipient() internal view returns (bool) {
         return _resolvedFeeRecipient() != address(0);
+    }
+
+    function _hasBadDebtRepaymentRecipient() internal view returns (bool) {
+        return _resolvedBadDebtRepaymentRecipient() != address(0);
     }
 
     function _requireRiskModuleSet() internal view {
@@ -289,6 +300,16 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
     function _marketOracle(PerpMarketRegistry.Market memory m) internal view returns (IOracle) {
         if (m.oracle == address(0)) return _oracle;
         return IOracle(m.oracle);
+    }
+
+    function _baseCollateralToken() internal view returns (address) {
+        _requireRiskModuleSet();
+
+        (bool success, bytes memory data) =
+            address(_riskModule).staticcall(abi.encodeWithSignature("baseCollateralToken()"));
+
+        if (!success || data.length < 32) revert RiskModuleNotSet();
+        return abi.decode(data, (address));
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -551,6 +572,20 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         p.lastCumulativeFundingRate1e18 = cumNow;
 
         emit PositionFundingSettled(trader, marketId, fundingPayment1e8, cumNow);
+    }
+
+    function _grossTraderNotional1e8(address trader) internal view returns (uint256 total) {
+        uint256[] memory markets = traderMarkets[trader];
+
+        for (uint256 i = 0; i < markets.length; i++) {
+            uint256 marketId = markets[i];
+            Position memory p = _positions[trader][marketId];
+            if (p.size1e8 == 0) continue;
+
+            uint256 absSize = p.size1e8 > 0 ? uint256(p.size1e8) : uint256(-p.size1e8);
+            uint256 mark = _getMarkPrice1e8(marketId);
+            total = _addChecked(total, Math.mulDiv(absSize, mark, PRICE_1E8, Math.Rounding.Down));
+        }
     }
 
     /*//////////////////////////////////////////////////////////////

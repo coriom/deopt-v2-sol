@@ -17,8 +17,62 @@ import "./RiskModuleAdmin.sol";
 ///   - conservative valuation: short intrinsic liability is included, longs ignored
 ///   - pagination over trader series avoids unbounded memory growth
 ///   - if base collateral is not configured, views degrade gracefully
-///   - residual bad debt is currently 0 at the options RiskModule layer
+///   - perp contribution is consumed best-effort through `perpRiskModule` when configured
 abstract contract RiskModuleViews is RiskModuleAdmin {
+    /*//////////////////////////////////////////////////////////////
+                            INTERNAL PERP HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function _hasPerpRiskModule() internal view returns (bool) {
+        return address(perpRiskModule) != address(0);
+    }
+
+    function _tryGetPerpAccountRisk(address trader)
+        internal
+        view
+        returns (bool ok, IPerpRiskModule.AccountRisk memory risk)
+    {
+        if (!_hasPerpRiskModule()) {
+            return (false, risk);
+        }
+
+        try perpRiskModule.computeAccountRisk(trader) returns (IPerpRiskModule.AccountRisk memory r) {
+            return (true, r);
+        } catch {
+            return (false, risk);
+        }
+    }
+
+    function _tryGetPerpNetPnl(address trader) internal view returns (bool ok, int256 netPnl) {
+        if (perpEngine == address(0)) return (false, 0);
+
+        try IPerpEngineViews(perpEngine).getAccountNetPnl(trader) returns (int256 n) {
+            return (true, n);
+        } catch {
+            return (false, 0);
+        }
+    }
+
+    function _tryGetPerpFunding(address trader) internal view returns (bool ok, int256 fundingAccrued) {
+        if (perpEngine == address(0)) return (false, 0);
+
+        try IPerpEngineViews(perpEngine).getAccountFunding(trader) returns (int256 f) {
+            return (true, f);
+        } catch {
+            return (false, 0);
+        }
+    }
+
+    function _tryGetPerpResidualBadDebt(address trader) internal view returns (bool ok, uint256 debt) {
+        if (perpEngine == address(0)) return (false, 0);
+
+        try IPerpEngineViews(perpEngine).getResidualBadDebt(trader) returns (uint256 d) {
+            return (true, d);
+        } catch {
+            return (false, 0);
+        }
+    }
+
     /*//////////////////////////////////////////////////////////////
                                 VIEWS
     //////////////////////////////////////////////////////////////*/
@@ -122,11 +176,29 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
             (mm > 0 && imFactorBps > 0) ? Math.mulDiv(mm, imFactorBps, BPS_U, Math.Rounding.Ceil) : 0;
 
         baseDec;
-        state.unrealizedPnl = 0;
-        state.fundingAccrued = 0;
-        state.perpsInitialMargin = 0;
-        state.perpsMaintenanceMargin = 0;
-        state.residualBadDebt = 0;
+
+        if (_hasPerpRiskModule()) {
+            (bool okPerpRisk, IPerpRiskModule.AccountRisk memory perpRisk) = _tryGetPerpAccountRisk(trader);
+            if (okPerpRisk) {
+                state.perpsMaintenanceMargin = perpRisk.maintenanceMargin1e8;
+                state.perpsInitialMargin = perpRisk.initialMargin1e8;
+            }
+
+            (bool okNetPnl, int256 netPnl) = _tryGetPerpNetPnl(trader);
+            if (okNetPnl) {
+                state.unrealizedPnl = netPnl;
+            }
+
+            (bool okFunding, int256 fundingAccrued) = _tryGetPerpFunding(trader);
+            if (okFunding) {
+                state.fundingAccrued = fundingAccrued;
+            }
+
+            (bool okDebt, uint256 residualBadDebt) = _tryGetPerpResidualBadDebt(trader);
+            if (okDebt) {
+                state.residualBadDebt = residualBadDebt;
+            }
+        }
     }
 
     function computeAccountRiskBreakdown(address trader)
@@ -148,6 +220,10 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
             breakdown.equity = _negUintToInt256Sat(shortLiabilityBase - breakdown.collateral.adjustedCollateralValue);
         } else {
             breakdown.equity = _uintToInt256Sat(breakdown.collateral.adjustedCollateralValue - shortLiabilityBase);
+        }
+
+        if (breakdown.products.unrealizedPnl != 0) {
+            breakdown.equity = _subInt256Sat(breakdown.equity, -breakdown.products.unrealizedPnl);
         }
 
         breakdown.maintenanceMargin = _addChecked(
@@ -193,13 +269,16 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
         return _subInt256Sat(risk.equity, im);
     }
 
-    function getResidualBadDebt(address)
+    function getResidualBadDebt(address trader)
         external
-        pure
+        view
         override
         returns (uint256 amount)
     {
-        amount = 0;
+        if (!_hasPerpRiskModule() || perpEngine == address(0)) return 0;
+
+        (, uint256 debt) = _tryGetPerpResidualBadDebt(trader);
+        amount = debt;
     }
 
     function getWithdrawableAmount(address trader, address token)

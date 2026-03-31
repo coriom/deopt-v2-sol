@@ -181,9 +181,7 @@ abstract contract CollateralVaultAdmin is CollateralVaultStorage {
     //////////////////////////////////////////////////////////////*/
 
     function setRiskModule(address _riskModule) external onlyOwner {
-        if (_riskModule == address(0)) revert ZeroAddress();
-        riskModule = IRiskModule(_riskModule);
-        emit RiskModuleSet(_riskModule);
+        _setRiskModule(_riskModule);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -204,10 +202,7 @@ abstract contract CollateralVaultAdmin is CollateralVaultStorage {
             collateralFactorBps: collateralFactorBps
         });
 
-        if (!isCollateralTokenListed[token]) {
-            isCollateralTokenListed[token] = true;
-            collateralTokens.push(token);
-        }
+        _listCollateralTokenIfNeeded(token);
 
         emit CollateralTokenConfigured(token, isSupported, decimals, collateralFactorBps);
     }
@@ -224,8 +219,9 @@ abstract contract CollateralVaultAdmin is CollateralVaultStorage {
     function setTokenStrategy(address token, address adapter) external onlyOwner {
         if (token == address(0)) revert ZeroAddress();
 
-        CollateralTokenConfig memory cfg = _collateralConfigs[token];
-        if (!cfg.isSupported) revert TokenNotSupported();
+        CollateralTokenConfig memory cfg = _requireSupportedToken(token);
+
+        if (cfg.decimals == 0) revert BadDecimals();
 
         address old = tokenStrategy[token];
         if (old != address(0) && old != adapter) {
@@ -241,6 +237,8 @@ abstract contract CollateralVaultAdmin is CollateralVaultStorage {
         if (adapter != address(0)) {
             if (IYieldAdapter(adapter).asset() != token) revert StrategyMismatch();
         }
+
+        _listCollateralTokenIfNeeded(token);
 
         tokenStrategy[token] = adapter;
         emit TokenStrategySet(token, adapter);

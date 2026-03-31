@@ -7,6 +7,23 @@ import "./PerpEngineAdmin.sol";
 
 abstract contract PerpEngineViews is PerpEngineAdmin {
     /*//////////////////////////////////////////////////////////////
+                            TYPES
+    //////////////////////////////////////////////////////////////*/
+
+    struct AccountPnlBreakdown {
+        int256 unrealizedPnl1e8;
+        int256 fundingAccrued1e8;
+        int256 netPnl1e8;
+    }
+
+    struct AccountExposureBreakdown {
+        uint256 marketsCount;
+        uint256 grossNotional1e8;
+        uint256 longNotional1e8;
+        uint256 shortNotional1e8;
+    }
+
+    /*//////////////////////////////////////////////////////////////
                             DEPENDENCY READS
     //////////////////////////////////////////////////////////////*/
 
@@ -273,6 +290,22 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         return _positionFundingAccrued1e8(trader, marketId);
     }
 
+    function getPositionNotional1e8(address trader, uint256 marketId) public view returns (uint256) {
+        Position memory p = _positions[trader][marketId];
+        if (p.size1e8 == 0) return 0;
+
+        uint256 absSize = p.size1e8 >= 0 ? uint256(p.size1e8) : uint256(-p.size1e8);
+        uint256 mark = _getMarkPrice1e8(marketId);
+        return Math.mulDiv(absSize, mark, PRICE_1E8, Math.Rounding.Down);
+    }
+
+    function getPositionDirection(address trader, uint256 marketId) external view returns (int8) {
+        int256 size = _positions[trader][marketId].size1e8;
+        if (size > 0) return 1;
+        if (size < 0) return -1;
+        return 0;
+    }
+
     /*//////////////////////////////////////////////////////////////
                         ACCOUNT AGGREGATION
     //////////////////////////////////////////////////////////////*/
@@ -293,8 +326,40 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         }
     }
 
-    function getAccountNetPnl(address trader) external view returns (int256) {
+    function getAccountNetPnl(address trader) public view returns (int256) {
         return getAccountUnrealizedPnl(trader) - getAccountFunding(trader);
+    }
+
+    function getAccountPnlBreakdown(address trader) external view returns (AccountPnlBreakdown memory b) {
+        b.unrealizedPnl1e8 = getAccountUnrealizedPnl(trader);
+        b.fundingAccrued1e8 = getAccountFunding(trader);
+        b.netPnl1e8 = b.unrealizedPnl1e8 - b.fundingAccrued1e8;
+    }
+
+    function getAccountExposureBreakdown(address trader)
+        external
+        view
+        returns (AccountExposureBreakdown memory b)
+    {
+        uint256[] memory markets = traderMarkets[trader];
+        b.marketsCount = markets.length;
+
+        for (uint256 i = 0; i < markets.length; i++) {
+            uint256 marketId = markets[i];
+            Position memory p = _positions[trader][marketId];
+            if (p.size1e8 == 0) continue;
+
+            uint256 absSize = p.size1e8 >= 0 ? uint256(p.size1e8) : uint256(-p.size1e8);
+            uint256 mark = _getMarkPrice1e8(marketId);
+            uint256 notional1e8 = Math.mulDiv(absSize, mark, PRICE_1E8, Math.Rounding.Down);
+
+            b.grossNotional1e8 += notional1e8;
+            if (p.size1e8 > 0) {
+                b.longNotional1e8 += notional1e8;
+            } else {
+                b.shortNotional1e8 += notional1e8;
+            }
+        }
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -314,6 +379,11 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
 
         IPerpRiskModule.AccountRisk memory r = _riskModule.computeAccountRisk(trader);
         return _marginRatioBpsFromState(r.equity1e8, r.maintenanceMargin1e8);
+    }
+
+    function getFreeCollateral(address trader) external view returns (int256) {
+        if (address(_riskModule) == address(0)) return 0;
+        return _riskModule.computeFreeCollateral(trader);
     }
 
     /*//////////////////////////////////////////////////////////////
