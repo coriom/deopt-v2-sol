@@ -122,11 +122,11 @@ abstract contract MarginEngineViews is MarginEngineTrading {
         payoffPerContract = _price1e8ToSettlementUnits(series.settlementAsset, intrinsicPrice1e8);
     }
 
-    function _previewAccountSettlementPnl(OptionProductRegistry.OptionSeries memory series, int128 qty, uint256 settlementPrice)
-        internal
-        view
-        returns (uint256 payoffPerContract, int256 pnl)
-    {
+    function _previewAccountSettlementPnl(
+        OptionProductRegistry.OptionSeries memory series,
+        int128 qty,
+        uint256 settlementPrice
+    ) internal view returns (uint256 payoffPerContract, int256 pnl) {
         _ensureQtyAllowed(qty);
 
         payoffPerContract = _previewPerContractPayoff(series, settlementPrice);
@@ -153,16 +153,16 @@ abstract contract MarginEngineViews is MarginEngineTrading {
         override
         returns (IMarginEngineState.Position memory)
     {
-        return _positions[trader][optionId];
+        return _positionOf(trader, optionId);
     }
 
     /// @notice OPEN series only.
     function getTraderSeries(address trader) external view override returns (uint256[] memory) {
-        return traderSeries[trader];
+        return _getTraderSeriesInternal(trader);
     }
 
     function getTraderSeriesLength(address trader) external view override returns (uint256) {
-        return traderSeries[trader].length;
+        return _getTraderSeriesLengthInternal(trader);
     }
 
     function getTraderSeriesSlice(address trader, uint256 start, uint256 end)
@@ -171,20 +171,7 @@ abstract contract MarginEngineViews is MarginEngineTrading {
         override
         returns (uint256[] memory slice)
     {
-        uint256 len = traderSeries[trader].length;
-
-        if (start >= len || start >= end) {
-            return new uint256;
-        }
-
-        if (end > len) end = len;
-
-        uint256 outLen = end - start;
-        slice = new uint256[](outLen);
-
-        for (uint256 i = 0; i < outLen; i++) {
-            slice[i] = traderSeries[trader][start + i];
-        }
+        return _getTraderSeriesSliceInternal(trader, start, end);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -192,27 +179,27 @@ abstract contract MarginEngineViews is MarginEngineTrading {
     //////////////////////////////////////////////////////////////*/
 
     function optionRegistry() external view override returns (address) {
-        return address(_optionRegistry);
+        return _optionRegistryAddress();
     }
 
     function collateralVault() external view override returns (address) {
-        return address(_collateralVault);
+        return _collateralVaultAddress();
     }
 
     function oracle() external view override returns (address) {
-        return address(_oracle);
+        return _oracleAddress();
     }
 
     function riskModule() external view override returns (address) {
-        return address(_riskModule);
+        return _riskModuleAddress();
     }
 
     function getPositionQuantity(address trader, uint256 optionId) external view override returns (int128) {
-        return _positions[trader][optionId].quantity;
+        return _positionQuantityOf(trader, optionId);
     }
 
     function isOpenSeries(address trader, uint256 optionId) external view override returns (bool) {
-        return traderSeriesIndexPlus1[trader][optionId] != 0;
+        return _isOpenSeriesInternal(trader, optionId);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -259,7 +246,7 @@ abstract contract MarginEngineViews is MarginEngineTrading {
     }
 
     function getAccountState(address trader) external view returns (AccountState memory s) {
-        s.openSeriesCount = traderSeries[trader].length;
+        s.openSeriesCount = _getTraderSeriesLengthInternal(trader);
         s.totalShortOpenContracts = totalShortContracts[trader];
 
         if (address(_riskModule) == address(0)) {
@@ -336,7 +323,7 @@ abstract contract MarginEngineViews is MarginEngineTrading {
         p.isExpired = block.timestamp >= series.expiry;
         p.settlementSet = isSet;
         p.alreadySettled = isAccountSettled[optionId][trader];
-        p.quantity = _positions[trader][optionId].quantity;
+        p.quantity = _positionQuantityOf(trader, optionId);
         p.settlementPrice = settlementPrice;
 
         if (!isSet || settlementPrice == 0 || p.quantity == 0) {
@@ -351,8 +338,7 @@ abstract contract MarginEngineViews is MarginEngineTrading {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Returns cumulative settlement accounting over a slice of registered option ids.
-    /// @dev
-    ///  This stays paginated because the registry can grow arbitrarily over time.
+    /// @dev This stays paginated because the registry can grow arbitrarily over time.
     function getProtocolSettlementAccountingSlice(uint256 start, uint256 end)
         external
         view

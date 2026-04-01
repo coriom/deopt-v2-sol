@@ -6,9 +6,10 @@ import {MarginEngineOps} from "./MarginEngineOps.sol";
 /// @title MarginEngine
 /// @notice Final options engine façade for DeOpt v2.
 /// @dev
-///  Inheritance stack:
+///  Target inheritance stack after the read-surface split:
 ///   MarginEngine
 ///     -> MarginEngineOps
+///     -> MarginEngineViews
 ///     -> MarginEngineTrading
 ///     -> MarginEngineAdmin
 ///     -> MarginEngineStorage
@@ -38,6 +39,11 @@ import {MarginEngineOps} from "./MarginEngineOps.sol";
 ///       * FeesManager
 ///       * InsuranceFund
 ///       * Governance / Timelock
+///
+///  Current sequencing note:
+///   - MarginEngineViews is introduced to make settlement accounting,
+///     bad debt visibility and protocol read surfaces explicit
+///   - MarginEngineOps should remain focused on state-changing flows
 contract MarginEngine is MarginEngineOps {
     constructor(address _owner, address registry_, address vault_, address oracle_) {
         _initMarginEngineStorage(_owner, registry_, vault_, oracle_);
