@@ -8,17 +8,23 @@ import {IFeesManager} from "../fees/IFeesManager.sol";
 
 import {MarginEngineAdmin} from "./MarginEngineAdmin.sol";
 
-/// @notice Matching-engine entrypoint (applyTrade)
+/// @title MarginEngineTrading
+/// @notice Matching-engine entrypoint for option trades.
 /// @dev
-///  - Updates positions (int128) with strict hardening (no int128.min).
-///  - Enforces close-only when series is inactive.
-///  - Executes premium cashflow in settlementAsset units via CollateralVault.transferBetweenAccounts().
-///  - Charges hybrid trading fees when FeesManager + recipient are configured.
-///  - Enforces Initial Margin post-trade for both sides.
+///  Responsibilities:
+///   - update option positions with strict int128 hardening
+///   - maintain open-series / short aggregates
+///   - transfer premium in settlement asset native units
+///   - charge hybrid trading fees when configured
+///   - enforce initial margin after state mutation
+///
+///  Architectural note:
+///   - this layer is intentionally state-changing only
+///   - read aggregation / settlement observability should live in MarginEngineViews
 ///
 ///  Maker/taker convention:
-///  - t.buyerIsMaker == true  => buyer = maker, seller = taker
-///  - t.buyerIsMaker == false => buyer = taker, seller = maker
+///   - t.buyerIsMaker == true  => buyer = maker, seller = taker
+///   - t.buyerIsMaker == false => buyer = taker, seller = maker
 abstract contract MarginEngineTrading is MarginEngineAdmin {
     /*//////////////////////////////////////////////////////////////
                             INTERNAL HELPERS
@@ -59,6 +65,10 @@ abstract contract MarginEngineTrading is MarginEngineAdmin {
             q.cappedByPremium
         );
     }
+
+    /*//////////////////////////////////////////////////////////////
+                                TRADING
+    //////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IMarginEngineTrade
     function applyTrade(IMarginEngineTrade.Trade calldata t)

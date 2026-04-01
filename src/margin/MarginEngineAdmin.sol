@@ -7,8 +7,20 @@ import {IFeesManager} from "../fees/IFeesManager.sol";
 
 import {MarginEngineStorage} from "./MarginEngineStorage.sol";
 
-/// @notice Owner / guardian configuration & emergency surface
-/// @dev Assumes constants/errors/events are declared in MarginEngineTypes (via MarginEngineStorage).
+/// @title MarginEngineAdmin
+/// @notice Owner / guardian configuration & emergency surface for MarginEngine.
+/// @dev
+///  Responsibilities:
+///   - 2-step ownership
+///   - guardian management
+///   - legacy + granular pause controls
+///   - dependency wiring
+///   - local cache of risk params expected to match RiskModule
+///   - liquidation parameter configuration
+///
+///  Architectural note:
+///   - this layer is admin/state-changing only
+///   - read aggregation should live in MarginEngineViews
 abstract contract MarginEngineAdmin is MarginEngineStorage {
     /*//////////////////////////////////////////////////////////////
                               OWNERSHIP (2-step)
