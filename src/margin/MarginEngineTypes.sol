@@ -55,7 +55,6 @@ abstract contract MarginEngineTypes {
     error SettlementAlreadyProcessed();
     error SettlementAssetNotConfigured();
     error InsuranceFundNotSet();
-    error InsuranceFundInsufficient(uint256 needed, uint256 available);
 
     // Withdraw via MarginEngine
     error WithdrawTooLarge();
@@ -166,6 +165,20 @@ abstract contract MarginEngineTypes {
 
     event InsuranceFundSet(address indexed oldFund, address indexed newFund);
 
+    /// @notice Per-account terminal settlement result.
+    /// @dev
+    ///  Sign convention:
+    ///   - pnl > 0  => trader was owed funds
+    ///   - pnl < 0  => trader owed funds
+    ///
+    ///  Accounting convention:
+    ///   - collectedFromTrader = amount actually recovered from the trader account
+    ///   - paidToTrader        = amount actually paid to the trader
+    ///   - badDebt             = unpaid residual amount after bounded collection / bounded insurance payout
+    ///
+    ///  Therefore:
+    ///   - if pnl > 0:  uint256(pnl) == paidToTrader + badDebt
+    ///   - if pnl < 0:  uint256(-pnl) == collectedFromTrader + badDebt
     event AccountSettled(
         address indexed trader,
         uint256 indexed optionId,
@@ -175,6 +188,12 @@ abstract contract MarginEngineTypes {
         uint256 badDebt
     );
 
+    /// @notice Running settlement accounting for a series.
+    /// @dev
+    ///  Aggregates are cumulative across all settled accounts of the series:
+    ///   - totalCollected = total amount recovered from losing traders
+    ///   - totalPaid      = total amount actually paid to winning traders
+    ///   - totalBadDebt   = total residual uncovered amount
     event SeriesSettlementAccountingUpdated(
         uint256 indexed optionId,
         uint256 totalCollected,

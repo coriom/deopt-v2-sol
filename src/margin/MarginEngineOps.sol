@@ -219,9 +219,81 @@ abstract contract MarginEngineOps is MarginEngineTrading {
         payoffPerContract = _price1e8ToSettlementUnits(series.settlementAsset, intrinsicPrice1e8);
     }
 
+    function _collectFromTraderUpTo(address trader, address toAccount, address asset, uint256 requestedAmount)
+        internal
+        returns (uint256 collected)
+    {
+        if (requestedAmount == 0) return 0;
+
+        _syncVaultBestEffort(trader, asset);
+
+        uint256 traderBal = _collateralVault.balances(trader, asset);
+        collected = traderBal >= requestedAmount ? requestedAmount : traderBal;
+
+        if (collected > 0) {
+            _collateralVault.transferBetweenAccounts(asset, trader, toAccount, collected);
+        }
+    }
+
+    function _payFromInsuranceFundUpTo(address asset, address toAccount, uint256 requestedAmount)
+        internal
+        returns (uint256 paid)
+    {
+        if (requestedAmount == 0) return 0;
+        if (insuranceFund == address(0)) return 0;
+
+        _syncVaultBestEffort(insuranceFund, asset);
+
+        (bool ok, bytes memory data) = insuranceFund.call(
+            abi.encodeWithSignature(
+                "coverVaultShortfall(address,address,uint256)",
+                asset,
+                toAccount,
+                requestedAmount
+            )
+        );
+
+        if (ok && data.length >= 32) {
+            paid = abi.decode(data, (uint256));
+            return paid;
+        }
+
+        uint256 fundBal = _collateralVault.balances(insuranceFund, asset);
+        paid = fundBal >= requestedAmount ? requestedAmount : fundBal;
+
+        if (paid > 0) {
+            _collateralVault.transferBetweenAccounts(asset, insuranceFund, toAccount, paid);
+        }
+    }
+
+    function _recordSeriesSettlementAccounting(
+        uint256 optionId,
+        uint256 collectedFromTrader,
+        uint256 paidToTrader,
+        uint256 badDebt
+    ) internal {
+        if (collectedFromTrader > 0) {
+            seriesCollected[optionId] = _addChecked(seriesCollected[optionId], collectedFromTrader);
+        }
+
+        if (paidToTrader > 0) {
+            seriesPaid[optionId] = _addChecked(seriesPaid[optionId], paidToTrader);
+        }
+
+        if (badDebt > 0) {
+            seriesBadDebt[optionId] = _addChecked(seriesBadDebt[optionId], badDebt);
+        }
+
+        emit SeriesSettlementAccountingUpdated(
+            optionId,
+            seriesCollected[optionId],
+            seriesPaid[optionId],
+            seriesBadDebt[optionId]
+        );
+    }
+
     function _settleAccount(uint256 optionId, address trader) internal {
         if (trader == address(0)) revert ZeroAddress();
-        if (insuranceFund == address(0)) revert InsuranceFundNotSet();
 
         OptionProductRegistry.OptionSeries memory series = _optionRegistry.getSeries(optionId);
         _requireStandardContractSize(series);
@@ -261,7 +333,7 @@ abstract contract MarginEngineOps is MarginEngineTrading {
             pnl = q >= 0 ? int256(amount) : -int256(amount);
         }
 
-        // close
+        // close position
         pos.quantity = 0;
         _syncPositionIndexes(trader, optionId, oldQty, 0);
 
@@ -271,43 +343,42 @@ abstract contract MarginEngineOps is MarginEngineTrading {
 
         address asset = series.settlementAsset;
 
-        // best-effort sync (yield)
         _syncVaultBestEffort(trader, asset);
-        _syncVaultBestEffort(insuranceFund, asset);
+        if (insuranceFund != address(0)) {
+            _syncVaultBestEffort(insuranceFund, asset);
+        }
 
         if (pnl > 0) {
-            uint256 amountPay = uint256(pnl);
+            uint256 amountDue = uint256(pnl);
 
-            uint256 fundBal = _collateralVault.balances(insuranceFund, asset);
-            if (fundBal < amountPay) revert InsuranceFundInsufficient(amountPay, fundBal);
+            // Payment hierarchy:
+            // 1) insurance fund / pooled backstop pays what it can
+            // 2) remainder becomes explicit bad debt
+            paidToTrader = _payFromInsuranceFundUpTo(asset, trader, amountDue);
 
-            _collateralVault.transferBetweenAccounts(asset, insuranceFund, trader, amountPay);
-
-            paidToTrader = amountPay;
-            seriesPaid[optionId] = _addChecked(seriesPaid[optionId], amountPay);
+            if (paidToTrader < amountDue) {
+                badDebt = amountDue - paidToTrader;
+            }
         } else if (pnl < 0) {
             uint256 amountOwed = uint256(-pnl);
 
-            uint256 traderBal = _collateralVault.balances(trader, asset);
-            uint256 amountToCollect = traderBal >= amountOwed ? amountOwed : traderBal;
-
-            if (amountToCollect > 0) {
-                _collateralVault.transferBetweenAccounts(asset, trader, insuranceFund, amountToCollect);
-                collectedFromTrader = amountToCollect;
-                seriesCollected[optionId] = _addChecked(seriesCollected[optionId], amountToCollect);
+            // Collection hierarchy:
+            // 1) collect what can actually be taken from the short
+            // 2) remainder becomes explicit bad debt
+            if (insuranceFund == address(0)) {
+                collectedFromTrader = _collectFromTraderUpTo(trader, address(this), asset, amountOwed);
+            } else {
+                collectedFromTrader = _collectFromTraderUpTo(trader, insuranceFund, asset, amountOwed);
             }
 
-            if (amountToCollect < amountOwed) {
-                badDebt = amountOwed - amountToCollect;
-                seriesBadDebt[optionId] = _addChecked(seriesBadDebt[optionId], badDebt);
+            if (collectedFromTrader < amountOwed) {
+                badDebt = amountOwed - collectedFromTrader;
             }
         }
 
-        emit AccountSettled(trader, optionId, pnl, collectedFromTrader, paidToTrader, badDebt);
+        _recordSeriesSettlementAccounting(optionId, collectedFromTrader, paidToTrader, badDebt);
 
-        emit SeriesSettlementAccountingUpdated(
-            optionId, seriesCollected[optionId], seriesPaid[optionId], seriesBadDebt[optionId]
-        );
+        emit AccountSettled(trader, optionId, pnl, collectedFromTrader, paidToTrader, badDebt);
     }
 
     function settleAccount(uint256 optionId, address trader) public whenSettlementNotPaused nonReentrant {
@@ -403,15 +474,12 @@ abstract contract MarginEngineOps is MarginEngineTrading {
         address liquidator = msg.sender;
         uint256 totalContractsClosed;
 
-        // precise executed quantities for event
         uint128[] memory executed = new uint128[](optionIds.length);
 
-        // track per settlement asset cash requested
         address[] memory cashAssets = new address[](optionIds.length);
         uint256[] memory cashRequested = new uint256[](optionIds.length);
         uint256 assetsCount;
 
-        // for penalty fallback seize: track distinct settlement assets touched
         address[] memory touchedAssets = new address[](optionIds.length);
         uint256 touchedCount;
 
@@ -484,7 +552,6 @@ abstract contract MarginEngineOps is MarginEngineTrading {
                 }
             }
 
-            // position transfer: trader short reduced, liquidator short increased
             traderPos.quantity = _checkedAddInt128(oldTraderQty, delta);
             liqPos.quantity = _checkedSubInt128(oldLiqQty, delta);
 
@@ -500,7 +567,6 @@ abstract contract MarginEngineOps is MarginEngineTrading {
 
         if (totalContractsClosed == 0) revert LiquidationNothingToDo();
 
-        // cashflow: per settlement asset, pay min(balance, requested)
         for (uint256 i = 0; i < assetsCount; i++) {
             address asset = cashAssets[i];
             uint256 req = cashRequested[i];
@@ -518,14 +584,12 @@ abstract contract MarginEngineOps is MarginEngineTrading {
             emit LiquidationCashflow(liquidator, trader, asset, paid, req);
         }
 
-        // penalty = MM_floor(base) * closedContracts * penaltyBps
         uint256 mmBase = _mulChecked(baseMaintenanceMarginPerContract, totalContractsClosed);
         uint256 penaltyBaseValue = Math.mulDiv(mmBase, liquidationPenaltyBps, BPS, Math.Rounding.Down);
 
         uint256 remainingBase = penaltyBaseValue;
         uint256 seizedBaseValueTotal = 0;
 
-        // 1) seize in base token first
         if (remainingBase > 0) {
             _syncVaultBestEffort(trader, baseCollateralToken);
 
@@ -541,7 +605,6 @@ abstract contract MarginEngineOps is MarginEngineTrading {
             }
         }
 
-        // 2) fallback: seize remaining penalty value using settlement assets touched (if oracle ok)
         if (remainingBase > 0) {
             for (uint256 i = 0; i < touchedCount; i++) {
                 if (remainingBase == 0) break;
@@ -574,7 +637,6 @@ abstract contract MarginEngineOps is MarginEngineTrading {
             }
         }
 
-        // post-check improvement
         IRiskModule.AccountRisk memory riskAfter = _riskModule.computeAccountRisk(trader);
         uint256 ratioAfterBps = _marginRatioBpsFromRisk(riskAfter.equity, riskAfter.maintenanceMargin);
 

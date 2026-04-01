@@ -342,7 +342,7 @@ contract InsuranceFund is ReentrancyGuard {
     }
 
     /// @notice Authorize or revoke a protocol caller allowed to consume the fund as a vault backstop.
-    /// @dev Intended for PerpEngine / future liquidation engines.
+    /// @dev Intended for PerpEngine / future liquidation engines / option settlement backstop.
     function setBackstopCaller(address caller, bool allowed) external onlyOwner {
         if (caller == address(0)) revert ZeroAddress();
         isBackstopCaller[caller] = allowed;
@@ -437,7 +437,7 @@ contract InsuranceFund is ReentrancyGuard {
     ///  - bounded to what is actually available for this fund in the vault
     ///  - returns the effective amount paid
     ///  - does not revert if balance is insufficient; caller must account residual shortfall
-    ///  - intended for liquidation engines / protocol backstop logic
+    ///  - intended for liquidation engines / protocol backstop logic / option settlement payout support
     function coverVaultShortfall(address token, address toAccount, uint256 requestedAmount)
         external
         onlyBackstopCaller
@@ -465,6 +465,7 @@ contract InsuranceFund is ReentrancyGuard {
     }
 
     /// @notice Preview how much this fund could currently pay from its vault balance.
+    /// @dev This is intentionally a bounded preview only; the actual transfer remains capped again at execution time.
     function previewVaultCoverage(address token, uint256 requestedAmount) external view returns (uint256 payableAmount) {
         if (requestedAmount == 0) return 0;
         if (!isTokenAllowed[token]) return 0;
