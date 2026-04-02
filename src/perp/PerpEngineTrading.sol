@@ -893,6 +893,12 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         _updateMarketOpenInterest(marketId, oldTraderPos.size1e8, newTraderPos.size1e8);
         _updateMarketOpenInterest(marketId, oldLiqPos.size1e8, newLiqPos.size1e8);
 
+        {
+            MarketState memory s = _marketStates[marketId];
+            uint256 oi = s.longOpenInterest1e8 > s.shortOpenInterest1e8 ? s.longOpenInterest1e8 : s.shortOpenInterest1e8;
+            if (oi > uint256(rcfg.maxOpenInterest1e8)) revert SizeTooLarge();
+        }
+
         uint256 closedNotional1e8 =
             Math.mulDiv(uint256(sizeClosed1e8), liqPrice1e8, PRICE_1E8, Math.Rounding.Down);
 
@@ -903,7 +909,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
             _seizePenaltyToLiquidator(trader, liquidator, m.settlementAsset, penaltyBaseValue);
 
         LiquidationResolution memory resolution =
-            _resolveLiquidationShortfall(liquidator, trader, marketId, penaltyBaseValue, seizedPenaltyBaseValue);
+            _resolveLiquidationShortfall(liquidator, trader, marketId, penaltyTargetBaseValue: penaltyBaseValue, seizedPenaltyBaseValue: seizedPenaltyBaseValue);
 
         if (resolution.residualShortfallBaseValue != 0) {
             _recordResidualBadDebt(trader, resolution.residualShortfallBaseValue);
