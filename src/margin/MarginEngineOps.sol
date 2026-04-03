@@ -7,164 +7,33 @@ import {OptionProductRegistry} from "../OptionProductRegistry.sol";
 import {CollateralVault} from "../collateral/CollateralVault.sol";
 import {IRiskModule} from "../risk/IRiskModule.sol";
 import {IMarginEngineState} from "../risk/IMarginEngineState.sol";
-import {IFeesManager} from "../fees/IFeesManager.sol";
 
-import {MarginEngineTrading} from "./MarginEngineTrading.sol";
+import {MarginEngineViews} from "./MarginEngineViews.sol";
 
-/// @notice Views + collateral + settlement + liquidation + oracle views
-abstract contract MarginEngineOps is MarginEngineTrading {
-    /*//////////////////////////////////////////////////////////////
-                          IMarginEngineState (required)
-    //////////////////////////////////////////////////////////////*/
-
-    function positions(address trader, uint256 optionId)
-        external
-        view
-        override
-        returns (IMarginEngineState.Position memory)
-    {
-        return _positions[trader][optionId];
-    }
-
-    /// @notice OPEN series only (positions non nulles)
-    function getTraderSeries(address trader) external view override returns (uint256[] memory) {
-        return traderSeries[trader];
-    }
-
-    function getTraderSeriesLength(address trader) external view override returns (uint256) {
-        return traderSeries[trader].length;
-    }
-
-    function getTraderSeriesSlice(address trader, uint256 start, uint256 end)
-        external
-        view
-        override
-        returns (uint256[] memory slice)
-    {
-        uint256 len = traderSeries[trader].length;
-
-        if (start >= len || start >= end) {
-            return new uint256;
-        }
-
-        if (end > len) end = len;
-
-        uint256 outLen = end - start;
-        slice = new uint256[](outLen);
-
-        for (uint256 i = 0; i < outLen; i++) {
-            slice[i] = traderSeries[trader][start + i];
-        }
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                    IMarginEngineState (optional helpers)
-    //////////////////////////////////////////////////////////////*/
-
-    function optionRegistry() external view override returns (address) {
-        return address(_optionRegistry);
-    }
-
-    function collateralVault() external view override returns (address) {
-        return address(_collateralVault);
-    }
-
-    function oracle() external view override returns (address) {
-        return address(_oracle);
-    }
-
-    function riskModule() external view override returns (address) {
-        return address(_riskModule);
-    }
-
-    function getPositionQuantity(address trader, uint256 optionId) external view override returns (int128) {
-        return _positions[trader][optionId].quantity;
-    }
-
-    function isOpenSeries(address trader, uint256 optionId) external view override returns (bool) {
-        return traderSeriesIndexPlus1[trader][optionId] != 0;
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                              VIEW HELPERS
-    //////////////////////////////////////////////////////////////*/
-
-    function getAccountRisk(address trader) external view returns (IRiskModule.AccountRisk memory risk) {
-        if (address(_riskModule) == address(0)) {
-            IRiskModule.AccountRisk memory empty;
-            return empty;
-        }
-        return _riskModule.computeAccountRisk(trader);
-    }
-
-    function getFreeCollateral(address trader) external view returns (int256) {
-        if (address(_riskModule) == address(0)) return 0;
-        return _riskModule.computeFreeCollateral(trader);
-    }
-
-    function previewWithdrawImpact(address trader, address token, uint256 amount)
-        external
-        view
-        returns (IRiskModule.WithdrawPreview memory preview)
-    {
-        if (address(_riskModule) == address(0)) return preview;
-        return _riskModule.previewWithdrawImpact(trader, token, amount);
-    }
-
-    function isSeriesExpired(uint256 optionId) public view returns (bool) {
-        OptionProductRegistry.OptionSeries memory series = _optionRegistry.getSeries(optionId);
-        return block.timestamp >= series.expiry;
-    }
-
-    /// @notice Returns the currently resolved trading fee recipient.
-    /// @dev Explicit feeRecipient has priority; fallback is insuranceFund.
-    function getResolvedFeeRecipient() external view returns (address) {
-        return _resolvedFeeRecipient();
-    }
-
-    /// @notice Preview hybrid trade fees for both counterparties.
-    /// @dev Useful for UI / executors / analytics.
-    function previewTradeFees(
-        uint256 optionId,
-        uint128 quantity,
-        uint128 price,
-        address buyer,
-        address seller,
-        bool buyerIsMaker
-    )
-        external
-        view
-        returns (
-            address settlementAsset,
-            address recipient,
-            uint256 premium,
-            uint256 notionalImplicit,
-            IFeesManager.FeeQuote memory buyerQuote,
-            IFeesManager.FeeQuote memory sellerQuote
-        )
-    {
-        if (buyer == address(0) || seller == address(0) || buyer == seller) revert InvalidTrade();
-        if (quantity == 0 || price == 0) revert InvalidTrade();
-
-        OptionProductRegistry.OptionSeries memory s = _optionRegistry.getSeries(optionId);
-        _requireStandardContractSize(s);
-        _requireSettlementAssetConfigured(s.settlementAsset);
-
-        settlementAsset = s.settlementAsset;
-        recipient = _resolvedFeeRecipient();
-        premium = _mulChecked(uint256(quantity), uint256(price));
-        notionalImplicit = _computeStrikeNotionalImplicit(s, uint256(quantity));
-
-        buyerQuote = _quoteHybridFee(buyer, buyerIsMaker, premium, notionalImplicit);
-        sellerQuote = _quoteHybridFee(seller, !buyerIsMaker, premium, notionalImplicit);
-    }
-
+/// @title MarginEngineOps
+/// @notice Stateful collateral / settlement / liquidation layer for the options engine.
+/// @dev
+///  Responsibilities:
+///   - user collateral wrappers
+///   - option settlement accounting
+///   - options liquidation flow
+///
+///  Architectural note:
+///   - read surfaces now live in MarginEngineViews
+///   - this layer should remain focused on state-changing logic
+///
+///  Canonical conventions:
+///   - risk amounts suffixed `Base` are denominated in native units of the protocol base collateral token
+///   - settlement accounting amounts are denominated in settlement-asset native units
+///   - `shortfall` is transient during an operation
+///   - `badDebt` is the final residual uncovered amount recorded by the protocol
+abstract contract MarginEngineOps is MarginEngineViews {
     /*//////////////////////////////////////////////////////////////
                         USER COLLATERAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Dépôt correct via CollateralVault.depositFor(user, token, amount).
-    ///      Si non implémenté dans CollateralVault => revert.
+    /// @dev Correct deposit path via CollateralVault.depositFor(user, token, amount).
+    ///      If not implemented in CollateralVault => revert.
     function depositCollateral(address token, uint256 amount) external whenCollateralOpsNotPaused nonReentrant {
         if (amount == 0) revert AmountZero();
 
@@ -176,8 +45,8 @@ abstract contract MarginEngineOps is MarginEngineTrading {
         emit CollateralDeposited(msg.sender, token, amount);
     }
 
-    /// @dev IMPORTANT: ne jamais appeler collateralVault.withdraw() ici (msg.sender = MarginEngine).
-    ///      On force withdrawFor(user, token, amount). Si non supporté => revert.
+    /// @dev IMPORTANT: never call collateralVault.withdraw() here (msg.sender = MarginEngine).
+    ///      Force withdrawFor(user, token, amount). If unsupported => revert.
     function withdrawCollateral(address token, uint256 amount) external whenCollateralOpsNotPaused nonReentrant {
         if (address(_riskModule) == address(0)) revert RiskModuleNotSet();
         if (amount == 0) revert AmountZero();
@@ -199,7 +68,7 @@ abstract contract MarginEngineOps is MarginEngineTrading {
                     PAYOFF & PnL HELPERS (SETTLEMENT)
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Returns settlement units per contract.
+    /// @dev Returns settlement-native units per contract.
     function _computePerContractPayoff(OptionProductRegistry.OptionSeries memory series, uint256 settlementPrice)
         internal
         view
@@ -210,9 +79,11 @@ abstract contract MarginEngineOps is MarginEngineTrading {
 
         uint256 intrinsicPrice1e8;
         if (series.isCall) {
-            intrinsicPrice1e8 = settlementPrice > uint256(series.strike) ? (settlementPrice - uint256(series.strike)) : 0;
+            intrinsicPrice1e8 =
+                settlementPrice > uint256(series.strike) ? (settlementPrice - uint256(series.strike)) : 0;
         } else {
-            intrinsicPrice1e8 = uint256(series.strike) > settlementPrice ? (uint256(series.strike) - settlementPrice) : 0;
+            intrinsicPrice1e8 =
+                uint256(series.strike) > settlementPrice ? (uint256(series.strike) - settlementPrice) : 0;
         }
 
         if (intrinsicPrice1e8 == 0) return 0;
@@ -245,12 +116,7 @@ abstract contract MarginEngineOps is MarginEngineTrading {
         _syncVaultBestEffort(insuranceFund, asset);
 
         (bool ok, bytes memory data) = insuranceFund.call(
-            abi.encodeWithSignature(
-                "coverVaultShortfall(address,address,uint256)",
-                asset,
-                toAccount,
-                requestedAmount
-            )
+            abi.encodeWithSignature("coverVaultShortfall(address,address,uint256)", asset, toAccount, requestedAmount)
         );
 
         if (ok && data.length >= 32) {
@@ -393,27 +259,10 @@ abstract contract MarginEngineOps is MarginEngineTrading {
     }
 
     /*//////////////////////////////////////////////////////////////
-                        LIQUIDATION LOGIC (A-1)
+                        LIQUIDATION LOGIC (OPTIONS)
     //////////////////////////////////////////////////////////////*/
 
-    function getMarginRatioBps(address trader) public view returns (uint256) {
-        if (address(_riskModule) == address(0)) return type(uint256).max;
-        IRiskModule.AccountRisk memory risk = _riskModule.computeAccountRisk(trader);
-        return _marginRatioBpsFromRisk(risk.equity, risk.maintenanceMargin);
-    }
-
-    function isLiquidatable(address trader) public view returns (bool) {
-        if (address(_riskModule) == address(0)) return false;
-
-        IRiskModule.AccountRisk memory risk = _riskModule.computeAccountRisk(trader);
-        if (risk.maintenanceMargin == 0) return false;
-        if (risk.equity <= 0) return true;
-
-        uint256 ratioBps = (uint256(risk.equity) * BPS) / risk.maintenanceMargin;
-        return ratioBps < liquidationThresholdBps;
-    }
-
-    /// @dev Returns settlement units per contract.
+    /// @dev Returns settlement-native units per contract.
     function _computeLiquidationPricePerContract(OptionProductRegistry.OptionSeries memory s)
         internal
         view
@@ -461,7 +310,7 @@ abstract contract MarginEngineOps is MarginEngineTrading {
         _requireRiskParamsSynced();
 
         IRiskModule.AccountRisk memory riskBefore = _riskModule.computeAccountRisk(trader);
-        uint256 ratioBeforeBps = _marginRatioBpsFromRisk(riskBefore.equity, riskBefore.maintenanceMargin);
+        uint256 ratioBeforeBps = _marginRatioBpsFromRisk(riskBefore.equityBase, riskBefore.maintenanceMarginBase);
 
         if (!isLiquidatable(trader)) revert NotLiquidatable();
 
@@ -585,10 +434,10 @@ abstract contract MarginEngineOps is MarginEngineTrading {
         }
 
         uint256 mmBase = _mulChecked(baseMaintenanceMarginPerContract, totalContractsClosed);
-        uint256 penaltyBaseValue = Math.mulDiv(mmBase, liquidationPenaltyBps, BPS, Math.Rounding.Down);
+        uint256 penaltyBase = Math.mulDiv(mmBase, liquidationPenaltyBps, BPS, Math.Rounding.Down);
 
-        uint256 remainingBase = penaltyBaseValue;
-        uint256 seizedBaseValueTotal = 0;
+        uint256 remainingBase = penaltyBase;
+        uint256 seizedBaseTotal = 0;
 
         if (remainingBase > 0) {
             _syncVaultBestEffort(trader, baseCollateralToken);
@@ -598,7 +447,7 @@ abstract contract MarginEngineOps is MarginEngineTrading {
 
             if (seizeBaseTokenAmt > 0) {
                 _collateralVault.transferBetweenAccounts(baseCollateralToken, trader, liquidator, seizeBaseTokenAmt);
-                seizedBaseValueTotal = _addChecked(seizedBaseValueTotal, seizeBaseTokenAmt);
+                seizedBaseTotal = _addChecked(seizedBaseTotal, seizeBaseTokenAmt);
                 remainingBase -= seizeBaseTokenAmt;
 
                 emit LiquidationSeize(liquidator, trader, baseCollateralToken, seizeBaseTokenAmt, seizeBaseTokenAmt);
@@ -625,12 +474,12 @@ abstract contract MarginEngineOps is MarginEngineTrading {
                 if (seizeTok == 0) continue;
 
                 uint256 pxTokBase = _getOraclePriceChecked(tok, baseCollateralToken);
-                uint256 seizedBaseValueApprox = _tokenAmountToBaseValueDown(tok, seizeTok, pxTokBase);
+                uint256 seizedBaseApprox = _tokenAmountToBaseValueDown(tok, seizeTok, pxTokBase);
 
                 _collateralVault.transferBetweenAccounts(tok, trader, liquidator, seizeTok);
 
-                uint256 applied = seizedBaseValueApprox <= remainingBase ? seizedBaseValueApprox : remainingBase;
-                seizedBaseValueTotal = _addChecked(seizedBaseValueTotal, applied);
+                uint256 applied = seizedBaseApprox <= remainingBase ? seizedBaseApprox : remainingBase;
+                seizedBaseTotal = _addChecked(seizedBaseTotal, applied);
                 remainingBase -= applied;
 
                 emit LiquidationSeize(liquidator, trader, tok, seizeTok, applied);
@@ -638,28 +487,18 @@ abstract contract MarginEngineOps is MarginEngineTrading {
         }
 
         IRiskModule.AccountRisk memory riskAfter = _riskModule.computeAccountRisk(trader);
-        uint256 ratioAfterBps = _marginRatioBpsFromRisk(riskAfter.equity, riskAfter.maintenanceMargin);
+        uint256 ratioAfterBps = _marginRatioBpsFromRisk(riskAfter.equityBase, riskAfter.maintenanceMarginBase);
 
-        if (riskBefore.equity > 0) {
+        if (riskBefore.equityBase > 0) {
             if (ratioAfterBps < ratioBeforeBps + minLiquidationImprovementBps) revert LiquidationNotImproving();
         } else {
-            bool improved =
-                (riskAfter.maintenanceMargin < riskBefore.maintenanceMargin) || (riskAfter.equity > riskBefore.equity);
+            bool improved = (riskAfter.maintenanceMarginBase < riskBefore.maintenanceMarginBase)
+                || (riskAfter.equityBase > riskBefore.equityBase);
             if (!improved) revert LiquidationNotImproving();
         }
 
-        emit Liquidation(liquidator, trader, optionIds, executed, seizedBaseValueTotal);
+        emit Liquidation(liquidator, trader, optionIds, executed, seizedBaseTotal);
 
         _enforceInitialMargin(liquidator);
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                        ORACLE HELPERS
-    //////////////////////////////////////////////////////////////*/
-
-    function getUnderlyingSpot(uint256 optionId) external view returns (uint256 price, uint256 updatedAt) {
-        OptionProductRegistry.OptionSeries memory series = _optionRegistry.getSeries(optionId);
-        _requireStandardContractSize(series);
-        return _oracle.getPrice(series.underlying, series.settlementAsset);
     }
 }

@@ -28,6 +28,10 @@ interface IRiskParamsView {
 ///   - position quantity must never be int128.min
 ///   - open-series list must only contain non-zero positions
 ///   - totalShortContracts must remain consistent with positions
+///
+///  Important architectural note:
+///   - external/public read surfaces should live in MarginEngineViews
+///   - this storage layer only exposes internal helpers for those views
 abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMarginEngineState, IMarginEngineTrade {
     /*//////////////////////////////////////////////////////////////
                                 LOCAL CONSTANTS
@@ -183,73 +187,6 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         emit GuardianSet(address(0), address(0));
         emit GlobalPauseSet(false);
         emit EmergencyModeUpdated(false, false, false, false);
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                          IMarginEngineState READS
-    //////////////////////////////////////////////////////////////*/
-
-    function positions(address trader, uint256 optionId)
-        external
-        view
-        override
-        returns (IMarginEngineState.Position memory)
-    {
-        return _positions[trader][optionId];
-    }
-
-    function getTraderSeries(address trader) external view override returns (uint256[] memory) {
-        return traderSeries[trader];
-    }
-
-    function getTraderSeriesLength(address trader) external view override returns (uint256) {
-        return traderSeries[trader].length;
-    }
-
-    function getTraderSeriesSlice(address trader, uint256 start, uint256 end)
-        external
-        view
-        override
-        returns (uint256[] memory slice)
-    {
-        uint256 len = traderSeries[trader].length;
-
-        if (start >= len || start >= end) {
-            return new uint256;
-        }
-
-        if (end > len) end = len;
-
-        uint256 outLen = end - start;
-        slice = new uint256[](outLen);
-
-        for (uint256 i = 0; i < outLen; i++) {
-            slice[i] = traderSeries[trader][start + i];
-        }
-    }
-
-    function optionRegistry() external view override returns (address) {
-        return address(_optionRegistry);
-    }
-
-    function collateralVault() external view override returns (address) {
-        return address(_collateralVault);
-    }
-
-    function oracle() external view override returns (address) {
-        return address(_oracle);
-    }
-
-    function riskModule() external view override returns (address) {
-        return address(_riskModule);
-    }
-
-    function getPositionQuantity(address trader, uint256 optionId) external view override returns (int128) {
-        return _positions[trader][optionId].quantity;
-    }
-
-    function isOpenSeries(address trader, uint256 optionId) external view override returns (bool) {
-        return traderSeriesIndexPlus1[trader][optionId] != 0;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -605,5 +542,70 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
 
         uint256 factor2 = _mePow10(uint256(tokDec - baseDec));
         return num / factor2;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        INTERNAL READ HELPERS FOR VIEWS
+    //////////////////////////////////////////////////////////////*/
+
+    function _positionOf(address trader, uint256 optionId)
+        internal
+        view
+        returns (IMarginEngineState.Position memory pos)
+    {
+        pos = _positions[trader][optionId];
+    }
+
+    function _positionQuantityOf(address trader, uint256 optionId) internal view returns (int128) {
+        return _positions[trader][optionId].quantity;
+    }
+
+    function _isOpenSeriesInternal(address trader, uint256 optionId) internal view returns (bool) {
+        return traderSeriesIndexPlus1[trader][optionId] != 0;
+    }
+
+    function _getTraderSeriesInternal(address trader) internal view returns (uint256[] memory) {
+        return traderSeries[trader];
+    }
+
+    function _getTraderSeriesLengthInternal(address trader) internal view returns (uint256) {
+        return traderSeries[trader].length;
+    }
+
+    function _getTraderSeriesSliceInternal(address trader, uint256 start, uint256 end)
+        internal
+        view
+        returns (uint256[] memory slice)
+    {
+        uint256 len = traderSeries[trader].length;
+
+        if (start >= len || start >= end) {
+            return new uint256;
+        }
+
+        if (end > len) end = len;
+
+        uint256 outLen = end - start;
+        slice = new uint256[](outLen);
+
+        for (uint256 i = 0; i < outLen; i++) {
+            slice[i] = traderSeries[trader][start + i];
+        }
+    }
+
+    function _optionRegistryAddress() internal view returns (address) {
+        return address(_optionRegistry);
+    }
+
+    function _collateralVaultAddress() internal view returns (address) {
+        return address(_collateralVault);
+    }
+
+    function _oracleAddress() internal view returns (address) {
+        return address(_oracle);
+    }
+
+    function _riskModuleAddress() internal view returns (address) {
+        return address(_riskModule);
     }
 }

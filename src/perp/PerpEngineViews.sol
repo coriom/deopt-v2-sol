@@ -10,12 +10,14 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
                                 TYPES
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Account PnL decomposition in normalized quote 1e8 units.
     struct AccountPnlBreakdown {
         int256 unrealizedPnl1e8;
         int256 fundingAccrued1e8;
         int256 netPnl1e8;
     }
 
+    /// @notice Account exposure decomposition in normalized quote 1e8 units.
     struct AccountExposureBreakdown {
         uint256 marketsCount;
         uint256 grossNotional1e8;
@@ -30,15 +32,19 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         uint256 minImprovementBps;
     }
 
+    /// @notice Best-effort liquidation preview.
+    /// @dev
+    ///  - `realizedPnlImpact1e8` / `closedNotional1e8` remain normalized quote 1e8 values
+    ///  - all `...Base` values are denominated in native units of the protocol base collateral token
     struct LiquidationPreview {
         uint128 executedSize1e8;
         uint256 liquidationPrice1e8;
         int256 realizedPnlImpact1e8;
         uint256 closedNotional1e8;
-        uint256 penaltyTargetBaseValue;
-        uint256 maxSeizablePenaltyBaseValue;
-        uint256 insurancePreviewBaseValue;
-        uint256 residualShortfallPreviewBaseValue;
+        uint256 penaltyTargetBase;
+        uint256 maxSeizablePenaltyBase;
+        uint256 insurancePreviewBase;
+        uint256 residualShortfallPreviewBase;
         bool valid;
     }
 
@@ -52,8 +58,8 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
 
     struct InsuranceCoveragePreview {
         address baseToken;
-        uint256 requestedBaseValue;
-        uint256 previewCoveredBaseValue;
+        uint256 requestedBase;
+        uint256 previewCoveredBase;
         bool insuranceFundConfigured;
     }
 
@@ -198,11 +204,11 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         }
 
         IPerpRiskModule.AccountRisk memory r = _riskModule.computeAccountRisk(trader);
-        s.marginRatioBps = _marginRatioBpsFromState(r.equity1e8, r.maintenanceMargin1e8);
+        s.marginRatioBps = _marginRatioBpsFromState(r.equityBase, r.maintenanceMarginBase);
 
-        if (r.maintenanceMargin1e8 == 0) {
+        if (r.maintenanceMarginBase == 0) {
             s.liquidatable = false;
-        } else if (r.equity1e8 <= 0) {
+        } else if (r.equityBase <= 0) {
             s.liquidatable = true;
         } else {
             s.liquidatable = s.marginRatioBps < BPS;
@@ -214,11 +220,11 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         view
         returns (BadDebtRepayment memory repayment)
     {
-        repayment.requestedBaseValue = requestedAmountBase;
-        repayment.outstandingBaseValue = _residualBadDebtOf(trader);
+        repayment.requestedBase = requestedAmountBase;
+        repayment.outstandingBase = _residualBadDebtOf(trader);
 
-        if (requestedAmountBase == 0 || repayment.outstandingBaseValue == 0 || payer == address(0)) {
-            repayment.remainingBaseValue = repayment.outstandingBaseValue;
+        if (requestedAmountBase == 0 || repayment.outstandingBase == 0 || payer == address(0)) {
+            repayment.remainingBase = repayment.outstandingBase;
             return repayment;
         }
 
@@ -226,10 +232,10 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         uint256 payerBal = _collateralVault.balances(payer, baseToken);
 
         uint256 cappedToDebt =
-            requestedAmountBase < repayment.outstandingBaseValue ? requestedAmountBase : repayment.outstandingBaseValue;
+            requestedAmountBase < repayment.outstandingBase ? requestedAmountBase : repayment.outstandingBase;
 
-        repayment.repaidBaseValue = payerBal < cappedToDebt ? payerBal : cappedToDebt;
-        repayment.remainingBaseValue = repayment.outstandingBaseValue - repayment.repaidBaseValue;
+        repayment.repaidBase = payerBal < cappedToDebt ? payerBal : cappedToDebt;
+        repayment.remainingBase = repayment.outstandingBase - repayment.repaidBase;
     }
 
     function getBadDebtRepaymentRecipient() external view returns (address) {
@@ -267,10 +273,10 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         if (address(_riskModule) == address(0)) return false;
 
         IPerpRiskModule.AccountRisk memory r = _riskModule.computeAccountRisk(trader);
-        if (r.maintenanceMargin1e8 == 0) return false;
-        if (r.equity1e8 <= 0) return true;
+        if (r.maintenanceMarginBase == 0) return false;
+        if (r.equityBase <= 0) return true;
 
-        return _marginRatioBpsFromState(r.equity1e8, r.maintenanceMargin1e8) < BPS;
+        return _marginRatioBpsFromState(r.equityBase, r.maintenanceMarginBase) < BPS;
     }
 
     function getLiquidationParams() external view returns (LiquidationPolicyView memory cfg) {
@@ -286,7 +292,7 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         returns (InsuranceCoveragePreview memory p)
     {
         p.baseToken = _baseCollateralToken();
-        p.requestedBaseValue = requestedBaseValue;
+        p.requestedBase = requestedBaseValue;
         p.insuranceFundConfigured = insuranceFund != address(0);
 
         if (!p.insuranceFundConfigured || requestedBaseValue == 0) {
@@ -294,7 +300,7 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         }
 
         uint256 bal = _collateralVault.balances(insuranceFund, p.baseToken);
-        p.previewCoveredBaseValue = bal < requestedBaseValue ? bal : requestedBaseValue;
+        p.previewCoveredBase = bal < requestedBaseValue ? bal : requestedBaseValue;
     }
 
     function previewLiquidation(address trader, uint256 marketId, uint128 requestedCloseSize1e8)
@@ -321,41 +327,41 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
             _computeNextPosition(pos, delta, liqPrice, _marketStates[marketId].cumulativeFundingRate1e18);
 
         uint256 closedNotional1e8 = Math.mulDiv(uint256(size), liqPrice, PRICE_1E8, Math.Rounding.Down);
-        uint256 closedNotionalBaseValue = _settlementAmount1e8ToBaseValue(m.settlementAsset, closedNotional1e8);
-        uint256 penaltyTarget = _liquidationPenaltyBaseValue(closedNotionalBaseValue, liquidationPenaltyBps);
+        uint256 closedNotionalBase = _settlementAmount1e8ToBaseValue(m.settlementAsset, closedNotional1e8);
+        uint256 penaltyTargetBase = _liquidationPenaltyBaseValue(closedNotionalBase, liquidationPenaltyBps);
 
-        uint256 maxSeizablePenaltyBaseValue = 0;
-        if (address(_collateralSeizer) != address(0) && penaltyTarget != 0) {
-            try _collateralSeizer.computeSeizurePlan(trader, penaltyTarget) returns (
+        uint256 maxSeizablePenaltyBase = 0;
+        if (address(_collateralSeizer) != address(0) && penaltyTargetBase != 0) {
+            try _collateralSeizer.computeSeizurePlan(trader, penaltyTargetBase) returns (
                 address[] memory,
                 uint256[] memory,
                 uint256 baseCovered
             ) {
-                maxSeizablePenaltyBaseValue = baseCovered < penaltyTarget ? baseCovered : penaltyTarget;
+                maxSeizablePenaltyBase = baseCovered < penaltyTargetBase ? baseCovered : penaltyTargetBase;
             } catch {}
         }
 
         uint256 remainingAfterSeizure =
-            penaltyTarget > maxSeizablePenaltyBaseValue ? penaltyTarget - maxSeizablePenaltyBaseValue : 0;
+            penaltyTargetBase > maxSeizablePenaltyBase ? penaltyTargetBase - maxSeizablePenaltyBase : 0;
 
-        uint256 insurancePreview = 0;
+        uint256 insurancePreviewBase = 0;
         if (remainingAfterSeizure != 0 && insuranceFund != address(0)) {
             address baseToken = _baseCollateralToken();
             uint256 fundBal = _collateralVault.balances(insuranceFund, baseToken);
-            insurancePreview = fundBal < remainingAfterSeizure ? fundBal : remainingAfterSeizure;
+            insurancePreviewBase = fundBal < remainingAfterSeizure ? fundBal : remainingAfterSeizure;
         }
 
-        uint256 residualPreview =
-            remainingAfterSeizure > insurancePreview ? remainingAfterSeizure - insurancePreview : 0;
+        uint256 residualPreviewBase =
+            remainingAfterSeizure > insurancePreviewBase ? remainingAfterSeizure - insurancePreviewBase : 0;
 
         p.executedSize1e8 = size;
         p.liquidationPrice1e8 = liqPrice;
         p.realizedPnlImpact1e8 = realized;
         p.closedNotional1e8 = closedNotional1e8;
-        p.penaltyTargetBaseValue = penaltyTarget;
-        p.maxSeizablePenaltyBaseValue = maxSeizablePenaltyBaseValue;
-        p.insurancePreviewBaseValue = insurancePreview;
-        p.residualShortfallPreviewBaseValue = residualPreview;
+        p.penaltyTargetBase = penaltyTargetBase;
+        p.maxSeizablePenaltyBase = maxSeizablePenaltyBase;
+        p.insurancePreviewBase = insurancePreviewBase;
+        p.residualShortfallPreviewBase = residualPreviewBase;
         p.valid = true;
     }
 
@@ -463,7 +469,7 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         if (address(_riskModule) == address(0)) return type(uint256).max;
 
         IPerpRiskModule.AccountRisk memory r = _riskModule.computeAccountRisk(trader);
-        return _marginRatioBpsFromState(r.equity1e8, r.maintenanceMargin1e8);
+        return _marginRatioBpsFromState(r.equityBase, r.maintenanceMarginBase);
     }
 
     function getFreeCollateral(address trader) external view returns (int256) {

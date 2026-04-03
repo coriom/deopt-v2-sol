@@ -23,7 +23,7 @@ import {MarginEngineStorage} from "./MarginEngineStorage.sol";
 ///   - read aggregation should live in MarginEngineViews
 abstract contract MarginEngineAdmin is MarginEngineStorage {
     /*//////////////////////////////////////////////////////////////
-                              OWNERSHIP (2-step)
+                            OWNERSHIP (2-step)
     //////////////////////////////////////////////////////////////*/
 
     function transferOwnership(address newOwner) external onlyOwner {
