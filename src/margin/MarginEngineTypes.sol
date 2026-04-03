@@ -3,16 +3,35 @@ pragma solidity ^0.8.20;
 
 import {OptionProductRegistry} from "../OptionProductRegistry.sol";
 
-/// @notice Types / constants / errors / events + pure helpers (no storage)
+/// @title MarginEngineTypes
+/// @notice Types / constants / errors / events + pure helpers for the options engine.
+/// @dev Canonical unit conventions used by this module:
+///  - prices normalized by the protocol are in 1e8
+///  - option contract size is fixed to 1e8 (= 1 underlying unit)
+///  - token-native cash amounts use the settlement asset native decimals
+///  - base risk amounts are expressed in the native decimals of the base collateral token
+///  - ratios use basis points (BPS)
+///
+///  Naming conventions:
+///  - `...1e8` => protocol-normalized amount / price
+///  - `...Bps` => ratio in basis points
+///  - `premium`, `paid`, `collected`, `fee`, `amount` in this file/events refer to token-native cash amounts
+///
+///  Economic conventions:
+///  - `shortfall` is a transient deficit during an operation
+///  - `badDebt` is the final residual uncovered amount recorded by the protocol
 abstract contract MarginEngineTypes {
     /*//////////////////////////////////////////////////////////////
                                 CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Basis points denominator.
     uint256 internal constant BPS = 10_000;
+
+    /// @notice Canonical normalized price scale.
     uint256 internal constant PRICE_1E8 = 1e8;
 
-    // defensive: 10**77 fits in uint256, 10**78 overflows
+    /// @dev Defensive upper bound: 10**77 fits in uint256, 10**78 does not.
     uint256 internal constant MAX_POW10_EXP = 77;
 
     int256 internal constant INT128_MAX = int256(type(int128).max);
@@ -102,6 +121,10 @@ abstract contract MarginEngineTypes {
 
     event MatchingEngineSet(address indexed newMatchingEngine);
 
+    /// @notice Trade execution in the options engine.
+    /// @dev
+    ///  - `quantity` is the number of option contracts, with fixed contractSize1e8 = 1e8
+    ///  - `price` is the token-native premium per contract in settlement-asset native units
     event TradeExecuted(
         address indexed buyer,
         address indexed seller,
@@ -110,6 +133,11 @@ abstract contract MarginEngineTypes {
         uint128 price
     );
 
+    /// @notice Local cached risk parameters synchronized against the RiskModule source of truth.
+    /// @dev
+    ///  - `baseCollateralToken` is the unique risk numeraire token
+    ///  - `baseMaintenanceMarginPerContract` is denominated in base-token native units
+    ///  - `imFactorBps` is in basis points
     event RiskParamsSet(address baseCollateralToken, uint256 baseMaintenanceMarginPerContract, uint256 imFactorBps);
 
     event Paused(address indexed account);
@@ -134,15 +162,21 @@ abstract contract MarginEngineTypes {
     event OracleSet(address indexed newOracle);
     event RiskModuleSet(address indexed newRiskModule);
 
+    /// @notice Liquidation trigger params.
+    /// @dev
+    ///  - `liquidationThresholdBps`: account considered liquidatable below this margin ratio
+    ///  - `liquidationPenaltyBps`: penalty charged in basis points
     event LiquidationParamsSet(uint256 liquidationThresholdBps, uint256 liquidationPenaltyBps);
 
     event LiquidationHardenParamsSet(uint256 liquidationCloseFactorBps, uint256 minLiquidationImprovementBps);
 
     event LiquidationPricingParamsSet(uint256 liquidationPriceSpreadBps, uint256 minLiquidationPriceBpsOfIntrinsic);
 
-    /// @notice Fraîcheur minimale exigée côté liquidation (en secondes). 0 = désactivé.
+    /// @notice Maximum oracle freshness tolerated by liquidation flows, in seconds. 0 = disabled.
     event LiquidationOracleMaxDelaySet(uint32 oldDelay, uint32 newDelay);
 
+    /// @notice Terminal liquidation summary.
+    /// @dev `collateralSeizedBaseValue` is expressed in base-collateral native units.
     event Liquidation(
         address indexed liquidator,
         address indexed trader,
@@ -151,6 +185,10 @@ abstract contract MarginEngineTypes {
         uint256 collateralSeizedBaseValue
     );
 
+    /// @notice Token-native cashflow transferred during liquidation.
+    /// @dev
+    ///  - `settlementAsset` is the token used for this cash leg
+    ///  - `cashPaidByTrader` and `cashRequested` are in settlement-asset native units
     event LiquidationCashflow(
         address indexed liquidator,
         address indexed trader,
@@ -159,8 +197,14 @@ abstract contract MarginEngineTypes {
         uint256 cashRequested
     );
 
+    /// @notice User collateral deposit into the protocol vault.
+    /// @dev `amount` is in token-native units.
     event CollateralDeposited(address indexed trader, address indexed token, uint256 amount);
 
+    /// @notice User collateral withdrawal from the protocol vault.
+    /// @dev
+    ///  - `amount` is in token-native units
+    ///  - `marginRatioAfterBps` is the projected post-withdraw risk ratio
     event CollateralWithdrawn(address indexed trader, address indexed token, uint256 amount, uint256 marginRatioAfterBps);
 
     event InsuranceFundSet(address indexed oldFund, address indexed newFund);
@@ -174,10 +218,13 @@ abstract contract MarginEngineTypes {
     ///  Accounting convention:
     ///   - collectedFromTrader = amount actually recovered from the trader account
     ///   - paidToTrader        = amount actually paid to the trader
-    ///   - badDebt             = unpaid residual amount after bounded collection / bounded insurance payout
+    ///   - badDebt             = final residual uncovered amount
+    ///
+    ///  Unit convention:
+    ///   - `collectedFromTrader`, `paidToTrader`, `badDebt` are all in settlement-asset native units
     ///
     ///  Therefore:
-    ///   - if pnl > 0:  uint256(pnl) == paidToTrader + badDebt
+    ///   - if pnl > 0:  uint256(pnl)  == paidToTrader + badDebt
     ///   - if pnl < 0:  uint256(-pnl) == collectedFromTrader + badDebt
     event AccountSettled(
         address indexed trader,
@@ -194,6 +241,9 @@ abstract contract MarginEngineTypes {
     ///   - totalCollected = total amount recovered from losing traders
     ///   - totalPaid      = total amount actually paid to winning traders
     ///   - totalBadDebt   = total residual uncovered amount
+    ///
+    ///  Unit convention:
+    ///   - all three fields are denominated in the series settlement-asset native units
     event SeriesSettlementAccountingUpdated(
         uint256 indexed optionId,
         uint256 totalCollected,
@@ -201,6 +251,10 @@ abstract contract MarginEngineTypes {
         uint256 totalBadDebt
     );
 
+    /// @notice Collateral seized during liquidation.
+    /// @dev
+    ///  - `amountToken` is denominated in the seized token native units
+    ///  - `seizedBaseValue` is denominated in base-collateral native units
     event LiquidationSeize(
         address indexed liquidator,
         address indexed trader,
@@ -213,7 +267,11 @@ abstract contract MarginEngineTypes {
     event FeesManagerSet(address indexed newFeesManager);
     event FeeRecipientSet(address indexed oldRecipient, address indexed newRecipient);
 
-    // Fees execution
+    /// @notice Trading fee charged during options execution.
+    /// @dev
+    ///  Unit convention:
+    ///   - `premium`, `notionalImplicit`, `notionalFee`, `premiumCapFee`, `appliedFee`
+    ///     are all denominated in settlement-asset native units
     event TradingFeeCharged(
         address indexed trader,
         address indexed recipient,
@@ -302,12 +360,18 @@ abstract contract MarginEngineTypes {
         return _absInt128(newQty) <= _absInt128(oldQty);
     }
 
+    /// @notice Converts account risk into a margin ratio.
+    /// @dev
+    ///  - `equity` and `maintenanceMargin` are denominated in base-collateral native units
+    ///  - output is in basis points
     function _marginRatioBpsFromRisk(int256 equity, uint256 maintenanceMargin) internal pure returns (uint256) {
         if (maintenanceMargin == 0) return type(uint256).max;
         if (equity <= 0) return 0;
         return (uint256(equity) * BPS) / maintenanceMargin;
     }
 
+    /// @notice Intrinsic value per option contract in normalized 1e8 quote units.
+    /// @dev Returned value is a price-like amount in 1e8, not token-native cash.
     function _intrinsic1e8(OptionProductRegistry.OptionSeries memory s, uint256 spot1e8)
         internal
         pure

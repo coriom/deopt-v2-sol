@@ -9,10 +9,11 @@ pragma solidity ^0.8.20;
 ///   - options stack compatibility today
 ///   - extensible toward options + perps unified cross-margin
 ///
-///  Conventions:
+///  Canonical conventions:
 ///   - PRICE_SCALE = 1e8
 ///   - BPS = 10_000
-///   - all margin / equity / pnl / bad debt fields are expressed in native base-collateral units
+///   - all fields suffixed `Base` are expressed in native units of the protocol base collateral token
+///   - all fields suffixed `Bps` are expressed in basis points
 ///   - equity may be negative
 ///
 ///  Integration notes:
@@ -28,16 +29,20 @@ interface IRiskModule {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Minimal unified account risk snapshot.
+    /// @dev All amounts are denominated in native units of the protocol base collateral token.
     struct AccountRisk {
-        int256 equity; // base collateral units
-        uint256 maintenanceMargin; // base collateral units
-        uint256 initialMargin; // base collateral units
+        int256 equityBase;
+        uint256 maintenanceMarginBase;
+        uint256 initialMarginBase;
     }
 
     /// @notice Detailed withdrawal preview.
-    /// @dev marginRatio = equity / maintenanceMargin in bps
-    ///      - 0 if equity <= 0
-    ///      - max uint if maintenanceMargin == 0
+    /// @dev
+    ///  - `requestedAmount` and `maxWithdrawable` are denominated in the withdrawn token native units
+    ///  - margin ratios are in basis points
+    ///  - marginRatio = equity / maintenanceMargin
+    ///      * 0 if equity <= 0
+    ///      * max uint if maintenanceMargin == 0
     struct WithdrawPreview {
         uint256 requestedAmount;
         uint256 maxWithdrawable;
@@ -46,31 +51,31 @@ interface IRiskModule {
         bool wouldBreachMargin;
     }
 
-    /// @notice Collateral-side decomposition in base units.
+    /// @notice Collateral-side decomposition in base-token native units.
     struct CollateralState {
-        uint256 grossCollateralValue; // before haircut
-        uint256 adjustedCollateralValue; // after haircut / collateral factors
+        uint256 grossCollateralValueBase; // before haircut
+        uint256 adjustedCollateralValueBase; // after haircut / collateral factors
     }
 
-    /// @notice Product-side decomposition in base units.
+    /// @notice Product-side decomposition in base-token native units.
     /// @dev
     ///  Current implementations may leave some fields at zero if the product
     ///  is not wired yet. The interface is intentionally forward-compatible.
     struct ProductRiskState {
-        int256 unrealizedPnl;
-        int256 fundingAccrued;
-        uint256 optionsInitialMargin;
-        uint256 optionsMaintenanceMargin;
-        uint256 perpsInitialMargin;
-        uint256 perpsMaintenanceMargin;
-        uint256 residualBadDebt;
+        int256 unrealizedPnlBase;
+        int256 fundingAccruedBase;
+        uint256 optionsInitialMarginBase;
+        uint256 optionsMaintenanceMarginBase;
+        uint256 perpsInitialMarginBase;
+        uint256 perpsMaintenanceMarginBase;
+        uint256 residualBadDebtBase;
     }
 
-    /// @notice Full decomposed global risk state.
+    /// @notice Full decomposed global risk state in base-token native units.
     struct AccountRiskBreakdown {
-        int256 equity;
-        uint256 maintenanceMargin;
-        uint256 initialMargin;
+        int256 equityBase;
+        uint256 maintenanceMarginBase;
+        uint256 initialMarginBase;
         CollateralState collateral;
         ProductRiskState products;
     }
@@ -82,10 +87,10 @@ interface IRiskModule {
     /// @notice Unified protocol account risk.
     function computeAccountRisk(address trader) external view returns (AccountRisk memory risk);
 
-    /// @notice Unified free collateral = equity - initialMargin.
-    function computeFreeCollateral(address trader) external view returns (int256 freeCollateral);
+    /// @notice Unified free collateral = equity - initialMargin, in base-token native units.
+    function computeFreeCollateral(address trader) external view returns (int256 freeCollateralBase);
 
-    /// @notice Unified margin ratio in bps.
+    /// @notice Unified margin ratio in basis points.
     function computeMarginRatioBps(address trader) external view returns (uint256);
 
     /// @notice Full decomposed unified account risk.
@@ -111,25 +116,30 @@ interface IRiskModule {
                         PRODUCT / COLLATERAL BREAKDOWNS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Haircut-adjusted collateral state in base units.
+    /// @notice Haircut-adjusted collateral state in base-token native units.
     function computeCollateralState(address trader) external view returns (CollateralState memory state);
 
-    /// @notice Product-side risk decomposition in base units.
+    /// @notice Product-side risk decomposition in base-token native units.
     function computeProductRiskState(address trader) external view returns (ProductRiskState memory state);
 
-    /// @notice Residual bad debt consumed by unified risk, in base units.
-    function getResidualBadDebt(address trader) external view returns (uint256 amount);
+    /// @notice Residual bad debt consumed by unified risk, in base-token native units.
+    function getResidualBadDebt(address trader) external view returns (uint256 amountBase);
 
     /*//////////////////////////////////////////////////////////////
                             PARAMS / CONFIG
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Protocol base collateral token used as the unified risk numeraire.
     function baseCollateralToken() external view returns (address);
+
+    /// @notice Native decimals of the base collateral token.
     function baseDecimals() external view returns (uint8);
 
     /// @dev Legacy options-side config getter kept for compatibility.
+    ///      Denominated in base-token native units.
     function baseMaintenanceMarginPerContract() external view returns (uint256);
 
     /// @dev Legacy options-side config getter kept for compatibility.
+    ///      Expressed in basis points.
     function imFactorBps() external view returns (uint256);
 }

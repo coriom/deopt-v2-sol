@@ -13,11 +13,16 @@ import "./RiskModuleAdmin.sol";
 ///   - expose margin ratio and oracle helper views
 ///   - expose decomposed collateral / product risk state
 ///
+///  Canonical conventions:
+///   - all `...Base` fields are denominated in native units of the protocol base collateral token
+///   - all `...Bps` fields are denominated in basis points
+///   - token withdrawal amounts remain denominated in token-native units
+///
 ///  Design notes:
 ///   - conservative valuation: short intrinsic liability is included, longs ignored
 ///   - pagination over trader series avoids unbounded memory growth
 ///   - if base collateral is not configured, views degrade gracefully
-///   - perp contribution is consumed best-effort through `perpRiskModule` when configured
+///   - perp contribution is consumed best-effort through `perpRiskModule` / `perpEngine` when configured
 abstract contract RiskModuleViews is RiskModuleAdmin {
     /*//////////////////////////////////////////////////////////////
                             INTERNAL PERP HELPERS
@@ -43,7 +48,7 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
         }
     }
 
-    function _tryGetPerpNetPnl(address trader) internal view returns (bool ok, int256 netPnl) {
+    function _tryGetPerpNetPnl(address trader) internal view returns (bool ok, int256 netPnlBase) {
         if (perpEngine == address(0)) return (false, 0);
 
         try IPerpEngineViews(perpEngine).getAccountNetPnl(trader) returns (int256 n) {
@@ -53,7 +58,7 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
         }
     }
 
-    function _tryGetPerpFunding(address trader) internal view returns (bool ok, int256 fundingAccrued) {
+    function _tryGetPerpFunding(address trader) internal view returns (bool ok, int256 fundingAccruedBase) {
         if (perpEngine == address(0)) return (false, 0);
 
         try IPerpEngineViews(perpEngine).getAccountFunding(trader) returns (int256 f) {
@@ -63,7 +68,7 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
         }
     }
 
-    function _tryGetPerpResidualBadDebt(address trader) internal view returns (bool ok, uint256 debt) {
+    function _tryGetPerpResidualBadDebt(address trader) internal view returns (bool ok, uint256 residualBadDebtBase) {
         if (perpEngine == address(0)) return (false, 0);
 
         try IPerpEngineViews(perpEngine).getResidualBadDebt(trader) returns (uint256 d) {
@@ -101,8 +106,8 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
 
         (, uint8 baseDec,) = _loadBase();
 
-        uint256 adjusted = _computeCollateralEquityBase(trader, base, baseDec);
-        state.adjustedCollateralValue = adjusted;
+        uint256 adjustedBase = _computeCollateralEquityBase(trader, base, baseDec);
+        state.adjustedCollateralValueBase = adjustedBase;
 
         uint256 len = collateralTokens.length;
         for (uint256 i = 0; i < len; i++) {
@@ -123,7 +128,7 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
                 valueBase = _tokenAmountToBaseValue(token, bal, price);
             }
 
-            state.grossCollateralValue = _addChecked(state.grossCollateralValue, valueBase);
+            state.grossCollateralValueBase = _addChecked(state.grossCollateralValueBase, valueBase);
         }
     }
 
@@ -139,7 +144,7 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
 
         (, uint8 baseDec, uint256 baseScale) = _loadBase();
 
-        uint256 mm;
+        uint256 optionsMaintenanceMarginBase;
         uint256 len = marginEngine.getTraderSeriesLength(trader);
 
         for (uint256 start = 0; start < len; start += SERIES_PAGE) {
@@ -162,41 +167,42 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
                 OptionProductRegistry.UnderlyingConfig memory ucfg = _getUnderlyingConfig(s.underlying);
                 (uint256 spot, bool okSpot) = _tryGetPrice(s.underlying, s.settlementAsset);
 
-                uint256 mmPerContract = _computePerContractMM(s, spot, ucfg, okSpot, base, baseScale);
+                uint256 mmPerContractBase = _computePerContractMM(s, spot, ucfg, okSpot, base, baseScale);
 
-                uint256 add = shortAbs * mmPerContract;
-                if (mmPerContract != 0 && add / mmPerContract != shortAbs) revert MathOverflow();
+                uint256 addBase = shortAbs * mmPerContractBase;
+                if (mmPerContractBase != 0 && addBase / mmPerContractBase != shortAbs) revert MathOverflow();
 
-                mm = _addChecked(mm, add);
+                optionsMaintenanceMarginBase = _addChecked(optionsMaintenanceMarginBase, addBase);
             }
         }
 
-        state.optionsMaintenanceMargin = mm;
-        state.optionsInitialMargin =
-            (mm > 0 && imFactorBps > 0) ? Math.mulDiv(mm, imFactorBps, BPS_U, Math.Rounding.Ceil) : 0;
+        state.optionsMaintenanceMarginBase = optionsMaintenanceMarginBase;
+        state.optionsInitialMarginBase = (optionsMaintenanceMarginBase > 0 && imFactorBps > 0)
+            ? Math.mulDiv(optionsMaintenanceMarginBase, imFactorBps, BPS_U, Math.Rounding.Ceil)
+            : 0;
 
         baseDec;
 
         if (_hasPerpRiskModule()) {
             (bool okPerpRisk, IPerpRiskModule.AccountRisk memory perpRisk) = _tryGetPerpAccountRisk(trader);
             if (okPerpRisk) {
-                state.perpsMaintenanceMargin = perpRisk.maintenanceMargin1e8;
-                state.perpsInitialMargin = perpRisk.initialMargin1e8;
+                state.perpsMaintenanceMarginBase = perpRisk.maintenanceMarginBase;
+                state.perpsInitialMarginBase = perpRisk.initialMarginBase;
             }
 
-            (bool okNetPnl, int256 netPnl) = _tryGetPerpNetPnl(trader);
+            (bool okNetPnl, int256 netPnlBase) = _tryGetPerpNetPnl(trader);
             if (okNetPnl) {
-                state.unrealizedPnl = netPnl;
+                state.unrealizedPnlBase = netPnlBase;
             }
 
-            (bool okFunding, int256 fundingAccrued) = _tryGetPerpFunding(trader);
+            (bool okFunding, int256 fundingAccruedBase) = _tryGetPerpFunding(trader);
             if (okFunding) {
-                state.fundingAccrued = fundingAccrued;
+                state.fundingAccruedBase = fundingAccruedBase;
             }
 
-            (bool okDebt, uint256 residualBadDebt) = _tryGetPerpResidualBadDebt(trader);
+            (bool okDebt, uint256 residualBadDebtBase) = _tryGetPerpResidualBadDebt(trader);
             if (okDebt) {
-                state.residualBadDebt = residualBadDebt;
+                state.residualBadDebtBase = residualBadDebtBase;
             }
         }
     }
@@ -216,29 +222,31 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
 
         uint256 shortLiabilityBase = _computeShortLiabilityBase(trader, base, _pow10(_vaultCfg(base).decimals));
 
-        if (shortLiabilityBase >= breakdown.collateral.adjustedCollateralValue) {
-            breakdown.equity = _negUintToInt256Sat(shortLiabilityBase - breakdown.collateral.adjustedCollateralValue);
+        if (shortLiabilityBase >= breakdown.collateral.adjustedCollateralValueBase) {
+            breakdown.equityBase =
+                _negUintToInt256Sat(shortLiabilityBase - breakdown.collateral.adjustedCollateralValueBase);
         } else {
-            breakdown.equity = _uintToInt256Sat(breakdown.collateral.adjustedCollateralValue - shortLiabilityBase);
+            breakdown.equityBase =
+                _uintToInt256Sat(breakdown.collateral.adjustedCollateralValueBase - shortLiabilityBase);
         }
 
-        if (breakdown.products.unrealizedPnl != 0) {
-            breakdown.equity = _subInt256Sat(breakdown.equity, -breakdown.products.unrealizedPnl);
+        if (breakdown.products.unrealizedPnlBase != 0) {
+            breakdown.equityBase = _subInt256Sat(breakdown.equityBase, -breakdown.products.unrealizedPnlBase);
         }
 
-        breakdown.maintenanceMargin = _addChecked(
-            breakdown.products.optionsMaintenanceMargin,
-            breakdown.products.perpsMaintenanceMargin
+        breakdown.maintenanceMarginBase = _addChecked(
+            breakdown.products.optionsMaintenanceMarginBase,
+            breakdown.products.perpsMaintenanceMarginBase
         );
 
-        breakdown.initialMargin = _addChecked(
-            breakdown.products.optionsInitialMargin,
-            breakdown.products.perpsInitialMargin
+        breakdown.initialMarginBase = _addChecked(
+            breakdown.products.optionsInitialMarginBase,
+            breakdown.products.perpsInitialMarginBase
         );
 
-        if (breakdown.products.residualBadDebt != 0) {
-            breakdown.equity =
-                _subInt256Sat(breakdown.equity, _uintToInt256Sat(breakdown.products.residualBadDebt));
+        if (breakdown.products.residualBadDebtBase != 0) {
+            breakdown.equityBase =
+                _subInt256Sat(breakdown.equityBase, _uintToInt256Sat(breakdown.products.residualBadDebtBase));
         }
     }
 
@@ -250,9 +258,9 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
         returns (AccountRisk memory risk)
     {
         AccountRiskBreakdown memory b = computeAccountRiskBreakdown(trader);
-        risk.equity = b.equity;
-        risk.maintenanceMargin = b.maintenanceMargin;
-        risk.initialMargin = b.initialMargin;
+        risk.equityBase = b.equityBase;
+        risk.maintenanceMarginBase = b.maintenanceMarginBase;
+        risk.initialMarginBase = b.initialMarginBase;
     }
 
     function computeFreeCollateral(address trader)
@@ -260,25 +268,25 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
         view
         override
         whenRiskChecksNotPaused
-        returns (int256 freeCollateral)
+        returns (int256 freeCollateralBase)
     {
         AccountRisk memory risk = computeAccountRisk(trader);
-        if (risk.initialMargin == 0) return risk.equity;
+        if (risk.initialMarginBase == 0) return risk.equityBase;
 
-        int256 im = _uintToInt256Sat(risk.initialMargin);
-        return _subInt256Sat(risk.equity, im);
+        int256 imBase = _uintToInt256Sat(risk.initialMarginBase);
+        return _subInt256Sat(risk.equityBase, imBase);
     }
 
     function getResidualBadDebt(address trader)
         external
         view
         override
-        returns (uint256 amount)
+        returns (uint256 amountBase)
     {
         if (!_hasPerpRiskModule() || perpEngine == address(0)) return 0;
 
-        (, uint256 debt) = _tryGetPerpResidualBadDebt(trader);
-        amount = debt;
+        (, uint256 debtBase) = _tryGetPerpResidualBadDebt(trader);
+        amountBase = debtBase;
     }
 
     function getWithdrawableAmount(address trader, address token)
@@ -305,17 +313,18 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
 
         AccountRisk memory risk = computeAccountRisk(trader);
 
-        int256 free =
-            (risk.initialMargin == 0) ? risk.equity : _subInt256Sat(risk.equity, _uintToInt256Sat(risk.initialMargin));
+        int256 freeBase = (risk.initialMarginBase == 0)
+            ? risk.equityBase
+            : _subInt256Sat(risk.equityBase, _uintToInt256Sat(risk.initialMarginBase));
 
-        if (free <= 0) return 0;
-        if (risk.maintenanceMargin == 0) return avail;
+        if (freeBase <= 0) return 0;
+        if (risk.maintenanceMarginBase == 0) return avail;
 
-        uint256 freeBase = uint256(free);
+        uint256 freeBaseU = uint256(freeBase);
 
         // adjustedRemoved = valueBaseRemoved * weight / BPS <= freeBase
         // => valueBaseRemoved <= freeBase * BPS / weight
-        uint256 valueBaseMax = Math.mulDiv(freeBase, BPS_U, uint256(rcfg.weightBps), Math.Rounding.Floor);
+        uint256 valueBaseMax = Math.mulDiv(freeBaseU, BPS_U, uint256(rcfg.weightBps), Math.Rounding.Floor);
 
         uint256 maxToken;
         if (token == base) {
@@ -340,18 +349,18 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
 
         AccountRisk memory risk = computeAccountRisk(trader);
 
-        if (risk.maintenanceMargin == 0) return type(uint256).max;
-        if (risk.equity <= 0) return 0;
+        if (risk.maintenanceMarginBase == 0) return type(uint256).max;
+        if (risk.equityBase <= 0) return 0;
 
-        return (uint256(risk.equity) * BPS_U) / risk.maintenanceMargin;
+        return (uint256(risk.equityBase) * BPS_U) / risk.maintenanceMarginBase;
     }
 
     function previewWithdrawImpact(address trader, address token, uint256 amount)
         external
         view
         override
-        returns (IRiskModule.WithdrawPreview memory preview)
         whenWithdrawPreviewNotPaused
+        returns (IRiskModule.WithdrawPreview memory preview)
     {
         preview.requestedAmount = amount;
 
@@ -369,12 +378,12 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
         AccountRisk memory riskBefore = computeAccountRisk(trader);
 
         uint256 mrBefore;
-        if (riskBefore.maintenanceMargin == 0) {
+        if (riskBefore.maintenanceMarginBase == 0) {
             mrBefore = type(uint256).max;
-        } else if (riskBefore.equity <= 0) {
+        } else if (riskBefore.equityBase <= 0) {
             mrBefore = 0;
         } else {
-            mrBefore = (uint256(riskBefore.equity) * BPS_U) / riskBefore.maintenanceMargin;
+            mrBefore = (uint256(riskBefore.equityBase) * BPS_U) / riskBefore.maintenanceMarginBase;
         }
 
         uint256 maxAllowed = getWithdrawableAmount(trader, token);
@@ -409,15 +418,15 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
             }
         }
 
-        int256 equityAfter = _subInt256Sat(riskBefore.equity, _uintToInt256Sat(deltaEquityBase));
+        int256 equityAfterBase = _subInt256Sat(riskBefore.equityBase, _uintToInt256Sat(deltaEquityBase));
 
         uint256 mrAfter;
-        if (riskBefore.maintenanceMargin == 0) {
+        if (riskBefore.maintenanceMarginBase == 0) {
             mrAfter = type(uint256).max;
-        } else if (equityAfter <= 0) {
+        } else if (equityAfterBase <= 0) {
             mrAfter = 0;
         } else {
-            mrAfter = (uint256(equityAfter) * BPS_U) / riskBefore.maintenanceMargin;
+            mrAfter = (uint256(equityAfterBase) * BPS_U) / riskBefore.maintenanceMarginBase;
         }
 
         preview.marginRatioAfterBps = mrAfter;
@@ -425,9 +434,9 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
         bool breach = (amount > maxAllowed);
 
         // Extra IM guard for rounding / estimation hardening.
-        if (!breach && riskBefore.initialMargin != 0) {
-            int256 im = _uintToInt256Sat(riskBefore.initialMargin);
-            if (equityAfter < im) breach = true;
+        if (!breach && riskBefore.initialMarginBase != 0) {
+            int256 imBase = _uintToInt256Sat(riskBefore.initialMarginBase);
+            if (equityAfterBase < imBase) breach = true;
         }
 
         preview.wouldBreachMargin = breach;
