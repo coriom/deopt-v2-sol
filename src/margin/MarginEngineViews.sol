@@ -23,6 +23,11 @@ import {MarginEngineTrading} from "./MarginEngineTrading.sol";
 ///   - expose fee preview helpers
 ///   - expose protocol-level settlement accounting slices
 ///
+///  Canonical conventions:
+///   - risk outputs suffixed `Base` are denominated in native units of the protocol base collateral token
+///   - settlement accounting amounts are denominated in settlement-asset native units
+///   - margin ratios are in basis points
+///
 ///  Design notes:
 ///   - settlement accounting is intentionally observable at the series level
 ///   - per-account settled cashflows are NOT fully stored onchain today, so this file
@@ -33,17 +38,26 @@ abstract contract MarginEngineViews is MarginEngineTrading {
                                 TYPES
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Account-level risk / exposure state.
+    /// @dev
+    ///  - `equityBase`, `maintenanceMarginBase`, `initialMarginBase`, `freeCollateralBase`
+    ///    are denominated in native units of the protocol base collateral token
     struct AccountState {
-        int256 equity;
-        uint256 maintenanceMargin;
-        uint256 initialMargin;
-        int256 freeCollateral;
+        int256 equityBase;
+        uint256 maintenanceMarginBase;
+        uint256 initialMarginBase;
+        int256 freeCollateralBase;
         uint256 marginRatioBps;
         uint256 openSeriesCount;
         uint256 totalShortOpenContracts;
         bool liquidatable;
     }
 
+    /// @notice Per-series settlement accounting state.
+    /// @dev
+    ///  - `settlementPrice` is normalized in 1e8
+    ///  - `totalCollected`, `totalPaid`, `totalBadDebt`
+    ///    are denominated in settlement-asset native units
     struct SeriesSettlementState {
         uint256 optionId;
         bool isSettled;
@@ -61,6 +75,11 @@ abstract contract MarginEngineViews is MarginEngineTrading {
         bool exists;
     }
 
+    /// @notice Deterministic settlement preview for one account.
+    /// @dev
+    ///  - `settlementPrice` and `payoffPerContract` are price-like values / cash values
+    ///    derived from the series settlement asset
+    ///  - `pnl` is denominated in settlement-asset native units
     struct AccountSettlementPreview {
         uint256 optionId;
         address trader;
@@ -74,6 +93,9 @@ abstract contract MarginEngineViews is MarginEngineTrading {
         int256 pnl;
     }
 
+    /// @notice Aggregated protocol settlement accounting across a slice of option ids.
+    /// @dev All totals are denominated in each series settlement-asset native units summed naively;
+    ///      this is an accounting aggregation helper, not a cross-asset economic normalization.
     struct ProtocolSettlementSliceTotals {
         uint256 seriesCount;
         uint256 totalCollected;
@@ -91,6 +113,10 @@ abstract contract MarginEngineViews is MarginEngineTrading {
         uint32 liquidationOracleMaxDelay;
     }
 
+    /// @notice Cached options-side risk config mirrored from RiskModule.
+    /// @dev
+    ///  - `baseMaintenanceMarginPerContract` is denominated in native units
+    ///    of the protocol base collateral token
     struct RiskCacheView {
         address baseCollateralToken;
         uint256 baseMaintenanceMarginPerContract;
@@ -231,17 +257,17 @@ abstract contract MarginEngineViews is MarginEngineTrading {
     function getMarginRatioBps(address trader) public view returns (uint256) {
         if (address(_riskModule) == address(0)) return type(uint256).max;
         IRiskModule.AccountRisk memory risk = _riskModule.computeAccountRisk(trader);
-        return _marginRatioBpsFromRisk(risk.equity, risk.maintenanceMargin);
+        return _marginRatioBpsFromRisk(risk.equityBase, risk.maintenanceMarginBase);
     }
 
     function isLiquidatable(address trader) public view returns (bool) {
         if (address(_riskModule) == address(0)) return false;
 
         IRiskModule.AccountRisk memory risk = _riskModule.computeAccountRisk(trader);
-        if (risk.maintenanceMargin == 0) return false;
-        if (risk.equity <= 0) return true;
+        if (risk.maintenanceMarginBase == 0) return false;
+        if (risk.equityBase <= 0) return true;
 
-        uint256 ratioBps = (uint256(risk.equity) * BPS) / risk.maintenanceMargin;
+        uint256 ratioBps = (uint256(risk.equityBase) * BPS) / risk.maintenanceMarginBase;
         return ratioBps < liquidationThresholdBps;
     }
 
@@ -256,12 +282,13 @@ abstract contract MarginEngineViews is MarginEngineTrading {
         }
 
         IRiskModule.AccountRisk memory r = _riskModule.computeAccountRisk(trader);
-        s.equity = r.equity;
-        s.maintenanceMargin = r.maintenanceMargin;
-        s.initialMargin = r.initialMargin;
-        s.freeCollateral = _riskModule.computeFreeCollateral(trader);
-        s.marginRatioBps = _marginRatioBpsFromRisk(r.equity, r.maintenanceMargin);
-        s.liquidatable = (r.maintenanceMargin != 0) && (r.equity <= 0 || s.marginRatioBps < liquidationThresholdBps);
+        s.equityBase = r.equityBase;
+        s.maintenanceMarginBase = r.maintenanceMarginBase;
+        s.initialMarginBase = r.initialMarginBase;
+        s.freeCollateralBase = _riskModule.computeFreeCollateral(trader);
+        s.marginRatioBps = _marginRatioBpsFromRisk(r.equityBase, r.maintenanceMarginBase);
+        s.liquidatable =
+            (r.maintenanceMarginBase != 0) && (r.equityBase <= 0 || s.marginRatioBps < liquidationThresholdBps);
     }
 
     /*//////////////////////////////////////////////////////////////
