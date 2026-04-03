@@ -113,7 +113,7 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
     /// @dev 5000 = 50%
     uint256 public liquidationCloseFactorBps = 5000;
 
-    /// @notice Penalty paid by the liquidated account to the liquidator.
+    /// @notice Penalty charged to the liquidated account, denominated in base-value terms.
     /// @dev 75 = 0.75%
     uint256 public liquidationPenaltyBps = 75;
 
@@ -265,6 +265,11 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         if (recipient == address(0)) recipient = insuranceFund;
     }
 
+    /// @notice Recipient used for explicit residual bad debt repayments.
+    /// @dev
+    ///  Priority:
+    ///   1) insuranceFund, because it is the canonical backstop that absorbed shortfall
+    ///   2) feeRecipient as fallback operational sink if insuranceFund is unavailable
     function _resolvedBadDebtRepaymentRecipient() internal view returns (address recipient) {
         recipient = insuranceFund;
         if (recipient == address(0)) {
@@ -494,6 +499,16 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         return _residualBadDebtBase[trader];
     }
 
+    /// @notice Remaining uncovered amount after a partial coverage step.
+    /// @dev Safe helper shared by liquidation resolution flow and previews.
+    function _remainingShortfall(uint256 targetBaseValue, uint256 coveredBaseValue)
+        internal
+        pure
+        returns (uint256)
+    {
+        return coveredBaseValue >= targetBaseValue ? 0 : (targetBaseValue - coveredBaseValue);
+    }
+
     /*//////////////////////////////////////////////////////////////
                           INTERNAL ORACLE HELPERS
     //////////////////////////////////////////////////////////////*/
@@ -593,9 +608,8 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     function _syncVaultBestEffort(address user, address token) internal {
-        (bool ok,) = address(_collateralVault).call(
-            abi.encodeWithSignature("syncAccountFor(address,address)", user, token)
-        );
+        (bool ok,) =
+            address(_collateralVault).call(abi.encodeWithSignature("syncAccountFor(address,address)", user, token));
         ok;
     }
 
