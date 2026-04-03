@@ -52,9 +52,10 @@ interface IPerpEngineBadDebtView {
 /// @title PerpRiskModule
 /// @notice Risk module dedicated to the perpetual engine.
 /// @dev
-///  Conventions:
+///  Canonical conventions:
 ///   - prices normalized in 1e8
-///   - risk outputs are expressed in base collateral token native units
+///   - quote notionals / funding from the engine are in normalized 1e8 quote units
+///   - risk outputs are expressed in native units of the base collateral token
 ///   - collateral valuation uses CollateralVault.collateralFactorBps as haircut
 ///   - account equity = adjusted collateral + unrealized PnL - accrued funding - residual bad debt
 ///
@@ -65,7 +66,7 @@ interface IPerpEngineBadDebtView {
 ///       * unsupported token => ignored
 ///       * zero CF token => ignored for margin equity
 ///       * stale / unavailable oracle on non-base token => ignored
-///   - perp quote amounts are converted to base token units:
+///   - perp quote amounts are converted to base token native units:
 ///       * directly if settlement asset == base collateral token
 ///       * otherwise through oracle best-effort if market settlement asset is exposed
 ///       * otherwise fallback assumes quote numeraire == base collateral token
@@ -85,12 +86,17 @@ contract PerpRiskModule {
                                 TYPES
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Unified account risk in base-token native units.
     struct AccountRisk {
-        int256 equity1e8;
-        uint256 maintenanceMargin1e8;
-        uint256 initialMargin1e8;
+        int256 equityBase;
+        uint256 maintenanceMarginBase;
+        uint256 initialMarginBase;
     }
 
+    /// @notice Withdrawal preview.
+    /// @dev
+    ///  - requestedAmount / maxWithdrawable are in token-native units
+    ///  - margin ratios are in basis points
     struct WithdrawPreview {
         uint256 requestedAmount;
         uint256 maxWithdrawable;
@@ -99,6 +105,7 @@ contract PerpRiskModule {
         bool wouldBreachMargin;
     }
 
+    /// @notice Perp-only aggregate contribution in base-token native units.
     struct PerpAggregate {
         uint256 maintenanceMarginBase;
         uint256 initialMarginBase;
@@ -108,6 +115,7 @@ contract PerpRiskModule {
         uint256 residualBadDebtBase;
     }
 
+    /// @notice Full account components in base-token native units.
     struct AccountComponents {
         uint256 collateralEquityBase;
         PerpAggregate perp;
@@ -435,7 +443,7 @@ contract PerpRiskModule {
         }
     }
 
-    function _tokenAmountToBaseValue(address token, uint256 tokenAmount, uint256 price1e8)
+    function _tokenAmountToBaseValue(address token, uint256 tokenAmountNative, uint256 price1e8)
         internal
         view
         returns (uint256 baseValue)
@@ -446,7 +454,7 @@ contract PerpRiskModule {
         uint8 baseDec = baseCfg.decimals;
         uint8 tokenDec = tokCfg.decimals;
 
-        uint256 tmp = Math.mulDiv(tokenAmount, price1e8, PRICE_SCALE, Math.Rounding.Floor);
+        uint256 tmp = Math.mulDiv(tokenAmountNative, price1e8, PRICE_SCALE, Math.Rounding.Floor);
 
         if (baseDec == tokenDec) return tmp;
 
@@ -551,12 +559,12 @@ contract PerpRiskModule {
             return _convertQuote1e8ToBase(amount1e8);
         }
 
-        uint256 settlementNative = _quote1e8ToTokenNative(settlementAsset, amount1e8);
+        uint256 settlementAmountNative = _quote1e8ToTokenNative(settlementAsset, amount1e8);
 
         (uint256 px, bool okPx) = _tryGetPrice(settlementAsset, base);
         if (!okPx || px == 0) revert InvalidParams();
 
-        valueBase = _tokenAmountToBaseValue(settlementAsset, settlementNative, px);
+        valueBase = _tokenAmountToBaseValue(settlementAsset, settlementAmountNative, px);
     }
 
     function _convertSignedQuote1e8ToBaseWithSettlement(int256 amount1e8, address settlementAsset)
@@ -622,8 +630,8 @@ contract PerpRiskModule {
                 uint256 markPrice1e8 = perpEngine.getMarkPrice(marketId);
                 if (markPrice1e8 == 0) revert InvalidParams();
 
-                uint256 absSize = size1e8 >= 0 ? uint256(size1e8) : uint256(-size1e8);
-                uint256 notional1e8 = Math.mulDiv(absSize, markPrice1e8, PRICE_SCALE, Math.Rounding.Down);
+                uint256 absSize1e8 = size1e8 >= 0 ? uint256(size1e8) : uint256(-size1e8);
+                uint256 notional1e8 = Math.mulDiv(absSize1e8, markPrice1e8, PRICE_SCALE, Math.Rounding.Down);
 
                 IPerpEngineRiskView.RiskConfig memory rcfg = perpEngine.getRiskConfig(marketId);
 
@@ -654,9 +662,9 @@ contract PerpRiskModule {
 
         agg.netPerpPnlBase = _checkedSubInt256(agg.unrealizedPnlBase, agg.fundingAccruedBase);
 
-        (uint256 badDebt, bool okBadDebt) = _tryGetResidualBadDebtBase(trader);
+        (uint256 badDebtBase, bool okBadDebt) = _tryGetResidualBadDebtBase(trader);
         if (okBadDebt) {
-            agg.residualBadDebtBase = badDebt;
+            agg.residualBadDebtBase = badDebtBase;
         }
     }
 
@@ -688,8 +696,8 @@ contract PerpRiskModule {
         return amount1e8 >= 0 ? absBase : -absBase;
     }
 
-    function _withdrawDeltaEquityBase(address token, uint256 amount) internal view returns (uint256 deltaEquityBase) {
-        if (amount == 0) return 0;
+    function _withdrawDeltaEquityBase(address token, uint256 amountNative) internal view returns (uint256 deltaEquityBase) {
+        if (amountNative == 0) return 0;
 
         ICollateralVaultPerpRiskView.CollateralTokenConfig memory cfg = _vaultCfg(token);
         if (!cfg.isSupported || cfg.collateralFactorBps == 0) return 0;
@@ -698,11 +706,11 @@ contract PerpRiskModule {
 
         uint256 valueBase;
         if (token == baseCollateralToken) {
-            valueBase = amount;
+            valueBase = amountNative;
         } else {
             (uint256 px, bool okPx) = _tryGetPrice(token, baseCollateralToken);
             if (!okPx || px == 0) return type(uint256).max;
-            valueBase = _tokenAmountToBaseValue(token, amount, px);
+            valueBase = _tokenAmountToBaseValue(token, amountNative, px);
         }
 
         deltaEquityBase = Math.mulDiv(valueBase, uint256(cfg.collateralFactorBps), BPS, Math.Rounding.Floor);
@@ -722,9 +730,9 @@ contract PerpRiskModule {
 
         AccountComponents memory comps = _computeAccountComponents(trader);
 
-        risk.equity1e8 = comps.equityBase;
-        risk.maintenanceMargin1e8 = comps.perp.maintenanceMarginBase;
-        risk.initialMargin1e8 = comps.perp.initialMarginBase;
+        risk.equityBase = comps.equityBase;
+        risk.maintenanceMarginBase = comps.perp.maintenanceMarginBase;
+        risk.initialMarginBase = comps.perp.initialMarginBase;
     }
 
     function computeCollateralEquity(address trader) external view whenRiskComputationNotPaused returns (uint256) {
@@ -746,11 +754,11 @@ contract PerpRiskModule {
         external
         view
         whenRiskComputationNotPaused
-        returns (int256 freeCollateral)
+        returns (int256 freeCollateralBase)
     {
         AccountRisk memory risk = computeAccountRisk(trader);
-        if (risk.initialMargin1e8 == 0) return risk.equity1e8;
-        return _checkedSubInt256(risk.equity1e8, _toInt256(risk.initialMargin1e8));
+        if (risk.initialMarginBase == 0) return risk.equityBase;
+        return _checkedSubInt256(risk.equityBase, _toInt256(risk.initialMarginBase));
     }
 
     function computeMarginRatioBps(address trader)
@@ -760,7 +768,7 @@ contract PerpRiskModule {
         returns (uint256)
     {
         AccountRisk memory risk = computeAccountRisk(trader);
-        return _marginRatioBps(risk.equity1e8, risk.maintenanceMargin1e8);
+        return _marginRatioBps(risk.equityBase, risk.maintenanceMarginBase);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -787,15 +795,15 @@ contract PerpRiskModule {
 
         AccountRisk memory risk = computeAccountRisk(trader);
 
-        int256 free = risk.initialMargin1e8 == 0
-            ? risk.equity1e8
-            : _checkedSubInt256(risk.equity1e8, _toInt256(risk.initialMargin1e8));
+        int256 freeBase = risk.initialMarginBase == 0
+            ? risk.equityBase
+            : _checkedSubInt256(risk.equityBase, _toInt256(risk.initialMarginBase));
 
-        if (free <= 0) return 0;
+        if (freeBase <= 0) return 0;
 
-        uint256 freeBase = uint256(free);
+        uint256 freeBaseU = uint256(freeBase);
         uint256 valueBaseMax =
-            Math.mulDiv(freeBase, BPS, uint256(cfg.collateralFactorBps), Math.Rounding.Floor);
+            Math.mulDiv(freeBaseU, BPS, uint256(cfg.collateralFactorBps), Math.Rounding.Floor);
 
         uint256 maxToken;
         if (token == baseCollateralToken) {
@@ -820,7 +828,7 @@ contract PerpRiskModule {
         uint256 avail = _effectiveBalanceOf(trader, token);
         AccountRisk memory riskBefore = computeAccountRisk(trader);
 
-        uint256 mrBefore = _marginRatioBps(riskBefore.equity1e8, riskBefore.maintenanceMargin1e8);
+        uint256 mrBefore = _marginRatioBps(riskBefore.equityBase, riskBefore.maintenanceMarginBase);
         uint256 maxAllowed = getWithdrawableAmount(trader, token);
 
         preview.maxWithdrawable = maxAllowed;
@@ -831,18 +839,18 @@ contract PerpRiskModule {
 
         uint256 deltaEquityBase = _withdrawDeltaEquityBase(token, effectiveAmount);
 
-        int256 equityAfter;
+        int256 equityAfterBase;
         if (deltaEquityBase == type(uint256).max) {
-            equityAfter = type(int256).min;
+            equityAfterBase = type(int256).min;
         } else {
-            equityAfter = _checkedSubInt256(riskBefore.equity1e8, _toInt256(deltaEquityBase));
+            equityAfterBase = _checkedSubInt256(riskBefore.equityBase, _toInt256(deltaEquityBase));
         }
 
-        uint256 mrAfter = _marginRatioBps(equityAfter, riskBefore.maintenanceMargin1e8);
+        uint256 mrAfter = _marginRatioBps(equityAfterBase, riskBefore.maintenanceMarginBase);
 
         bool breach = amount > maxAllowed;
-        if (!breach && riskBefore.initialMargin1e8 != 0) {
-            if (equityAfter < _toInt256(riskBefore.initialMargin1e8)) breach = true;
+        if (!breach && riskBefore.initialMarginBase != 0) {
+            if (equityAfterBase < _toInt256(riskBefore.initialMarginBase)) breach = true;
         }
 
         preview.marginRatioAfterBps = mrAfter;
