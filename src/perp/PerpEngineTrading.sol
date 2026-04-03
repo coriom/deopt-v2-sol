@@ -73,9 +73,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
     }
 
     function _baseToken() internal view returns (address) {
-        address token = _marketRegistry.baseCollateralToken();
-        if (token == address(0)) revert InvalidMarket();
-        return token;
+        return _baseCollateralToken();
     }
 
     function _hasResidualBadDebt(address trader) internal view returns (bool) {
@@ -117,7 +115,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         return tmp / factor2;
     }
 
-    function _settlementNativeToBaseValue(address settlementAsset, uint256 settlementAmountNative)
+    function _settlementNativeToBase(address settlementAsset, uint256 settlementAmountNative)
         internal
         view
         returns (uint256 baseValue)
@@ -152,7 +150,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         return tmp / factor2;
     }
 
-    function _settlementAmount1e8ToBaseValue(address settlementAsset, uint256 amount1e8)
+    function _settlementAmount1e8ToBase(address settlementAsset, uint256 amount1e8)
         internal
         view
         returns (uint256 baseValue)
@@ -160,24 +158,24 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         if (amount1e8 == 0) return 0;
 
         uint256 settlementNative = _value1e8ToSettlementNative(settlementAsset, amount1e8);
-        return _settlementNativeToBaseValue(settlementAsset, settlementNative);
+        return _settlementNativeToBase(settlementAsset, settlementNative);
     }
 
-    function _penaltySettlementNative(address settlementAsset, uint256 penaltyBaseValue)
+    function _penaltySettlementNative(address settlementAsset, uint256 penaltyBase)
         internal
         view
         returns (uint256 penaltyNative)
     {
         address baseToken = _baseToken();
-        if (penaltyBaseValue == 0) return 0;
+        if (penaltyBase == 0) return 0;
 
         if (settlementAsset == baseToken) {
-            return penaltyBaseValue;
+            return penaltyBase;
         }
 
         (uint256 px, bool ok) = _tryGetMarkPrice1e8FromPair(settlementAsset, baseToken);
         if (!ok || px == 0) revert OraclePriceUnavailable();
-        penaltyNative = _baseValueToTokenAmount(settlementAsset, penaltyBaseValue, px);
+        penaltyNative = _baseValueToTokenAmount(settlementAsset, penaltyBase, px);
     }
 
     function _tryGetMarkPrice1e8FromPair(address base, address quote) internal view returns (uint256 price1e8, bool ok) {
@@ -205,20 +203,20 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         return (seizer, true);
     }
 
-    function _trySeizeViaPlan(address trader, address liquidator, uint256 targetBaseValue)
+    function _trySeizeViaPlan(address trader, address liquidator, uint256 targetBase)
         internal
-        returns (uint256 paidBaseValue)
+        returns (uint256 paidBase)
     {
-        if (targetBaseValue == 0) return 0;
+        if (targetBase == 0) return 0;
 
         (ICollateralSeizer seizer, bool hasSeizer) = _tryResolveCollateralSeizer();
         if (!hasSeizer) return 0;
 
         address[] memory tokens;
         uint256[] memory amounts;
-        uint256 plannedCovered;
+        uint256 plannedCoveredBase;
 
-        try seizer.computeSeizurePlan(trader, targetBaseValue) returns (
+        try seizer.computeSeizurePlan(trader, targetBase) returns (
             address[] memory tokensOut,
             uint256[] memory amountsOut,
             uint256 baseCovered
@@ -228,7 +226,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
 
             tokens = tokensOut;
             amounts = amountsOut;
-            plannedCovered = baseCovered;
+            plannedCoveredBase = baseCovered;
         } catch {
             return 0;
         }
@@ -254,69 +252,68 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
                 bool okPreview
             ) {
                 if (okPreview && effectiveBaseFloor != 0) {
-                    paidBaseValue += effectiveBaseFloor;
+                    paidBase += effectiveBaseFloor;
                 }
             } catch {}
         }
 
-        if (paidBaseValue > plannedCovered) {
-            paidBaseValue = plannedCovered;
+        if (paidBase > plannedCoveredBase) {
+            paidBase = plannedCoveredBase;
         }
-        if (paidBaseValue > targetBaseValue) {
-            paidBaseValue = targetBaseValue;
+        if (paidBase > targetBase) {
+            paidBase = targetBase;
         }
     }
 
-    function _seizePenaltyToLiquidator(
-        address trader,
-        address liquidator,
-        address settlementAsset,
-        uint256 penaltyBaseValue
-    ) internal returns (uint256 paidPenaltyBaseValue) {
-        if (penaltyBaseValue == 0) return 0;
+    function _seizePenaltyToLiquidator(address trader, address liquidator, address settlementAsset, uint256 penaltyBase)
+        internal
+        returns (uint256 paidPenaltyBase)
+    {
+        if (penaltyBase == 0) return 0;
 
-        paidPenaltyBaseValue = _trySeizeViaPlan(trader, liquidator, penaltyBaseValue);
-        if (paidPenaltyBaseValue >= penaltyBaseValue) {
-            return penaltyBaseValue;
+        paidPenaltyBase = _trySeizeViaPlan(trader, liquidator, penaltyBase);
+        if (paidPenaltyBase >= penaltyBase) {
+            return penaltyBase;
         }
 
-        uint256 remainingBase = penaltyBaseValue - paidPenaltyBaseValue;
+        uint256 remainingBase = penaltyBase - paidPenaltyBase;
 
         _syncVaultBestEffort(trader, settlementAsset);
 
         uint256 penaltyNative = _penaltySettlementNative(settlementAsset, remainingBase);
-        if (penaltyNative == 0) return paidPenaltyBaseValue;
+        if (penaltyNative == 0) return paidPenaltyBase;
 
         uint256 traderBal = _collateralVault.balances(trader, settlementAsset);
         uint256 paidNative = penaltyNative <= traderBal ? penaltyNative : traderBal;
-        if (paidNative == 0) return paidPenaltyBaseValue;
+        if (paidNative == 0) return paidPenaltyBase;
 
         _collateralVault.transferBetweenAccounts(settlementAsset, trader, liquidator, paidNative);
 
         if (settlementAsset == _baseToken()) {
-            return paidPenaltyBaseValue + paidNative;
+            return paidPenaltyBase + paidNative;
         }
 
-        uint256 extraBase = _settlementNativeToBaseValue(settlementAsset, paidNative);
-        paidPenaltyBaseValue += extraBase;
+        uint256 extraBase = _settlementNativeToBase(settlementAsset, paidNative);
+        paidPenaltyBase += extraBase;
 
-        if (paidPenaltyBaseValue > penaltyBaseValue) {
-            paidPenaltyBaseValue = penaltyBaseValue;
+        if (paidPenaltyBase > penaltyBase) {
+            paidPenaltyBase = penaltyBase;
         }
     }
 
-    function _tryCoverShortfallWithInsurance(address liquidator, uint256 requestedBaseValue)
+    function _tryCoverShortfallWithInsurance(address liquidator, uint256 requestedBase)
         internal
-        returns (uint256 paidBaseValue)
+        returns (uint256 paidBase)
     {
-        if (requestedBaseValue == 0) return 0;
+        if (requestedBase == 0) return 0;
         _requireInsuranceFund();
 
         address baseToken = _baseToken();
 
-        try IInsuranceFundPerpBackstop(insuranceFund).coverVaultShortfall(baseToken, liquidator, requestedBaseValue)
-        returns (uint256 paid) {
-            paidBaseValue = paid <= requestedBaseValue ? paid : requestedBaseValue;
+        try IInsuranceFundPerpBackstop(insuranceFund).coverVaultShortfall(baseToken, liquidator, requestedBase) returns (
+            uint256 paid
+        ) {
+            paidBase = paid <= requestedBase ? paid : requestedBase;
         } catch {
             revert InsuranceFundCoverageFailed();
         }
@@ -326,36 +323,38 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         address liquidator,
         address trader,
         uint256 marketId,
-        uint256 penaltyTargetBaseValue,
-        uint256 seizedPenaltyBaseValue
+        uint256 penaltyTargetBase,
+        uint256 seizedPenaltyBase
     ) internal returns (LiquidationResolution memory res) {
-        res.penaltyTargetBaseValue = penaltyTargetBaseValue;
-        res.seizedPenaltyBaseValue = seizedPenaltyBaseValue;
+        res.penaltyTargetBase = penaltyTargetBase;
+        res.seizedPenaltyBase = seizedPenaltyBase;
 
-        uint256 remainingAfterSeizure = _remainingShortfall(penaltyTargetBaseValue, seizedPenaltyBaseValue);
+        uint256 remainingAfterSeizureBase = _remainingShortfall(penaltyTargetBase, seizedPenaltyBase);
 
-        if (remainingAfterSeizure != 0) {
+        if (remainingAfterSeizureBase != 0) {
             emit LiquidationShortfall(
                 liquidator,
                 trader,
                 marketId,
-                penaltyTargetBaseValue,
-                seizedPenaltyBaseValue,
-                remainingAfterSeizure
+                penaltyTargetBase,
+                seizedPenaltyBase,
+                remainingAfterSeizureBase
             );
 
-            uint256 insurancePaid = _tryCoverShortfallWithInsurance(liquidator, remainingAfterSeizure);
-            res.insurancePaidBaseValue = insurancePaid;
+            uint256 insurancePaidBase = _tryCoverShortfallWithInsurance(liquidator, remainingAfterSeizureBase);
+            res.insurancePaidBase = insurancePaidBase;
 
-            if (insurancePaid != 0) {
-                emit LiquidationInsuranceCoverage(liquidator, trader, marketId, remainingAfterSeizure, insurancePaid);
+            if (insurancePaidBase != 0) {
+                emit LiquidationInsuranceCoverage(
+                    liquidator, trader, marketId, remainingAfterSeizureBase, insurancePaidBase
+                );
             }
 
-            uint256 residual = _remainingShortfall(remainingAfterSeizure, insurancePaid);
-            res.residualShortfallBaseValue = residual;
+            uint256 residualShortfallBase = _remainingShortfall(remainingAfterSeizureBase, insurancePaidBase);
+            res.residualShortfallBase = residualShortfallBase;
 
-            if (residual != 0) {
-                emit LiquidationBadDebtRecorded(liquidator, trader, marketId, residual);
+            if (residualShortfallBase != 0) {
+                emit LiquidationBadDebtRecorded(liquidator, trader, marketId, residualShortfallBase);
             }
         }
     }
@@ -379,7 +378,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
             return;
         }
 
-        uint256 incomingBase = _settlementNativeToBaseValue(settlementAsset, incomingNative);
+        uint256 incomingBase = _settlementNativeToBase(settlementAsset, incomingNative);
         if (incomingBase == 0) {
             _collateralVault.transferBetweenAccounts(settlementAsset, payer, receiver, incomingNative);
             return;
@@ -406,7 +405,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
             return;
         }
 
-        uint256 actualRepaidBase = _settlementNativeToBaseValue(settlementAsset, repayNative);
+        uint256 actualRepaidBase = _settlementNativeToBase(settlementAsset, repayNative);
         if (actualRepaidBase > outstandingBase) {
             actualRepaidBase = outstandingBase;
         }
@@ -654,8 +653,8 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         if (address(_riskModule) == address(0)) return;
 
         IPerpRiskModule.AccountRisk memory r = _riskModule.computeAccountRisk(trader);
-        if (r.initialMargin1e8 > uint256(type(int256).max)) revert MathOverflow();
-        if (r.equity1e8 < int256(r.initialMargin1e8)) revert MarginRequirementBreached(trader);
+        if (r.initialMarginBase > uint256(type(int256).max)) revert MathOverflow();
+        if (r.equityBase < int256(r.initialMarginBase)) revert MarginRequirementBreached(trader);
     }
 
     function _applyRealizedCashflow(
@@ -686,9 +685,9 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
 
     function _isTraderLiquidatable(address trader) internal view returns (bool) {
         IPerpRiskModule.AccountRisk memory r = _marginState(trader);
-        if (r.maintenanceMargin1e8 == 0) return false;
-        if (r.equity1e8 <= 0) return true;
-        return _marginRatioBpsFromState(r.equity1e8, r.maintenanceMargin1e8) < BPS;
+        if (r.maintenanceMarginBase == 0) return false;
+        if (r.equityBase <= 0) return true;
+        return _marginRatioBpsFromState(r.equityBase, r.maintenanceMarginBase) < BPS;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -799,7 +798,8 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
 
         {
             MarketState memory s = _marketStates[t.marketId];
-            uint256 oi = s.longOpenInterest1e8 > s.shortOpenInterest1e8 ? s.longOpenInterest1e8 : s.shortOpenInterest1e8;
+            uint256 oi =
+                s.longOpenInterest1e8 > s.shortOpenInterest1e8 ? s.longOpenInterest1e8 : s.shortOpenInterest1e8;
             if (oi > uint256(rcfg.maxOpenInterest1e8)) revert SizeTooLarge();
         }
 
@@ -808,9 +808,8 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
             if (recipient == address(0)) revert FeesManagerNotSet();
             if (recipient == t.buyer || recipient == t.seller) revert InvalidTrade();
 
-            uint256 notional1e8 = Math.mulDiv(
-                uint256(t.sizeDelta1e8), uint256(t.executionPrice1e8), PRICE_1E8, Math.Rounding.Down
-            );
+            uint256 notional1e8 =
+                Math.mulDiv(uint256(t.sizeDelta1e8), uint256(t.executionPrice1e8), PRICE_1E8, Math.Rounding.Down);
 
             uint256 notionalNative = _value1e8ToSettlementNative(m.settlementAsset, notional1e8);
 
@@ -856,10 +855,9 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         Position memory oldTraderPos = _positions[trader][marketId];
         if (oldTraderPos.size1e8 == 0) revert LiquidationNothingToDo();
 
-        uint256 markPrice1e8 = _getMarkPrice1e8(marketId);
-        uint256 liqPrice1e8 = _liquidationPrice1e8FromMark(
-            oldTraderPos.size1e8, markPrice1e8, liquidationPriceSpreadBps
-        );
+        uint256 markPrice1e8 =
+            _getMarkPrice1e8(marketId);
+        uint256 liqPrice1e8 = _liquidationPrice1e8FromMark(oldTraderPos.size1e8, markPrice1e8, liquidationPriceSpreadBps);
 
         Position memory newTraderPos;
         int256 traderRealizedPnl1e8;
@@ -874,8 +872,9 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         Position memory oldLiqPos = _positions[liquidator][marketId];
         bool traderWasLong = oldTraderPos.size1e8 > 0;
 
-        Position memory newLiqPos =
-            _applyLiquidationLegToLiquidator(liquidator, marketId, sizeClosed1e8, liqPrice1e8, currentFunding, traderWasLong);
+        Position memory newLiqPos = _applyLiquidationLegToLiquidator(
+            liquidator, marketId, sizeClosed1e8, liqPrice1e8, currentFunding, traderWasLong
+        );
 
         if (_absInt256(newLiqPos.size1e8) > uint256(rcfg.maxPositionSize1e8)) {
             revert LiquidatorWouldBreachMargin(liquidator);
@@ -895,41 +894,41 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
 
         {
             MarketState memory s = _marketStates[marketId];
-            uint256 oi = s.longOpenInterest1e8 > s.shortOpenInterest1e8 ? s.longOpenInterest1e8 : s.shortOpenInterest1e8;
+            uint256 oi =
+                s.longOpenInterest1e8 > s.shortOpenInterest1e8 ? s.longOpenInterest1e8 : s.shortOpenInterest1e8;
             if (oi > uint256(rcfg.maxOpenInterest1e8)) revert SizeTooLarge();
         }
 
         uint256 closedNotional1e8 =
             Math.mulDiv(uint256(sizeClosed1e8), liqPrice1e8, PRICE_1E8, Math.Rounding.Down);
 
-        uint256 closedNotionalBaseValue = _settlementAmount1e8ToBaseValue(m.settlementAsset, closedNotional1e8);
-        uint256 penaltyBaseValue = _liquidationPenaltyBaseValue(closedNotionalBaseValue, liquidationPenaltyBps);
+        uint256 closedNotionalBase = _settlementAmount1e8ToBase(m.settlementAsset, closedNotional1e8);
+        uint256 penaltyBase = _liquidationPenaltyBaseValue(closedNotionalBase, liquidationPenaltyBps);
 
-        uint256 seizedPenaltyBaseValue =
-            _seizePenaltyToLiquidator(trader, liquidator, m.settlementAsset, penaltyBaseValue);
+        uint256 seizedPenaltyBase = _seizePenaltyToLiquidator(trader, liquidator, m.settlementAsset, penaltyBase);
 
         LiquidationResolution memory resolution =
-            _resolveLiquidationShortfall(liquidator, trader, marketId, penaltyTargetBaseValue: penaltyBaseValue, seizedPenaltyBaseValue: seizedPenaltyBaseValue);
+            _resolveLiquidationShortfall(liquidator, trader, marketId, penaltyBase, seizedPenaltyBase);
 
-        if (resolution.residualShortfallBaseValue != 0) {
-            _recordResidualBadDebt(trader, resolution.residualShortfallBaseValue);
+        if (resolution.residualShortfallBase != 0) {
+            _recordResidualBadDebt(trader, resolution.residualShortfallBase);
         }
 
         IPerpRiskModule.AccountRisk memory traderAfter = _marginState(trader);
         bool improved = _liquidationImproved(
-            traderBefore.equity1e8,
-            traderBefore.maintenanceMargin1e8,
-            traderAfter.equity1e8,
-            traderAfter.maintenanceMargin1e8,
+            traderBefore.equityBase,
+            traderBefore.maintenanceMarginBase,
+            traderAfter.equityBase,
+            traderAfter.maintenanceMarginBase,
             minLiquidationImprovementBps
         );
         if (!improved) revert LiquidationNotImproving();
 
         _enforcePostTradeRisk(liquidator);
 
-        uint256 totalPenaltyPaidBaseValue = resolution.seizedPenaltyBaseValue + resolution.insurancePaidBaseValue;
+        uint256 totalPenaltyPaidBase = resolution.seizedPenaltyBase + resolution.insurancePaidBase;
 
-        emit Liquidation(liquidator, trader, marketId, sizeClosed1e8, liqPrice1e8, totalPenaltyPaidBaseValue);
-        emit LiquidationPenaltyPaid(liquidator, trader, marketId, totalPenaltyPaidBaseValue);
+        emit Liquidation(liquidator, trader, marketId, sizeClosed1e8, liqPrice1e8, totalPenaltyPaidBase);
+        emit LiquidationPenaltyPaid(liquidator, trader, marketId, totalPenaltyPaidBase);
     }
 }
