@@ -9,7 +9,7 @@ import "./IMarginEngineState.sol";
 
 /// @notice Storage root for RiskModule.
 /// @dev
-///  - Centralizes all shared state / constants / events / errors
+///  - Centralizes shared state / constants / events / errors
 ///  - Includes emergency controls compatible with governance + guardian separation
 ///  - Serves as the common base for:
 ///      * oracle helpers
@@ -20,6 +20,12 @@ import "./IMarginEngineState.sol";
 ///  Current scope:
 ///   - options-side risk source of truth
 ///   - prepared for richer unified decomposition surfaces
+///
+///  Canonical conventions:
+///   - `PRICE_SCALE` = 1e8
+///   - `BPS` = 10_000
+///   - all risk outputs suffixed `Base` are denominated in native units of the protocol base collateral token
+///   - all ratios suffixed `Bps` are expressed in basis points
 abstract contract RiskModuleStorage is IRiskModule {
     /*//////////////////////////////////////////////////////////////
                                 CONSTANTS
@@ -31,9 +37,6 @@ abstract contract RiskModuleStorage is IRiskModule {
     // defensive: 10**77 fits in uint256, 10**78 does not
     uint256 internal constant MAX_POW10_EXP = 77;
 
-    // current deployment target: USDC-like base collateral
-    uint8 internal constant EXPECTED_BASE_DECIMALS = 6;
-
     // pagination for margin-engine open series scanning
     uint256 internal constant SERIES_PAGE = 64;
 
@@ -42,16 +45,26 @@ abstract contract RiskModuleStorage is IRiskModule {
     //////////////////////////////////////////////////////////////*/
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event OwnershipTransferStarted(address indexed previousOwner, address indexed pendingOwner);
 
     /// @notice Emergency guardian updated.
     /// @dev address(0) is allowed to disable guardian mode.
     event GuardianSet(address indexed oldGuardian, address indexed newGuardian);
 
+    /// @notice Unified risk numeraire + options-side cached parameters.
+    /// @dev
+    ///  - `baseCollateralToken` is the unique protocol risk numeraire
+    ///  - `baseMaintenanceMarginPerContract` is denominated in native units of `baseCollateralToken`
+    ///  - `imFactorBps` is expressed in basis points
     event RiskParamsSet(address baseCollateralToken, uint256 baseMaintenanceMarginPerContract, uint256 imFactorBps);
 
     event OracleSet(address indexed oldOracle, address indexed newOracle);
     event MarginEngineSet(address indexed oldMarginEngine, address indexed newMarginEngine);
 
+    /// @notice Collateral valuation configuration for one token.
+    /// @dev
+    ///  - `weightBps` is the collateral haircut / weight in basis points
+    ///  - if `isEnabled == false`, token does not contribute to adjusted collateral value
     event CollateralConfigSet(address indexed token, uint64 weightBps, bool isEnabled);
     event CollateralTokensSyncedFromVault(uint256 added);
 
@@ -95,6 +108,8 @@ abstract contract RiskModuleStorage is IRiskModule {
     error InvalidParams();
     error MathOverflow();
 
+    error OwnershipTransferNotInitiated();
+
     error BaseTokenNotConfigured();
     error TokenNotConfigured(address token);
     error TokenDecimalsNotConfigured(address token);
@@ -103,8 +118,6 @@ abstract contract RiskModuleStorage is IRiskModule {
 
     error DecimalsOverflow(address token);
     error DecimalsDiffOverflow(address token);
-
-    error BaseTokenDecimalsNotUSDC(address token, uint8 decimals);
 
     error InvalidContractSize();
 
@@ -127,6 +140,9 @@ abstract contract RiskModuleStorage is IRiskModule {
     /// @notice Governance owner, expected to be timelock / Safe in production.
     address public owner;
 
+    /// @notice Pending owner for 2-step ownership transfers.
+    address public pendingOwner;
+
     /// @notice Operational emergency actor.
     /// @dev Can trigger protective pauses but should not be the long-term governance authority.
     address public guardian;
@@ -136,8 +152,15 @@ abstract contract RiskModuleStorage is IRiskModule {
     IMarginEngineState public marginEngine;
     IOracle public oracle;
 
+    /// @notice Unified protocol risk numeraire token.
     address public override baseCollateralToken;
+
+    /// @notice Base maintenance-margin floor per short option contract.
+    /// @dev Denominated in native units of `baseCollateralToken`.
     uint256 public override baseMaintenanceMarginPerContract;
+
+    /// @notice Initial-margin multiplier applied on top of maintenance margin.
+    /// @dev Expressed in basis points.
     uint256 public override imFactorBps;
 
     /// @notice Optional local oracle staleness guard. 0 = disabled.
@@ -220,7 +243,10 @@ abstract contract RiskModuleStorage is IRiskModule {
     ) internal {
         if (owner != address(0)) revert NotAuthorized();
         if (
-            owner_ == address(0) || vault_ == address(0) || registry_ == address(0) || marginEngine_ == address(0)
+            owner_ == address(0)
+                || vault_ == address(0)
+                || registry_ == address(0)
+                || marginEngine_ == address(0)
                 || oracle_ == address(0)
         ) {
             revert ZeroAddress();

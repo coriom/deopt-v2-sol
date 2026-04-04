@@ -5,19 +5,34 @@ import "./RiskModuleMargin.sol";
 
 abstract contract RiskModuleAdmin is RiskModuleMargin {
     /*//////////////////////////////////////////////////////////////
-                                OWNERSHIP
+                            OWNERSHIP (2-step)
     //////////////////////////////////////////////////////////////*/
 
     function transferOwnership(address newOwner) external onlyOwner {
         if (newOwner == address(0)) revert ZeroAddress();
+        pendingOwner = newOwner;
+        emit OwnershipTransferStarted(owner, newOwner);
+    }
+
+    function acceptOwnership() external {
+        address po = pendingOwner;
+        if (msg.sender != po) revert NotAuthorized();
 
         address oldOwner = owner;
-        owner = newOwner;
+        owner = po;
+        pendingOwner = address(0);
 
-        emit OwnershipTransferred(oldOwner, newOwner);
+        emit OwnershipTransferred(oldOwner, po);
+    }
+
+    function cancelOwnershipTransfer() external onlyOwner {
+        if (pendingOwner == address(0)) revert OwnershipTransferNotInitiated();
+        pendingOwner = address(0);
     }
 
     function renounceOwnership() external onlyOwner {
+        if (pendingOwner != address(0)) revert NotAuthorized();
+
         address oldOwner = owner;
         owner = address(0);
 
@@ -161,6 +176,17 @@ abstract contract RiskModuleAdmin is RiskModuleMargin {
         emit OracleDownMmMultiplierSet(old, _multiplierBps);
     }
 
+    /// @notice Sets the unified risk numeraire and core options-side cached parameters.
+    /// @dev
+    ///  Canonical conventions:
+    ///   - `_baseMMPerContract` is denominated in native units of `_baseToken`
+    ///   - `_imFactorBps` is expressed in basis points
+    ///
+    ///  Note:
+    ///   - this function no longer hardcodes a USDC-specific decimal requirement
+    ///   - the only hard requirements are:
+    ///       * token is supported in the vault
+    ///       * token decimals are configured and safe
     function setRiskParams(address _baseToken, uint256 _baseMMPerContract, uint256 _imFactorBps) external onlyOwner {
         if (_baseToken == address(0)) revert ZeroAddress();
         if (_baseMMPerContract == 0) revert InvalidParams();
@@ -170,7 +196,6 @@ abstract contract RiskModuleAdmin is RiskModuleMargin {
         if (!baseCfg.isSupported) revert TokenNotSupportedInVault(_baseToken);
         if (baseCfg.decimals == 0) revert TokenDecimalsNotConfigured(_baseToken);
         if (uint256(baseCfg.decimals) > MAX_POW10_EXP) revert DecimalsOverflow(_baseToken);
-        if (baseCfg.decimals != EXPECTED_BASE_DECIMALS) revert BaseTokenDecimalsNotUSDC(_baseToken, baseCfg.decimals);
 
         baseCollateralToken = _baseToken;
         baseMaintenanceMarginPerContract = _baseMMPerContract;

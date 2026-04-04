@@ -21,6 +21,13 @@ import {MarginEngineStorage} from "./MarginEngineStorage.sol";
 ///  Architectural note:
 ///   - this layer is admin/state-changing only
 ///   - read aggregation should live in MarginEngineViews
+///
+///  Canonical conventions:
+///   - `baseMaintenanceMarginPerContract` is denominated in native units of `baseCollateralToken`
+///   - `imFactorBps`, `liquidationThresholdBps`, `liquidationPenaltyBps`,
+///     `liquidationCloseFactorBps`, `minLiquidationImprovementBps`,
+///     `liquidationPriceSpreadBps`, `minLiquidationPriceBpsOfIntrinsic`
+///     are expressed in basis points
 abstract contract MarginEngineAdmin is MarginEngineStorage {
     /*//////////////////////////////////////////////////////////////
                             OWNERSHIP (2-step)
@@ -264,8 +271,14 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
                           RISK PARAMS CACHE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Configure le cache risk params côté MarginEngine, en vérifiant qu'ils matchent RiskModule.
-    /// @dev Source of truth = RiskModule.
+    /// @notice Configure the local options-side risk cache, while enforcing consistency with RiskModule.
+    /// @dev
+    ///  Source of truth = RiskModule.
+    ///
+    ///  Canonical conventions:
+    ///   - `baseToken_` = unified protocol risk numeraire
+    ///   - `baseMMPerContract_` = native units of `baseToken_`
+    ///   - `imFactorBps_` = basis points
     function setRiskParams(address baseToken_, uint256 baseMMPerContract_, uint256 imFactorBps_) external onlyOwner {
         if (baseToken_ == address(0)) revert ZeroAddress();
         if (baseMMPerContract_ == 0) revert InvalidLiquidationParams();

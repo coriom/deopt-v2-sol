@@ -14,13 +14,19 @@ import {MarginEngineAdmin} from "./MarginEngineAdmin.sol";
 ///  Responsibilities:
 ///   - update option positions with strict int128 hardening
 ///   - maintain open-series / short aggregates
-///   - transfer premium in settlement asset native units
+///   - transfer premium in settlement-asset native units
 ///   - charge hybrid trading fees when configured
 ///   - enforce initial margin after state mutation
 ///
 ///  Architectural note:
 ///   - this layer is intentionally state-changing only
 ///   - read aggregation / settlement observability should live in MarginEngineViews
+///
+///  Canonical conventions:
+///   - prices normalized by the protocol remain in 1e8 only where explicitly stated
+///   - trade `price` here is premium per contract in settlement-asset native units
+///   - `premium` / fees are in settlement-asset native units
+///   - risk checks are delegated to RiskModule and interpreted in base-token native units
 ///
 ///  Maker/taker convention:
 ///   - t.buyerIsMaker == true  => buyer = maker, seller = taker
@@ -79,8 +85,13 @@ abstract contract MarginEngineTrading is MarginEngineAdmin {
         nonReentrant
     {
         // Basic validation
-        if (t.buyer == address(0) || t.seller == address(0) || t.buyer == t.seller || t.quantity == 0 || t.price == 0)
-        {
+        if (
+            t.buyer == address(0)
+                || t.seller == address(0)
+                || t.buyer == t.seller
+                || t.quantity == 0
+                || t.price == 0
+        ) {
             revert InvalidTrade();
         }
 
@@ -133,7 +144,7 @@ abstract contract MarginEngineTrading is MarginEngineAdmin {
         _syncPositionIndexes(t.buyer, t.optionId, oldBuyerQty, newBuyerQty);
         _syncPositionIndexes(t.seller, t.optionId, oldSellerQty, newSellerQty);
 
-        // Premium cashflow: settlement asset native units
+        // Premium cashflow: settlement-asset native units
         // premium = quantity * pricePerContract
         uint256 premium = _mulChecked(uint256(t.quantity), uint256(t.price));
         _collateralVault.transferBetweenAccounts(series.settlementAsset, t.buyer, t.seller, premium);
