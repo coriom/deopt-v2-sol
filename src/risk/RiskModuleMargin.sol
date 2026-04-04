@@ -8,10 +8,16 @@ import "./RiskModuleCollateral.sol";
 /// @notice Margin / liability layer for RiskModule.
 /// @dev
 ///  Responsibilities:
-///   - per-contract MM floor
-///   - conservative intrinsic liability for shorts
+///   - per-contract maintenance-margin floor
+///   - conservative intrinsic liability for short options
 ///   - stress-based per-contract maintenance margin
 ///   - aggregate short liability / MM / IM across all open option series
+///
+///  Canonical conventions:
+///   - all outputs suffixed `Base` are denominated in native units of the protocol base collateral token
+///   - all normalized prices / notionals remain in protocol 1e8 units until explicitly converted
+///   - `shortLiabilityBase` is a conservative liability measure for short options
+///   - `maintenanceMarginBase` / `initialMarginBase` are margin requirements, not cashflows
 ///
 ///  Emergency note:
 ///   - This layer only exposes internal helpers.
@@ -22,6 +28,8 @@ abstract contract RiskModuleMargin is RiskModuleCollateral {
                                 TYPES
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Aggregated options-side margin/liability snapshot.
+    /// @dev All fields are denominated in native units of the protocol base collateral token.
     struct OptionsMarginSnapshot {
         uint256 shortLiabilityBase;
         uint256 maintenanceMarginBase;
@@ -32,7 +40,7 @@ abstract contract RiskModuleMargin is RiskModuleCollateral {
                         INTERNAL MM FLOOR
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Base MM floor per contract in base token units.
+    /// @dev Base maintenance-margin floor per contract in base-token native units.
     ///      With contract size hard-locked to 1e8, this is a direct constant floor.
     function _baseMmFloorPerContract(OptionProductRegistry.OptionSeries memory s) internal view returns (uint256) {
         _requireStandardContractSize(s);
@@ -43,7 +51,7 @@ abstract contract RiskModuleMargin is RiskModuleCollateral {
                     INTERNAL INTRINSIC LIABILITY
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Returns conservative per-contract intrinsic amount in settlement 1e8 units.
+    /// @dev Returns conservative per-contract intrinsic amount in normalized settlement 1e8 units.
     ///      Because contractSize is fixed to 1e8, intrinsic amount == intrinsic price.
     function _computePerContractIntrinsicAmount1e8(OptionProductRegistry.OptionSeries memory s, uint256 spot1e8)
         internal
@@ -63,7 +71,7 @@ abstract contract RiskModuleMargin is RiskModuleCollateral {
                     INTERNAL FALLBACK / STRESS HELPERS
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Conservative fallback amount in base token units when oracle path is unavailable.
+    /// @dev Conservative fallback amount in base-token native units when oracle path is unavailable.
     function _oracleDownFallbackPerContractBase(OptionProductRegistry.OptionSeries memory s)
         internal
         view
@@ -79,10 +87,10 @@ abstract contract RiskModuleMargin is RiskModuleCollateral {
                     INTERNAL PER-CONTRACT MM
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Computes stress-based MM per short contract in base token units.
+    /// @dev Computes stress-based MM per short contract in base-token native units.
     ///      Logic:
-    ///       - start from stress scenario on spot / vol proxy
-    ///       - convert settlement amount to base
+    ///       - start from a stress scenario on spot / vol proxy
+    ///       - convert settlement-side amount to base
     ///       - enforce base MM floor
     ///       - if oracle conversion fails, fallback to oracleDownMmMultiplierBps * floor
     function _computePerContractMM(
@@ -122,15 +130,15 @@ abstract contract RiskModuleMargin is RiskModuleCollateral {
             mmPrice1e8 = intrinsicShock > floorPrice ? intrinsicShock : floorPrice;
         }
 
-        (uint256 converted, bool okConv) =
+        (uint256 convertedBase, bool okConv) =
             _convert1e8SettlementToBaseWithBase(s.settlementAsset, mmPrice1e8, base, baseScale);
 
-        if (!okConv || converted == 0) {
+        if (!okConv || convertedBase == 0) {
             return _oracleDownFallbackPerContractBase(s);
         }
 
-        if (converted < baseFloor) converted = baseFloor;
-        return converted;
+        if (convertedBase < baseFloor) convertedBase = baseFloor;
+        return convertedBase;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -138,7 +146,7 @@ abstract contract RiskModuleMargin is RiskModuleCollateral {
     //////////////////////////////////////////////////////////////*/
 
     /// @dev Aggregates conservative short intrinsic liability across all open short series.
-    ///      Liability is expressed in base token units.
+    ///      Liability is expressed in base-token native units.
     ///      If spot or conversion is unavailable, falls back to oracleDownMmMultiplierBps * base floor.
     function _computeShortLiabilityBase(address trader, address base, uint256 baseScale)
         internal
@@ -179,38 +187,37 @@ abstract contract RiskModuleMargin is RiskModuleCollateral {
                 _requireStandardContractSize(s);
 
                 OptionProductRegistry.UnderlyingConfig memory cfg = _getUnderlyingConfig(s.underlying);
-                (uint256 spot, bool okSpot) = _tryGetPrice(s.underlying, s.settlementAsset);
+                (uint256 spot1e8, bool okSpot) = _tryGetPrice(s.underlying, s.settlementAsset);
 
-                uint256 mmPerContract = _computePerContractMM(s, spot, cfg, okSpot, base, baseScale);
-                if (mmPerContract != 0) {
-                    uint256 mmAdd = shortAbs * mmPerContract;
-                    if (mmAdd / mmPerContract != shortAbs) revert MathOverflow();
-                    snap.maintenanceMarginBase = _addChecked(snap.maintenanceMarginBase, mmAdd);
+                uint256 mmPerContractBase = _computePerContractMM(s, spot1e8, cfg, okSpot, base, baseScale);
+                if (mmPerContractBase != 0) {
+                    uint256 mmAddBase = shortAbs * mmPerContractBase;
+                    if (mmAddBase / mmPerContractBase != shortAbs) revert MathOverflow();
+                    snap.maintenanceMarginBase = _addChecked(snap.maintenanceMarginBase, mmAddBase);
                 }
 
-                uint256 liabilityPerContract;
+                uint256 liabilityPerContractBase;
 
                 if (!okSpot) {
-                    liabilityPerContract = _oracleDownFallbackPerContractBase(s);
+                    liabilityPerContractBase = _oracleDownFallbackPerContractBase(s);
                 } else {
-                    uint256 intrinsicAmount1e8 = _computePerContractIntrinsicAmount1e8(s, spot);
+                    uint256 intrinsicAmount1e8 = _computePerContractIntrinsicAmount1e8(s, spot1e8);
 
                     if (intrinsicAmount1e8 == 0) {
-                        liabilityPerContract = 0;
+                        liabilityPerContractBase = 0;
                     } else {
                         (uint256 intrinsicBase, bool okConv) =
                             _convert1e8SettlementToBaseWithBase(s.settlementAsset, intrinsicAmount1e8, base, baseScale);
 
-                        liabilityPerContract = (!okConv || intrinsicBase == 0)
-                            ? _oracleDownFallbackPerContractBase(s)
-                            : intrinsicBase;
+                        liabilityPerContractBase =
+                            (!okConv || intrinsicBase == 0) ? _oracleDownFallbackPerContractBase(s) : intrinsicBase;
                     }
                 }
 
-                if (liabilityPerContract != 0) {
-                    uint256 liabAdd = shortAbs * liabilityPerContract;
-                    if (liabAdd / liabilityPerContract != shortAbs) revert MathOverflow();
-                    snap.shortLiabilityBase = _addChecked(snap.shortLiabilityBase, liabAdd);
+                if (liabilityPerContractBase != 0) {
+                    uint256 liabAddBase = shortAbs * liabilityPerContractBase;
+                    if (liabAddBase / liabilityPerContractBase != shortAbs) revert MathOverflow();
+                    snap.shortLiabilityBase = _addChecked(snap.shortLiabilityBase, liabAddBase);
                 }
             }
         }

@@ -22,7 +22,6 @@ abstract contract RiskModuleOracle is RiskModuleUtils {
     /*//////////////////////////////////////////////////////////////
                             FRESHNESS HELPERS
     //////////////////////////////////////////////////////////////*/
-
     function _isOracleDataFresh(uint256 updatedAt) internal view returns (bool) {
         uint256 d = maxOracleDelay;
         if (d == 0) return true;
