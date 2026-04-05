@@ -31,6 +31,13 @@ import {MarginEngineOps} from "./MarginEngineOps.sol";
 ///   - liquidation params
 ///   - cached risk params
 ///
+///  Canonical conventions:
+///   - account risk is sourced from RiskModule and interpreted in native units
+///     of the protocol base collateral token
+///   - option premium / settlement accounting / bad debt at series level remain
+///     denominated in settlement-asset native units
+///   - normalized protocol prices remain in 1e8 where explicitly documented
+///
 ///  Architectural note:
 ///   - options stack is intentionally separated from perp stack
 ///   - both are expected to share:
@@ -41,9 +48,9 @@ import {MarginEngineOps} from "./MarginEngineOps.sol";
 ///       * Governance / Timelock
 ///
 ///  Current sequencing note:
-///   - MarginEngineViews is introduced to make settlement accounting,
+///   - MarginEngineViews makes settlement accounting,
 ///     bad debt visibility and protocol read surfaces explicit
-///   - MarginEngineOps should remain focused on state-changing flows
+///   - MarginEngineOps remains focused on state-changing flows
 contract MarginEngine is MarginEngineOps {
     constructor(address _owner, address registry_, address vault_, address oracle_) {
         _initMarginEngineStorage(_owner, registry_, vault_, oracle_);

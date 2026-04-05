@@ -29,6 +29,13 @@ import {PerpEngineTrading} from "./PerpEngineTrading.sol";
 ///   - feesManager
 ///   - feeRecipient
 ///
+///  Canonical conventions:
+///   - account risk is sourced from PerpRiskModule and interpreted in native units
+///     of the protocol base collateral token
+///   - normalized prices / notionals remain in 1e8 where explicitly documented
+///   - funding accumulators remain in 1e18
+///   - liquidation shortfall is transient, while residual bad debt is final recorded debt
+///
 ///  Architectural note:
 ///   - this engine remains intentionally separated from the options MarginEngine
 ///   - both stacks are expected to share:
