@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import {CollateralVault} from "../collateral/CollateralVault.sol";
@@ -15,11 +16,15 @@ import {PerpEngineTypes} from "./PerpEngineTypes.sol";
 /// @dev
 ///  This stays intentionally narrow so the perp stack can evolve independently
 ///  from the options RiskModule.
+///
+///  Canonical conventions:
+///   - `AccountRisk` outputs are denominated in native units of the protocol base collateral token
+///   - `WithdrawPreview.requestedAmount / maxWithdrawable` are denominated in token-native units
 interface IPerpRiskModule {
     struct AccountRisk {
-        int256 equity1e8;
-        uint256 maintenanceMargin1e8;
-        uint256 initialMargin1e8;
+        int256 equityBase;
+        uint256 maintenanceMarginBase;
+        uint256 initialMarginBase;
     }
 
     struct WithdrawPreview {
@@ -31,7 +36,7 @@ interface IPerpRiskModule {
     }
 
     function computeAccountRisk(address trader) external view returns (AccountRisk memory risk);
-    function computeFreeCollateral(address trader) external view returns (int256 freeCollateral);
+    function computeFreeCollateral(address trader) external view returns (int256 freeCollateralBase);
     function previewWithdrawImpact(address trader, address token, uint256 amount)
         external
         view
@@ -39,10 +44,11 @@ interface IPerpRiskModule {
     function getWithdrawableAmount(address trader, address token) external view returns (uint256 amount);
 }
 
-/// @notice Minimal read view for market registry config coherence checks.
+/// @notice Minimal read view for market-registry config coherence checks.
 interface IPerpMarketRegistryView {
     function getMarket(uint256 marketId) external view returns (PerpMarketRegistry.Market memory);
     function getRiskConfig(uint256 marketId) external view returns (PerpMarketRegistry.RiskConfig memory);
+    function getLiquidationConfig(uint256 marketId) external view returns (PerpMarketRegistry.LiquidationConfig memory);
     function getFundingConfig(uint256 marketId) external view returns (PerpMarketRegistry.FundingConfig memory);
 }
 
@@ -88,7 +94,7 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
     mapping(address => uint256) public totalAbsLongSize1e8;
     mapping(address => uint256) public totalAbsShortSize1e8;
 
-    /// @notice Residual bad debt per trader, denominated in native base token units.
+    /// @notice Residual bad debt per trader, denominated in native base-token units.
     /// @dev
     ///  This tracks liquidation leftovers not covered by:
     ///   - collateral seizure
@@ -97,7 +103,7 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
     ///  It is protocol-visible economic debt and must be consumed by risk views.
     mapping(address => uint256) internal _residualBadDebtBase;
 
-    /// @notice Aggregate residual bad debt across all traders, in native base token units.
+    /// @notice Aggregate residual bad debt across all traders, in native base-token units.
     uint256 public totalResidualBadDebtBase;
 
     /// @notice Legacy global pause.
@@ -109,21 +115,25 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
     bool public fundingPaused;
     bool public collateralOpsPaused;
 
-    /// @notice Max fraction of a position closable in one liquidation.
+    /// @notice Legacy default close factor used only as fallback when market-specific config is unavailable.
     /// @dev 5000 = 50%
     uint256 public liquidationCloseFactorBps = 5000;
 
-    /// @notice Penalty charged to the liquidated account, denominated in base-value terms.
-    /// @dev 75 = 0.75%
-    uint256 public liquidationPenaltyBps = 75;
+    /// @notice Legacy default liquidation penalty used only as fallback when market-specific config is unavailable.
+    /// @dev 500 = 5%
+    uint256 public liquidationPenaltyBps = 500;
 
-    /// @notice Conservative spread applied to mark for liquidation execution.
-    /// @dev 50 = 0.50%
-    uint256 public liquidationPriceSpreadBps = 50;
+    /// @notice Legacy default liquidation spread used only as fallback when market-specific config is unavailable.
+    /// @dev 100 = 1%
+    uint256 public liquidationPriceSpreadBps = 100;
 
-    /// @notice Minimum required improvement in margin ratio after liquidation.
+    /// @notice Legacy default minimum required improvement used only as fallback when market-specific config is unavailable.
     /// @dev In bps of margin ratio.
-    uint256 public minLiquidationImprovementBps = 1;
+    uint256 public minLiquidationImprovementBps = 50;
+
+    /// @notice Legacy default liquidation oracle freshness used only as fallback when market-specific config is unavailable.
+    /// @dev In seconds. 0 disables staleness guard for the fallback path.
+    uint32 public liquidationOracleMaxDelay = 60;
 
     /*//////////////////////////////////////////////////////////////
                                 MODIFIERS
@@ -298,6 +308,14 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         cfg = _marketRegistry.getRiskConfig(marketId);
     }
 
+    function _getLiquidationConfig(uint256 marketId)
+        internal
+        view
+        returns (PerpMarketRegistry.LiquidationConfig memory cfg)
+    {
+        cfg = _marketRegistry.getLiquidationConfig(marketId);
+    }
+
     function _getFundingConfig(uint256 marketId) internal view returns (PerpMarketRegistry.FundingConfig memory cfg) {
         cfg = _marketRegistry.getFundingConfig(marketId);
     }
@@ -315,6 +333,91 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
 
         if (!success || data.length < 32) revert RiskModuleNotSet();
         return abi.decode(data, (address));
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                    INTERNAL MARKET POLICY HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Effective close factor for one market.
+    /// @dev Falls back to legacy global storage only if registry config is unavailable or zeroed.
+    function _liquidationCloseFactorBpsForMarket(uint256 marketId) internal view returns (uint256) {
+        try _marketRegistry.getLiquidationConfig(marketId) returns (PerpMarketRegistry.LiquidationConfig memory cfg) {
+            if (cfg.closeFactorBps != 0) return uint256(cfg.closeFactorBps);
+        } catch {}
+        return liquidationCloseFactorBps;
+    }
+
+    /// @notice Effective adverse price spread for one market.
+    /// @dev Falls back to legacy global storage only if registry config is unavailable.
+    function _liquidationPriceSpreadBpsForMarket(uint256 marketId) internal view returns (uint256) {
+        try _marketRegistry.getLiquidationConfig(marketId) returns (PerpMarketRegistry.LiquidationConfig memory cfg) {
+            return uint256(cfg.priceSpreadBps);
+        } catch {}
+        return liquidationPriceSpreadBps;
+    }
+
+    /// @notice Effective minimum improvement requirement for one market.
+    function _minLiquidationImprovementBpsForMarket(uint256 marketId) internal view returns (uint256) {
+        try _marketRegistry.getLiquidationConfig(marketId) returns (PerpMarketRegistry.LiquidationConfig memory cfg) {
+            return uint256(cfg.minImprovementBps);
+        } catch {}
+        return minLiquidationImprovementBps;
+    }
+
+    /// @notice Effective oracle freshness threshold for one market.
+    /// @dev 0 disables staleness enforcement.
+    function _liquidationOracleMaxDelayForMarket(uint256 marketId) internal view returns (uint32) {
+        try _marketRegistry.getLiquidationConfig(marketId) returns (PerpMarketRegistry.LiquidationConfig memory cfg) {
+            return cfg.oracleMaxDelay;
+        } catch {}
+        return liquidationOracleMaxDelay;
+    }
+
+    /// @notice Effective liquidation penalty for one market.
+    /// @dev Penalty is still sourced from RiskConfig because it is part of product risk policy.
+    function _liquidationPenaltyBpsForMarket(uint256 marketId) internal view returns (uint256) {
+        PerpMarketRegistry.RiskConfig memory cfg = _getRiskConfig(marketId);
+        if (cfg.liquidationPenaltyBps != 0) return uint256(cfg.liquidationPenaltyBps);
+        return liquidationPenaltyBps;
+    }
+
+    /// @notice Validates a liquidation policy bundle.
+    /// @dev Shared helper for admin config sanity checks and runtime assertions.
+    function _validateLiquidationParams(
+        uint256 closeFactorBps_,
+        uint256 penaltyBps_,
+        uint256 priceSpreadBps_,
+        uint256 minImprovementBps_,
+        uint256 oracleMaxDelay_
+    ) internal pure {
+        if (closeFactorBps_ == 0) revert LiquidationCloseFactorZero();
+        if (closeFactorBps_ > BPS) revert LiquidationParamsInvalid();
+        if (penaltyBps_ > BPS) revert LiquidationPenaltyTooLarge();
+        if (priceSpreadBps_ > BPS) revert LiquidationParamsInvalid();
+        if (minImprovementBps_ > BPS) revert LiquidationParamsInvalid();
+        if (oracleMaxDelay_ > 3600) revert LiquidationParamsInvalid();
+    }
+
+    /// @notice Runtime fetch + validation of effective market liquidation policy.
+    function _loadEffectiveLiquidationParams(uint256 marketId)
+        internal
+        view
+        returns (uint256 closeFactorBps, uint256 penaltyBps, uint256 priceSpreadBps, uint256 minImprovementBps, uint32 oracleMaxDelay)
+    {
+        closeFactorBps = _liquidationCloseFactorBpsForMarket(marketId);
+        penaltyBps = _liquidationPenaltyBpsForMarket(marketId);
+        priceSpreadBps = _liquidationPriceSpreadBpsForMarket(marketId);
+        minImprovementBps = _minLiquidationImprovementBpsForMarket(marketId);
+        oracleMaxDelay = _liquidationOracleMaxDelayForMarket(marketId);
+
+        _validateLiquidationParams(
+            closeFactorBps,
+            penaltyBps,
+            priceSpreadBps,
+            minImprovementBps,
+            uint256(oracleMaxDelay)
+        );
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -446,19 +549,6 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////
                           INTERNAL LIQUIDATION HELPERS
     //////////////////////////////////////////////////////////////*/
-
-    function _validateLiquidationParams(
-        uint256 closeFactorBps_,
-        uint256 penaltyBps_,
-        uint256 priceSpreadBps_,
-        uint256 minImprovementBps_
-    ) internal pure {
-        if (closeFactorBps_ == 0) revert LiquidationCloseFactorZero();
-        if (closeFactorBps_ > BPS) revert LiquidationParamsInvalid();
-        if (penaltyBps_ > BPS) revert LiquidationPenaltyTooLarge();
-        if (priceSpreadBps_ > BPS) revert LiquidationParamsInvalid();
-        minImprovementBps_;
-    }
 
     function _recordResidualBadDebt(address trader, uint256 amountBase) internal {
         if (trader == address(0)) revert ZeroAddress();

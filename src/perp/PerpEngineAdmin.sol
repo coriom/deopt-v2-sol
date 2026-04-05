@@ -172,6 +172,11 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
         emit MatchingEngineSet(matchingEngine_);
     }
 
+    function clearMatchingEngine() external onlyOwner {
+        matchingEngine = address(0);
+        emit MatchingEngineSet(address(0));
+    }
+
     function setOracle(address oracle_) external onlyOwner {
         if (oracle_ == address(0)) revert ZeroAddress();
         _oracle = IOracle(oracle_);
@@ -182,6 +187,11 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
         if (riskModule_ == address(0)) revert ZeroAddress();
         _riskModule = IPerpRiskModule(riskModule_);
         emit RiskModuleSet(riskModule_);
+    }
+
+    function clearRiskModule() external onlyOwner {
+        _riskModule = IPerpRiskModule(address(0));
+        emit RiskModuleSet(address(0));
     }
 
     function setCollateralSeizer(address collateralSeizer_) external onlyOwner {
@@ -334,7 +344,7 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
     /// @notice Repays residual bad debt in base token units by moving vault collateral from `payer` to protocol recipient.
     /// @dev
     ///  - repayment asset is strictly the protocol base collateral token
-    ///  - recipient priority:
+    ///  - recipient priority is defined in storage helper:
     ///      1. insuranceFund
     ///      2. feeRecipient
     ///  - effective repayment is bounded by:
@@ -350,6 +360,8 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
         if (requestedAmountBase == 0) revert AmountZero();
 
         address recipient = _resolvedBadDebtRepaymentRecipient();
+        if (recipient == address(0)) revert InsuranceFundNotSet();
+
         address baseToken = _baseCollateralToken();
 
         _syncVaultBestEffort(payer, baseToken);
@@ -402,24 +414,5 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
     function setCollateralVault(address vault_) external onlyOwner {
         if (vault_ == address(0)) revert ZeroAddress();
         _collateralVault = CollateralVault(vault_);
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                            INTERNAL HELPERS
-    //////////////////////////////////////////////////////////////*/
-
-    function _baseCollateralToken() internal view returns (address token) {
-        token = _marketRegistry.baseCollateralToken();
-        if (token == address(0)) revert InvalidMarket();
-    }
-
-    function _resolvedBadDebtRepaymentRecipient() internal view returns (address recipient) {
-        recipient = insuranceFund;
-        if (recipient != address(0)) return recipient;
-
-        recipient = feeRecipient;
-        if (recipient != address(0)) return recipient;
-
-        revert InsuranceFundNotSet();
     }
 }

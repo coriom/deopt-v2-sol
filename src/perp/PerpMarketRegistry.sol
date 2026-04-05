@@ -6,13 +6,14 @@ pragma solidity ^0.8.20;
 /// @dev
 ///  Responsibilities:
 ///   - define perp markets (no expiry)
-///   - store market risk / funding / oracle configuration
+///   - store market risk / liquidation / funding / oracle configuration
 ///   - NOT handle positions, runtime funding accrual, or user margin
 ///
 ///  Conventions:
 ///   - prices in 1e8
 ///   - position sizing in size1e8 (1e8 = 1 underlying)
 ///   - position / OI caps expressed in 1e8 underlying units
+///   - ratios suffixed `Bps` are in basis points
 ///
 ///  Architecture:
 ///   - PerpEngine reads this registry
@@ -41,6 +42,10 @@ contract PerpMarketRegistry {
     uint32 public constant MIN_INITIAL_MARGIN_BPS = 1;
     uint32 public constant MIN_MAINTENANCE_MARGIN_BPS = 1;
 
+    uint32 public constant MAX_LIQUIDATION_ORACLE_DELAY = 3600;
+    uint32 public constant MIN_CLOSE_FACTOR_BPS = 1;
+    uint32 public constant MAX_CLOSE_FACTOR_BPS = 10_000;
+
     /*//////////////////////////////////////////////////////////////
                                 TYPES
     //////////////////////////////////////////////////////////////*/
@@ -58,10 +63,23 @@ contract PerpMarketRegistry {
     struct RiskConfig {
         uint32 initialMarginBps; // ex: 1000 = 10%
         uint32 maintenanceMarginBps; // ex: 500 = 5%
-        uint32 liquidationPenaltyBps; // penalty paid on liquidation
+        uint32 liquidationPenaltyBps; // penalty target
         uint128 maxPositionSize1e8; // max abs size per account
         uint128 maxOpenInterest1e8; // cap total OI
         bool reduceOnlyDuringCloseOnly; // safety switch for engine
+    }
+
+    /// @notice Per-market liquidation policy.
+    /// @dev
+    ///  - closeFactorBps controls max clip size per liquidation
+    ///  - priceSpreadBps applies adverse execution vs mark
+    ///  - minImprovementBps avoids grief / decorative liquidations
+    ///  - oracleMaxDelay is the local liquidation staleness guard
+    struct LiquidationConfig {
+        uint32 closeFactorBps;
+        uint32 priceSpreadBps;
+        uint32 minImprovementBps;
+        uint32 oracleMaxDelay;
     }
 
     struct FundingConfig {
@@ -87,6 +105,7 @@ contract PerpMarketRegistry {
     error InvalidMarketParams();
 
     error InvalidRiskConfig();
+    error InvalidLiquidationConfig();
     error InvalidFundingConfig();
 
     error CreationPaused();
@@ -138,6 +157,14 @@ contract PerpMarketRegistry {
         bool reduceOnlyDuringCloseOnly
     );
 
+    event LiquidationConfigSet(
+        uint256 indexed marketId,
+        uint32 closeFactorBps,
+        uint32 priceSpreadBps,
+        uint32 minImprovementBps,
+        uint32 oracleMaxDelay
+    );
+
     event FundingConfigSet(
         uint256 indexed marketId,
         bool isEnabled,
@@ -155,6 +182,7 @@ contract PerpMarketRegistry {
 
     mapping(uint256 => Market) private _markets;
     mapping(uint256 => RiskConfig) private _riskConfigs;
+    mapping(uint256 => LiquidationConfig) private _liquidationConfigs;
     mapping(uint256 => FundingConfig) private _fundingConfigs;
 
     uint256[] private _allMarketIds;
@@ -381,6 +409,25 @@ contract PerpMarketRegistry {
         );
     }
 
+    function setLiquidationConfig(uint256 marketId, LiquidationConfig calldata cfg)
+        external
+        onlyOwner
+        whenConfigNotPaused
+    {
+        if (!_markets[marketId].exists) revert UnknownMarket();
+        _validateLiquidationConfig(cfg);
+
+        _liquidationConfigs[marketId] = cfg;
+
+        emit LiquidationConfigSet(
+            marketId,
+            cfg.closeFactorBps,
+            cfg.priceSpreadBps,
+            cfg.minImprovementBps,
+            cfg.oracleMaxDelay
+        );
+    }
+
     function setFundingConfig(uint256 marketId, FundingConfig calldata cfg) external onlyOwner whenConfigNotPaused {
         if (!_markets[marketId].exists) revert UnknownMarket();
         _validateFundingConfig(cfg);
@@ -413,12 +460,14 @@ contract PerpMarketRegistry {
         address oracle_,
         bytes32 symbol,
         RiskConfig calldata riskCfg,
+        LiquidationConfig calldata liquidationCfg,
         FundingConfig calldata fundingCfg
     ) external onlyMarketCreator whenCreationNotPaused returns (uint256 marketId) {
         _validateMarketParams(underlying, settlementAsset, symbol);
         if (!isSettlementAssetAllowed[settlementAsset]) revert SettlementAssetNotAllowed();
 
         _validateRiskConfig(riskCfg);
+        _validateLiquidationConfig(liquidationCfg);
         _validateFundingConfig(fundingCfg);
 
         bytes32 key = _marketKey(underlying, settlementAsset, symbol);
@@ -438,6 +487,7 @@ contract PerpMarketRegistry {
         });
 
         _riskConfigs[marketId] = riskCfg;
+        _liquidationConfigs[marketId] = liquidationCfg;
         _fundingConfigs[marketId] = fundingCfg;
 
         marketIdByKey[key] = marketId;
@@ -454,6 +504,14 @@ contract PerpMarketRegistry {
             riskCfg.maxPositionSize1e8,
             riskCfg.maxOpenInterest1e8,
             riskCfg.reduceOnlyDuringCloseOnly
+        );
+
+        emit LiquidationConfigSet(
+            marketId,
+            liquidationCfg.closeFactorBps,
+            liquidationCfg.priceSpreadBps,
+            liquidationCfg.minImprovementBps,
+            liquidationCfg.oracleMaxDelay
         );
 
         emit FundingConfigSet(
@@ -502,6 +560,11 @@ contract PerpMarketRegistry {
         return _riskConfigs[marketId];
     }
 
+    function getLiquidationConfig(uint256 marketId) external view returns (LiquidationConfig memory cfg) {
+        if (!_markets[marketId].exists) revert UnknownMarket();
+        return _liquidationConfigs[marketId];
+    }
+
     function getFundingConfig(uint256 marketId) external view returns (FundingConfig memory cfg) {
         if (!_markets[marketId].exists) revert UnknownMarket();
         return _fundingConfigs[marketId];
@@ -510,11 +573,17 @@ contract PerpMarketRegistry {
     function getMarketConfigs(uint256 marketId)
         external
         view
-        returns (Market memory market_, RiskConfig memory riskCfg, FundingConfig memory fundingCfg)
+        returns (
+            Market memory market_,
+            RiskConfig memory riskCfg,
+            LiquidationConfig memory liquidationCfg,
+            FundingConfig memory fundingCfg
+        )
     {
         market_ = _markets[marketId];
         if (!market_.exists) revert UnknownMarket();
         riskCfg = _riskConfigs[marketId];
+        liquidationCfg = _liquidationConfigs[marketId];
         fundingCfg = _fundingConfigs[marketId];
     }
 
@@ -625,6 +694,14 @@ contract PerpMarketRegistry {
         if (cfg.maxOpenInterest1e8 == 0) revert InvalidRiskConfig();
 
         if (cfg.maxOpenInterest1e8 < cfg.maxPositionSize1e8) revert InvalidRiskConfig();
+    }
+
+    function _validateLiquidationConfig(LiquidationConfig calldata cfg) internal pure {
+        if (cfg.closeFactorBps < MIN_CLOSE_FACTOR_BPS) revert InvalidLiquidationConfig();
+        if (cfg.closeFactorBps > MAX_CLOSE_FACTOR_BPS) revert InvalidLiquidationConfig();
+        if (cfg.priceSpreadBps > uint32(BPS)) revert InvalidLiquidationConfig();
+        if (cfg.minImprovementBps > uint32(BPS)) revert InvalidLiquidationConfig();
+        if (cfg.oracleMaxDelay > MAX_LIQUIDATION_ORACLE_DELAY) revert InvalidLiquidationConfig();
     }
 
     function _validateFundingConfig(FundingConfig calldata cfg) internal pure {
