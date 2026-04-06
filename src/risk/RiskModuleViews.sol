@@ -12,6 +12,7 @@ import "./RiskModuleAdmin.sol";
 ///   - compute account risk / free collateral / withdraw previews
 ///   - expose margin ratio and oracle helper views
 ///   - expose decomposed collateral / product risk state
+///   - expose effective options risk policy by underlying
 ///
 ///  Canonical conventions:
 ///   - all `...Base` fields are denominated in native units of the protocol base collateral token
@@ -23,7 +24,25 @@ import "./RiskModuleAdmin.sol";
 ///   - pagination over trader series avoids unbounded memory growth
 ///   - if base collateral is not configured, views degrade gracefully
 ///   - perp contribution is consumed best-effort through `perpRiskModule` / `perpEngine` when configured
+///   - options-side IM/MM/liability are sourced from `_computeOptionsMarginSnapshot(...)`
+///     so they automatically reflect per-underlying `OptionRiskConfig`
 abstract contract RiskModuleViews is RiskModuleAdmin {
+    /*//////////////////////////////////////////////////////////////
+                                TYPES
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Public-facing effective options risk policy for one underlying.
+    /// @dev
+    ///  - values are post-fallback effective values
+    ///  - `usesGlobalFallback` tells whether registry-level config was absent
+    struct EffectiveOptionRiskPolicyView {
+        address underlying;
+        uint256 baseMaintenanceMarginPerContract;
+        uint256 imFactorBps;
+        uint256 oracleDownMmMultiplierBps;
+        bool usesGlobalFallback;
+    }
+
     /*//////////////////////////////////////////////////////////////
                             INTERNAL PERP HELPERS
     //////////////////////////////////////////////////////////////*/
@@ -142,46 +161,11 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
         address base = baseCollateralToken;
         if (base == address(0)) return state;
 
-        (, uint8 baseDec, uint256 baseScale) = _loadBase();
+        (, , uint256 baseScale) = _loadBase();
 
-        uint256 optionsMaintenanceMarginBase;
-        uint256 len = marginEngine.getTraderSeriesLength(trader);
-
-        for (uint256 start = 0; start < len; start += SERIES_PAGE) {
-            uint256 end = start + SERIES_PAGE;
-            if (end > len) end = len;
-
-            uint256[] memory seriesIds = marginEngine.getTraderSeriesSlice(trader, start, end);
-
-            for (uint256 i = 0; i < seriesIds.length; i++) {
-                uint256 optionId = seriesIds[i];
-
-                IMarginEngineState.Position memory pos = marginEngine.positions(trader, optionId);
-                if (pos.quantity >= 0) continue;
-
-                uint256 shortAbs = _absQuantityU(pos.quantity);
-
-                OptionProductRegistry.OptionSeries memory s = optionRegistry.getSeries(optionId);
-                _requireStandardContractSize(s);
-
-                OptionProductRegistry.UnderlyingConfig memory ucfg = _getUnderlyingConfig(s.underlying);
-                (uint256 spot, bool okSpot) = _tryGetPrice(s.underlying, s.settlementAsset);
-
-                uint256 mmPerContractBase = _computePerContractMM(s, spot, ucfg, okSpot, base, baseScale);
-
-                uint256 addBase = shortAbs * mmPerContractBase;
-                if (mmPerContractBase != 0 && addBase / mmPerContractBase != shortAbs) revert MathOverflow();
-
-                optionsMaintenanceMarginBase = _addChecked(optionsMaintenanceMarginBase, addBase);
-            }
-        }
-
-        state.optionsMaintenanceMarginBase = optionsMaintenanceMarginBase;
-        state.optionsInitialMarginBase = (optionsMaintenanceMarginBase > 0 && imFactorBps > 0)
-            ? Math.mulDiv(optionsMaintenanceMarginBase, imFactorBps, BPS_U, Math.Rounding.Ceil)
-            : 0;
-
-        baseDec;
+        OptionsMarginSnapshot memory optSnap = _computeOptionsMarginSnapshot(trader, base, baseScale);
+        state.optionsMaintenanceMarginBase = optSnap.maintenanceMarginBase;
+        state.optionsInitialMarginBase = optSnap.initialMarginBase;
 
         if (_hasPerpRiskModule()) {
             (bool okPerpRisk, IPerpRiskModule.AccountRisk memory perpRisk) = _tryGetPerpAccountRisk(trader);
@@ -440,6 +424,59 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
         }
 
         preview.wouldBreachMargin = breach;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                    OPTION RISK POLICY VIEWS
+    //////////////////////////////////////////////////////////////*/
+
+    function getEffectiveOptionRiskPolicy(address underlying)
+        external
+        view
+        returns (EffectiveOptionRiskPolicyView memory policy)
+    {
+        policy.underlying = underlying;
+
+        (
+            uint128 baseMmFloorPerContract,
+            uint32 imFactorBpsLocal,
+            uint32 oracleDownMmMultiplierBpsLocal,
+            bool isConfigured
+        ) = optionRegistry.optionRiskConfigs(underlying);
+
+        if (isConfigured) {
+            policy.baseMaintenanceMarginPerContract = uint256(baseMmFloorPerContract);
+            policy.imFactorBps = uint256(imFactorBpsLocal);
+            policy.oracleDownMmMultiplierBps = uint256(oracleDownMmMultiplierBpsLocal);
+            policy.usesGlobalFallback = false;
+            return policy;
+        }
+
+        policy.baseMaintenanceMarginPerContract = baseMaintenanceMarginPerContract;
+        policy.imFactorBps = imFactorBps;
+        policy.oracleDownMmMultiplierBps = oracleDownMmMultiplierBps;
+        policy.usesGlobalFallback = true;
+    }
+
+    function getUnderlyingConfig(address underlying)
+        external
+        view
+        returns (OptionProductRegistry.UnderlyingConfig memory cfg)
+    {
+        cfg = optionRegistry.underlyingConfigs(underlying);
+    }
+
+    function getOptionRiskConfig(address underlying)
+        external
+        view
+        returns (
+            uint128 baseMaintenanceMarginPerContract,
+            uint32 optionImFactorBps,
+            uint32 optionOracleDownMmMultiplierBps,
+            bool isConfigured
+        )
+    {
+        return optionRegistry.optionRiskConfigs(underlying);
     }
 
     /*//////////////////////////////////////////////////////////////
