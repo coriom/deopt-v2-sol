@@ -167,6 +167,17 @@ abstract contract RiskModuleAdmin is RiskModuleMargin {
         emit MaxOracleDelaySet(old, _maxOracleDelay);
     }
 
+    /*//////////////////////////////////////////////////////////////
+                    OPTION GLOBAL FALLBACK DEFAULTS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Sets the global fallback multiplier used when settlement->base conversion fails.
+    /// @dev
+    ///  Primary source of truth for options risk policy is now:
+    ///   - OptionProductRegistry.optionRiskConfigs(underlying)
+    ///
+    ///  This global value is only used when a given underlying has no specific
+    ///  `OptionRiskConfig` configured.
     function setOracleDownMmMultiplier(uint256 _multiplierBps) external onlyOwner {
         if (_multiplierBps < BPS_U || _multiplierBps > 100_000) revert InvalidParams();
 
@@ -176,17 +187,22 @@ abstract contract RiskModuleAdmin is RiskModuleMargin {
         emit OracleDownMmMultiplierSet(old, _multiplierBps);
     }
 
-    /// @notice Sets the unified risk numeraire and core options-side cached parameters.
+    /// @notice Sets the unified protocol risk numeraire and global fallback defaults for options.
     /// @dev
     ///  Canonical conventions:
-    ///   - `_baseMMPerContract` is denominated in native units of `_baseToken`
-    ///   - `_imFactorBps` is expressed in basis points
+    ///   - `_baseToken` = unified protocol risk numeraire
+    ///   - `_baseMMPerContract` = global fallback MM floor per option contract,
+    ///      denominated in native units of `_baseToken`
+    ///   - `_imFactorBps` = global fallback IM/MM multiplier in basis points
     ///
-    ///  Note:
-    ///   - this function no longer hardcodes a USDC-specific decimal requirement
-    ///   - the only hard requirements are:
-    ///       * token is supported in the vault
-    ///       * token decimals are configured and safe
+    ///  Important:
+    ///   - these options parameters are now fallback defaults only
+    ///   - per-underlying options policy should preferably live in:
+    ///       OptionProductRegistry.optionRiskConfigs(underlying)
+    ///
+    ///  This function still remains necessary because:
+    ///   - RiskModule must keep a central base collateral token
+    ///   - fallback defaults are useful for migration / unset underlyings / emergency operation
     function setRiskParams(address _baseToken, uint256 _baseMMPerContract, uint256 _imFactorBps) external onlyOwner {
         if (_baseToken == address(0)) revert ZeroAddress();
         if (_baseMMPerContract == 0) revert InvalidParams();
@@ -207,6 +223,35 @@ abstract contract RiskModuleAdmin is RiskModuleMargin {
         collateralConfigs[_baseToken] = CollateralConfig({weightBps: uint64(BPS_U), isEnabled: true});
         emit CollateralConfigSet(_baseToken, uint64(BPS_U), true);
     }
+
+    /// @notice Convenience alias making the fallback semantics explicit.
+    function setOptionFallbackRiskParams(address _baseToken, uint256 _baseMMPerContract, uint256 _imFactorBps)
+        external
+        onlyOwner
+    {
+        if (_baseToken == address(0)) revert ZeroAddress();
+        if (_baseMMPerContract == 0) revert InvalidParams();
+        if (_imFactorBps < BPS_U) revert InvalidParams();
+
+        CollateralVault.CollateralTokenConfig memory baseCfg = _vaultCfg(_baseToken);
+        if (!baseCfg.isSupported) revert TokenNotSupportedInVault(_baseToken);
+        if (baseCfg.decimals == 0) revert TokenDecimalsNotConfigured(_baseToken);
+        if (uint256(baseCfg.decimals) > MAX_POW10_EXP) revert DecimalsOverflow(_baseToken);
+
+        baseCollateralToken = _baseToken;
+        baseMaintenanceMarginPerContract = _baseMMPerContract;
+        imFactorBps = _imFactorBps;
+
+        emit RiskParamsSet(_baseToken, _baseMMPerContract, _imFactorBps);
+
+        _listTokenIfNeeded(_baseToken);
+        collateralConfigs[_baseToken] = CollateralConfig({weightBps: uint64(BPS_U), isEnabled: true});
+        emit CollateralConfigSet(_baseToken, uint64(BPS_U), true);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                            COLLATERAL CONFIG
+    //////////////////////////////////////////////////////////////*/
 
     function setCollateralConfig(address token, uint64 weightBps, bool isEnabled) external onlyOwner {
         if (token == address(0)) revert ZeroAddress();
