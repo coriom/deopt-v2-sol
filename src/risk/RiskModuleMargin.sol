@@ -19,6 +19,11 @@ import "./RiskModuleCollateral.sol";
 ///   - `shortLiabilityBase` is a conservative liability measure for short options
 ///   - `maintenanceMarginBase` / `initialMarginBase` are margin requirements, not cashflows
 ///
+///  Economic architecture:
+///   - primary source of truth for options risk policy is now:
+///       OptionProductRegistry.optionRiskConfigs(underlying)
+///   - global RiskModule params remain available as fallback legacy defaults
+///
 ///  Emergency note:
 ///   - This layer only exposes internal helpers.
 ///   - External/public pause enforcement is expected in upper layers
@@ -36,6 +41,47 @@ abstract contract RiskModuleMargin is RiskModuleCollateral {
         uint256 initialMarginBase;
     }
 
+    /// @notice Effective options risk policy for one underlying.
+    /// @dev All values are post-fallback effective values.
+    struct EffectiveOptionRiskConfig {
+        uint256 baseMaintenanceMarginPerContract;
+        uint256 imFactorBps;
+        uint256 oracleDownMmMultiplierBps;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                    INTERNAL OPTION RISK POLICY HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @dev Loads the effective options risk config for one underlying.
+    ///      Primary source of truth:
+    ///       - OptionProductRegistry.optionRiskConfigs(underlying)
+    ///      Fallback:
+    ///       - global RiskModule params
+    function _effectiveOptionRiskConfig(address underlying)
+        internal
+        view
+        returns (EffectiveOptionRiskConfig memory cfg)
+    {
+        (
+            uint128 baseMmFloorPerContract,
+            uint32 imFactorBpsLocal,
+            uint32 oracleDownMmMultiplierBpsLocal,
+            bool isConfigured
+        ) = optionRegistry.optionRiskConfigs(underlying);
+
+        if (isConfigured) {
+            cfg.baseMaintenanceMarginPerContract = uint256(baseMmFloorPerContract);
+            cfg.imFactorBps = uint256(imFactorBpsLocal);
+            cfg.oracleDownMmMultiplierBps = uint256(oracleDownMmMultiplierBpsLocal);
+            return cfg;
+        }
+
+        cfg.baseMaintenanceMarginPerContract = baseMaintenanceMarginPerContract;
+        cfg.imFactorBps = imFactorBps;
+        cfg.oracleDownMmMultiplierBps = oracleDownMmMultiplierBps;
+    }
+
     /*//////////////////////////////////////////////////////////////
                         INTERNAL MM FLOOR
     //////////////////////////////////////////////////////////////*/
@@ -44,7 +90,9 @@ abstract contract RiskModuleMargin is RiskModuleCollateral {
     ///      With contract size hard-locked to 1e8, this is a direct constant floor.
     function _baseMmFloorPerContract(OptionProductRegistry.OptionSeries memory s) internal view returns (uint256) {
         _requireStandardContractSize(s);
-        return baseMaintenanceMarginPerContract;
+
+        EffectiveOptionRiskConfig memory cfg = _effectiveOptionRiskConfig(s.underlying);
+        return cfg.baseMaintenanceMarginPerContract;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -80,7 +128,8 @@ abstract contract RiskModuleMargin is RiskModuleCollateral {
         uint256 baseFloor = _baseMmFloorPerContract(s);
         if (baseFloor == 0) return 0;
 
-        fallbackBase = Math.mulDiv(baseFloor, oracleDownMmMultiplierBps, BPS_U, Math.Rounding.Ceil);
+        EffectiveOptionRiskConfig memory cfg = _effectiveOptionRiskConfig(s.underlying);
+        fallbackBase = Math.mulDiv(baseFloor, cfg.oracleDownMmMultiplierBps, BPS_U, Math.Rounding.Ceil);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -187,6 +236,8 @@ abstract contract RiskModuleMargin is RiskModuleCollateral {
                 _requireStandardContractSize(s);
 
                 OptionProductRegistry.UnderlyingConfig memory cfg = _getUnderlyingConfig(s.underlying);
+                EffectiveOptionRiskConfig memory riskCfg = _effectiveOptionRiskConfig(s.underlying);
+
                 (uint256 spot1e8, bool okSpot) = _tryGetPrice(s.underlying, s.settlementAsset);
 
                 uint256 mmPerContractBase = _computePerContractMM(s, spot1e8, cfg, okSpot, base, baseScale);
@@ -219,13 +270,53 @@ abstract contract RiskModuleMargin is RiskModuleCollateral {
                     if (liabAddBase / liabilityPerContractBase != shortAbs) revert MathOverflow();
                     snap.shortLiabilityBase = _addChecked(snap.shortLiabilityBase, liabAddBase);
                 }
+
+                riskCfg;
             }
         }
 
-        if (snap.maintenanceMarginBase == 0 || imFactorBps == 0) return snap;
+        if (snap.maintenanceMarginBase == 0) return snap;
 
-        snap.initialMarginBase =
-            Math.mulDiv(snap.maintenanceMarginBase, imFactorBps, BPS_U, Math.Rounding.Ceil);
+        uint256 len2 = marginEngine.getTraderSeriesLength(trader);
+        uint256 weightedImBase;
+        uint256 totalMmBase;
+
+        for (uint256 start2 = 0; start2 < len2; start2 += SERIES_PAGE) {
+            uint256 end2 = start2 + SERIES_PAGE;
+            if (end2 > len2) end2 = len2;
+
+            uint256[] memory seriesIds2 = marginEngine.getTraderSeriesSlice(trader, start2, end2);
+
+            for (uint256 j = 0; j < seriesIds2.length; j++) {
+                uint256 optionId2 = seriesIds2[j];
+
+                IMarginEngineState.Position memory pos2 = marginEngine.positions(trader, optionId2);
+                if (pos2.quantity >= 0) continue;
+
+                uint256 shortAbs2 = _absQuantityU(pos2.quantity);
+                if (shortAbs2 == 0) continue;
+
+                OptionProductRegistry.OptionSeries memory s2 = optionRegistry.getSeries(optionId2);
+                _requireStandardContractSize(s2);
+
+                OptionProductRegistry.UnderlyingConfig memory ucfg2 = _getUnderlyingConfig(s2.underlying);
+                EffectiveOptionRiskConfig memory rcfg2 = _effectiveOptionRiskConfig(s2.underlying);
+                (uint256 spot2, bool okSpot2) = _tryGetPrice(s2.underlying, s2.settlementAsset);
+
+                uint256 mmPerContractBase2 = _computePerContractMM(s2, spot2, ucfg2, okSpot2, base, baseScale);
+                if (mmPerContractBase2 == 0) continue;
+
+                uint256 mmAddBase2 = shortAbs2 * mmPerContractBase2;
+                if (mmAddBase2 / mmPerContractBase2 != shortAbs2) revert MathOverflow();
+
+                totalMmBase = _addChecked(totalMmBase, mmAddBase2);
+
+                uint256 imAddBase2 = Math.mulDiv(mmAddBase2, rcfg2.imFactorBps, BPS_U, Math.Rounding.Ceil);
+                weightedImBase = _addChecked(weightedImBase, imAddBase2);
+            }
+        }
+
+        snap.initialMarginBase = totalMmBase == 0 ? 0 : weightedImBase;
     }
 
     /*//////////////////////////////////////////////////////////////

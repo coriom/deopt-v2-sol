@@ -4,8 +4,11 @@ pragma solidity ^0.8.20;
 /// @title OptionProductRegistry
 /// @notice Registre central des séries d'options de DeOpt v2
 /// @dev
-///  Ne gère pas les positions ni la marge, seulement la définition des instruments
-///  + le prix de settlement officiel à l'expiration.
+///  Ne gère pas les positions ni la marge, seulement :
+///   - la définition des instruments
+///   - la configuration du sous-jacent
+///   - la policy de risque options par underlying
+///   - le prix de settlement officiel à l'expiration.
 ///
 ///  Conventions d'unités (VERROUILLÉES ici):
 ///    - strike et settlementPrice sont en PRICE_SCALE (= 1e8)
@@ -33,6 +36,7 @@ contract OptionProductRegistry {
 
     /// @notice Convention de prix: 1e8 (type Chainlink 8 decimals)
     uint256 public constant PRICE_SCALE = 1e8;
+    uint256 public constant BPS = 10_000;
 
     /*//////////////////////////////////////////////////////////////
                                 TYPES
@@ -55,9 +59,10 @@ contract OptionProductRegistry {
         bool isActive; // true = tradable, false = close-only / désactivée
     }
 
-    /// @notice Configuration de risque / oracle par sous-jacent
+    /// @notice Configuration de risque / oracle par sous-jacent.
     /// @dev
     ///   - Les champs *Shock* sont en basis points (bps).
+    ///   - Cette struct reste focalisée sur le comportement de stress du sous-jacent.
     struct UnderlyingConfig {
         address oracle; // (optionnel) pour usage futur / RiskModule
         uint64 spotShockDownBps; // choc spot down, ex: 2500 = -25%
@@ -67,11 +72,34 @@ contract OptionProductRegistry {
         bool isEnabled; // sous-jacent utilisable ou non
     }
 
+    /// @notice Policy de risque options par sous-jacent.
+    /// @dev
+    ///   - `baseMaintenanceMarginPerContract` est exprimé dans le numéraire de risque central
+    ///     attendu par le protocole (ex: unités natives de l'USDC si USDC = base token).
+    ///   - `imFactorBps` = multiplicateur IM/MM en bps
+    ///   - `oracleDownMmMultiplierBps` = fallback conservateur en bps
+    ///
+    ///  Cette struct ne remplace PAS `UnderlyingConfig`.
+    ///  Elle capture la policy économique spécifique aux options du sous-jacent.
+    struct OptionRiskConfig {
+        uint128 baseMaintenanceMarginPerContract;
+        uint32 imFactorBps;
+        uint32 oracleDownMmMultiplierBps;
+        bool isConfigured;
+    }
+
     /// @notice Proposition de prix de settlement (phase 1), finalisation (phase 2).
     struct SettlementProposal {
         uint256 price; // prix proposé en 1e8
         uint64 proposedAt; // timestamp de proposition
         bool exists; // proposal set
+    }
+
+    /// @notice Vue combinée utile pour RiskModule / front / admin tooling.
+    struct UnderlyingRiskProfile {
+        address underlying;
+        UnderlyingConfig underlyingConfig;
+        OptionRiskConfig optionRiskConfig;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -92,6 +120,7 @@ contract OptionProductRegistry {
     error SettlementAlreadySet();
     error NotExpiredYet();
     error InvalidUnderlyingConfig(); // paramètres de sous-jacent hors bornes
+    error InvalidOptionRiskConfig(); // paramètres de risque options hors bornes
     error UnderlyingNotEnabled();
     error SettlementAssetNotAllowed();
 
@@ -123,6 +152,11 @@ contract OptionProductRegistry {
 
     uint64 public constant MAX_SPOT_SHOCK_BPS = 10_000; // 100%
     uint64 public constant MAX_VOL_SHOCK_BPS = 5_000; // 50%
+
+    uint32 public constant MIN_IM_FACTOR_BPS = 10_000; // 1.0x
+    uint32 public constant MAX_IM_FACTOR_BPS = 100_000; // 10x defensive upper bound
+    uint32 public constant MIN_ORACLE_DOWN_MM_MULTIPLIER_BPS = 10_000; // 1.0x
+    uint32 public constant MAX_ORACLE_DOWN_MM_MULTIPLIER_BPS = 100_000; // 10x defensive upper bound
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
@@ -167,6 +201,14 @@ contract OptionProductRegistry {
         bool isEnabled
     );
 
+    event OptionRiskConfigSet(
+        address indexed underlying,
+        uint128 baseMaintenanceMarginPerContract,
+        uint32 imFactorBps,
+        uint32 oracleDownMmMultiplierBps,
+        bool isConfigured
+    );
+
     event SettlementOperatorSet(address indexed account);
 
     event SettlementPriceProposed(uint256 indexed optionId, uint256 proposedPrice, uint256 proposedAt);
@@ -203,6 +245,7 @@ contract OptionProductRegistry {
 
     mapping(address => bool) public isSeriesCreator;
     mapping(address => UnderlyingConfig) public underlyingConfigs;
+    mapping(address => OptionRiskConfig) public optionRiskConfigs;
 
     /// @dev address(0) autorisé (désactivation).
     address public settlementOperator;
@@ -445,6 +488,72 @@ contract OptionProductRegistry {
             cfg.volShockDownBps,
             cfg.volShockUpBps,
             cfg.isEnabled
+        );
+    }
+
+    /// @notice Sets options-specific risk policy for one underlying.
+    /// @dev
+    ///  This is the new per-underlying economic layer used to calibrate:
+    ///   - ETH options
+    ///   - BTC options
+    ///   - future underlyings
+    function setOptionRiskConfig(address underlying, OptionRiskConfig calldata cfg)
+        external
+        onlyOwner
+        whenConfigNotPaused
+    {
+        if (underlying == address(0)) revert UnderlyingZero();
+        _validateOptionRiskConfig(cfg);
+
+        optionRiskConfigs[underlying] = cfg;
+
+        emit OptionRiskConfigSet(
+            underlying,
+            cfg.baseMaintenanceMarginPerContract,
+            cfg.imFactorBps,
+            cfg.oracleDownMmMultiplierBps,
+            cfg.isConfigured
+        );
+    }
+
+    /// @notice Convenience setter to configure both layers in a single transaction.
+    function setUnderlyingRiskProfile(
+        address underlying,
+        UnderlyingConfig calldata underlyingCfg,
+        OptionRiskConfig calldata optionRiskCfg
+    ) external onlyOwner whenConfigNotPaused {
+        if (underlying == address(0)) revert UnderlyingZero();
+
+        if (
+            underlyingCfg.spotShockDownBps > MAX_SPOT_SHOCK_BPS || underlyingCfg.spotShockUpBps > MAX_SPOT_SHOCK_BPS
+        ) {
+            revert InvalidUnderlyingConfig();
+        }
+        if (underlyingCfg.volShockDownBps > MAX_VOL_SHOCK_BPS || underlyingCfg.volShockUpBps > MAX_VOL_SHOCK_BPS) {
+            revert InvalidUnderlyingConfig();
+        }
+
+        _validateOptionRiskConfig(optionRiskCfg);
+
+        underlyingConfigs[underlying] = underlyingCfg;
+        optionRiskConfigs[underlying] = optionRiskCfg;
+
+        emit UnderlyingConfigSet(
+            underlying,
+            underlyingCfg.oracle,
+            underlyingCfg.spotShockDownBps,
+            underlyingCfg.spotShockUpBps,
+            underlyingCfg.volShockDownBps,
+            underlyingCfg.volShockUpBps,
+            underlyingCfg.isEnabled
+        );
+
+        emit OptionRiskConfigSet(
+            underlying,
+            optionRiskCfg.baseMaintenanceMarginPerContract,
+            optionRiskCfg.imFactorBps,
+            optionRiskCfg.oracleDownMmMultiplierBps,
+            optionRiskCfg.isConfigured
         );
     }
 
@@ -784,6 +893,24 @@ contract OptionProductRegistry {
         }
     }
 
+    function getUnderlyingConfig(address underlying) external view returns (UnderlyingConfig memory cfg) {
+        cfg = underlyingConfigs[underlying];
+    }
+
+    function getOptionRiskConfig(address underlying) external view returns (OptionRiskConfig memory cfg) {
+        cfg = optionRiskConfigs[underlying];
+    }
+
+    function getUnderlyingRiskProfile(address underlying)
+        external
+        view
+        returns (UnderlyingRiskProfile memory profile)
+    {
+        profile.underlying = underlying;
+        profile.underlyingConfig = underlyingConfigs[underlying];
+        profile.optionRiskConfig = optionRiskConfigs[underlying];
+    }
+
     /// @notice Explicit helper for pricing / fees integrations.
     /// @dev
     ///  Because contractSize1e8 is locked to PRICE_SCALE, one contract always represents exactly
@@ -903,6 +1030,26 @@ contract OptionProductRegistry {
     /*//////////////////////////////////////////////////////////////
                         INTERNAL HELPERS
     //////////////////////////////////////////////////////////////*/
+
+    function _validateOptionRiskConfig(OptionRiskConfig calldata cfg) internal pure {
+        if (!cfg.isConfigured) {
+            if (cfg.baseMaintenanceMarginPerContract != 0) revert InvalidOptionRiskConfig();
+            if (cfg.imFactorBps != 0) revert InvalidOptionRiskConfig();
+            if (cfg.oracleDownMmMultiplierBps != 0) revert InvalidOptionRiskConfig();
+            return;
+        }
+
+        if (cfg.baseMaintenanceMarginPerContract == 0) revert InvalidOptionRiskConfig();
+        if (cfg.imFactorBps < MIN_IM_FACTOR_BPS || cfg.imFactorBps > MAX_IM_FACTOR_BPS) {
+            revert InvalidOptionRiskConfig();
+        }
+        if (
+            cfg.oracleDownMmMultiplierBps < MIN_ORACLE_DOWN_MM_MULTIPLIER_BPS
+                || cfg.oracleDownMmMultiplierBps > MAX_ORACLE_DOWN_MM_MULTIPLIER_BPS
+        ) {
+            revert InvalidOptionRiskConfig();
+        }
+    }
 
     function _computeOptionId(OptionSeries memory s) internal pure returns (uint256) {
         return uint256(
