@@ -699,13 +699,14 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         uint256 marketId,
         uint128 requestedCloseSize1e8,
         uint256 liqPrice1e8,
-        int256 currentFunding1e18
+        int256 currentFunding1e18,
+        uint256 closeFactorBps
     ) internal view returns (Position memory newPos, int256 realizedPnl1e8, uint128 executedCloseSize1e8) {
         Position memory oldPos = _positions[trader][marketId];
         if (oldPos.size1e8 == 0) revert LiquidationNothingToDo();
 
         executedCloseSize1e8 =
-            _boundedLiquidationSize1e8(oldPos.size1e8, requestedCloseSize1e8, liquidationCloseFactorBps);
+            _boundedLiquidationSize1e8(oldPos.size1e8, requestedCloseSize1e8, closeFactorBps);
         if (executedCloseSize1e8 == 0) revert LiquidationNothingToDo();
 
         int256 deltaForTrader =
@@ -846,6 +847,14 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         _requireSettlementAssetConfigured(m.settlementAsset);
         _requireInsuranceFund();
 
+        (
+            uint256 closeFactorBps,
+            uint256 penaltyBps,
+            uint256 priceSpreadBps,
+            uint256 minImprovementBps,
+            uint32 oracleMaxDelay
+        ) = _loadEffectiveLiquidationParams(marketId);
+
         IPerpRiskModule.AccountRisk memory traderBefore = _marginState(trader);
         if (!_isTraderLiquidatable(trader)) revert NotLiquidatable();
 
@@ -855,16 +864,49 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         Position memory oldTraderPos = _positions[trader][marketId];
         if (oldTraderPos.size1e8 == 0) revert LiquidationNothingToDo();
 
-        uint256 markPrice1e8 =
-            _getMarkPrice1e8(marketId);
-        uint256 liqPrice1e8 = _liquidationPrice1e8FromMark(oldTraderPos.size1e8, markPrice1e8, liquidationPriceSpreadBps);
+        uint256 markPrice1e8;
+        {
+            PerpMarketRegistry.Market memory mm = _requireMarketExists(marketId);
+            IOracle o = _marketOracle(mm);
+
+            {
+                (bool success, bytes memory data) = address(o).staticcall(
+                    abi.encodeWithSignature("getPriceSafe(address,address)", mm.underlying, mm.settlementAsset)
+                );
+
+                if (success && data.length >= 96) {
+                    (uint256 px, uint256 updatedAt, bool safeOk) = abi.decode(data, (uint256, uint256, bool));
+                    if (safeOk && px != 0) {
+                        if (oracleMaxDelay != 0) {
+                            if (updatedAt == 0) revert OraclePriceStale();
+                            if (updatedAt > block.timestamp) revert OraclePriceStale();
+                            if (block.timestamp - updatedAt > uint256(oracleMaxDelay)) revert OraclePriceStale();
+                        }
+                        markPrice1e8 = px;
+                    }
+                }
+            }
+
+            if (markPrice1e8 == 0) {
+                (uint256 px, uint256 updatedAt) = o.getPrice(mm.underlying, mm.settlementAsset);
+                if (px == 0) revert OraclePriceUnavailable();
+                if (oracleMaxDelay != 0) {
+                    if (updatedAt == 0) revert OraclePriceStale();
+                    if (updatedAt > block.timestamp) revert OraclePriceStale();
+                    if (block.timestamp - updatedAt > uint256(oracleMaxDelay)) revert OraclePriceStale();
+                }
+                markPrice1e8 = px;
+            }
+        }
+
+        uint256 liqPrice1e8 = _liquidationPrice1e8FromMark(oldTraderPos.size1e8, markPrice1e8, priceSpreadBps);
 
         Position memory newTraderPos;
         int256 traderRealizedPnl1e8;
         uint128 sizeClosed1e8;
 
         (newTraderPos, traderRealizedPnl1e8, sizeClosed1e8) =
-            _liquidationClip(trader, marketId, requestedCloseSize1e8, liqPrice1e8, currentFunding);
+            _liquidationClip(trader, marketId, requestedCloseSize1e8, liqPrice1e8, currentFunding, closeFactorBps);
 
         if (sizeClosed1e8 == 0) revert LiquidationNothingToDo();
 
@@ -903,7 +945,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
             Math.mulDiv(uint256(sizeClosed1e8), liqPrice1e8, PRICE_1E8, Math.Rounding.Down);
 
         uint256 closedNotionalBase = _settlementAmount1e8ToBase(m.settlementAsset, closedNotional1e8);
-        uint256 penaltyBase = _liquidationPenaltyBaseValue(closedNotionalBase, liquidationPenaltyBps);
+        uint256 penaltyBase = _liquidationPenaltyBaseValue(closedNotionalBase, penaltyBps);
 
         uint256 seizedPenaltyBase = _seizePenaltyToLiquidator(trader, liquidator, m.settlementAsset, penaltyBase);
 
@@ -920,7 +962,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
             traderBefore.maintenanceMarginBase,
             traderAfter.equityBase,
             traderAfter.maintenanceMarginBase,
-            minLiquidationImprovementBps
+            minImprovementBps
         );
         if (!improved) revert LiquidationNotImproving();
 

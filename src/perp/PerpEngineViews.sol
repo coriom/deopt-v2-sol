@@ -25,11 +25,16 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         uint256 shortNotional1e8;
     }
 
+    /// @notice Effective liquidation policy resolved for one market.
+    /// @dev
+    ///  - `penaltyBps` comes from market RiskConfig first, fallback engine default second
+    ///  - the other fields come from market LiquidationConfig first, fallback engine defaults second
     struct LiquidationPolicyView {
         uint256 closeFactorBps;
         uint256 penaltyBps;
         uint256 priceSpreadBps;
         uint256 minImprovementBps;
+        uint32 oracleMaxDelay;
     }
 
     /// @notice Best-effort liquidation preview.
@@ -255,6 +260,11 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         return _getRiskConfig(marketId);
     }
 
+    function getLiquidationConfig(uint256 marketId) external view returns (PerpMarketRegistry.LiquidationConfig memory) {
+        _requireMarketExists(marketId);
+        return _getLiquidationConfig(marketId);
+    }
+
     function getFundingConfig(uint256 marketId) external view returns (PerpMarketRegistry.FundingConfig memory) {
         _requireMarketExists(marketId);
         return _getFundingConfig(marketId);
@@ -279,11 +289,34 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         return _marginRatioBpsFromState(r.equityBase, r.maintenanceMarginBase) < BPS;
     }
 
+    /// @notice Legacy fallback liquidation defaults stored on the engine.
+    function getLiquidationFallbackParams() external view returns (LiquidationPolicyView memory cfg) {
+        cfg.closeFactorBps = liquidationCloseFactorBps;
+        cfg.penaltyBps = liquidationPenaltyBps;
+        cfg.priceSpreadBps = liquidationPriceSpreadBps;
+        cfg.minImprovementBps = minLiquidationImprovementBps;
+        cfg.oracleMaxDelay = liquidationOracleMaxDelay;
+    }
+
+    /// @notice Effective liquidation policy resolved for one market.
+    function getEffectiveLiquidationParams(uint256 marketId) public view returns (LiquidationPolicyView memory cfg) {
+        _requireMarketExists(marketId);
+
+        cfg.closeFactorBps = _liquidationCloseFactorBpsForMarket(marketId);
+        cfg.penaltyBps = _liquidationPenaltyBpsForMarket(marketId);
+        cfg.priceSpreadBps = _liquidationPriceSpreadBpsForMarket(marketId);
+        cfg.minImprovementBps = _minLiquidationImprovementBpsForMarket(marketId);
+        cfg.oracleMaxDelay = _liquidationOracleMaxDelayForMarket(marketId);
+    }
+
+    /// @notice Backward-compatible alias.
+    /// @dev Returns fallback defaults, not the effective per-market policy.
     function getLiquidationParams() external view returns (LiquidationPolicyView memory cfg) {
         cfg.closeFactorBps = liquidationCloseFactorBps;
         cfg.penaltyBps = liquidationPenaltyBps;
         cfg.priceSpreadBps = liquidationPriceSpreadBps;
         cfg.minImprovementBps = minLiquidationImprovementBps;
+        cfg.oracleMaxDelay = liquidationOracleMaxDelay;
     }
 
     function previewInsuranceCoverage(uint256 requestedBaseValue)
@@ -315,9 +348,12 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
 
         PerpMarketRegistry.Market memory m = _requireMarketExists(marketId);
 
+        (uint256 closeFactorBps, uint256 penaltyBps, uint256 priceSpreadBps,,) =
+            _loadEffectiveLiquidationParams(marketId);
+
         uint256 mark = _getMarkPrice1e8(marketId);
-        uint256 liqPrice = _liquidationPrice1e8FromMark(pos.size1e8, mark, liquidationPriceSpreadBps);
-        uint128 size = _boundedLiquidationSize1e8(pos.size1e8, requestedCloseSize1e8, liquidationCloseFactorBps);
+        uint256 liqPrice = _liquidationPrice1e8FromMark(pos.size1e8, mark, priceSpreadBps);
+        uint128 size = _boundedLiquidationSize1e8(pos.size1e8, requestedCloseSize1e8, closeFactorBps);
 
         if (size == 0) return p;
 
@@ -327,8 +363,8 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
             _computeNextPosition(pos, delta, liqPrice, _marketStates[marketId].cumulativeFundingRate1e18);
 
         uint256 closedNotional1e8 = Math.mulDiv(uint256(size), liqPrice, PRICE_1E8, Math.Rounding.Down);
-        uint256 closedNotionalBase = _settlementAmount1e8ToBaseValue(m.settlementAsset, closedNotional1e8);
-        uint256 penaltyTargetBase = _liquidationPenaltyBaseValue(closedNotionalBase, liquidationPenaltyBps);
+        uint256 closedNotionalBase = _settlementAmount1e8ToBase(m.settlementAsset, closedNotional1e8);
+        uint256 penaltyTargetBase = _liquidationPenaltyBaseValue(closedNotionalBase, penaltyBps);
 
         uint256 maxSeizablePenaltyBase = 0;
         if (address(_collateralSeizer) != address(0) && penaltyTargetBase != 0) {
