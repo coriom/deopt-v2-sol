@@ -14,7 +14,7 @@ import {MarginEngineTrading} from "./MarginEngineTrading.sol";
 ///  Intended wiring:
 ///   - MarginEngineViews inherits MarginEngineTrading so it can reuse
 ///     low-level pure/view helpers already present in the options stack
-///   - MarginEngineOps should then inherit MarginEngineViews
+///   - MarginEngineOps then inherits MarginEngineViews
 ///
 ///  Responsibilities:
 ///   - expose IMarginEngineState reads
@@ -53,12 +53,12 @@ abstract contract MarginEngineViews is MarginEngineTrading {
         bool liquidatable;
     }
 
-    /// @notice Per-series settlement accounting state.
+    /// @notice Rich per-series settlement status view.
     /// @dev
     ///  - `settlementPrice` is normalized in 1e8
     ///  - `totalCollected`, `totalPaid`, `totalBadDebt`
     ///    are denominated in settlement-asset native units
-    struct SeriesSettlementState {
+    struct SeriesSettlementStatusView {
         uint256 optionId;
         bool isSettled;
         uint64 settledAt;
@@ -73,24 +73,6 @@ abstract contract MarginEngineViews is MarginEngineTrading {
         uint256 proposedPrice;
         uint64 proposedAt;
         bool exists;
-    }
-
-    /// @notice Deterministic settlement preview for one account.
-    /// @dev
-    ///  - `settlementPrice` and `payoffPerContract` are price-like values / cash values
-    ///    derived from the series settlement asset
-    ///  - `pnl` is denominated in settlement-asset native units
-    struct AccountSettlementPreview {
-        uint256 optionId;
-        address trader;
-        address settlementAsset;
-        bool isExpired;
-        bool settlementSet;
-        bool alreadySettled;
-        int128 quantity;
-        uint256 settlementPrice;
-        uint256 payoffPerContract;
-        int256 pnl;
     }
 
     /// @notice Aggregated protocol settlement accounting across a slice of option ids.
@@ -167,6 +149,49 @@ abstract contract MarginEngineViews is MarginEngineTrading {
         if (amount > uint256(type(int256).max)) revert PnlOverflow();
 
         pnl = q >= 0 ? int256(amount) : -int256(amount);
+    }
+
+    function _previewSettlementResolution(
+        uint256 optionId,
+        address trader,
+        int256 pnl,
+        address settlementAsset
+    ) internal view returns (SettlementPreview memory p) {
+        p.pnl = pnl;
+        p.isSettled = isAccountSettled[optionId][trader];
+
+        if (p.isSettled) return p;
+        if (pnl == 0) {
+            p.canSettle = true;
+            return p;
+        }
+
+        uint256 grossAmount = pnl > 0 ? uint256(pnl) : uint256(-pnl);
+        p.grossAmount = grossAmount;
+
+        if (pnl < 0) {
+            uint256 traderBal = _collateralVault.balances(trader, settlementAsset);
+            p.collectibleAmount = traderBal >= grossAmount ? grossAmount : traderBal;
+            p.residualBadDebtPreview = grossAmount - p.collectibleAmount;
+            p.canSettle = true;
+            return p;
+        }
+
+        address sink = insuranceFund != address(0) ? insuranceFund : address(this);
+
+        uint256 sinkBal = _collateralVault.balances(sink, settlementAsset);
+        p.payableFromSettlementSink = sinkBal >= grossAmount ? grossAmount : sinkBal;
+
+        uint256 remainingAfterSink = grossAmount - p.payableFromSettlementSink;
+
+        if (remainingAfterSink != 0 && insuranceFund != address(0) && sink != insuranceFund) {
+            uint256 fundBal = _collateralVault.balances(insuranceFund, settlementAsset);
+            p.insurancePreview = fundBal >= remainingAfterSink ? remainingAfterSink : fundBal;
+            remainingAfterSink -= p.insurancePreview;
+        }
+
+        p.residualBadDebtPreview = remainingAfterSink;
+        p.canSettle = true;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -300,7 +325,15 @@ abstract contract MarginEngineViews is MarginEngineTrading {
         return block.timestamp >= series.expiry;
     }
 
-    function getSeriesSettlementState(uint256 optionId) public view returns (SeriesSettlementState memory s) {
+    /// @notice Pure cumulative accounting state for one series.
+    /// @dev All amounts are denominated in the series settlement-asset native units.
+    function getSeriesSettlementAccounting(uint256 optionId) external view returns (SeriesSettlementState memory s) {
+        s.totalCollected = seriesCollected[optionId];
+        s.totalPaid = seriesPaid[optionId];
+        s.totalBadDebt = seriesBadDebt[optionId];
+    }
+
+    function getSeriesSettlementState(uint256 optionId) public view returns (SeriesSettlementStatusView memory s) {
         (uint256 settlementPrice, bool isSet) = _optionRegistry.getSettlementInfo(optionId);
 
         s.optionId = optionId;
@@ -339,25 +372,26 @@ abstract contract MarginEngineViews is MarginEngineTrading {
     function previewAccountSettlement(uint256 optionId, address trader)
         external
         view
-        returns (AccountSettlementPreview memory p)
+        returns (SettlementPreview memory p)
     {
         OptionProductRegistry.OptionSeries memory series = _optionRegistry.getSeries(optionId);
         (uint256 settlementPrice, bool isSet) = _optionRegistry.getSettlementInfo(optionId);
 
-        p.optionId = optionId;
-        p.trader = trader;
-        p.settlementAsset = series.settlementAsset;
-        p.isExpired = block.timestamp >= series.expiry;
-        p.settlementSet = isSet;
-        p.alreadySettled = isAccountSettled[optionId][trader];
-        p.quantity = _positionQuantityOf(trader, optionId);
-        p.settlementPrice = settlementPrice;
-
-        if (!isSet || settlementPrice == 0 || p.quantity == 0) {
+        bool expired = block.timestamp >= series.expiry;
+        if (!expired || !isSet || settlementPrice == 0) {
+            p.isSettled = isAccountSettled[optionId][trader];
             return p;
         }
 
-        (p.payoffPerContract, p.pnl) = _previewAccountSettlementPnl(series, p.quantity, settlementPrice);
+        int128 qty = _positionQuantityOf(trader, optionId);
+        if (qty == 0) {
+            p.isSettled = isAccountSettled[optionId][trader];
+            p.canSettle = true;
+            return p;
+        }
+
+        (, int256 pnl) = _previewAccountSettlementPnl(series, qty, settlementPrice);
+        p = _previewSettlementResolution(optionId, trader, pnl, series.settlementAsset);
     }
 
     /*//////////////////////////////////////////////////////////////
