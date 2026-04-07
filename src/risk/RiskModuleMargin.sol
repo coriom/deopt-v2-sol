@@ -24,6 +24,14 @@ import "./RiskModuleCollateral.sol";
 ///       OptionProductRegistry.optionRiskConfigs(underlying)
 ///   - global RiskModule params remain available as fallback legacy defaults
 ///
+///  Invariant targeted here:
+///   MM_per_contract =
+—     max(
+///         current intrinsic liability,
+///         stressed oracle/shock liability,
+///         base MM floor
+///     )
+///
 ///  Emergency note:
 ///   - This layer only exposes internal helpers.
 ///   - External/public pause enforcement is expected in upper layers
@@ -83,6 +91,18 @@ abstract contract RiskModuleMargin is RiskModuleCollateral {
     }
 
     /*//////////////////////////////////////////////////////////////
+                            INTERNAL SMALL HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function _max2(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a >= b ? a : b;
+    }
+
+    function _max3(uint256 a, uint256 b, uint256 c) internal pure returns (uint256) {
+        return _max2(_max2(a, b), c);
+    }
+
+    /*//////////////////////////////////////////////////////////////
                         INTERNAL MM FLOOR
     //////////////////////////////////////////////////////////////*/
 
@@ -115,6 +135,22 @@ abstract contract RiskModuleMargin is RiskModuleCollateral {
         return uint256(s.strike) > spot1e8 ? (uint256(s.strike) - spot1e8) : 0;
     }
 
+    /// @dev Converts current intrinsic liability per contract to base-token native units.
+    ///      Returns (0,false) if conversion path is unavailable.
+    function _computeCurrentIntrinsicPerContractBase(
+        OptionProductRegistry.OptionSeries memory s,
+        uint256 spot1e8,
+        address base,
+        uint256 baseScale
+    ) internal view returns (uint256 intrinsicBase, bool ok) {
+        uint256 intrinsicAmount1e8 = _computePerContractIntrinsicAmount1e8(s, spot1e8);
+        if (intrinsicAmount1e8 == 0) {
+            return (0, true);
+        }
+
+        return _convert1e8SettlementToBaseWithBase(s.settlementAsset, intrinsicAmount1e8, base, baseScale);
+    }
+
     /*//////////////////////////////////////////////////////////////
                     INTERNAL FALLBACK / STRESS HELPERS
     //////////////////////////////////////////////////////////////*/
@@ -132,16 +168,45 @@ abstract contract RiskModuleMargin is RiskModuleCollateral {
         fallbackBase = Math.mulDiv(baseFloor, cfg.oracleDownMmMultiplierBps, BPS_U, Math.Rounding.Ceil);
     }
 
+    /// @dev Computes stressed per-contract settlement-side amount in normalized 1e8 units.
+    function _computeStressedPerContractAmount1e8(
+        OptionProductRegistry.OptionSeries memory s,
+        uint256 spot1e8,
+        OptionProductRegistry.UnderlyingConfig memory cfg
+    ) internal pure returns (uint256 stressedAmount1e8) {
+        uint256 spotLocal = spot1e8;
+
+        if (s.isCall) {
+            uint256 shockedSpot =
+                Math.mulDiv(spotLocal, (BPS_U + uint256(cfg.spotShockUpBps)), BPS_U, Math.Rounding.Floor);
+
+            uint256 intrinsicShock = shockedSpot > uint256(s.strike) ? (shockedSpot - uint256(s.strike)) : 0;
+            uint256 volFloor = Math.mulDiv(spotLocal, uint256(cfg.volShockUpBps), BPS_U, Math.Rounding.Floor);
+
+            stressedAmount1e8 = _max2(intrinsicShock, volFloor);
+        } else {
+            uint256 shockDownBps = uint256(cfg.spotShockDownBps);
+            if (shockDownBps > BPS_U) shockDownBps = BPS_U;
+
+            uint256 shockedSpot = Math.mulDiv(spotLocal, (BPS_U - shockDownBps), BPS_U, Math.Rounding.Floor);
+            uint256 intrinsicShock = uint256(s.strike) > shockedSpot ? (uint256(s.strike) - shockedSpot) : 0;
+            uint256 volFloor = Math.mulDiv(uint256(s.strike), uint256(cfg.volShockUpBps), BPS_U, Math.Rounding.Floor);
+
+            stressedAmount1e8 = _max2(intrinsicShock, volFloor);
+        }
+    }
+
     /*//////////////////////////////////////////////////////////////
                     INTERNAL PER-CONTRACT MM
     //////////////////////////////////////////////////////////////*/
 
     /// @dev Computes stress-based MM per short contract in base-token native units.
-    ///      Logic:
-    ///       - start from a stress scenario on spot / vol proxy
-    ///       - convert settlement-side amount to base
-    ///       - enforce base MM floor
-    ///       - if oracle conversion fails, fallback to oracleDownMmMultiplierBps * floor
+    ///      Invariant:
+    ///       MM_per_contract = max(current intrinsic, stressed liability, base floor)
+    ///
+    ///      Fallback behavior:
+    ///       - if spot is unavailable => fallback conservatively to oracleDownFallback
+    ///       - if conversion of stress/current intrinsic is unavailable => fallback conservatively
     function _computePerContractMM(
         OptionProductRegistry.OptionSeries memory s,
         uint256 spot1e8,
@@ -153,41 +218,25 @@ abstract contract RiskModuleMargin is RiskModuleCollateral {
         if (base == address(0)) return 0;
 
         uint256 baseFloor = _baseMmFloorPerContract(s);
+        uint256 oracleDownFallback = _oracleDownFallbackPerContractBase(s);
 
-        // Even if the explicit base floor is zero, keep the oracle-down fallback behavior deterministic.
-        if (!cfg.isEnabled) return baseFloor;
-
-        uint256 spotLocal = hasSpot ? spot1e8 : uint256(s.strike);
-        uint256 mmPrice1e8;
-
-        if (s.isCall) {
-            uint256 shockedSpot =
-                Math.mulDiv(spotLocal, (BPS_U + uint256(cfg.spotShockUpBps)), BPS_U, Math.Rounding.Floor);
-
-            uint256 intrinsicShock = shockedSpot > uint256(s.strike) ? (shockedSpot - uint256(s.strike)) : 0;
-            uint256 floorPrice = Math.mulDiv(spotLocal, uint256(cfg.volShockUpBps), BPS_U, Math.Rounding.Floor);
-
-            mmPrice1e8 = intrinsicShock > floorPrice ? intrinsicShock : floorPrice;
-        } else {
-            uint256 shockDownBps = uint256(cfg.spotShockDownBps);
-            if (shockDownBps > BPS_U) shockDownBps = BPS_U;
-
-            uint256 shockedSpot = Math.mulDiv(spotLocal, (BPS_U - shockDownBps), BPS_U, Math.Rounding.Floor);
-            uint256 intrinsicShock = uint256(s.strike) > shockedSpot ? (uint256(s.strike) - shockedSpot) : 0;
-            uint256 floorPrice = Math.mulDiv(uint256(s.strike), uint256(cfg.volShockUpBps), BPS_U, Math.Rounding.Floor);
-
-            mmPrice1e8 = intrinsicShock > floorPrice ? intrinsicShock : floorPrice;
+        // Underlying disabled or no spot => deterministic conservative fallback.
+        if (!cfg.isEnabled || !hasSpot) {
+            return _max2(baseFloor, oracleDownFallback);
         }
 
-        (uint256 convertedBase, bool okConv) =
-            _convert1e8SettlementToBaseWithBase(s.settlementAsset, mmPrice1e8, base, baseScale);
+        (uint256 intrinsicBase, bool okIntrinsic) =
+            _computeCurrentIntrinsicPerContractBase(s, spot1e8, base, baseScale);
 
-        if (!okConv || convertedBase == 0) {
-            return _oracleDownFallbackPerContractBase(s);
+        uint256 stressedAmount1e8 = _computeStressedPerContractAmount1e8(s, spot1e8, cfg);
+        (uint256 stressedBase, bool okStress) =
+            _convert1e8SettlementToBaseWithBase(s.settlementAsset, stressedAmount1e8, base, baseScale);
+
+        if (!okIntrinsic || !okStress) {
+            return _max3(baseFloor, intrinsicBase, oracleDownFallback);
         }
 
-        if (convertedBase < baseFloor) convertedBase = baseFloor;
-        return convertedBase;
+        return _max3(baseFloor, intrinsicBase, stressedBase);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -196,7 +245,7 @@ abstract contract RiskModuleMargin is RiskModuleCollateral {
 
     /// @dev Aggregates conservative short intrinsic liability across all open short series.
     ///      Liability is expressed in base-token native units.
-    ///      If spot or conversion is unavailable, falls back to oracleDownMmMultiplierBps * base floor.
+    ///      If spot or conversion is unavailable, falls back conservatively.
     function _computeShortLiabilityBase(address trader, address base, uint256 baseScale)
         internal
         view
@@ -235,16 +284,20 @@ abstract contract RiskModuleMargin is RiskModuleCollateral {
                 OptionProductRegistry.OptionSeries memory s = optionRegistry.getSeries(optionId);
                 _requireStandardContractSize(s);
 
-                OptionProductRegistry.UnderlyingConfig memory cfg = _getUnderlyingConfig(s.underlying);
-                EffectiveOptionRiskConfig memory riskCfg = _effectiveOptionRiskConfig(s.underlying);
+                OptionProductRegistry.UnderlyingConfig memory ucfg = _getUnderlyingConfig(s.underlying);
+                EffectiveOptionRiskConfig memory rcfg = _effectiveOptionRiskConfig(s.underlying);
 
                 (uint256 spot1e8, bool okSpot) = _tryGetPrice(s.underlying, s.settlementAsset);
 
-                uint256 mmPerContractBase = _computePerContractMM(s, spot1e8, cfg, okSpot, base, baseScale);
+                uint256 mmPerContractBase = _computePerContractMM(s, spot1e8, ucfg, okSpot, base, baseScale);
                 if (mmPerContractBase != 0) {
                     uint256 mmAddBase = shortAbs * mmPerContractBase;
                     if (mmAddBase / mmPerContractBase != shortAbs) revert MathOverflow();
+
                     snap.maintenanceMarginBase = _addChecked(snap.maintenanceMarginBase, mmAddBase);
+
+                    uint256 imAddBase = Math.mulDiv(mmAddBase, rcfg.imFactorBps, BPS_U, Math.Rounding.Ceil);
+                    snap.initialMarginBase = _addChecked(snap.initialMarginBase, imAddBase);
                 }
 
                 uint256 liabilityPerContractBase;
@@ -252,17 +305,10 @@ abstract contract RiskModuleMargin is RiskModuleCollateral {
                 if (!okSpot) {
                     liabilityPerContractBase = _oracleDownFallbackPerContractBase(s);
                 } else {
-                    uint256 intrinsicAmount1e8 = _computePerContractIntrinsicAmount1e8(s, spot1e8);
+                    (uint256 intrinsicBase, bool okIntrinsic) =
+                        _computeCurrentIntrinsicPerContractBase(s, spot1e8, base, baseScale);
 
-                    if (intrinsicAmount1e8 == 0) {
-                        liabilityPerContractBase = 0;
-                    } else {
-                        (uint256 intrinsicBase, bool okConv) =
-                            _convert1e8SettlementToBaseWithBase(s.settlementAsset, intrinsicAmount1e8, base, baseScale);
-
-                        liabilityPerContractBase =
-                            (!okConv || intrinsicBase == 0) ? _oracleDownFallbackPerContractBase(s) : intrinsicBase;
-                    }
+                    liabilityPerContractBase = okIntrinsic ? intrinsicBase : _oracleDownFallbackPerContractBase(s);
                 }
 
                 if (liabilityPerContractBase != 0) {
@@ -270,53 +316,8 @@ abstract contract RiskModuleMargin is RiskModuleCollateral {
                     if (liabAddBase / liabilityPerContractBase != shortAbs) revert MathOverflow();
                     snap.shortLiabilityBase = _addChecked(snap.shortLiabilityBase, liabAddBase);
                 }
-
-                riskCfg;
             }
         }
-
-        if (snap.maintenanceMarginBase == 0) return snap;
-
-        uint256 len2 = marginEngine.getTraderSeriesLength(trader);
-        uint256 weightedImBase;
-        uint256 totalMmBase;
-
-        for (uint256 start2 = 0; start2 < len2; start2 += SERIES_PAGE) {
-            uint256 end2 = start2 + SERIES_PAGE;
-            if (end2 > len2) end2 = len2;
-
-            uint256[] memory seriesIds2 = marginEngine.getTraderSeriesSlice(trader, start2, end2);
-
-            for (uint256 j = 0; j < seriesIds2.length; j++) {
-                uint256 optionId2 = seriesIds2[j];
-
-                IMarginEngineState.Position memory pos2 = marginEngine.positions(trader, optionId2);
-                if (pos2.quantity >= 0) continue;
-
-                uint256 shortAbs2 = _absQuantityU(pos2.quantity);
-                if (shortAbs2 == 0) continue;
-
-                OptionProductRegistry.OptionSeries memory s2 = optionRegistry.getSeries(optionId2);
-                _requireStandardContractSize(s2);
-
-                OptionProductRegistry.UnderlyingConfig memory ucfg2 = _getUnderlyingConfig(s2.underlying);
-                EffectiveOptionRiskConfig memory rcfg2 = _effectiveOptionRiskConfig(s2.underlying);
-                (uint256 spot2, bool okSpot2) = _tryGetPrice(s2.underlying, s2.settlementAsset);
-
-                uint256 mmPerContractBase2 = _computePerContractMM(s2, spot2, ucfg2, okSpot2, base, baseScale);
-                if (mmPerContractBase2 == 0) continue;
-
-                uint256 mmAddBase2 = shortAbs2 * mmPerContractBase2;
-                if (mmAddBase2 / mmPerContractBase2 != shortAbs2) revert MathOverflow();
-
-                totalMmBase = _addChecked(totalMmBase, mmAddBase2);
-
-                uint256 imAddBase2 = Math.mulDiv(mmAddBase2, rcfg2.imFactorBps, BPS_U, Math.Rounding.Ceil);
-                weightedImBase = _addChecked(weightedImBase, imAddBase2);
-            }
-        }
-
-        snap.initialMarginBase = totalMmBase == 0 ? 0 : weightedImBase;
     }
 
     /*//////////////////////////////////////////////////////////////

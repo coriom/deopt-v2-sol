@@ -27,6 +27,12 @@ import {MarginEngineViews} from "./MarginEngineViews.sol";
 ///   - settlement accounting amounts are denominated in settlement-asset native units
 ///   - `shortfall` is transient during an operation
 ///   - `badDebt` is the final residual uncovered amount recorded by the protocol
+///
+///  Settlement design:
+///   - collections from losing shorts are routed to a settlement sink
+///   - longs are paid first from the settlement sink
+///   - if needed, insurance fund tops up the remaining shortfall
+///   - any residual uncovered remainder becomes explicit series bad debt
 abstract contract MarginEngineOps is MarginEngineViews {
     /*//////////////////////////////////////////////////////////////
                         USER COLLATERAL FUNCTIONS
@@ -90,6 +96,15 @@ abstract contract MarginEngineOps is MarginEngineViews {
         payoffPerContract = _price1e8ToSettlementUnits(series.settlementAsset, intrinsicPrice1e8);
     }
 
+    /// @dev Canonical settlement sink.
+    ///      Priority:
+    ///       1) insuranceFund when configured
+    ///       2) MarginEngine itself as internal sink / pooled settlement account
+    function _settlementSink() internal view returns (address sink) {
+        sink = insuranceFund;
+        if (sink == address(0)) sink = address(this);
+    }
+
     function _collectFromTraderUpTo(address trader, address toAccount, address asset, uint256 requestedAmount)
         internal
         returns (uint256 collected)
@@ -97,12 +112,35 @@ abstract contract MarginEngineOps is MarginEngineViews {
         if (requestedAmount == 0) return 0;
 
         _syncVaultBestEffort(trader, asset);
+        if (toAccount != address(this) && toAccount != trader) {
+            _syncVaultBestEffort(toAccount, asset);
+        }
 
         uint256 traderBal = _collateralVault.balances(trader, asset);
         collected = traderBal >= requestedAmount ? requestedAmount : traderBal;
 
         if (collected > 0) {
             _collateralVault.transferBetweenAccounts(asset, trader, toAccount, collected);
+        }
+    }
+
+    /// @dev Pays from a settlement pool/sink already holding funds.
+    function _payFromSettlementSinkUpTo(address asset, address fromAccount, address toAccount, uint256 requestedAmount)
+        internal
+        returns (uint256 paid)
+    {
+        if (requestedAmount == 0) return 0;
+
+        _syncVaultBestEffort(fromAccount, asset);
+        if (toAccount != fromAccount) {
+            _syncVaultBestEffort(toAccount, asset);
+        }
+
+        uint256 fromBal = _collateralVault.balances(fromAccount, asset);
+        paid = fromBal >= requestedAmount ? requestedAmount : fromBal;
+
+        if (paid > 0) {
+            _collateralVault.transferBetweenAccounts(asset, fromAccount, toAccount, paid);
         }
     }
 
@@ -121,6 +159,7 @@ abstract contract MarginEngineOps is MarginEngineViews {
 
         if (ok && data.length >= 32) {
             paid = abi.decode(data, (uint256));
+            if (paid > requestedAmount) paid = requestedAmount;
             return paid;
         }
 
@@ -156,6 +195,48 @@ abstract contract MarginEngineOps is MarginEngineViews {
             seriesPaid[optionId],
             seriesBadDebt[optionId]
         );
+    }
+
+    /// @dev Settlement hierarchy for a winning long:
+    ///      1) settlement sink
+    ///      2) insurance fund top-up if sink != insuranceFund
+    ///      3) residual becomes bad debt
+    function _resolveLongSettlementPayout(address settlementAsset, address trader, uint256 amountDue)
+        internal
+        returns (uint256 paidToTrader, uint256 badDebt)
+    {
+        if (amountDue == 0) return (0, 0);
+
+        address sink = _settlementSink();
+
+        paidToTrader = _payFromSettlementSinkUpTo(settlementAsset, sink, trader, amountDue);
+
+        if (paidToTrader < amountDue && insuranceFund != address(0) && sink != insuranceFund) {
+            uint256 remaining = amountDue - paidToTrader;
+            uint256 insurancePaid = _payFromInsuranceFundUpTo(settlementAsset, trader, remaining);
+            paidToTrader = _addChecked(paidToTrader, insurancePaid);
+        }
+
+        if (paidToTrader < amountDue) {
+            badDebt = amountDue - paidToTrader;
+        }
+    }
+
+    /// @dev Settlement hierarchy for a losing short:
+    ///      1) collect what can actually be taken from trader
+    ///      2) residual uncollectable remainder becomes bad debt
+    function _resolveShortSettlementCollection(address settlementAsset, address trader, uint256 amountOwed)
+        internal
+        returns (uint256 collectedFromTrader, uint256 badDebt)
+    {
+        if (amountOwed == 0) return (0, 0);
+
+        address sink = _settlementSink();
+        collectedFromTrader = _collectFromTraderUpTo(trader, sink, settlementAsset, amountOwed);
+
+        if (collectedFromTrader < amountOwed) {
+            badDebt = amountOwed - collectedFromTrader;
+        }
     }
 
     function _settleAccount(uint256 optionId, address trader) internal {
@@ -199,7 +280,7 @@ abstract contract MarginEngineOps is MarginEngineViews {
             pnl = q >= 0 ? int256(amount) : -int256(amount);
         }
 
-        // close position
+        // Close position before transfers so settlement cannot be replayed.
         pos.quantity = 0;
         _syncPositionIndexes(trader, optionId, oldQty, 0);
 
@@ -210,36 +291,17 @@ abstract contract MarginEngineOps is MarginEngineViews {
         address asset = series.settlementAsset;
 
         _syncVaultBestEffort(trader, asset);
+        _syncVaultBestEffort(_settlementSink(), asset);
         if (insuranceFund != address(0)) {
             _syncVaultBestEffort(insuranceFund, asset);
         }
 
         if (pnl > 0) {
             uint256 amountDue = uint256(pnl);
-
-            // Payment hierarchy:
-            // 1) insurance fund / pooled backstop pays what it can
-            // 2) remainder becomes explicit bad debt
-            paidToTrader = _payFromInsuranceFundUpTo(asset, trader, amountDue);
-
-            if (paidToTrader < amountDue) {
-                badDebt = amountDue - paidToTrader;
-            }
+            (paidToTrader, badDebt) = _resolveLongSettlementPayout(asset, trader, amountDue);
         } else if (pnl < 0) {
             uint256 amountOwed = uint256(-pnl);
-
-            // Collection hierarchy:
-            // 1) collect what can actually be taken from the short
-            // 2) remainder becomes explicit bad debt
-            if (insuranceFund == address(0)) {
-                collectedFromTrader = _collectFromTraderUpTo(trader, address(this), asset, amountOwed);
-            } else {
-                collectedFromTrader = _collectFromTraderUpTo(trader, insuranceFund, asset, amountOwed);
-            }
-
-            if (collectedFromTrader < amountOwed) {
-                badDebt = amountOwed - collectedFromTrader;
-            }
+            (collectedFromTrader, badDebt) = _resolveShortSettlementCollection(asset, trader, amountOwed);
         }
 
         _recordSeriesSettlementAccounting(optionId, collectedFromTrader, paidToTrader, badDebt);
