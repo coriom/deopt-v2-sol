@@ -26,7 +26,7 @@ import "./RiskModuleCollateral.sol";
 ///
 ///  Invariant targeted here:
 ///   MM_per_contract =
-—     max(
+///     max(
 ///         current intrinsic liability,
 ///         stressed oracle/shock liability,
 ///         base MM floor

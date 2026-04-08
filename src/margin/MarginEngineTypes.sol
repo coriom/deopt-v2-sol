@@ -20,6 +20,8 @@ import {OptionProductRegistry} from "../OptionProductRegistry.sol";
 ///  Economic conventions:
 ///  - `shortfall` is a transient deficit during an operation
 ///  - `badDebt` is the final residual uncovered amount recorded by the protocol
+///  - options settlement accounting mirrors perp logic:
+///      collection / payment -> transient shortfall -> insurance coverage -> residual bad debt
 abstract contract MarginEngineTypes {
     /*//////////////////////////////////////////////////////////////
                                 CONSTANTS
@@ -36,6 +38,60 @@ abstract contract MarginEngineTypes {
 
     int256 internal constant INT128_MAX = int256(type(int128).max);
     int256 internal constant INT128_MIN = int256(type(int128).min);
+
+    /*//////////////////////////////////////////////////////////////
+                                TYPES
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Terminal result of settling one account on one option series.
+    /// @dev
+    ///  Sign convention:
+    ///   - pnl > 0 => trader was owed funds
+    ///   - pnl < 0 => trader owed funds
+    ///
+    ///  Unit convention:
+    ///   - all amounts below are denominated in settlement-asset native units
+    struct SettlementResult {
+        int256 pnl;
+        uint256 collectedFromTrader;
+        uint256 paidToTrader;
+        uint256 badDebt;
+    }
+
+    /// @notice Settlement-side shortfall resolution detail.
+    /// @dev
+    ///  Used to mirror the perp `LiquidationResolution` semantics:
+    ///   - targetAmount           = what should have been paid
+    ///   - paidFromSettlementSink = what the settlement sink could actually pay
+    ///   - insurancePaid          = what insurance fund additionally paid
+    ///   - residualBadDebt        = final uncovered remainder
+    struct SettlementResolution {
+        uint256 targetAmount;
+        uint256 paidFromSettlementSink;
+        uint256 insurancePaid;
+        uint256 residualBadDebt;
+    }
+
+    /// @notice Aggregated settlement accounting state for one series.
+    /// @dev All fields are denominated in settlement-asset native units.
+    struct SeriesSettlementState {
+        uint256 totalCollected;
+        uint256 totalPaid;
+        uint256 totalBadDebt;
+    }
+
+    /// @notice Settlement preview / accounting helper for one trader / one series.
+    /// @dev All cash amounts are denominated in settlement-asset native units.
+    struct SettlementPreview {
+        int256 pnl;
+        uint256 grossAmount;
+        uint256 collectibleAmount;
+        uint256 payableFromSettlementSink;
+        uint256 insurancePreview;
+        uint256 residualBadDebtPreview;
+        bool isSettled;
+        bool canSettle;
+    }
 
     /*//////////////////////////////////////////////////////////////
                                 ERRORS
@@ -250,6 +306,29 @@ abstract contract MarginEngineTypes {
         uint256 totalPaid,
         uint256 totalBadDebt
     );
+
+    /// @notice Options settlement-side shortfall observed for a winning account.
+    /// @dev All amounts are denominated in settlement-asset native units.
+    event SettlementShortfall(
+        address indexed trader,
+        uint256 indexed optionId,
+        uint256 requestedAmount,
+        uint256 paidFromSettlementSink,
+        uint256 shortfall
+    );
+
+    /// @notice Insurance fund contribution to options settlement.
+    /// @dev All amounts are denominated in settlement-asset native units.
+    event SettlementInsuranceCoverage(
+        address indexed trader,
+        uint256 indexed optionId,
+        uint256 requestedAmount,
+        uint256 paidAmount
+    );
+
+    /// @notice Final residual bad debt recorded during options settlement.
+    /// @dev All amounts are denominated in settlement-asset native units.
+    event SettlementBadDebtRecorded(address indexed trader, uint256 indexed optionId, uint256 residualBadDebt);
 
     /// @notice Collateral seized during liquidation.
     /// @dev

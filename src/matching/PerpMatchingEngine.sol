@@ -16,6 +16,12 @@ import "./IPerpEngineTrade.sol";
 ///   - buyerIsMaker:
 ///       * true  => buyer = maker, seller = taker
 ///       * false => buyer = taker, seller = maker
+///
+///  Security model:
+///   - only authorized executors may submit matched trades
+///   - both parties sign the exact same EIP-712 payload
+///   - each side consumes one strictly monotonic account nonce
+///   - traders may invalidate future orders by bumping nonce
 contract PerpMatchingEngine is ReentrancyGuard, EIP712 {
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
@@ -51,6 +57,7 @@ contract PerpMatchingEngine is ReentrancyGuard, EIP712 {
     error InvalidTrade();
     error DeadlineExpired();
     error OwnershipTransferNotInitiated();
+    error EngineNotSet();
 
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
@@ -220,6 +227,29 @@ contract PerpMatchingEngine is ReentrancyGuard, EIP712 {
         digest = _hashTypedDataV4(structHash);
     }
 
+    function previewTradeDigest(PerpTrade calldata t) external view returns (bytes32) {
+        return hashTrade(t);
+    }
+
+    function previewTradeValidity(PerpTrade calldata t)
+        external
+        view
+        returns (
+            bool structurallyValid,
+            bool deadlineValid,
+            bool buyerNonceValid,
+            bool sellerNonceValid,
+            bytes32 digest
+        )
+    {
+        digest = hashTrade(t);
+
+        structurallyValid = _isStructurallyValid(t);
+        deadlineValid = _isDeadlineValid(t);
+        buyerNonceValid = nonces[t.buyer] == t.buyerNonce;
+        sellerNonceValid = nonces[t.seller] == t.sellerNonce;
+    }
+
     function _verify(address signer, bytes32 digest, bytes calldata sig) internal pure returns (bool) {
         (address recovered, ECDSA.RecoverError err,) = ECDSA.tryRecover(digest, sig);
         return (err == ECDSA.RecoverError.NoError) && (recovered == signer);
@@ -235,12 +265,22 @@ contract PerpMatchingEngine is ReentrancyGuard, EIP712 {
         }
     }
 
-    function _validate(PerpTrade calldata t) internal view {
-        if (t.buyer == address(0) || t.seller == address(0)) revert InvalidTrade();
-        if (t.buyer == t.seller) revert InvalidTrade();
-        if (t.sizeDelta1e8 == 0 || t.executionPrice1e8 == 0) revert InvalidTrade();
+    function _isStructurallyValid(PerpTrade calldata t) internal pure returns (bool) {
+        if (t.buyer == address(0) || t.seller == address(0)) return false;
+        if (t.buyer == t.seller) return false;
+        if (t.sizeDelta1e8 == 0) return false;
+        if (t.executionPrice1e8 == 0) return false;
+        return true;
+    }
 
-        if (t.deadline != 0 && block.timestamp > t.deadline) revert DeadlineExpired();
+    function _isDeadlineValid(PerpTrade calldata t) internal view returns (bool) {
+        if (t.deadline == 0) return true;
+        return block.timestamp <= t.deadline;
+    }
+
+    function _validate(PerpTrade calldata t) internal view {
+        if (!_isStructurallyValid(t)) revert InvalidTrade();
+        if (!_isDeadlineValid(t)) revert DeadlineExpired();
     }
 
     function _toEngineTrade(PerpTrade calldata t) internal pure returns (IPerpEngineTrade.Trade memory mt) {
@@ -254,15 +294,11 @@ contract PerpMatchingEngine is ReentrancyGuard, EIP712 {
         });
     }
 
-    /*//////////////////////////////////////////////////////////////
-                                EXECUTION
-    //////////////////////////////////////////////////////////////*/
+    function _requireEngineSet() internal view {
+        if (address(perpEngine) == address(0)) revert EngineNotSet();
+    }
 
-    function executeTrade(PerpTrade calldata t, bytes calldata buyerSig, bytes calldata sellerSig)
-        external
-        onlyExecutor
-        nonReentrant
-    {
+    function _executeSingle(PerpTrade calldata t, bytes calldata buyerSig, bytes calldata sellerSig) internal {
         _validate(t);
 
         bytes32 digest = hashTrade(t);
@@ -286,38 +322,31 @@ contract PerpMatchingEngine is ReentrancyGuard, EIP712 {
         );
     }
 
+    /*//////////////////////////////////////////////////////////////
+                                EXECUTION
+    //////////////////////////////////////////////////////////////*/
+
+    function executeTrade(PerpTrade calldata t, bytes calldata buyerSig, bytes calldata sellerSig)
+        external
+        onlyExecutor
+        nonReentrant
+    {
+        _requireEngineSet();
+        _executeSingle(t, buyerSig, sellerSig);
+    }
+
     function executeBatch(PerpTrade[] calldata trades, bytes[] calldata buyerSigs, bytes[] calldata sellerSigs)
         external
         onlyExecutor
         nonReentrant
     {
+        _requireEngineSet();
+
         uint256 len = trades.length;
         if (len == 0 || buyerSigs.length != len || sellerSigs.length != len) revert InvalidTrade();
 
         for (uint256 i = 0; i < len; i++) {
-            PerpTrade calldata t = trades[i];
-
-            _validate(t);
-
-            bytes32 digest = hashTrade(t);
-
-            if (!_verify(t.buyer, digest, buyerSigs[i])) revert InvalidSignature();
-            if (!_verify(t.seller, digest, sellerSigs[i])) revert InvalidSignature();
-
-            _consumeNonces(t);
-
-            perpEngine.applyTrade(_toEngineTrade(t));
-
-            emit TradeExecuted(
-                t.buyer,
-                t.seller,
-                t.marketId,
-                t.sizeDelta1e8,
-                t.executionPrice1e8,
-                t.buyerIsMaker,
-                t.buyerNonce,
-                t.sellerNonce
-            );
+            _executeSingle(trades[i], buyerSigs[i], sellerSigs[i]);
         }
     }
 }

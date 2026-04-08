@@ -7,7 +7,7 @@ pragma solidity ^0.8.20;
 ///  This component is intentionally a planning / valuation surface only.
 ///  It does not execute transfers itself.
 ///
-— exposed surface:
+/// exposed surface:
 ///   - conservative seizure plan computation
 ///   - effective token discount inspection
 ///   - valuation previews used by liquidation engines

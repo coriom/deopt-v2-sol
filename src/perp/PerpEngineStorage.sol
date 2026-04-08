@@ -335,6 +335,10 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         return abi.decode(data, (address));
     }
 
+    function _baseToken() internal view returns (address) {
+        return _baseCollateralToken();
+    }
+
     /*//////////////////////////////////////////////////////////////
                     INTERNAL MARKET POLICY HELPERS
     //////////////////////////////////////////////////////////////*/
@@ -403,7 +407,13 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
     function _loadEffectiveLiquidationParams(uint256 marketId)
         internal
         view
-        returns (uint256 closeFactorBps, uint256 penaltyBps, uint256 priceSpreadBps, uint256 minImprovementBps, uint32 oracleMaxDelay)
+        returns (
+            uint256 closeFactorBps,
+            uint256 penaltyBps,
+            uint256 priceSpreadBps,
+            uint256 minImprovementBps,
+            uint32 oracleMaxDelay
+        )
     {
         closeFactorBps = _liquidationCloseFactorBpsForMarket(marketId);
         penaltyBps = _liquidationPenaltyBpsForMarket(marketId);
@@ -412,12 +422,268 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         oracleMaxDelay = _liquidationOracleMaxDelayForMarket(marketId);
 
         _validateLiquidationParams(
-            closeFactorBps,
-            penaltyBps,
-            priceSpreadBps,
-            minImprovementBps,
-            uint256(oracleMaxDelay)
+            closeFactorBps, penaltyBps, priceSpreadBps, minImprovementBps, uint256(oracleMaxDelay)
         );
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                    INTERNAL SHARED ACCOUNTING HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function _requireSettlementAssetConfigured(address settlementAsset)
+        internal
+        view
+        returns (CollateralVault.CollateralTokenConfig memory cfg)
+    {
+        cfg = _collateralVault.getCollateralConfig(settlementAsset);
+        if (!cfg.isSupported || cfg.decimals == 0) revert InvalidMarket();
+        if (uint256(cfg.decimals) > MAX_POW10_EXP) revert MathOverflow();
+    }
+
+    function _value1e8ToSettlementNative(address settlementAsset, uint256 amount1e8)
+        internal
+        view
+        returns (uint256 amountNative)
+    {
+        CollateralVault.CollateralTokenConfig memory cfg = _requireSettlementAssetConfigured(settlementAsset);
+        uint256 scale = _pow10(uint256(cfg.decimals));
+        amountNative = Math.mulDiv(amount1e8, scale, PRICE_1E8, Math.Rounding.Floor);
+    }
+
+    function _signedNotional1e8(int256 size1e8, uint256 executionPrice1e8) internal pure returns (int256 notional1e8) {
+        return _signedMarkValue1e8(size1e8, executionPrice1e8);
+    }
+
+    function _minU(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a < b ? a : b;
+    }
+
+    function _sameSignNonZero(int256 a, int256 b) internal pure returns (bool) {
+        return (a > 0 && b > 0) || (a < 0 && b < 0);
+    }
+
+    function _absInt256Signed(int256 x) internal pure returns (int256) {
+        return x >= 0 ? x : -x;
+    }
+
+    function _sign(int256 x) internal pure returns (int256) {
+        if (x > 0) return int256(1);
+        if (x < 0) return int256(-1);
+        return int256(0);
+    }
+
+    function _clampSigned(int256 x, int256 minX, int256 maxX) internal pure returns (int256) {
+        if (x < minX) return minX;
+        if (x > maxX) return maxX;
+        return x;
+    }
+
+    function _baseValueToTokenAmount(address token, uint256 baseValue, uint256 price1e8)
+        internal
+        view
+        returns (uint256 tokenAmount)
+    {
+        CollateralVault.CollateralTokenConfig memory baseCfg = _collateralVault.getCollateralConfig(_baseToken());
+        CollateralVault.CollateralTokenConfig memory tokCfg = _collateralVault.getCollateralConfig(token);
+
+        if (!baseCfg.isSupported || baseCfg.decimals == 0) revert InvalidMarket();
+        if (!tokCfg.isSupported || tokCfg.decimals == 0) revert InvalidMarket();
+
+        uint8 baseDec = baseCfg.decimals;
+        uint8 tokenDec = tokCfg.decimals;
+
+        uint256 tmp = Math.mulDiv(baseValue, PRICE_1E8, price1e8, Math.Rounding.Floor);
+
+        if (baseDec == tokenDec) return tmp;
+
+        if (tokenDec > baseDec) {
+            uint256 factor = _pow10(uint256(tokenDec - baseDec));
+            return Math.mulDiv(tmp, factor, 1, Math.Rounding.Floor);
+        }
+
+        uint256 factor2 = _pow10(uint256(baseDec - tokenDec));
+        return tmp / factor2;
+    }
+
+    function _settlementNativeToBase(address settlementAsset, uint256 settlementAmountNative)
+        internal
+        view
+        returns (uint256 baseValue)
+    {
+        if (settlementAmountNative == 0) return 0;
+
+        address baseToken = _baseToken();
+
+        CollateralVault.CollateralTokenConfig memory baseCfg = _collateralVault.getCollateralConfig(baseToken);
+        CollateralVault.CollateralTokenConfig memory setCfg = _collateralVault.getCollateralConfig(settlementAsset);
+
+        if (!baseCfg.isSupported || baseCfg.decimals == 0) revert InvalidMarket();
+        if (!setCfg.isSupported || setCfg.decimals == 0) revert InvalidMarket();
+
+        if (settlementAsset == baseToken) {
+            return settlementAmountNative;
+        }
+
+        (uint256 px, bool ok) = _tryGetMarkPrice1e8FromPair(settlementAsset, baseToken);
+        if (!ok || px == 0) revert OraclePriceUnavailable();
+
+        uint256 tmp = Math.mulDiv(settlementAmountNative, px, PRICE_1E8, Math.Rounding.Floor);
+
+        if (baseCfg.decimals == setCfg.decimals) return tmp;
+
+        if (baseCfg.decimals > setCfg.decimals) {
+            uint256 factor = _pow10(uint256(baseCfg.decimals - setCfg.decimals));
+            return Math.mulDiv(tmp, factor, 1, Math.Rounding.Floor);
+        }
+
+        uint256 factor2 = _pow10(uint256(setCfg.decimals - baseCfg.decimals));
+        return tmp / factor2;
+    }
+
+    function _settlementAmount1e8ToBase(address settlementAsset, uint256 amount1e8)
+        internal
+        view
+        returns (uint256 baseValue)
+    {
+        if (amount1e8 == 0) return 0;
+
+        uint256 settlementNative = _value1e8ToSettlementNative(settlementAsset, amount1e8);
+        return _settlementNativeToBase(settlementAsset, settlementNative);
+    }
+
+    function _penaltySettlementNative(address settlementAsset, uint256 penaltyBase)
+        internal
+        view
+        returns (uint256 penaltyNative)
+    {
+        address baseToken = _baseToken();
+        if (penaltyBase == 0) return 0;
+
+        if (settlementAsset == baseToken) {
+            return penaltyBase;
+        }
+
+        (uint256 px, bool ok) = _tryGetMarkPrice1e8FromPair(settlementAsset, baseToken);
+        if (!ok || px == 0) revert OraclePriceUnavailable();
+        penaltyNative = _baseValueToTokenAmount(settlementAsset, penaltyBase, px);
+    }
+
+    function _tryGetMarkPrice1e8FromPair(address base, address quote) internal view returns (uint256 price1e8, bool ok) {
+        {
+            (bool success, bytes memory data) =
+                address(_oracle).staticcall(abi.encodeWithSignature("getPriceSafe(address,address)", base, quote));
+
+            if (success && data.length >= 96) {
+                (uint256 px,, bool safeOk) = abi.decode(data, (uint256, uint256, bool));
+                if (safeOk && px != 0) return (px, true);
+            }
+        }
+
+        try _oracle.getPrice(base, quote) returns (uint256 px, uint256) {
+            if (px == 0) return (0, false);
+            return (px, true);
+        } catch {
+            return (0, false);
+        }
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                    INTERNAL POSITION TRANSITION HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    function _accruedFundingOnPosition(Position memory oldPos, int256 currentCumulativeFundingRate1e18)
+        internal
+        pure
+        returns (int256 funding1e8)
+    {
+        if (oldPos.size1e8 == 0) return 0;
+        return _fundingPayment1e8(
+            oldPos.size1e8, currentCumulativeFundingRate1e18, oldPos.lastCumulativeFundingRate1e18
+        );
+    }
+
+    function _closedFundingPortion1e8(
+        Position memory oldPos,
+        uint256 closeAbs,
+        int256 currentCumulativeFundingRate1e18
+    ) internal pure returns (int256 closedFunding1e8) {
+        if (oldPos.size1e8 == 0 || closeAbs == 0) return 0;
+
+        uint256 absOld = _absInt256(oldPos.size1e8);
+        int256 totalAccruedFunding1e8 = _accruedFundingOnPosition(oldPos, currentCumulativeFundingRate1e18);
+
+        closedFunding1e8 = (totalAccruedFunding1e8 * _toInt256(closeAbs)) / _toInt256(absOld);
+    }
+
+    function _carryForwardFundingCheckpointForIncrease(
+        Position memory oldPos,
+        int256 newSize1e8,
+        int256 currentCumulativeFundingRate1e18
+    ) internal pure returns (int256 nextCheckpoint1e18) {
+        if (oldPos.size1e8 == 0) return currentCumulativeFundingRate1e18;
+
+        int256 accruedFunding1e8 = _accruedFundingOnPosition(oldPos, currentCumulativeFundingRate1e18);
+        if (accruedFunding1e8 == 0) return currentCumulativeFundingRate1e18;
+
+        int256 deltaRate1e18 = (accruedFunding1e8 * int256(FUNDING_SCALE_1E18)) / newSize1e8;
+        nextCheckpoint1e18 = currentCumulativeFundingRate1e18 - deltaRate1e18;
+    }
+
+    function _computeNextPosition(
+        Position memory oldPos,
+        int256 deltaSize1e8,
+        uint256 executionPrice1e8,
+        int256 currentCumulativeFundingRate1e18
+    ) internal pure returns (Position memory nextPos, int256 realizedPnl1e8) {
+        int256 oldSize = oldPos.size1e8;
+        int256 oldOpenNotional = oldPos.openNotional1e8;
+
+        if (deltaSize1e8 == 0) revert SizeZero();
+        if (executionPrice1e8 == 0) revert PriceZero();
+
+        int256 newSize = _checkedAddInt256(oldSize, deltaSize1e8);
+        nextPos.size1e8 = newSize;
+
+        if (oldSize == 0 || _sameSignNonZero(oldSize, deltaSize1e8)) {
+            nextPos.openNotional1e8 =
+                _checkedAddInt256(oldOpenNotional, _signedNotional1e8(deltaSize1e8, executionPrice1e8));
+
+            if (oldSize == 0) {
+                nextPos.lastCumulativeFundingRate1e18 = currentCumulativeFundingRate1e18;
+            } else {
+                nextPos.lastCumulativeFundingRate1e18 =
+                    _carryForwardFundingCheckpointForIncrease(oldPos, newSize, currentCumulativeFundingRate1e18);
+            }
+
+            return (nextPos, 0);
+        }
+
+        uint256 absOld = _absInt256(oldSize);
+        uint256 absDelta = _absInt256(deltaSize1e8);
+        uint256 closeAbs = _minU(absOld, absDelta);
+
+        int256 closeSizeSigned = oldSize > 0 ? _toInt256(closeAbs) : -_toInt256(closeAbs);
+
+        int256 removedBasis1e8 = (oldOpenNotional * _toInt256(closeAbs)) / _toInt256(absOld);
+        int256 closedMarkValue1e8 = _signedMarkValue1e8(closeSizeSigned, executionPrice1e8);
+        int256 closedFunding1e8 = _closedFundingPortion1e8(oldPos, closeAbs, currentCumulativeFundingRate1e18);
+
+        realizedPnl1e8 = _checkedSubInt256(_checkedSubInt256(closedMarkValue1e8, removedBasis1e8), closedFunding1e8);
+
+        if (newSize == 0) {
+            nextPos.openNotional1e8 = 0;
+            nextPos.lastCumulativeFundingRate1e18 = 0;
+            return (nextPos, realizedPnl1e8);
+        }
+
+        if (_sameSignNonZero(oldSize, newSize)) {
+            nextPos.openNotional1e8 = _checkedSubInt256(oldOpenNotional, removedBasis1e8);
+            nextPos.lastCumulativeFundingRate1e18 = oldPos.lastCumulativeFundingRate1e18;
+            return (nextPos, realizedPnl1e8);
+        }
+
+        nextPos.openNotional1e8 = _signedNotional1e8(newSize, executionPrice1e8);
+        nextPos.lastCumulativeFundingRate1e18 = currentCumulativeFundingRate1e18;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -492,7 +758,7 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
     }
 
     /*//////////////////////////////////////////////////////////////
-                          INTERNAL MARKET-STATE HELPERS
+                        INTERNAL MARKET-STATE HELPERS
     //////////////////////////////////////////////////////////////*/
 
     function _marketState(uint256 marketId) internal view returns (MarketState memory s) {
@@ -547,7 +813,7 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
     }
 
     /*//////////////////////////////////////////////////////////////
-                          INTERNAL LIQUIDATION HELPERS
+                        INTERNAL LIQUIDATION HELPERS
     //////////////////////////////////////////////////////////////*/
 
     function _recordResidualBadDebt(address trader, uint256 amountBase) internal {
@@ -600,7 +866,7 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
     }
 
     /*//////////////////////////////////////////////////////////////
-                          INTERNAL ORACLE HELPERS
+                        INTERNAL ORACLE HELPERS
     //////////////////////////////////////////////////////////////*/
 
     function _getMarkPrice1e8(uint256 marketId) internal view returns (uint256 price1e8) {
@@ -689,7 +955,7 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
 
             uint256 absSize = p.size1e8 > 0 ? uint256(p.size1e8) : uint256(-p.size1e8);
             uint256 mark = _getMarkPrice1e8(marketId);
-            total = _addChecked(total, Math.mulDiv(absSize, mark, PRICE_1E8, Math.Rounding.Down));
+            total = _addChecked(total, Math.mulDiv(absSize, mark, PRICE_1E8, Math.Rounding.Floor));
         }
     }
 

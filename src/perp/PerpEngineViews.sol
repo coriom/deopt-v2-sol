@@ -41,7 +41,7 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
     /// @dev
     ///  - `realizedPnlImpact1e8` / `closedNotional1e8` remain normalized quote 1e8 values
     ///  - all `...Base` values are denominated in native units of the protocol base collateral token
-    struct LiquidationPreview {
+    struct LiquidationResolutionPreview {
         uint128 executedSize1e8;
         uint256 liquidationPrice1e8;
         int256 realizedPnlImpact1e8;
