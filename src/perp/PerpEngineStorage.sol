@@ -860,6 +860,7 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
     function _remainingShortfall(uint256 targetBaseValue, uint256 coveredBaseValue)
         internal
         pure
+        override
         returns (uint256)
     {
         return coveredBaseValue >= targetBaseValue ? 0 : (targetBaseValue - coveredBaseValue);

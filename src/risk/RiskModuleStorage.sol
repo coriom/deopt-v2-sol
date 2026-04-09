@@ -7,6 +7,41 @@ import "../oracle/IOracle.sol";
 import "./IRiskModule.sol";
 import "./IMarginEngineState.sol";
 
+/// @notice Minimal perp-risk surface consumed by RiskModule unified views.
+/// @dev
+///  Canonical conventions:
+///   - all values suffixed `Base` are denominated in native units of the protocol base collateral token
+interface IPerpRiskModule {
+    struct AccountRisk {
+        int256 equityBase;
+        uint256 maintenanceMarginBase;
+        uint256 initialMarginBase;
+    }
+
+    struct WithdrawPreview {
+        uint256 requestedAmount;
+        uint256 maxWithdrawable;
+        uint256 marginRatioBeforeBps;
+        uint256 marginRatioAfterBps;
+        bool wouldBreachMargin;
+    }
+
+    function computeAccountRisk(address trader) external view returns (AccountRisk memory risk);
+    function computeFreeCollateral(address trader) external view returns (int256 freeCollateralBase);
+    function previewWithdrawImpact(address trader, address token, uint256 amount)
+        external
+        view
+        returns (WithdrawPreview memory preview);
+    function getWithdrawableAmount(address trader, address token) external view returns (uint256 amount);
+}
+
+/// @notice Minimal perp-engine read surface consumed best-effort by unified RiskModule views.
+interface IPerpEngineViews {
+    function getAccountNetPnl(address trader) external view returns (int256 netPnlBase);
+    function getAccountFunding(address trader) external view returns (int256 fundingAccruedBase);
+    function getResidualBadDebt(address trader) external view returns (uint256 residualBadDebtBase);
+}
+
 /// @notice Storage root for RiskModule.
 /// @dev
 ///  - Centralizes shared state / constants / events / errors
@@ -60,6 +95,10 @@ abstract contract RiskModuleStorage is IRiskModule {
 
     event OracleSet(address indexed oldOracle, address indexed newOracle);
     event MarginEngineSet(address indexed oldMarginEngine, address indexed newMarginEngine);
+
+    /// @notice Optional perp modules for unified cross-product risk decomposition.
+    event PerpRiskModuleSet(address indexed oldPerpRiskModule, address indexed newPerpRiskModule);
+    event PerpEngineSet(address indexed oldPerpEngine, address indexed newPerpEngine);
 
     /// @notice Collateral valuation configuration for one token.
     /// @dev
@@ -151,6 +190,11 @@ abstract contract RiskModuleStorage is IRiskModule {
     OptionProductRegistry public optionRegistry;
     IMarginEngineState public marginEngine;
     IOracle public oracle;
+
+    /// @notice Optional perp-side unified decomposition modules.
+    /// @dev Best-effort only. If unset, RiskModule remains options-only.
+    IPerpRiskModule public perpRiskModule;
+    address public perpEngine;
 
     /// @notice Unified protocol risk numeraire token.
     address public override baseCollateralToken;
@@ -266,6 +310,8 @@ abstract contract RiskModuleStorage is IRiskModule {
         emit OwnershipTransferred(address(0), owner_);
         emit MarginEngineSet(address(0), marginEngine_);
         emit OracleSet(address(0), oracle_);
+        emit PerpRiskModuleSet(address(0), address(0));
+        emit PerpEngineSet(address(0), address(0));
         emit OracleDownMmMultiplierSet(0, oracleDownMmMultiplierBps);
         emit EmergencyModeUpdated(false, false, false);
     }

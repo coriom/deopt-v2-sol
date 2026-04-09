@@ -608,6 +608,7 @@ abstract contract PerpEngineTypes {
     function _remainingShortfall(uint256 targetBaseValue, uint256 recoveredBaseValue)
         internal
         pure
+        virtual
         returns (uint256 remainingBaseValue)
     {
         if (recoveredBaseValue >= targetBaseValue) return 0;
