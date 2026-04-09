@@ -22,6 +22,7 @@ abstract contract RiskModuleOracle is RiskModuleUtils {
     /*//////////////////////////////////////////////////////////////
                             FRESHNESS HELPERS
     //////////////////////////////////////////////////////////////*/
+
     function _isOracleDataFresh(uint256 updatedAt) internal view returns (bool) {
         uint256 d = maxOracleDelay;
         if (d == 0) return true;
@@ -64,6 +65,53 @@ abstract contract RiskModuleOracle is RiskModuleUtils {
         (uint256 p, bool ok) = _tryGetPrice(base, quote);
         if (!ok) revert OracleUnavailable(base, quote);
         return p;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        TOKEN / BASE CONVERSION HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Converts a token-native amount into native units of the configured base token.
+    /// @dev
+    ///  `price1e8` is expected to be the oracle price for:
+    ///      token / base
+    ///  scaled by 1e8.
+    ///
+    ///  Examples:
+    ///   - token=USDT(6), base=USDC(6), px=1e8:
+    ///       1e6 -> 1e6
+    ///   - token=WETH(18), base=USDC(6), px=2000e8:
+    ///       1e18 -> 2000e6
+    function _tokenAmountToBaseValue(address token, uint256 amountNative, uint256 price1e8)
+        internal
+        view
+        returns (uint256 valueBase)
+    {
+        if (amountNative == 0) return 0;
+        if (price1e8 == 0) revert InvalidParams();
+
+        (address base, uint8 baseDec,) = _loadBase();
+
+        CollateralVault.CollateralTokenConfig memory tokCfg = _vaultCfg(token);
+        if (!tokCfg.isSupported) revert TokenNotSupportedInVault(token);
+        if (tokCfg.decimals == 0) revert TokenDecimalsNotConfigured(token);
+        if (uint256(tokCfg.decimals) > MAX_POW10_EXP) revert DecimalsOverflow(token);
+
+        if (token == base) return amountNative;
+
+        uint8 tokenDec = tokCfg.decimals;
+
+        uint256 tmp = Math.mulDiv(amountNative, price1e8, PRICE_SCALE_U, Math.Rounding.Floor);
+
+        if (tokenDec == baseDec) return tmp;
+
+        if (baseDec > tokenDec) {
+            uint256 factor = _pow10(uint256(baseDec - tokenDec));
+            return Math.mulDiv(tmp, factor, 1, Math.Rounding.Floor);
+        }
+
+        uint256 factor2 = _pow10(uint256(tokenDec - baseDec));
+        return tmp / factor2;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -110,8 +158,21 @@ abstract contract RiskModuleOracle is RiskModuleUtils {
     }
 
     /// @notice Converts a 1e8 settlement amount into base native units using configured base token.
+    /// @dev
+    ///  Legacy convenience wrapper preserved for compatibility.
+    ///  This path is only an identity/base-token conversion.
     function _convert1e8SettlementToBase(uint256 amount1e8) internal view returns (uint256 valueBase, bool ok) {
         (address base,, uint256 baseScale) = _loadBase();
-        return _convert1e8SettlementToBaseWithBase(baseCollateralToken, amount1e8, base, baseScale);
+        return _convert1e8SettlementToBaseWithBase(base, amount1e8, base, baseScale);
+    }
+
+    /// @notice Converts a 1e8 amount denominated in `settlementAsset` into base native units.
+    function _convert1e8SettlementToBase(address settlementAsset, uint256 amount1e8)
+        internal
+        view
+        returns (uint256 valueBase, bool ok)
+    {
+        (address base,, uint256 baseScale) = _loadBase();
+        return _convert1e8SettlementToBaseWithBase(settlementAsset, amount1e8, base, baseScale);
     }
 }
