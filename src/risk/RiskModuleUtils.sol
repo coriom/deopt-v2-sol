@@ -47,7 +47,6 @@ abstract contract RiskModuleUtils is RiskModuleStorage {
         if (!baseCfg.isSupported) revert TokenNotSupportedInVault(base);
         if (baseCfg.decimals == 0) revert TokenDecimalsNotConfigured(base);
         if (uint256(baseCfg.decimals) > MAX_POW10_EXP) revert DecimalsOverflow(base);
-        if (baseCfg.decimals != EXPECTED_BASE_DECIMALS) revert BaseTokenDecimalsNotUSDC(base, baseCfg.decimals);
 
         baseDec = baseCfg.decimals;
         baseScale = _pow10(uint256(baseDec));
