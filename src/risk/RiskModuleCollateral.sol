@@ -54,6 +54,7 @@ abstract contract RiskModuleCollateral is RiskModuleOracle {
     function _tokenAmountToBaseValue(address token, uint256 tokenAmount, uint256 price1e8)
         internal
         view
+        override
         returns (uint256 baseValue)
     {
         CollateralVault.CollateralTokenConfig memory baseCfg = _vaultCfg(baseCollateralToken);

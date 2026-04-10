@@ -1,11 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 import "./CollateralVaultAdmin.sol";
 
 abstract contract CollateralVaultYield is CollateralVaultAdmin {
+    using SafeERC20 for IERC20;
+
     /*//////////////////////////////////////////////////////////////
-                          INTERNAL PREVIEW HELPERS
+                        INTERNAL PREVIEW HELPERS
     //////////////////////////////////////////////////////////////*/
 
     function _previewDeposit(address adapter, uint256 assets) internal view returns (uint256) {
@@ -37,17 +42,15 @@ abstract contract CollateralVaultYield is CollateralVaultAdmin {
     //////////////////////////////////////////////////////////////*/
 
     function _sync(address user, address token) internal {
-        CollateralTokenConfig memory cfg = _collateralConfigs[token];
-        if (!cfg.isSupported) revert TokenNotSupported();
+        _requireSupportedToken(token);
 
         uint256 idle = idleBalances[user][token];
         uint256 shares = strategyShares[user][token];
-        address adapter = tokenStrategy[token];
 
         uint256 assetsFromShares = 0;
         if (shares != 0) {
-            if (adapter == address(0)) revert StrategyNotSet();
-            assetsFromShares = _previewRedeem(adapter, shares);
+            IYieldAdapter adapter = _requireStrategySet(token);
+            assetsFromShares = _previewRedeem(address(adapter), shares);
         }
 
         uint256 effective = idle + assetsFromShares;
@@ -73,22 +76,22 @@ abstract contract CollateralVaultYield is CollateralVaultAdmin {
     function _moveToStrategy(address user, address token, uint256 amount) internal {
         if (amount == 0) revert AmountZero();
 
-        CollateralTokenConfig memory cfg = _collateralConfigs[token];
-        if (!cfg.isSupported) revert TokenNotSupported();
+        _requireSupportedToken(token);
+        _requireYieldAllowed(user);
 
-        address adapter = tokenStrategy[token];
-        if (adapter == address(0)) revert StrategyNotSet();
+        IYieldAdapter adapter = _requireStrategySet(token);
 
         uint256 idle = idleBalances[user][token];
         if (idle < amount) revert NotEnoughIdle();
 
-        uint256 expectedShares = _previewDeposit(adapter, amount);
+        uint256 expectedShares = _previewDeposit(address(adapter), amount);
 
         idleBalances[user][token] = idle - amount;
 
-        IERC20(token).forceApprove(adapter, amount);
-        uint256 sharesMinted = IYieldAdapter(adapter).deposit(amount);
+        IERC20(token).forceApprove(address(adapter), 0);
+        IERC20(token).forceApprove(address(adapter), amount);
 
+        uint256 sharesMinted = adapter.deposit(amount);
         if (sharesMinted != expectedShares) revert AdapterReturnedUnexpectedShares();
 
         strategyShares[user][token] += sharesMinted;
@@ -126,8 +129,7 @@ abstract contract CollateralVaultYield is CollateralVaultAdmin {
         if (amount == 0) revert AmountZero();
         if (to == address(0)) revert ZeroAddress();
 
-        CollateralTokenConfig memory cfg = _collateralConfigs[token];
-        if (!cfg.isSupported) revert TokenNotSupported();
+        _requireSupportedToken(token);
 
         _sync(user, token);
 
@@ -156,17 +158,16 @@ abstract contract CollateralVaultYield is CollateralVaultAdmin {
             IERC20(token).safeTransfer(to, idle);
         }
 
-        address adapter = tokenStrategy[token];
-        if (adapter == address(0)) revert StrategyNotSet();
+        IYieldAdapter adapter = _requireStrategySet(token);
 
-        uint256 sharesNeeded = _previewWithdraw(adapter, remaining);
+        uint256 sharesNeeded = _previewWithdraw(address(adapter), remaining);
 
         uint256 userShares = strategyShares[user][token];
         if (userShares < sharesNeeded) revert InsufficientStrategyShares();
 
         strategyShares[user][token] = userShares - sharesNeeded;
 
-        uint256 sharesBurned = IYieldAdapter(adapter).withdraw(remaining, to);
+        uint256 sharesBurned = adapter.withdraw(remaining, to);
         if (sharesBurned != sharesNeeded) revert AdapterReturnedUnexpectedShares();
 
         tokenTotalStrategyShares[token] -= sharesBurned;

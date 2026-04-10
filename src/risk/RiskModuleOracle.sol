@@ -85,6 +85,7 @@ abstract contract RiskModuleOracle is RiskModuleUtils {
     function _tokenAmountToBaseValue(address token, uint256 amountNative, uint256 price1e8)
         internal
         view
+        virtual
         returns (uint256 valueBase)
     {
         if (amountNative == 0) return 0;
