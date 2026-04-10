@@ -29,19 +29,6 @@ interface IPerpEngineTrade {
         bool buyerIsMaker;
     }
 
-    /// @notice Matching engine currently authorized to submit trades.
-    function matchingEngine() external view returns (address);
-
-    /// @notice Owner of the perp engine.
-    function owner() external view returns (address);
-
-    /// @notice Legacy global pause flag.
-    function paused() external view returns (bool);
-
-    /// @notice Dedicated trading pause flag.
-    /// @dev More precise than `paused()` for offchain execution infra.
-    function tradingPaused() external view returns (bool);
-
     /// @notice Apply one matched perpetual trade.
     /// @dev Must revert if caller is not the authorized matching engine
     ///      or if trade validation / risk checks fail.
