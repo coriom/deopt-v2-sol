@@ -442,7 +442,7 @@ contract CollateralSeizer is ICollateralSeizer {
         if (trader == address(0)) revert ZeroAddress();
 
         if (targetBaseAmount == 0) {
-            return (new address, new uint256, 0);
+            return (new address[](0), new uint256[](0), 0);
         }
 
         _requireSetup();
