@@ -8,7 +8,7 @@ abstract contract RiskGovernorQueue is RiskGovernorAdmin {
                             GENERIC TIMELOCK WRAPPERS
     //////////////////////////////////////////////////////////////*/
 
-    function hashOperation(address target, uint256 value, bytes calldata data, uint256 eta)
+    function hashOperation(address target, uint256 value, bytes memory data, uint256 eta)
         external
         pure
         returns (bytes32)
@@ -31,7 +31,7 @@ abstract contract RiskGovernorQueue is RiskGovernorAdmin {
         return (op.target, op.value, op.eta, op.data, op.state);
     }
 
-    function queueOperation(address target, uint256 value, bytes calldata data, uint256 eta)
+    function queueOperation(address target, uint256 value, bytes memory data, uint256 eta)
         public
         onlyOwner
         returns (bytes32 txHash)
@@ -44,7 +44,7 @@ abstract contract RiskGovernorQueue is RiskGovernorAdmin {
         emit OperationQueued(txHash, target, value, eta, data);
     }
 
-    function cancelOperation(address target, uint256 value, bytes calldata data, uint256 eta)
+    function cancelOperation(address target, uint256 value, bytes memory data, uint256 eta)
         public
         onlyGuardianOrOwner
         returns (bytes32 txHash)
@@ -57,7 +57,7 @@ abstract contract RiskGovernorQueue is RiskGovernorAdmin {
         emit OperationCancelled(txHash, target, value, eta, data);
     }
 
-    function executeOperation(address target, uint256 value, bytes calldata data, uint256 eta)
+    function executeOperation(address target, uint256 value, bytes memory data, uint256 eta)
         public
         payable
         onlyOwner

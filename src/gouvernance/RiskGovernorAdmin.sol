@@ -45,71 +45,51 @@ abstract contract RiskGovernorAdmin is RiskGovernorStorage {
 
     /// @dev address(0) allowed to disable guardian.
     function setGuardian(address newGuardian) external onlyOwner {
-        address old = guardian;
-        guardian = newGuardian;
-        emit GuardianSet(old, newGuardian);
+        _setGuardian(newGuardian);
     }
 
     function setRiskModuleTarget(address newTarget) external onlyOwner {
-        if (newTarget == address(0)) revert ZeroAddress();
-        address old = riskModule;
-        riskModule = newTarget;
-        emit RiskModuleSet(old, newTarget);
+        _validateTarget(newTarget);
+        _setRiskModule(newTarget);
     }
 
     function setMarginEngineTarget(address newTarget) external onlyOwner {
-        if (newTarget == address(0)) revert ZeroAddress();
-        address old = marginEngine;
-        marginEngine = newTarget;
-        emit MarginEngineSet(old, newTarget);
+        _validateTarget(newTarget);
+        _setMarginEngine(newTarget);
     }
 
     function setOracleRouterTarget(address newTarget) external onlyOwner {
-        if (newTarget == address(0)) revert ZeroAddress();
-        address old = oracleRouter;
-        oracleRouter = newTarget;
-        emit OracleRouterSet(old, newTarget);
+        _validateTarget(newTarget);
+        _setOracleRouter(newTarget);
     }
 
     function setFeesManagerTarget(address newTarget) external onlyOwner {
-        if (newTarget == address(0)) revert ZeroAddress();
-        address old = feesManager;
-        feesManager = newTarget;
-        emit FeesManagerSet(old, newTarget);
+        _validateTarget(newTarget);
+        _setFeesManager(newTarget);
     }
 
     function setOptionRegistryTarget(address newTarget) external onlyOwner {
-        if (newTarget == address(0)) revert ZeroAddress();
-        address old = optionRegistry;
-        optionRegistry = newTarget;
-        emit OptionRegistrySet(old, newTarget);
+        _validateTarget(newTarget);
+        _setOptionRegistry(newTarget);
     }
 
     function setCollateralVaultTarget(address newTarget) external onlyOwner {
-        if (newTarget == address(0)) revert ZeroAddress();
-        address old = collateralVault;
-        collateralVault = newTarget;
-        emit CollateralVaultSet(old, newTarget);
+        _validateTarget(newTarget);
+        _setCollateralVault(newTarget);
     }
 
     function setInsuranceFundTarget(address newTarget) external onlyOwner {
-        if (newTarget == address(0)) revert ZeroAddress();
-        address old = insuranceFund;
-        insuranceFund = newTarget;
-        emit InsuranceFundSet(old, newTarget);
+        _validateTarget(newTarget);
+        _setInsuranceFund(newTarget);
     }
 
     function setPerpMarketRegistryTarget(address newTarget) external onlyOwner {
-        if (newTarget == address(0)) revert ZeroAddress();
-        address old = perpMarketRegistry;
-        perpMarketRegistry = newTarget;
-        emit PerpMarketRegistrySet(old, newTarget);
+        _validateTarget(newTarget);
+        _setPerpMarketRegistry(newTarget);
     }
 
     function setPerpEngineTarget(address newTarget) external onlyOwner {
-        if (newTarget == address(0)) revert ZeroAddress();
-        address old = perpEngine;
-        perpEngine = newTarget;
-        emit PerpEngineSet(old, newTarget);
+        _validateTarget(newTarget);
+        _setPerpEngine(newTarget);
     }
 }
