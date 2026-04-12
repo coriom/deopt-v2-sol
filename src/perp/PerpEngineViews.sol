@@ -37,22 +37,6 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         uint32 oracleMaxDelay;
     }
 
-    /// @notice Best-effort liquidation preview.
-    /// @dev
-    ///  - `realizedPnlImpact1e8` / `closedNotional1e8` remain normalized quote 1e8 values
-    ///  - all `...Base` values are denominated in native units of the protocol base collateral token
-    struct LiquidationResolutionPreview {
-        uint128 executedSize1e8;
-        uint256 liquidationPrice1e8;
-        int256 realizedPnlImpact1e8;
-        uint256 closedNotional1e8;
-        uint256 penaltyTargetBase;
-        uint256 maxSeizablePenaltyBase;
-        uint256 insurancePreviewBase;
-        uint256 residualShortfallPreviewBase;
-        bool valid;
-    }
-
     struct PerpLiquidationState {
         bool liquidatable;
         uint256 marginRatioBps;
@@ -341,7 +325,9 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         view
         returns (LiquidationPreview memory p)
     {
-        if (!isLiquidatable(trader)) return p;
+        p.requestedCloseSize1e8 = requestedCloseSize1e8;
+        p.isLiquidatable = isLiquidatable(trader);
+        if (!p.isLiquidatable) return p;
 
         Position memory pos = _positions[trader][marketId];
         if (pos.size1e8 == 0) return p;
@@ -351,54 +337,22 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         (uint256 closeFactorBps, uint256 penaltyBps, uint256 priceSpreadBps,,) =
             _loadEffectiveLiquidationParams(marketId);
 
+        p.maxClosableSize1e8 = _boundedLiquidationSize1e8(pos.size1e8, 0, closeFactorBps);
+
         uint256 mark = _getMarkPrice1e8(marketId);
         uint256 liqPrice = _liquidationPrice1e8FromMark(pos.size1e8, mark, priceSpreadBps);
         uint128 size = _boundedLiquidationSize1e8(pos.size1e8, requestedCloseSize1e8, closeFactorBps);
 
         if (size == 0) return p;
 
-        int256 delta = pos.size1e8 > 0 ? -_toInt256(uint256(size)) : _toInt256(uint256(size));
-
-        (, int256 realized) =
-            _computeNextPosition(pos, delta, liqPrice, _marketStates[marketId].cumulativeFundingRate1e18);
-
         uint256 closedNotional1e8 = Math.mulDiv(uint256(size), liqPrice, PRICE_1E8, Math.Rounding.Floor);
         uint256 closedNotionalBase = _settlementAmount1e8ToBase(m.settlementAsset, closedNotional1e8);
-        uint256 penaltyTargetBase = _liquidationPenaltyBaseValue(closedNotionalBase, penaltyBps);
+        uint256 penaltyBase = _liquidationPenaltyBaseValue(closedNotionalBase, penaltyBps);
 
-        uint256 maxSeizablePenaltyBase = 0;
-        if (address(_collateralSeizer) != address(0) && penaltyTargetBase != 0) {
-            try _collateralSeizer.computeSeizurePlan(trader, penaltyTargetBase) returns (
-                address[] memory,
-                uint256[] memory,
-                uint256 baseCovered
-            ) {
-                maxSeizablePenaltyBase = baseCovered < penaltyTargetBase ? baseCovered : penaltyTargetBase;
-            } catch {}
-        }
-
-        uint256 remainingAfterSeizure =
-            penaltyTargetBase > maxSeizablePenaltyBase ? penaltyTargetBase - maxSeizablePenaltyBase : 0;
-
-        uint256 insurancePreviewBase = 0;
-        if (remainingAfterSeizure != 0 && insuranceFund != address(0)) {
-            address baseToken = _baseCollateralToken();
-            uint256 fundBal = _collateralVault.balances(insuranceFund, baseToken);
-            insurancePreviewBase = fundBal < remainingAfterSeizure ? fundBal : remainingAfterSeizure;
-        }
-
-        uint256 residualPreviewBase =
-            remainingAfterSeizure > insurancePreviewBase ? remainingAfterSeizure - insurancePreviewBase : 0;
-
-        p.executedSize1e8 = size;
+        p.executedCloseSize1e8 = size;
         p.liquidationPrice1e8 = liqPrice;
-        p.realizedPnlImpact1e8 = realized;
-        p.closedNotional1e8 = closedNotional1e8;
-        p.penaltyTargetBase = penaltyTargetBase;
-        p.maxSeizablePenaltyBase = maxSeizablePenaltyBase;
-        p.insurancePreviewBase = insurancePreviewBase;
-        p.residualShortfallPreviewBase = residualPreviewBase;
-        p.valid = true;
+        p.notionalClosed1e8 = closedNotional1e8;
+        p.penaltyBase = penaltyBase;
     }
 
     /*//////////////////////////////////////////////////////////////

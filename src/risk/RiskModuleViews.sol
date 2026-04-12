@@ -458,13 +458,6 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
         policy.usesGlobalFallback = true;
     }
 
-    function getUnderlyingConfig(address underlying)
-        external
-        view
-        returns (OptionProductRegistry.UnderlyingConfig memory cfg)
-    {
-        cfg = optionRegistry.underlyingConfigs(underlying);
-    }
 
     function getOptionRiskConfig(address underlying)
         external
