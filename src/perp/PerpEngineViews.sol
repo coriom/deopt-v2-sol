@@ -125,7 +125,7 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         uint256 len = traderMarkets[trader].length;
 
         if (start >= len || start >= end) {
-            return new uint256;
+            return new uint256[](0);
         }
 
         if (end > len) end = len;
@@ -362,7 +362,7 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         (, int256 realized) =
             _computeNextPosition(pos, delta, liqPrice, _marketStates[marketId].cumulativeFundingRate1e18);
 
-        uint256 closedNotional1e8 = Math.mulDiv(uint256(size), liqPrice, PRICE_1E8, Math.Rounding.Down);
+        uint256 closedNotional1e8 = Math.mulDiv(uint256(size), liqPrice, PRICE_1E8, Math.Rounding.Floor);
         uint256 closedNotionalBase = _settlementAmount1e8ToBase(m.settlementAsset, closedNotional1e8);
         uint256 penaltyTargetBase = _liquidationPenaltyBaseValue(closedNotionalBase, penaltyBps);
 
@@ -423,7 +423,7 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
 
         uint256 absSize = p.size1e8 >= 0 ? uint256(p.size1e8) : uint256(-p.size1e8);
         uint256 mark = _getMarkPrice1e8(marketId);
-        return Math.mulDiv(absSize, mark, PRICE_1E8, Math.Rounding.Down);
+        return Math.mulDiv(absSize, mark, PRICE_1E8, Math.Rounding.Floor);
     }
 
     function getPositionDirection(address trader, uint256 marketId) external view returns (int8) {
@@ -478,7 +478,7 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
 
             uint256 absSize = p.size1e8 >= 0 ? uint256(p.size1e8) : uint256(-p.size1e8);
             uint256 mark = _getMarkPrice1e8(marketId);
-            uint256 notional1e8 = Math.mulDiv(absSize, mark, PRICE_1E8, Math.Rounding.Down);
+            uint256 notional1e8 = Math.mulDiv(absSize, mark, PRICE_1E8, Math.Rounding.Floor);
 
             b.grossNotional1e8 += notional1e8;
             if (p.size1e8 > 0) {

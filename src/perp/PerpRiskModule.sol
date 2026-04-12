@@ -498,7 +498,7 @@ contract PerpRiskModule {
         if (uint256(cfg.decimals) > MAX_POW10_EXP) revert TokenDecimalsOverflow(token);
 
         uint256 scale = _pow10(uint256(cfg.decimals));
-        amountNative = Math.mulDiv(amount1e8, scale, PRICE_SCALE, Math.Rounding.Down);
+        amountNative = Math.mulDiv(amount1e8, scale, PRICE_SCALE, Math.Rounding.Floor);
     }
 
     function _toInt256(uint256 x) internal pure returns (int256 y) {
@@ -631,7 +631,7 @@ contract PerpRiskModule {
                 if (markPrice1e8 == 0) revert InvalidParams();
 
                 uint256 absSize1e8 = size1e8 >= 0 ? uint256(size1e8) : uint256(-size1e8);
-                uint256 notional1e8 = Math.mulDiv(absSize1e8, markPrice1e8, PRICE_SCALE, Math.Rounding.Down);
+                uint256 notional1e8 = Math.mulDiv(absSize1e8, markPrice1e8, PRICE_SCALE, Math.Rounding.Floor);
 
                 IPerpEngineRiskView.RiskConfig memory rcfg = perpEngine.getRiskConfig(marketId);
 
@@ -684,7 +684,7 @@ contract PerpRiskModule {
     function _convertQuote1e8ToBase(uint256 amount1e8) internal view returns (uint256 valueBase) {
         (, uint8 baseDec, uint256 baseScale) = _loadBase();
         baseDec;
-        valueBase = Math.mulDiv(amount1e8, baseScale, PRICE_SCALE, Math.Rounding.Down);
+        valueBase = Math.mulDiv(amount1e8, baseScale, PRICE_SCALE, Math.Rounding.Floor);
     }
 
     function _convertSignedQuote1e8ToBase(int256 amount1e8) internal view returns (int256 valueBase) {

@@ -379,7 +379,7 @@ abstract contract MarginEngineOps is MarginEngineViews {
         uint256 traderTotalShort = totalShortContracts[trader];
         if (traderTotalShort == 0) revert NotLiquidatable();
 
-        uint256 maxCloseOverall = Math.mulDiv(traderTotalShort, liquidationCloseFactorBps, BPS, Math.Rounding.Down);
+        uint256 maxCloseOverall = Math.mulDiv(traderTotalShort, liquidationCloseFactorBps, BPS, Math.Rounding.Floor);
         if (maxCloseOverall == 0) maxCloseOverall = 1;
 
         address liquidator = msg.sender;
@@ -496,7 +496,7 @@ abstract contract MarginEngineOps is MarginEngineViews {
         }
 
         uint256 mmBase = _mulChecked(baseMaintenanceMarginPerContract, totalContractsClosed);
-        uint256 penaltyBase = Math.mulDiv(mmBase, liquidationPenaltyBps, BPS, Math.Rounding.Down);
+        uint256 penaltyBase = Math.mulDiv(mmBase, liquidationPenaltyBps, BPS, Math.Rounding.Floor);
 
         uint256 remainingBase = penaltyBase;
         uint256 seizedBaseTotal = 0;

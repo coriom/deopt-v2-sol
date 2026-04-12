@@ -289,13 +289,13 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     }
 
     /*//////////////////////////////////////////////////////////////
-                          INTERNAL STATE HELPERS
+                        INTERNAL STATE HELPERS
     //////////////////////////////////////////////////////////////*/
 
     function _enforceInitialMargin(address trader) internal view {
         IRiskModule.AccountRisk memory r = _riskModule.computeAccountRisk(trader);
-        if (r.initialMargin > uint256(type(int256).max)) revert MathOverflow();
-        if (r.equity < int256(r.initialMargin)) revert MarginRequirementBreached(trader);
+        if (r.initialMarginBase > uint256(type(int256).max)) revert MathOverflow();
+        if (r.equityBase < int256(r.initialMarginBase)) revert MarginRequirementBreached(trader);
     }
 
     function _addOpenSeries(address trader, uint256 optionId) internal {
@@ -374,7 +374,7 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         if (uint256(cfg.decimals) > _ME_MAX_POW10_EXP) revert DecimalsOverflow(settlementAsset);
 
         uint256 scale = _mePow10(uint256(cfg.decimals));
-        valueNative = Math.mulDiv(value1e8, scale, _ME_PRICE_1E8, Math.Rounding.Down);
+        valueNative = Math.mulDiv(value1e8, scale, _ME_PRICE_1E8, Math.Rounding.Floor);
     }
 
     function _requireBaseConfigured() internal view {
@@ -529,7 +529,7 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         uint8 baseDec = baseCfg.decimals;
         uint8 tokDec = tokCfg.decimals;
 
-        uint256 num = Math.mulDiv(tokenAmount, pxTokBase, _ME_PRICE_1E8, Math.Rounding.Down);
+        uint256 num = Math.mulDiv(tokenAmount, pxTokBase, _ME_PRICE_1E8, Math.Rounding.Floor);
 
         if (tokDec == baseDec) return num;
 
@@ -580,7 +580,7 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         uint256 len = traderSeries[trader].length;
 
         if (start >= len || start >= end) {
-            return new uint256;
+            return new uint256[](0);
         }
 
         if (end > len) end = len;

@@ -480,7 +480,7 @@ contract OracleRouter is IOracle {
         if (minP == 0) return type(uint256).max;
 
         uint256 diff = p1 > p2 ? (p1 - p2) : (p2 - p1);
-        return Math.mulDiv(diff, BPS, minP, Math.Rounding.Down);
+        return Math.mulDiv(diff, BPS, minP, Math.Rounding.Floor);
     }
 
     function _readConfiguredFeed(FeedConfig memory cfg)
@@ -538,7 +538,7 @@ contract OracleRouter is IOracle {
 
     function _invertPrice(uint256 price1e8) internal pure returns (uint256 inv1e8) {
         if (price1e8 == 0) revert NoSource();
-        inv1e8 = Math.mulDiv(PRICE_SCALE, PRICE_SCALE, price1e8, Math.Rounding.Down);
+        inv1e8 = Math.mulDiv(PRICE_SCALE, PRICE_SCALE, price1e8, Math.Rounding.Floor);
     }
 
     function _tryDirect(address baseAsset, address quoteAsset)
