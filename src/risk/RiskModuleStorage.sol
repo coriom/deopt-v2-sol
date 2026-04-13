@@ -7,6 +7,8 @@ import "../oracle/IOracle.sol";
 import "./IRiskModule.sol";
 import "./IMarginEngineState.sol";
 
+import {ProtocolConstants} from "../ProtocolConstants.sol";
+
 /// @notice Minimal perp-risk surface consumed by RiskModule unified views.
 /// @dev
 ///  Canonical conventions:
@@ -66,8 +68,8 @@ abstract contract RiskModuleStorage is IRiskModule {
                                 CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    uint256 internal constant PRICE_SCALE_U = IRiskModule.PRICE_SCALE;
-    uint256 internal constant BPS_U = IRiskModule.BPS;
+    uint256 internal constant PRICE_SCALE_U = ProtocolConstants.PRICE_SCALE;
+    uint256 internal constant BPS_U = ProtocolConstants.BPS;
 
     // defensive: 10**77 fits in uint256, 10**78 does not
     uint256 internal constant MAX_POW10_EXP = 77;

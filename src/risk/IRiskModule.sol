@@ -21,9 +21,6 @@ pragma solidity ^0.8.20;
 ///   - `previewWithdrawImpact()` is intended for withdrawal surfaces
 ///   - richer decomposition helpers are exposed to avoid duplicating protocol accounting offchain
 interface IRiskModule {
-    uint256 constant PRICE_SCALE = 1e8;
-    uint256 constant BPS = 10_000;
-
     /*//////////////////////////////////////////////////////////////
                                 TYPES
     //////////////////////////////////////////////////////////////*/

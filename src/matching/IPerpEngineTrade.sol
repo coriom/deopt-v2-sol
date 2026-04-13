@@ -18,7 +18,6 @@ pragma solidity ^0.8.20;
 ///   - expose enough engine state for external execution infra
 ///   - avoid coupling matching to internal perp accounting details
 interface IPerpEngineTrade {
-    uint256 constant PRICE_SCALE = 1e8;
 
     struct Trade {
         address buyer;

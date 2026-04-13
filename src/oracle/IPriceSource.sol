@@ -22,8 +22,6 @@ pragma solidity ^0.8.20;
 ///  - `getLatestPrice()` peut revert si la donnée sous-jacente est invalide.
 ///  - Le router consomme cette interface en best-effort via try/catch.
 interface IPriceSource {
-    /// @notice Scale canonique des prix retournés par toutes les implémentations.
-    uint256 constant PRICE_SCALE = 1e8;
 
     /// @notice Retourne le dernier prix disponible de la source.
     /// @dev

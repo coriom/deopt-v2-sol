@@ -119,7 +119,7 @@ abstract contract RiskModuleCollateral is RiskModuleOracle {
     }
 
     /// @notice Applies collateral haircut / weight to a gross base value.
-    function _applyCollateralWeight(uint256 grossBaseValue, uint16 weightBps)
+    function _applyCollateralWeight(uint256 grossBaseValue, uint64 weightBps)
         internal
         pure
         returns (uint256 adjustedBaseValue)

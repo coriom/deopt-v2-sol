@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 import {IFeesManager} from "./IFeesManager.sol";
+import {ProtocolConstants} from "../ProtocolConstants.sol";
 
 /// @title FeesManager
 /// @notice Module de fees hybride DeOpt v2:
@@ -33,6 +34,12 @@ import {IFeesManager} from "./IFeesManager.sol";
 ///    - les vues restent lisibles même en pause
 ///    - owner peut être un Safe multisig
 contract FeesManager is IFeesManager {
+    /*//////////////////////////////////////////////////////////////
+                                CONSTANTS
+    //////////////////////////////////////////////////////////////*/
+
+    uint256 internal constant BPS = ProtocolConstants.BPS;
+
     /*//////////////////////////////////////////////////////////////
                                 ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -452,11 +459,11 @@ contract FeesManager is IFeesManager {
         }
 
         if (params.notionalFeeBps != 0 && notionalImplicit != 0) {
-            quote.notionalFee = (notionalImplicit * uint256(params.notionalFeeBps)) / uint256(BPS);
+            quote.notionalFee = (notionalImplicit * uint256(params.notionalFeeBps)) / BPS;
         }
 
         if (params.premiumCapBps != 0 && premium != 0) {
-            quote.premiumCapFee = (premium * uint256(params.premiumCapBps)) / uint256(BPS);
+            quote.premiumCapFee = (premium * uint256(params.premiumCapBps)) / BPS;
         }
 
         if (params.notionalFeeBps == 0) {
