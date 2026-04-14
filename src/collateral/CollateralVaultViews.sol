@@ -52,6 +52,11 @@ abstract contract CollateralVaultViews is CollateralVaultYield {
         return _getAuthorizedEngines();
     }
 
+    /// @notice Returns whether an account is considered a protocol account.
+    function isProtocolAccount(address account) external view returns (bool) {
+        return _isProtocolAccount(account);
+    }
+
     /*//////////////////////////////////////////////////////////////
                                 VIEWS
     //////////////////////////////////////////////////////////////*/
@@ -70,6 +75,52 @@ abstract contract CollateralVaultViews is CollateralVaultYield {
         } catch {
             return idle;
         }
+    }
+
+    /// @notice Returns strategy-backed assets preview only.
+    /// @dev Safe-view: returns 0 on preview failure.
+    function strategyAssetsPreview(address user, address token) external view returns (uint256 assetsFromShares) {
+        uint256 shares = strategyShares[user][token];
+        address adapter = tokenStrategy[token];
+
+        if (shares == 0 || adapter == address(0)) return 0;
+
+        try IYieldAdapter(adapter).previewRedeem(shares) returns (uint256 a) {
+            return a;
+        } catch {
+            return 0;
+        }
+    }
+
+    /// @notice Returns a compact account state view for one user/token pair.
+    function getAccountTokenState(address user, address token)
+        external
+        view
+        returns (
+            uint256 balanceClaimable,
+            uint256 idle,
+            uint256 shares,
+            uint256 assetsFromShares,
+            uint256 effective,
+            bool yieldEnabled,
+            address strategy
+        )
+    {
+        balanceClaimable = balances[user][token];
+        idle = idleBalances[user][token];
+        shares = strategyShares[user][token];
+        yieldEnabled = yieldOptIn[user][token];
+        strategy = tokenStrategy[token];
+
+        if (shares != 0 && strategy != address(0)) {
+            try IYieldAdapter(strategy).previewRedeem(shares) returns (uint256 a) {
+                assetsFromShares = a;
+            } catch {
+                assetsFromShares = 0;
+            }
+        }
+
+        effective = idle + assetsFromShares;
     }
 
     /// @notice Invariant diagnostic helper for tests / monitoring.
