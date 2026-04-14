@@ -12,3 +12,13 @@ docs/
 
 # Dotenv file
 .env
+
+.codex
+
+SPECS.md
+AGENTS.md
+BUILD_AND_VALIDATE.md
+INVARIANTS.md
+PARAMETERS.md
+PROCESS.md
+DEPLOYMENT_PLAN.md

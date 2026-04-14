@@ -2,7 +2,10 @@
 pragma solidity ^0.8.20;
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
+import {IFeesManager} from "../fees/IFeesManager.sol";
+import {IOracle} from "../oracle/IOracle.sol";
 import "../matching/IPerpEngineTrade.sol";
 import "../liquidation/ICollateralSeizer.sol";
 import "./PerpEngineViews.sol";
@@ -16,6 +19,9 @@ interface IInsuranceFundPerpBackstop {
 /// @title PerpEngineTrading
 /// @notice Matching-engine entrypoint for perpetual trades + liquidation logic.
 abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
+    using SafeCast for uint256;
+    using SafeCast for int256;
+
     /*//////////////////////////////////////////////////////////////
                             INTERNAL HELPERS
     //////////////////////////////////////////////////////////////*/
@@ -458,7 +464,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         uint256 liqPrice1e8,
         int256 currentFunding1e18,
         bool traderWasLong
-    ) internal returns (Position memory newLiqPos) {
+    ) internal view returns (Position memory newLiqPos) {
         Position memory oldLiqPos = _positions[liquidator][marketId];
         int256 deltaForLiquidator =
             traderWasLong ? _toInt256(uint256(sizeClosed1e8)) : -_toInt256(uint256(sizeClosed1e8));
