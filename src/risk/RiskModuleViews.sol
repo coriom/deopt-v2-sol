@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import "./RiskModuleAdmin.sol";
 
@@ -304,7 +305,7 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
         if (freeBase <= 0) return 0;
         if (risk.maintenanceMarginBase == 0) return avail;
 
-        uint256 freeBaseU = uint256(freeBase);
+        uint256 freeBaseU = SafeCast.toUint256(freeBase);
 
         // adjustedRemoved = valueBaseRemoved * weight / BPS <= freeBase
         // => valueBaseRemoved <= freeBase * BPS / weight
@@ -410,7 +411,7 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
         } else if (equityAfterBase <= 0) {
             mrAfter = 0;
         } else {
-            mrAfter = (uint256(equityAfterBase) * BPS_U) / riskBefore.maintenanceMarginBase;
+            mrAfter = (SafeCast.toUint256(equityAfterBase) * BPS_U) / riskBefore.maintenanceMarginBase;
         }
 
         preview.marginRatioAfterBps = mrAfter;

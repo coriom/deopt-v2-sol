@@ -688,7 +688,7 @@ contract PerpMarketRegistry {
         if (cfg.maintenanceMarginBps > MAX_MARGIN_BPS) revert InvalidRiskConfig();
 
         if (cfg.maintenanceMarginBps >= cfg.initialMarginBps) revert InvalidRiskConfig();
-        if (cfg.liquidationPenaltyBps > uint32(BPS)) revert InvalidRiskConfig();
+        if (cfg.liquidationPenaltyBps > BPS) revert InvalidRiskConfig();
 
         if (cfg.maxPositionSize1e8 == 0) revert InvalidRiskConfig();
         if (cfg.maxOpenInterest1e8 == 0) revert InvalidRiskConfig();
@@ -699,8 +699,8 @@ contract PerpMarketRegistry {
     function _validateLiquidationConfig(LiquidationConfig calldata cfg) internal pure {
         if (cfg.closeFactorBps < MIN_CLOSE_FACTOR_BPS) revert InvalidLiquidationConfig();
         if (cfg.closeFactorBps > MAX_CLOSE_FACTOR_BPS) revert InvalidLiquidationConfig();
-        if (cfg.priceSpreadBps > uint32(BPS)) revert InvalidLiquidationConfig();
-        if (cfg.minImprovementBps > uint32(BPS)) revert InvalidLiquidationConfig();
+        if (cfg.priceSpreadBps > BPS) revert InvalidLiquidationConfig();
+        if (cfg.minImprovementBps > BPS) revert InvalidLiquidationConfig();
         if (cfg.oracleMaxDelay > MAX_LIQUIDATION_ORACLE_DELAY) revert InvalidLiquidationConfig();
     }
 
@@ -717,8 +717,8 @@ contract PerpMarketRegistry {
             revert InvalidFundingConfig();
         }
 
-        if (cfg.maxFundingRateBps > uint32(BPS)) revert InvalidFundingConfig();
-        if (cfg.maxSkewFundingBps > uint32(BPS)) revert InvalidFundingConfig();
+        if (cfg.maxFundingRateBps > BPS) revert InvalidFundingConfig();
+        if (cfg.maxSkewFundingBps > BPS) revert InvalidFundingConfig();
         if (cfg.oracleClampBps > MAX_CLAMP_BPS) revert InvalidFundingConfig();
     }
 

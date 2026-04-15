@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "./RiskModuleMargin.sol";
 
 abstract contract RiskModuleAdmin is RiskModuleMargin {
@@ -220,8 +221,8 @@ abstract contract RiskModuleAdmin is RiskModuleMargin {
         emit RiskParamsSet(_baseToken, _baseMMPerContract, _imFactorBps);
 
         _listTokenIfNeeded(_baseToken);
-        collateralConfigs[_baseToken] = CollateralConfig({weightBps: uint64(BPS_U), isEnabled: true});
-        emit CollateralConfigSet(_baseToken, uint64(BPS_U), true);
+        collateralConfigs[_baseToken] = CollateralConfig({weightBps: SafeCast.toUint64(BPS_U), isEnabled: true});
+        emit CollateralConfigSet(_baseToken, SafeCast.toUint64(BPS_U), true);
     }
 
     /// @notice Convenience alias making the fallback semantics explicit.
@@ -245,8 +246,8 @@ abstract contract RiskModuleAdmin is RiskModuleMargin {
         emit RiskParamsSet(_baseToken, _baseMMPerContract, _imFactorBps);
 
         _listTokenIfNeeded(_baseToken);
-        collateralConfigs[_baseToken] = CollateralConfig({weightBps: uint64(BPS_U), isEnabled: true});
-        emit CollateralConfigSet(_baseToken, uint64(BPS_U), true);
+        collateralConfigs[_baseToken] = CollateralConfig({weightBps: SafeCast.toUint64(BPS_U), isEnabled: true});
+        emit CollateralConfigSet(_baseToken, SafeCast.toUint64(BPS_U), true);
     }
 
     /*//////////////////////////////////////////////////////////////

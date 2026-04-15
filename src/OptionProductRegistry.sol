@@ -36,6 +36,7 @@ contract OptionProductRegistry {
 
     /// @notice Convention de prix: 1e8 (type Chainlink 8 decimals)
     uint256 public constant PRICE_SCALE = 1e8;
+    uint128 internal constant CONTRACT_SIZE_1E8 = 1e8;
     uint256 public constant BPS = 10_000;
 
     /*//////////////////////////////////////////////////////////////
@@ -594,7 +595,7 @@ contract OptionProductRegistry {
             settlementAsset,
             expiry,
             strike,
-            uint128(PRICE_SCALE), // hard-lock
+            CONTRACT_SIZE_1E8, // hard-lock
             isCall,
             isEuropean
         );
@@ -631,13 +632,13 @@ contract OptionProductRegistry {
 
         if (!isSettlementAssetAllowed[settlementAsset]) revert SettlementAssetNotAllowed();
 
-        if (expiry <= uint64(block.timestamp)) revert ExpiryInPast();
-        if (minExpiryDelay > 0 && expiry < uint64(block.timestamp + minExpiryDelay)) revert ExpiryTooSoon();
+        if (uint256(expiry) <= block.timestamp) revert ExpiryInPast();
+        if (minExpiryDelay > 0 && uint256(expiry) < block.timestamp + minExpiryDelay) revert ExpiryTooSoon();
 
         if (strike == 0) revert StrikeZero();
 
         // HARD-LOCK: 1 contrat = 1 underlying
-        if (contractSize1e8 != uint128(PRICE_SCALE)) revert InvalidContractSize();
+        if (contractSize1e8 != CONTRACT_SIZE_1E8) revert InvalidContractSize();
 
         OptionSeries memory s = OptionSeries({
             underlying: underlying,
@@ -941,7 +942,7 @@ contract OptionProductRegistry {
     function getStrikeNotionalPerContract1e8(uint256 optionId) external view returns (uint256 strikeNotional1e8) {
         OptionSeries memory s = _series[optionId];
         if (!s.exists) revert UnknownSeries();
-        if (s.contractSize1e8 != uint128(PRICE_SCALE)) revert InvalidContractSize();
+        if (s.contractSize1e8 != CONTRACT_SIZE_1E8) revert InvalidContractSize();
 
         return uint256(s.strike);
     }
@@ -954,7 +955,7 @@ contract OptionProductRegistry {
     {
         OptionSeries memory s = _series[optionId];
         if (!s.exists) revert UnknownSeries();
-        if (s.contractSize1e8 != uint128(PRICE_SCALE)) revert InvalidContractSize();
+        if (s.contractSize1e8 != CONTRACT_SIZE_1E8) revert InvalidContractSize();
 
         strikeNotional1e8 = uint256(s.strike) * quantity;
     }

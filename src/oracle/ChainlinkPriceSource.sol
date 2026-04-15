@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+
 import "./IPriceSource.sol";
 
 /// @dev Interface minimale de Chainlink V3
@@ -61,7 +63,7 @@ contract ChainlinkPriceSource is IPriceSource {
         if (updatedAt_ > block.timestamp) revert InvalidTimestamp();
         if (answer <= 0) revert InvalidAnswer();
 
-        uint256 raw = uint256(answer);
+        uint256 raw = SafeCast.toUint256(answer);
         uint8 dec = aggregatorDecimals;
 
         if (dec == TARGET_DECIMALS) {

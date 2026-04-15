@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {OptionProductRegistry} from "../OptionProductRegistry.sol";
 import {IRiskModule} from "../risk/IRiskModule.sol";
 import {IMarginEngineState} from "../risk/IMarginEngineState.sol";
@@ -143,12 +144,12 @@ abstract contract MarginEngineViews is MarginEngineTrading {
         }
 
         int256 q = int256(qty);
-        uint256 absQty = q >= 0 ? uint256(q) : uint256(-q);
+        uint256 absQty = _absInt128(qty);
 
         uint256 amount = _mulChecked(absQty, payoffPerContract);
         if (amount > uint256(type(int256).max)) revert PnlOverflow();
 
-        pnl = q >= 0 ? int256(amount) : -int256(amount);
+        pnl = q >= 0 ? SafeCast.toInt256(amount) : -SafeCast.toInt256(amount);
     }
 
     function _previewSettlementResolution(
@@ -166,7 +167,7 @@ abstract contract MarginEngineViews is MarginEngineTrading {
             return p;
         }
 
-        uint256 grossAmount = pnl > 0 ? uint256(pnl) : uint256(-pnl);
+        uint256 grossAmount = pnl > 0 ? SafeCast.toUint256(pnl) : SafeCast.toUint256(-pnl);
         p.grossAmount = grossAmount;
 
         if (pnl < 0) {
@@ -292,7 +293,7 @@ abstract contract MarginEngineViews is MarginEngineTrading {
         if (risk.maintenanceMarginBase == 0) return false;
         if (risk.equityBase <= 0) return true;
 
-        uint256 ratioBps = (uint256(risk.equityBase) * BPS) / risk.maintenanceMarginBase;
+        uint256 ratioBps = (SafeCast.toUint256(risk.equityBase) * BPS) / risk.maintenanceMarginBase;
         return ratioBps < liquidationThresholdBps;
     }
 

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import {OptionProductRegistry} from "../OptionProductRegistry.sol";
 import {CollateralVault} from "../collateral/CollateralVault.sol";
@@ -272,12 +273,12 @@ abstract contract MarginEngineOps is MarginEngineViews {
             pnl = 0;
         } else {
             int256 q = int256(oldQty);
-            uint256 absQty = q >= 0 ? uint256(q) : uint256(-q);
+            uint256 absQty = _absInt128(oldQty);
 
             uint256 amount = _mulChecked(absQty, payoffPerContract);
             if (amount > uint256(type(int256).max)) revert PnlOverflow();
 
-            pnl = q >= 0 ? int256(amount) : -int256(amount);
+            pnl = q >= 0 ? SafeCast.toInt256(amount) : -SafeCast.toInt256(amount);
         }
 
         // Close position before transfers so settlement cannot be replayed.
@@ -297,10 +298,10 @@ abstract contract MarginEngineOps is MarginEngineViews {
         }
 
         if (pnl > 0) {
-            uint256 amountDue = uint256(pnl);
+            uint256 amountDue = SafeCast.toUint256(pnl);
             (paidToTrader, badDebt) = _resolveLongSettlementPayout(asset, trader, amountDue);
         } else if (pnl < 0) {
-            uint256 amountOwed = uint256(-pnl);
+            uint256 amountOwed = SafeCast.toUint256(-pnl);
             (collectedFromTrader, badDebt) = _resolveShortSettlementCollection(asset, trader, amountOwed);
         }
 
@@ -418,7 +419,7 @@ abstract contract MarginEngineOps is MarginEngineViews {
             _ensureQtyAllowed(oldTraderQty);
             _ensureQtyAllowed(oldLiqQty);
 
-            uint256 traderShortAbs = uint256(-int256(oldTraderQty));
+            uint256 traderShortAbs = _absInt128(oldTraderQty);
             uint256 remainingAllowance = maxCloseOverall - totalContractsClosed;
 
             uint256 liqQtyU = uint256(requestedQty);
@@ -427,7 +428,7 @@ abstract contract MarginEngineOps is MarginEngineViews {
             if (liqQtyU == 0) continue;
 
             if (liqQtyU > uint256(uint128(type(int128).max))) revert QuantityTooLarge();
-            uint128 liqQty = uint128(liqQtyU);
+            uint128 liqQty = SafeCast.toUint128(liqQtyU);
             int128 delta = _toInt128(liqQty);
 
             uint256 liqPricePerContract = _computeLiquidationPricePerContract(s);

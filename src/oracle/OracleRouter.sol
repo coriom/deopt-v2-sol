@@ -298,7 +298,7 @@ contract OracleRouter is IOracle {
         if (baseAsset == address(0) || quoteAsset == address(0)) revert ZeroAddress();
         if (baseAsset == quoteAsset) revert SameAssetPair();
         if (maxDelay > MAX_ALLOWED_DELAY) revert DelayOutOfRange();
-        if (maxDeviationBps > uint16(BPS)) revert DeviationOutOfRange();
+        if (maxDeviationBps > BPS) revert DeviationOutOfRange();
 
         if (isActive) {
             if (address(primarySource) == address(0) && address(secondarySource) == address(0)) {
@@ -531,7 +531,7 @@ contract OracleRouter is IOracle {
         }
 
         uint256 dev = _deviationBps(p1, p2);
-        if (dev > uint256(maxDev)) return (false, 0, 0, ReadStatus.Deviation);
+        if (dev > maxDev) return (false, 0, 0, ReadStatus.Deviation);
 
         return (true, p1, t1 < t2 ? t1 : t2, ReadStatus.Ok);
     }

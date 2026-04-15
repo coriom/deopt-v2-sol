@@ -202,7 +202,7 @@ contract CollateralSeizer is ICollateralSeizer {
     ///      - majors liquides: 50..100
     function setTokenSeizeConfig(address token, uint16 spreadBps, bool isEnabled) external onlyOwner {
         if (token == address(0)) revert ZeroAddress();
-        if (spreadBps > uint16(BPS)) revert SpreadOutOfRange();
+        if (uint256(spreadBps) > BPS) revert SpreadOutOfRange();
 
         seizeConfigs[token] = SeizeTokenConfig({spreadBps: spreadBps, isEnabled: isEnabled, isSet: true});
         emit TokenSeizeConfigSet(token, spreadBps, isEnabled, true);

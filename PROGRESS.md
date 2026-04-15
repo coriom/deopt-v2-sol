@@ -76,3 +76,102 @@ Maintain a clear, auditable history of system evolution.
 - Validation:
   - `forge build`: OK
 - Status: DONE
+
+---
+
+- Date: 2026-04-15
+- Scope: Oracle unsafe cast hardening
+- Files Modified:
+  - src/oracle/ChainlinkPriceSource.sol
+  - src/oracle/PythPriceSource.sol
+  - src/oracle/OracleRouter.sol
+  - PROGRESS.md
+- Summary:
+  Removed the `unsafe-typecast` warnings under the requested `src/oracle/*` files by using `SafeCast` for signed feed values, replacing width-only `BPS` comparisons with width-neutral checks, and making the Pyth exponent bound explicit in signed form. Oracle normalization, timestamp checks, and deviation behavior were otherwise unchanged.
+- Invariants Impacted:
+  - No protocol economics changed
+  - Oracle outputs remain normalized to 1e8
+  - Staleness, future-timestamp rejection, and deviation enforcement remain explicit
+- Validation:
+  - `forge build`: OK
+- Status: DONE
+
+---
+
+- Date: 2026-04-15
+- Scope: Perp unsafe cast hardening
+- Files Modified:
+  - src/perp/PerpEngineTypes.sol
+  - src/perp/PerpEngineStorage.sol
+  - src/perp/PerpRiskModule.sol
+  - src/perp/PerpEngineTrading.sol
+  - src/perp/PerpMarketRegistry.sol
+  - PROGRESS.md
+- Summary:
+  Removed the `unsafe-typecast` warnings under the requested `src/perp/*` files by routing bounded signed/unsigned and narrowing conversions through existing perp helpers or `SafeCast`, and by replacing registry bound comparisons with width-neutral `BPS` checks only. No perp pricing, funding, liquidation, or risk formulas were changed.
+- Invariants Impacted:
+  - No protocol economics changed
+  - Position sign handling and aggregate exposure accounting remain explicit
+  - Funding checkpoint math and margin ratios remain in their existing 1e18, 1e8, and base-native units
+- Validation:
+  - `forge build`: OK
+- Status: DONE
+
+---
+
+- Date: 2026-04-15
+- Scope: Margin unsafe cast hardening
+- Files Modified:
+  - src/margin/MarginEngineTypes.sol
+  - src/margin/MarginEngineViews.sol
+  - src/margin/MarginEngineOps.sol
+  - src/margin/MarginEngineStorage.sol
+  - PROGRESS.md
+- Summary:
+  Removed the `unsafe-typecast` warnings under `src/margin/*` by replacing bounded narrowing and signed/unsigned conversions with `SafeCast`, reusing the existing `_absInt128` guard for negative quantity magnitudes, and adding explicit justification comments only where surrounding logic already made the cast trivially safe.
+- Invariants Impacted:
+  - No protocol economics changed
+  - Quantity sign and `int128.min` exclusion remain explicit in margin paths
+  - Margin and settlement values remain in their existing base-native and settlement-native units
+- Validation:
+  - `forge build`: OK
+- Status: DONE
+
+---
+
+- Date: 2026-04-15
+- Scope: Risk-module unsafe cast hardening
+- Files Modified:
+  - src/risk/RiskModuleUtils.sol
+  - src/risk/RiskModuleViews.sol
+  - src/risk/RiskModuleAdmin.sol
+  - PROGRESS.md
+- Summary:
+  Replaced `src/risk/*` unsafe narrowing/signed casts with explicit safe conversions or width-neutral comparisons only. This removed the risk-module `unsafe-typecast` warnings without changing valuation, margin, or liquidation economics.
+- Invariants Impacted:
+  - No economic invariant changed
+  - Safer enforcement of unit-consistent signed/unsigned conversions in risk paths
+- Validation:
+  - `forge build`: OK
+- Status: DONE
+
+---
+
+- Date: 2026-04-15
+- Scope: Registry, fees, and liquidation unsafe cast hardening
+- Files Modified:
+  - src/OptionProductRegistry.sol
+  - src/fees/FeesManager.sol
+  - src/liquidation/CollateralSeizer.sol
+  - PROGRESS.md
+- Summary:
+  Removed the remaining `unsafe-typecast` warnings in the requested registry, fees, and liquidation files by replacing width-only comparisons with width-neutral checks and by introducing a typed contract-size lock constant for the options registry. No option sizing, expiry gating, fee caps, or seizure economics changed.
+- Invariants Impacted:
+  - No protocol economics changed
+  - Option contract size remains hard-locked to `1e8`
+  - Min-expiry enforcement remains explicit
+  - Fee and spread BPS bounds remain capped at `10_000`
+- Validation:
+  - `forge build`: OK
+  - `forge build 2>&1 | rg "unsafe-typecast"`: no matches
+- Status: DONE

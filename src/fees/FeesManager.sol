@@ -528,7 +528,7 @@ contract FeesManager is IFeesManager {
     //////////////////////////////////////////////////////////////*/
 
     function _setFeeBpsCap(uint16 newCap) internal {
-        if (newCap == 0 || newCap > uint16(BPS)) revert InvalidBps();
+        if (newCap == 0 || uint256(newCap) > BPS) revert InvalidBps();
 
         uint16 old = feeBpsCap;
         feeBpsCap = newCap;
@@ -600,7 +600,7 @@ contract FeesManager is IFeesManager {
     }
 
     function _validateBps(uint16 bps) internal pure {
-        if (bps > uint16(BPS)) revert InvalidBps();
+        if (uint256(bps) > BPS) revert InvalidBps();
     }
 
     function _cap(uint16 bps) internal view returns (uint16) {

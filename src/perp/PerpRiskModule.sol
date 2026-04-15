@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {IOracle} from "../oracle/IOracle.sol";
 
 interface ICollateralVaultPerpRiskView {
@@ -503,7 +504,7 @@ contract PerpRiskModule {
 
     function _toInt256(uint256 x) internal pure returns (int256 y) {
         if (x > uint256(type(int256).max)) revert MathOverflow();
-        y = int256(x);
+        y = SafeCast.toInt256(x);
     }
 
     function _checkedAddInt256(int256 a, int256 b) internal pure returns (int256 r) {
@@ -525,7 +526,7 @@ contract PerpRiskModule {
     function _marginRatioBps(int256 equityBase, uint256 maintenanceMarginBase) internal pure returns (uint256) {
         if (maintenanceMarginBase == 0) return type(uint256).max;
         if (equityBase <= 0) return 0;
-        return (uint256(equityBase) * BPS) / maintenanceMarginBase;
+        return (SafeCast.toUint256(equityBase) * BPS) / maintenanceMarginBase;
     }
 
     function _tryGetSettlementAsset(uint256 marketId) internal view returns (address settlementAsset, bool ok) {
@@ -574,7 +575,7 @@ contract PerpRiskModule {
     {
         if (amount1e8 == 0) return 0;
 
-        uint256 absAmt = amount1e8 >= 0 ? uint256(amount1e8) : uint256(-amount1e8);
+        uint256 absAmt = amount1e8 >= 0 ? SafeCast.toUint256(amount1e8) : SafeCast.toUint256(-amount1e8);
         int256 absBase = _toInt256(_convertQuote1e8ToBaseWithSettlement(absAmt, settlementAsset));
 
         return amount1e8 >= 0 ? absBase : -absBase;
@@ -630,7 +631,7 @@ contract PerpRiskModule {
                 uint256 markPrice1e8 = perpEngine.getMarkPrice(marketId);
                 if (markPrice1e8 == 0) revert InvalidParams();
 
-                uint256 absSize1e8 = size1e8 >= 0 ? uint256(size1e8) : uint256(-size1e8);
+                uint256 absSize1e8 = size1e8 >= 0 ? SafeCast.toUint256(size1e8) : SafeCast.toUint256(-size1e8);
                 uint256 notional1e8 = Math.mulDiv(absSize1e8, markPrice1e8, PRICE_SCALE, Math.Rounding.Floor);
 
                 IPerpEngineRiskView.RiskConfig memory rcfg = perpEngine.getRiskConfig(marketId);
@@ -690,7 +691,7 @@ contract PerpRiskModule {
     function _convertSignedQuote1e8ToBase(int256 amount1e8) internal view returns (int256 valueBase) {
         if (amount1e8 == 0) return 0;
 
-        uint256 absAmt = amount1e8 >= 0 ? uint256(amount1e8) : uint256(-amount1e8);
+        uint256 absAmt = amount1e8 >= 0 ? SafeCast.toUint256(amount1e8) : SafeCast.toUint256(-amount1e8);
         int256 absBase = _toInt256(_convertQuote1e8ToBase(absAmt));
 
         return amount1e8 >= 0 ? absBase : -absBase;
@@ -801,7 +802,7 @@ contract PerpRiskModule {
 
         if (freeBase <= 0) return 0;
 
-        uint256 freeBaseU = uint256(freeBase);
+        uint256 freeBaseU = SafeCast.toUint256(freeBase);
         uint256 valueBaseMax =
             Math.mulDiv(freeBaseU, BPS, uint256(cfg.collateralFactorBps), Math.Rounding.Floor);
 

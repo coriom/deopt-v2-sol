@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "./RiskModuleStorage.sol";
 
 /// @notice Low-level shared helpers for RiskModule.
@@ -87,7 +88,7 @@ abstract contract RiskModuleUtils is RiskModuleStorage {
     }
 
     function _requireStandardContractSize(OptionProductRegistry.OptionSeries memory s) internal pure {
-        if (s.contractSize1e8 != uint128(PRICE_SCALE_U)) revert InvalidContractSize();
+        if (s.contractSize1e8 != PRICE_SCALE_U) revert InvalidContractSize();
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -119,13 +120,13 @@ abstract contract RiskModuleUtils is RiskModuleStorage {
     function _uintToInt256Sat(uint256 x) internal pure returns (int256) {
         uint256 m = uint256(type(int256).max);
         if (x > m) return type(int256).max;
-        return int256(x);
+        return SafeCast.toInt256(x);
     }
 
     function _negUintToInt256Sat(uint256 x) internal pure returns (int256) {
         uint256 m = uint256(type(int256).max);
         if (x > m) return type(int256).min;
-        return -int256(x);
+        return -SafeCast.toInt256(x);
     }
 
     function _subInt256Sat(int256 a, int256 b) internal pure returns (int256 r) {
@@ -145,9 +146,9 @@ abstract contract RiskModuleUtils is RiskModuleStorage {
     }
 
     function _absInt256ToUint(int256 x) internal pure returns (uint256) {
-        if (x >= 0) return uint256(x);
+        if (x >= 0) return SafeCast.toUint256(x);
         if (x == type(int256).min) revert MathOverflow();
-        return uint256(-x);
+        return SafeCast.toUint256(-x);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -155,10 +156,10 @@ abstract contract RiskModuleUtils is RiskModuleStorage {
     //////////////////////////////////////////////////////////////*/
 
     function _absQuantityU(int128 q) internal pure returns (uint256) {
-        if (q >= 0) return uint256(int256(q));
+        if (q >= 0) return SafeCast.toUint256(int256(q));
         if (q == type(int128).min) revert QuantityInt128Min();
         int256 a = -int256(q);
         if (a < 0) revert QuantityAbsOverflow();
-        return uint256(a);
+        return SafeCast.toUint256(a);
     }
 }

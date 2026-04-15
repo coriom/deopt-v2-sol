@@ -336,8 +336,8 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         _meEnsureQtyAllowed(oldQty);
         _meEnsureQtyAllowed(newQty);
 
-        uint256 oldShort = oldQty < 0 ? uint256(-int256(oldQty)) : 0;
-        uint256 newShort = newQty < 0 ? uint256(-int256(newQty)) : 0;
+        uint256 oldShort = oldQty < 0 ? _absInt128(oldQty) : 0;
+        uint256 newShort = newQty < 0 ? _absInt128(newQty) : 0;
 
         uint256 cur = totalShortContracts[trader];
 

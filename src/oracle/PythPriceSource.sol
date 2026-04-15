@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+
 import "./IPriceSource.sol";
 
 /// @dev Interface minimale de Pyth sur EVM.
@@ -25,6 +27,7 @@ interface IPyth {
 ///      target(1e8)  = valeur réelle * 1e8 = mantissa * 10^(expo+8)
 contract PythPriceSource is IPriceSource {
     uint256 internal constant MAX_POW10_EXP = 77;
+    int32 internal constant MAX_POW10_EXP_I32 = 77;
 
     IPyth public immutable pyth;
     bytes32 public immutable priceId;
@@ -59,20 +62,20 @@ contract PythPriceSource is IPriceSource {
 
         int32 expTo1e8 = p.expo + 8;
 
-        if (expTo1e8 > int32(uint32(MAX_POW10_EXP)) || expTo1e8 < -int32(uint32(MAX_POW10_EXP))) {
+        if (expTo1e8 > MAX_POW10_EXP_I32 || expTo1e8 < -MAX_POW10_EXP_I32) {
             revert ExpoOutOfRange();
         }
 
-        uint256 mantissa = uint256(uint64(p.price));
+        uint256 mantissa = SafeCast.toUint256(int256(p.price));
 
         if (expTo1e8 == 0) {
             price = mantissa;
         } else if (expTo1e8 < 0) {
-            uint256 diff = uint256(uint32(-expTo1e8));
+            uint256 diff = SafeCast.toUint256(int256(-expTo1e8));
             uint256 factor = _pow10(diff);
             price = mantissa / factor;
         } else {
-            uint256 diff = uint256(uint32(expTo1e8));
+            uint256 diff = SafeCast.toUint256(int256(expTo1e8));
             uint256 factor = _pow10(diff);
             if (mantissa != 0 && factor > type(uint256).max / mantissa) revert ScaleOverflow();
             price = mantissa * factor;

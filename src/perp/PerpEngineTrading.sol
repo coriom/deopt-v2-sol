@@ -337,7 +337,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         int256 ratePerInterval1e18 = _fundingRatePerInterval1e18(marketId);
         if (ratePerInterval1e18 == 0) return (0, effectiveTimestamp);
 
-        delta1e18 = (ratePerInterval1e18 * int256(elapsed)) / int256(uint256(fcfg.fundingInterval));
+        delta1e18 = (ratePerInterval1e18 * elapsed.toInt256()) / uint256(fcfg.fundingInterval).toInt256();
     }
 
     function updateFunding(uint256 marketId)

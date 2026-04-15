@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+
 /// @title PerpEngineTypes
 /// @notice Types / constants / errors / events / pure helpers for DeOpt v2 perpetuals.
 /// @dev Canonical unit conventions used by this module:
@@ -411,17 +413,17 @@ abstract contract PerpEngineTypes {
 
     function _toInt256(uint256 x) internal pure returns (int256 y) {
         if (x > uint256(type(int256).max)) revert CastOverflow();
-        y = int256(x);
+        y = SafeCast.toInt256(x);
     }
 
     function _toUint256(int256 x) internal pure returns (uint256 y) {
         if (x < 0) revert CastOverflow();
-        y = uint256(x);
+        y = SafeCast.toUint256(x);
     }
 
     function _toInt128(uint128 x) internal pure returns (int128 y) {
         if (x > uint128(type(int128).max)) revert CastOverflow();
-        y = int128(int256(uint256(x)));
+        y = SafeCast.toInt128(int256(uint256(x)));
         _ensureInt128Allowed(y);
     }
 
@@ -510,7 +512,7 @@ abstract contract PerpEngineTypes {
     function _marginRatioBpsFromState(int256 equityBase, uint256 maintenanceMarginBase) internal pure returns (uint256) {
         if (maintenanceMarginBase == 0) return type(uint256).max;
         if (equityBase <= 0) return 0;
-        return (uint256(equityBase) * BPS) / maintenanceMarginBase;
+        return (SafeCast.toUint256(equityBase) * BPS) / maintenanceMarginBase;
     }
 
     /// @notice Checks whether a transition is strictly reduce-only.
@@ -554,7 +556,7 @@ abstract contract PerpEngineTypes {
         if (raw == 0) raw = 1;
 
         if (raw > uint256(type(uint128).max)) revert SizeTooLarge();
-        return uint128(raw);
+        return SafeCast.toUint128(raw);
     }
 
     /// @notice Clamps a requested liquidation clip to the protocol maximum.

@@ -625,7 +625,7 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         int256 accruedFunding1e8 = _accruedFundingOnPosition(oldPos, currentCumulativeFundingRate1e18);
         if (accruedFunding1e8 == 0) return currentCumulativeFundingRate1e18;
 
-        int256 deltaRate1e18 = (accruedFunding1e8 * int256(FUNDING_SCALE_1E18)) / newSize1e8;
+        int256 deltaRate1e18 = (accruedFunding1e8 * _toInt256(FUNDING_SCALE_1E18)) / newSize1e8;
         nextCheckpoint1e18 = currentCumulativeFundingRate1e18 - deltaRate1e18;
     }
 
@@ -730,11 +730,11 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         _ensureInt256Allowed(oldSize1e8);
         _ensureInt256Allowed(newSize1e8);
 
-        uint256 oldLong = oldSize1e8 > 0 ? uint256(oldSize1e8) : 0;
-        uint256 newLong = newSize1e8 > 0 ? uint256(newSize1e8) : 0;
+        uint256 oldLong = oldSize1e8 > 0 ? _toUint256(oldSize1e8) : 0;
+        uint256 newLong = newSize1e8 > 0 ? _toUint256(newSize1e8) : 0;
 
-        uint256 oldShort = oldSize1e8 < 0 ? uint256(-oldSize1e8) : 0;
-        uint256 newShort = newSize1e8 < 0 ? uint256(-newSize1e8) : 0;
+        uint256 oldShort = oldSize1e8 < 0 ? _absInt256(oldSize1e8) : 0;
+        uint256 newShort = newSize1e8 < 0 ? _absInt256(newSize1e8) : 0;
 
         uint256 curLong = totalAbsLongSize1e8[trader];
         uint256 curShort = totalAbsShortSize1e8[trader];
@@ -768,11 +768,11 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
     function _updateMarketOpenInterest(uint256 marketId, int256 oldSize1e8, int256 newSize1e8) internal {
         MarketState storage s = _marketStates[marketId];
 
-        uint256 oldLong = oldSize1e8 > 0 ? uint256(oldSize1e8) : 0;
-        uint256 newLong = newSize1e8 > 0 ? uint256(newSize1e8) : 0;
+        uint256 oldLong = oldSize1e8 > 0 ? _toUint256(oldSize1e8) : 0;
+        uint256 newLong = newSize1e8 > 0 ? _toUint256(newSize1e8) : 0;
 
-        uint256 oldShort = oldSize1e8 < 0 ? uint256(-oldSize1e8) : 0;
-        uint256 newShort = newSize1e8 < 0 ? uint256(-newSize1e8) : 0;
+        uint256 oldShort = oldSize1e8 < 0 ? _absInt256(oldSize1e8) : 0;
+        uint256 newShort = newSize1e8 < 0 ? _absInt256(newSize1e8) : 0;
 
         if (newLong >= oldLong) {
             s.longOpenInterest1e8 = _addChecked(s.longOpenInterest1e8, newLong - oldLong);

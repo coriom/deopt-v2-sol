@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {OptionProductRegistry} from "../OptionProductRegistry.sol";
 
 /// @title MarginEngineTypes
@@ -386,14 +387,14 @@ abstract contract MarginEngineTypes {
 
     function _toInt128(uint128 x) internal pure returns (int128) {
         if (x > uint128(type(int128).max)) revert QuantityTooLarge();
-        return int128(int256(uint256(x)));
+        return SafeCast.toInt128(int256(uint256(x)));
     }
 
     function _checkedAddInt128(int128 a, int128 b) internal pure returns (int128 r) {
         int256 rr = int256(a) + int256(b);
         if (rr == INT128_MIN) revert QuantityMinNotAllowed();
         if (rr > INT128_MAX || rr < INT128_MIN) revert QuantityTooLarge();
-        r = int128(rr);
+        r = SafeCast.toInt128(rr);
         _ensureQtyAllowed(r);
     }
 
@@ -401,7 +402,7 @@ abstract contract MarginEngineTypes {
         int256 rr = int256(a) - int256(b);
         if (rr == INT128_MIN) revert QuantityMinNotAllowed();
         if (rr > INT128_MAX || rr < INT128_MIN) revert QuantityTooLarge();
-        r = int128(rr);
+        r = SafeCast.toInt128(rr);
         _ensureQtyAllowed(r);
     }
 
@@ -418,6 +419,8 @@ abstract contract MarginEngineTypes {
 
     /// @dev Enforce contractSize1e8 == 1e8 (fixed contract sizing).
     function _requireStandardContractSize(OptionProductRegistry.OptionSeries memory s) internal pure {
+        // PRICE_1E8 is the fixed 1e8 scale constant, so the uint128 cast cannot truncate.
+        // forge-lint: disable-next-line(unsafe-typecast)
         if (s.contractSize1e8 != uint128(PRICE_1E8)) revert InvalidContractSize();
     }
 
@@ -446,6 +449,8 @@ abstract contract MarginEngineTypes {
     function _marginRatioBpsFromRisk(int256 equity, uint256 maintenanceMargin) internal pure returns (uint256) {
         if (maintenanceMargin == 0) return type(uint256).max;
         if (equity <= 0) return 0;
+        // equity is strictly positive above, so the uint256 cast preserves the value.
+        // forge-lint: disable-next-line(unsafe-typecast)
         return (uint256(equity) * BPS) / maintenanceMargin;
     }
 
