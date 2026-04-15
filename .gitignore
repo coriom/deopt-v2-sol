@@ -1,24 +1,26 @@
 # Compiler files
 cache/
 out/
+foundry.lock
 
-# Ignores development broadcast logs
-!/broadcast
-/broadcast/*/31337/
-/broadcast/**/dry-run/
-
-# Docs
-docs/
-
-# Dotenv file
-.env
-
-.codex
-
-SPECS.md
+# Agentic Programming Docs
 AGENTS.md
-BUILD_AND_VALIDATE.md
+ARCHITECTURE_MAP.md
+DEPLOYMENT_PLAN.md
 INVARIANTS.md
 PARAMETERS.md
-PROCESS.md
-DEPLOYMENT_PLAN.md
+PROGRESS.md
+SPEC.md
+TEST_MATRIX.md
+
+# Ignores development broadcast logs
+broadcast/
+
+# Personal & Secrets
+.env
+.env.*
+note_for_later.txt
+
+# Docs & System
+docs/
+.DS_Store
