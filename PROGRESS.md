@@ -175,3 +175,75 @@ Maintain a clear, auditable history of system evolution.
   - `forge build`: OK
   - `forge build 2>&1 | rg "unsafe-typecast"`: no matches
 - Status: DONE
+
+---
+
+- Date: 2026-04-15
+- Scope: Initial collateral vault unit test suite
+- Files Modified:
+  - src/risk/RiskModuleUtils.sol
+  - test/unit/vault/CollateralVault.t.sol
+  - PROGRESS.md
+- Summary:
+  Removed the single unused `Math` import from `RiskModuleUtils` and added the first minimal Foundry unit tests for `CollateralVault`, covering deposit, withdraw, insufficient-balance revert, unsupported-token revert, internal transfer conservation, and token config/decimals sanity.
+- Invariants Impacted:
+  - Vault balances remain explicit token-native accounting
+  - Unsupported tokens remain excluded from vault accounting paths
+  - Internal transfers preserve aggregate in-vault token balances
+- Validation:
+  - `forge build`: OK
+  - `forge test --match-path test/unit/vault/CollateralVault.t.sol`: OK (6 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-16
+- Scope: Collateral seizer unit test suite
+- Files Modified:
+  - test/unit/liquidation/CollateralSeizer.t.sol
+  - PROGRESS.md
+- Summary:
+  Added a minimal deterministic Foundry unit suite for `CollateralSeizer` using the real vault and seizer with in-file oracle and risk-config mocks. The tests cover token discount behavior, base and non-base valuation previews, base-first seizure ordering, secondary-collateral usage, partial-coverage planning, and the zero-target empty-plan case.
+- Invariants Impacted:
+  - Base-value conversion remains explicit in native base-token units with `PRICE_SCALE = 1e8`
+  - Token discounting remains explicit through collateral weight and spread in `BPS = 10_000`
+  - Seizure planning remains conservative, base-first, and partial when collateral is insufficient
+- Validation:
+  - `forge build`: OK
+  - `forge test --match-path test/unit/liquidation/CollateralSeizer.t.sol`: OK (8 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-16
+- Scope: Risk module unit test suite
+- Files Modified:
+  - test/unit/risk/RiskModule.t.sol
+  - PROGRESS.md
+- Summary:
+  Added a minimal deterministic Foundry unit suite for `RiskModule` using the real vault, registry, and risk module with in-file oracle and margin-engine mocks. The tests cover account-risk consistency, margin-ratio thresholds, zero-position margins, collateral-weight adjustment, multi-collateral aggregation, free-collateral consistency, and below-threshold liquidation-condition detection.
+- Invariants Impacted:
+  - Equity, maintenance margin, and initial margin remain coherent in base-native units
+  - Collateral valuation remains normalized through `PRICE_SCALE` and `BPS`
+  - Haircut-adjusted collateral aggregation remains explicit across supported tokens
+  - Margin-ratio threshold behavior remains explicit at above, equal, and below `BPS`
+- Validation:
+  - `forge build`: OK
+  - `forge test --match-path test/unit/risk/RiskModule.t.sol`: OK (7 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-16
+- Scope: Collateral vault unit test validation
+- Files Modified:
+  - PROGRESS.md
+- Summary:
+  Reviewed the required repository docs, confirmed `test/unit/vault/CollateralVault.t.sol` already contains only the requested six collateral-vault unit tests, and verified the file against the current vault interfaces without changing protocol contracts.
+- Invariants Impacted:
+  - None
+  - Existing vault token-native accounting and internal transfer conservation checks remain unchanged
+- Validation:
+  - `forge build`: OK
+  - `forge test --match-path test/unit/vault/CollateralVault.t.sol`: OK (6 passed)
+- Status: DONE
