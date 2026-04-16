@@ -216,6 +216,24 @@ Maintain a clear, auditable history of system evolution.
 ---
 
 - Date: 2026-04-16
+- Scope: First option settlement scenario suite
+- Files Modified:
+  - test/scenario/options/OptionSettlementFlow.t.sol
+  - PROGRESS.md
+- Summary:
+  Added the first deterministic cross-module option-settlement scenario suite using the real `MarginEngine`, `OptionProductRegistry`, and `CollateralVault` with narrow in-file oracle, risk, and insurance mocks only. The scenarios cover ITM settlement with correct payoff, OTM zero-payoff settlement, per-account settlement idempotency, premium-plus-payoff accounting coherence across the full flow, insurance-fund-backed payout on settlement shortfall, and residual bad-debt recording when payout coverage remains insufficient.
+- Invariants Impacted:
+  - Option settlement remains idempotent per account and series
+  - Collected, paid, and bad-debt series accounting remains explicit in settlement-asset native units
+  - Insurance usage and residual shortfall remain explicit without changing protocol economics or storage/layout
+- Validation:
+  - `forge build`: OK
+  - `forge test --match-path test/scenario/options/OptionSettlementFlow.t.sol`: OK (6 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-16
 - Scope: Deterministic margin engine core unit test suite
 - Files Modified:
   - test/unit/margin/MarginEngine.t.sol
