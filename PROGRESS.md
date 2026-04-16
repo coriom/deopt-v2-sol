@@ -198,6 +198,99 @@ Maintain a clear, auditable history of system evolution.
 ---
 
 - Date: 2026-04-16
+- Scope: First perp full-liquidation scenario suite
+- Files Modified:
+  - test/scenario/perp/PerpFullLiquidationFlow.t.sol
+  - PROGRESS.md
+- Summary:
+  Added the first deterministic cross-module perp liquidation scenario suite using the real `PerpEngine`, `PerpMarketRegistry`, and `CollateralVault` with narrow in-file oracle, risk, seizer, and insurance mocks only. The scenarios cover adverse-price liquidation with solvency improvement, collateral-seizer plan consumption, insurance-fund top-up when seized collateral is insufficient, residual bad-debt recording after collateral and insurance are exhausted, and healthy-account liquidation rejection.
+- Invariants Impacted:
+  - Liquidation remains explicit across seized collateral, insurance coverage, and residual bad debt
+  - Position conservation and post-liquidation solvency improvement remain enforced on the real engine path
+  - No protocol economics, perp logic, or contract storage/layout changed
+- Validation:
+  - `forge build`: OK
+  - `forge test --match-path test/scenario/perp/PerpFullLiquidationFlow.t.sol`: OK (5 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-16
+- Scope: Deterministic margin engine core unit test suite
+- Files Modified:
+  - test/unit/margin/MarginEngine.t.sol
+  - PROGRESS.md
+- Summary:
+  Added a deterministic Foundry unit suite for `MarginEngine` using the real engine, registry, and vault with in-file oracle and risk-module mocks only. The suite covers trader open-series tracking on open/close, total short exposure updates, premium transfer, expiry settlement payoff, single-use settlement behavior, liquidation size reduction, liquidation penalty routing, and the empty-account read surface.
+- Invariants Impacted:
+  - Open-series indexing remains consistent with non-zero option positions
+  - Total short exposure remains coherent with short position transitions and liquidation reductions
+  - Premium, settlement payoff, and liquidation penalty cashflows remain explicit in settlement/base native units without changing protocol economics
+  - Option settlement idempotency remains enforced per account and per series
+- Validation:
+  - `forge build`: OK
+  - `forge test --match-path test/unit/margin/MarginEngine.t.sol`: OK (9 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-16
+- Scope: Deterministic fees manager unit test suite
+- Files Modified:
+  - test/unit/fees/FeesManager.t.sol
+  - PROGRESS.md
+- Summary:
+  Added a deterministic Foundry unit suite for `FeesManager` using the real contract with minimal in-file Merkle helpers only. The suite covers default maker/taker quotes, individual field cap enforcement, tier profile lookups, override precedence, expired-override fallback, min(notional fee, premium cap fee) quote behavior, zero-input zero-fee behavior, successful Merkle tier claim, and invalid-proof revert behavior.
+- Invariants Impacted:
+  - Fee quotes remain explicit in `BPS = 10_000` using `min(notionalFee, premiumCapFee)` semantics
+  - Active override precedence and expired override fallback remain explicit without changing protocol economics
+  - Merkle tier claims remain bound to the current epoch and reject invalid proofs
+- Validation:
+  - `forge build`: OK
+  - `forge test --match-path test/unit/fees/FeesManager.t.sol`: OK (10 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-16
+- Scope: Deterministic governance and timelock unit/integration test suite
+- Files Modified:
+  - test/unit/governance/Governance.t.sol
+  - PROGRESS.md
+- Summary:
+  Added a deterministic Foundry suite covering `RiskGovernor` and `ProtocolTimelock` with a real `FeesManager` target owned by the timelock. The suite covers operation-hash/bookkeeping storage on queue, queued-operation cancellation state, pre-eta execution rejection, post-eta execution success, queued fee-parameter updates on the live target module, owner/proposer queue authorization, guardian/owner cancel permissions, and malformed calldata execution failure behavior.
+- Invariants Impacted:
+  - Timelock operation identity remains explicit as `keccak256(abi.encode(target, value, data, eta))`
+  - Queue, cancel, and execute permission boundaries remain explicit across governor-owner, timelock-proposer, and guardian/owner cancel paths
+  - Queued parameter changes remain delayed by timelock eta before mutating the target module
+  - Malformed calldata cannot mutate target state and leaves the queued operation intact after failed execution
+- Validation:
+  - `forge build`: OK
+  - `forge test --match-path test/unit/governance/Governance.t.sol`: OK (8 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-16
+- Scope: Deterministic perp liquidation unit test suite
+- Files Modified:
+  - test/unit/perp/PerpEngineLiquidation.t.sol
+  - PROGRESS.md
+- Summary:
+  Added a deterministic Foundry unit suite for `PerpEngine` liquidation behavior using the real engine, registry, and vault with in-file oracle, risk, seizer, and insurance mocks only. The suite covers healthy-account rejection, partial liquidation, close-factor enforcement, direct penalty transfer with sufficient collateral, configured seizer-plan usage, insurance-fund coverage when seizure is insufficient, residual bad debt recording when both seizure and insurance are insufficient, and the solvency-improvement guard.
+- Invariants Impacted:
+  - Position reductions remain bounded by configured close factor and preserve sign consistency
+  - Penalty routing, insurance coverage, and residual bad debt recording remain explicit in base-token native units
+  - Liquidation improvement gating remains explicit and reverts atomically when solvency does not improve
+  - No protocol economics or contract storage/layout changed
+- Validation:
+  - `forge build`: OK
+  - `forge test --match-path test/unit/perp/PerpEngineLiquidation.t.sol`: OK (8 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-16
 - Scope: Deterministic perp funding unit test suite
 - Files Modified:
   - test/unit/perp/PerpEngineFunding.t.sol
