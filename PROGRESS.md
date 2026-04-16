@@ -198,6 +198,43 @@ Maintain a clear, auditable history of system evolution.
 ---
 
 - Date: 2026-04-16
+- Scope: Deterministic perp funding unit test suite
+- Files Modified:
+  - test/unit/perp/PerpEngineFunding.t.sol
+  - PROGRESS.md
+- Summary:
+  Added a deterministic Foundry unit suite for `PerpEngine` funding behavior using the real engine, registry, and vault with in-file oracle and risk-module mocks only. The suite covers first-call funding initialization, disabled-funding and zero-elapsed no-op cases, positive and negative premium deltas, deadband suppression, cap clamping, and accrued funding visibility on an open position after a funding update.
+- Invariants Impacted:
+  - Funding accumulator updates remain explicit in 1e18 precision
+  - Funding accrual on open positions remains consistent with stored cumulative checkpoints
+  - No protocol economics, liquidation behavior, or contract storage/layout changed
+- Validation:
+  - `forge build`: OK
+  - `forge test --match-path test/unit/perp/PerpEngineFunding.t.sol`: OK (8 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-16
+- Scope: Initial perp engine unit test suite
+- Files Modified:
+  - test/unit/perp/PerpEngine.t.sol
+  - PROGRESS.md
+- Summary:
+  Added the first deterministic Foundry unit suite for `PerpEngine` using the real engine, registry, and vault with in-file oracle and risk-module mocks only. The suite covers long/opening position accounting, offsetting open-interest updates, same-side increases, reduction PnL realization, full close reset, side-flip basis reset, bad-debt exposure-increase blocking, and reduce-only transitions under residual bad debt.
+- Invariants Impacted:
+  - Position sign transitions remain explicit across increase, reduce, close, and flip flows
+  - Open interest remains consistent with aggregate long and short exposure
+  - Residual bad debt continues to block exposure increases while allowing strict reduce-only transitions
+  - No protocol economics or contract storage/layout changed
+- Validation:
+  - `forge build`: OK
+  - `forge test --match-path test/unit/perp/PerpEngine.t.sol`: OK (8 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-16
 - Scope: Collateral seizer unit test suite
 - Files Modified:
   - test/unit/liquidation/CollateralSeizer.t.sol
