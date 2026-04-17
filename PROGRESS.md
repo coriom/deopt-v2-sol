@@ -65,6 +65,25 @@ Maintain a clear, auditable history of system evolution.
 
 ---
 
+- Date: 2026-04-17
+- Scope: Residual bad debt repayment scenario suite
+- Files Modified:
+  - test/scenario/system/BadDebtRepaymentFlow.t.sol
+  - PROGRESS.md
+- Summary:
+  Added a deterministic cross-module system scenario suite for perp residual bad debt repayment behavior using the real `PerpEngine`, `PerpMarketRegistry`, and `CollateralVault`, with narrow in-file oracle, risk, seizer, and insurance mocks only. The suite covers liquidation-created residual bad debt, exposure-increase blocking while debt exists, reduce-only transitions, debt-first routing of incoming realized cashflow, bounded partial/full repayment, and restoration of normal exposure increase once debt is fully cleared.
+- Invariants Impacted:
+  - Residual bad debt remains created only through the explicit liquidation shortfall path
+  - Accounts with residual bad debt remain strict reduce-only until debt is cleared
+  - Incoming realized cashflow and explicit repayment remain capped by outstanding debt and actual transferable base balance
+  - No protocol economics, storage layout, or contract logic changed
+- Validation:
+  - `forge build`: OK
+  - `forge test --match-path test/scenario/system/BadDebtRepaymentFlow.t.sol`: OK (8 passed)
+- Status: DONE
+
+---
+
 - Date: 2026-04-15
 - Scope: Baseline build check
 - Files Modified:
