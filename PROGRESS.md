@@ -66,6 +66,88 @@ Maintain a clear, auditable history of system evolution.
 ---
 
 - Date: 2026-04-17
+- Scope: Liquidation and shortfall accounting invariant suite
+- Files Modified:
+  - test/invariant/liquidation/LiquidationInvariants.t.sol
+  - PROGRESS.md
+- Summary:
+  Added a Foundry invariant suite for perp liquidation and shortfall accounting safety using the real `PerpEngine`, `PerpMarketRegistry`, and `CollateralVault`, with narrow in-file oracle, risk, seizer, insurance, and token mocks only. The handler drives deterministic fresh-trader liquidation cases spanning full seizure coverage, partial seizure plus insurance coverage, explicit residual shortfall creation, no-seizer shortfall, and over-planned seizure cases.
+- Invariants Impacted:
+  - Seized collateral effective value remains capped by conservative planned coverage
+  - Liquidation crediting remains bounded by actual trader and insurance balances moved through the vault
+  - Residual bad debt remains created only through explicit liquidation shortfall resolution
+  - Insurance coverage remains capped by both requested shortfall and actual available fund balance
+  - Liquidation bookkeeping remains coherent across trader debits, liquidator credits, seized collateral, and residual bad debt totals
+  - No protocol economics, storage layout, or contract logic changed
+- Validation:
+  - `forge build`: OK
+  - `forge test --match-path test/invariant/liquidation/LiquidationInvariants.t.sol`: OK (6 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-17
+- Scope: Position and index accounting invariant suite
+- Files Modified:
+  - test/invariant/engine/PositionIndexInvariants.t.sol
+  - PROGRESS.md
+- Summary:
+  Added a Foundry invariant suite for option series indexing, perp market indexing, and perp open-interest accounting safety using the real `MarginEngine`, `PerpEngine`, `OptionProductRegistry`, `PerpMarketRegistry`, and `CollateralVault`, with narrow in-file token, oracle, and risk mocks only. The handler drives deterministic option and perp trade plus flatten transitions so both index insertion and index removal paths are exercised.
+- Invariants Impacted:
+  - Non-zero option positions remain represented in the active series index
+  - Zero option positions remain absent from the active series index
+  - Non-zero perp positions remain represented in the active market index
+  - Zero perp positions remain absent from the active market index
+  - No duplicate active series or market entries appear for a trader
+  - Perp open interest remains coherent with aggregate live long and short positions under tested action sequences
+  - No protocol economics, storage layout, or contract logic changed
+- Validation:
+  - `forge build`: OK
+  - `forge test --match-path test/invariant/engine/PositionIndexInvariants.t.sol`: OK (6 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-17
+- Scope: Collateral vault accounting invariant suite
+- Files Modified:
+  - test/invariant/vault/CollateralVaultInvariants.t.sol
+  - PROGRESS.md
+- Summary:
+  Added the first Foundry invariant suite for collateral vault accounting safety using the real `CollateralVault` and a narrow in-file handler with deterministic supported and unsupported token mocks. The suite exercises deposits, withdrawals, engine-authorized internal transfers, and rejected unsupported-token deposits to check accounting conservation and effective-balance safety across action sequences.
+- Invariants Impacted:
+  - Internal transfers conserve tracked accounting across participating accounts
+  - Deposit and withdraw action sequences do not create phantom tracked balance
+  - Unsupported tokens never enter tracked collateral accounting
+  - Tested action sequences preserve non-negative effective accounting behavior under `checkInvariant`
+  - No protocol economics, storage layout, or contract logic changed
+- Validation:
+  - `forge build`: OK
+  - `forge test --match-path test/invariant/vault/CollateralVaultInvariants.t.sol`: OK (4 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-17
+- Scope: Oracle failure scenario suite
+- Files Modified:
+  - test/scenario/system/OracleFailureFlow.t.sol
+  - PROGRESS.md
+- Summary:
+  Added a deterministic cross-module system scenario suite for oracle failure behavior using the real `OracleRouter`, `PerpEngine`, `PerpMarketRegistry`, and `CollateralVault`, with narrow in-file `IPriceSource`, risk, and insurance mocks only. The suite covers stale-price rejection on a protected liquidation path, zero-price rejection, future-timestamp rejection, unavailable-oracle safe failure, and conservative router fallback/deviation behavior when primary and secondary sources are configured.
+- Invariants Impacted:
+  - Oracle reads remain normalized to 1e8 and reject zero, stale, future, and unavailable data on protected paths
+  - No liquidation path proceeds when the configured oracle state is unsafe or unusable
+  - Primary/secondary fallback and deviation enforcement remain explicit and conservative
+  - No protocol economics, storage layout, or contract logic changed
+- Validation:
+  - `forge build`: OK
+  - `forge test --match-path test/scenario/system/OracleFailureFlow.t.sol`: OK (5 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-17
 - Scope: Residual bad debt repayment scenario suite
 - Files Modified:
   - test/scenario/system/BadDebtRepaymentFlow.t.sol
