@@ -66,6 +66,49 @@ Maintain a clear, auditable history of system evolution.
 ---
 
 - Date: 2026-04-17
+- Scope: Margin engine fuzz/property suite
+- Files Modified:
+  - test/fuzz/options/MarginEngineFuzz.t.sol
+  - PROGRESS.md
+- Summary:
+  Added a bounded Foundry fuzz/property suite for `MarginEngine` using the real `MarginEngine`, `OptionProductRegistry`, and `CollateralVault`, with narrow in-file oracle and risk mocks only. The suite drives bounded option trade, reduce, close, settlement, inactive-series, expiry, and liquidation sequences and checks trader-series index coherence, zero-position index removal, aggregate short exposure consistency, reduce/close short-exposure monotonicity, settlement and lifecycle guard coherence, and bounded liquidation sizing.
+- Invariants Impacted:
+  - Trader open-series indexing remains coherent with live non-zero option positions
+  - Zero-quantity option positions remain absent from active trader series lists
+  - `totalShortContracts` remains aligned with aggregate live short option quantities under tested sequences
+  - Reduce and close transitions do not increase short exposure unexpectedly
+  - Settlement, inactive-series, and expiry guards remain explicit and coherent under bounded inputs
+  - Liquidation closes remain bounded by live short inventory and configured close-factor limits without creating impossible position signs
+  - No protocol economics, storage layout, or contract logic changed
+- Validation:
+  - `forge build`: OK
+  - `forge test --match-path test/fuzz/options/MarginEngineFuzz.t.sol`: OK (6 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-17
+- Scope: Perp engine fuzz/property suite
+- Files Modified:
+  - test/fuzz/perp/PerpEngineFuzz.t.sol
+  - PROGRESS.md
+- Summary:
+  Added the first bounded Foundry fuzz/property suite for `PerpEngine` using the real `PerpEngine`, `PerpMarketRegistry`, and `CollateralVault`, with narrow in-file oracle, risk, and token mocks only. The suite drives bounded transition sequences across one perp market and checks reference-model position accounting, open-interest coherence, reduce-only exposure behavior, realized PnL cashflow consistency, and residual-bad-debt exposure gating.
+- Invariants Impacted:
+  - Position size, open-notional basis, and funding checkpoint accounting remain coherent across open, increase, reduce, close, and flip transitions
+  - Market open interest remains aligned with aggregate live long and short positions under tested trade sequences
+  - Reduce and close transitions do not increase absolute exposure unexpectedly
+  - Realized PnL cashflows remain finite and consistent with bounded base-token vault transfers
+  - Traders with residual bad debt remain unable to increase exposure until debt is cleared
+  - No protocol economics, storage layout, or contract logic changed
+- Validation:
+  - `forge build`: OK
+  - `forge test --match-path test/fuzz/perp/PerpEngineFuzz.t.sol`: OK (5 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-17
 - Scope: Liquidation and shortfall accounting invariant suite
 - Files Modified:
   - test/invariant/liquidation/LiquidationInvariants.t.sol
