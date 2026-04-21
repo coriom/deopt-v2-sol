@@ -207,6 +207,17 @@ abstract contract CollateralVaultAdmin is CollateralVaultStorage {
         emit CollateralTokenConfigured(token, isSupported, decimals, collateralFactorBps);
     }
 
+    /// @notice Sets an optional launch-safety cap for aggregate deposits of one supported token.
+    /// @dev `cap == 0` disables the cap. Lowering below current aggregate only blocks further deposits.
+    function setTokenDepositCap(address token, uint256 cap) external onlyOwner {
+        _requireSupportedToken(token);
+
+        uint256 oldCap = tokenDepositCap[token];
+        tokenDepositCap[token] = cap;
+
+        emit TokenDepositCapSet(token, oldCap, cap);
+    }
+
     /*//////////////////////////////////////////////////////////////
                         ADMIN / YIELD STRATEGY
     //////////////////////////////////////////////////////////////*/

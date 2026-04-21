@@ -260,6 +260,17 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
         emit FeeRecipientSet(old, feeRecipient_);
     }
 
+    /// @notice Sets an optional launch-safety cap for aggregate short contracts on one option series.
+    /// @dev `cap == 0` disables the cap. Existing over-cap exposure may only be reduced by trade.
+    function setSeriesShortOpenInterestCap(uint256 optionId, uint256 cap) external onlyOwner {
+        _optionRegistry.getSeries(optionId);
+
+        uint256 oldCap = seriesShortOpenInterestCap[optionId];
+        seriesShortOpenInterestCap[optionId] = cap;
+
+        emit SeriesShortOpenInterestCapSet(optionId, oldCap, cap);
+    }
+
     /// @notice Clear explicit fee recipient and fallback to insuranceFund if integration uses it.
     function clearFeeRecipient() external onlyOwner {
         address old = feeRecipient;

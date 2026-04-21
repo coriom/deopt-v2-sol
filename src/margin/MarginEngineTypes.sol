@@ -121,6 +121,7 @@ abstract contract MarginEngineTypes {
     // Series / trading
     error SeriesExpired();
     error SeriesNotActiveCloseOnly();
+    error SeriesShortOpenInterestCapExceeded(uint256 optionId, uint256 openInterest, uint256 cap);
 
     // Contract size hardening (enforce fixed 1e8)
     error InvalidContractSize();
@@ -189,6 +190,10 @@ abstract contract MarginEngineTypes {
         uint128 quantity,
         uint128 price
     );
+
+    /// @notice Launch-safety cap for aggregate short contracts on one option series.
+    /// @dev `cap == 0` disables the cap. Values are raw option-contract counts.
+    event SeriesShortOpenInterestCapSet(uint256 indexed optionId, uint256 oldCap, uint256 newCap);
 
     /// @notice Local cached risk parameters synchronized against the RiskModule source of truth.
     /// @dev

@@ -68,6 +68,12 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     /// @notice Total absolute short quantity across all open series.
     mapping(address => uint256) public totalShortContracts;
 
+    /// @notice Aggregate absolute short contracts per option series.
+    mapping(uint256 => uint256) public seriesShortOpenInterest;
+
+    /// @notice Optional launch-safety cap for aggregate short contracts per option series. 0 = disabled.
+    mapping(uint256 => uint256) public seriesShortOpenInterestCap;
+
     /// -----------------------------------------------------------------------
     /// OPEN SERIES TRACKING
     /// -----------------------------------------------------------------------
@@ -348,10 +354,35 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         }
     }
 
+    function _updateSeriesShortOpenInterest(uint256 optionId, int128 oldQty, int128 newQty) internal {
+        _meEnsureQtyAllowed(oldQty);
+        _meEnsureQtyAllowed(newQty);
+
+        uint256 oldShort = oldQty < 0 ? _absInt128(oldQty) : 0;
+        uint256 newShort = newQty < 0 ? _absInt128(newQty) : 0;
+
+        uint256 cur = seriesShortOpenInterest[optionId];
+
+        if (newShort >= oldShort) {
+            seriesShortOpenInterest[optionId] = _meAddChecked(cur, newShort - oldShort);
+        } else {
+            seriesShortOpenInterest[optionId] = _meSubChecked(cur, oldShort - newShort);
+        }
+    }
+
+    function _enforceSeriesShortOpenInterestCap(uint256 optionId) internal view {
+        uint256 cap = seriesShortOpenInterestCap[optionId];
+        if (cap == 0) return;
+
+        uint256 openInterest = seriesShortOpenInterest[optionId];
+        if (openInterest > cap) revert SeriesShortOpenInterestCapExceeded(optionId, openInterest, cap);
+    }
+
     /// @dev Canonical helper to maintain all open-series / short aggregates on a position mutation.
     function _syncPositionIndexes(address trader, uint256 optionId, int128 oldQty, int128 newQty) internal {
         _updateOpenSeriesOnChange(trader, optionId, oldQty, newQty);
         _updateTotalShortContracts(trader, oldQty, newQty);
+        _updateSeriesShortOpenInterest(optionId, oldQty, newQty);
     }
 
     function _vaultCfg(address token) internal view returns (CollateralVault.CollateralTokenConfig memory cfg) {

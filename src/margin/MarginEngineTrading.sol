@@ -143,6 +143,7 @@ abstract contract MarginEngineTrading is MarginEngineAdmin {
         // Maintain canonical open-series tracking + short aggregates
         _syncPositionIndexes(t.buyer, t.optionId, oldBuyerQty, newBuyerQty);
         _syncPositionIndexes(t.seller, t.optionId, oldSellerQty, newSellerQty);
+        _enforceSeriesShortOpenInterestCap(t.optionId);
 
         // Premium cashflow: settlement-asset native units
         // premium = quantity * pricePerContract

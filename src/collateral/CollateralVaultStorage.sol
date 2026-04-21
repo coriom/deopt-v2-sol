@@ -41,6 +41,7 @@ abstract contract CollateralVaultStorage is ReentrancyGuard {
     error WithdrawalsPaused();
     error InternalTransfersPaused();
     error YieldOperationsPaused();
+    error DepositCapExceeded(address token, uint256 aggregateDeposited, uint256 cap);
 
     error StrategyNotSet();
     error NotEnoughIdle();
@@ -81,6 +82,7 @@ abstract contract CollateralVaultStorage is ReentrancyGuard {
     event Deposited(address indexed user, address indexed token, uint256 amount);
     event Withdrawn(address indexed user, address indexed token, uint256 amount);
     event InternalTransfer(address indexed token, address indexed from, address indexed to, uint256 amount);
+    event TokenDepositCapSet(address indexed token, uint256 oldCap, uint256 newCap);
 
     event Paused(address indexed account);
     event Unpaused(address indexed account);
@@ -132,6 +134,12 @@ abstract contract CollateralVaultStorage is ReentrancyGuard {
     /// @notice User accounting balance in token native units.
     /// @dev This balance is intended to reflect the effective account balance after sync.
     mapping(address => mapping(address => uint256)) public balances;
+
+    /// @notice Aggregate externally deposited collateral per token, in token-native units.
+    mapping(address => uint256) public totalDepositedByToken;
+
+    /// @notice Optional launch-safety cap for aggregate deposits per token, in token-native units. 0 = disabled.
+    mapping(address => uint256) public tokenDepositCap;
 
     mapping(address => CollateralTokenConfig) internal _collateralConfigs;
     address[] public collateralTokens;
@@ -264,6 +272,18 @@ abstract contract CollateralVaultStorage is ReentrancyGuard {
     function _requireSupportedToken(address token) internal view returns (CollateralTokenConfig memory cfg) {
         cfg = _collateralConfigs[token];
         if (!cfg.isSupported) revert TokenNotSupported();
+    }
+
+    function _increaseTotalDeposited(address token, uint256 amount) internal {
+        uint256 next = totalDepositedByToken[token] + amount;
+        uint256 cap = tokenDepositCap[token];
+        if (cap != 0 && next > cap) revert DepositCapExceeded(token, next, cap);
+        totalDepositedByToken[token] = next;
+    }
+
+    function _decreaseTotalDeposited(address token, uint256 amount) internal {
+        uint256 current = totalDepositedByToken[token];
+        totalDepositedByToken[token] = amount >= current ? 0 : current - amount;
     }
 
     function _listCollateralTokenIfNeeded(address token) internal {

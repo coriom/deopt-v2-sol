@@ -65,6 +65,50 @@ Maintain a clear, auditable history of system evolution.
 
 ---
 
+- Date: 2026-04-21
+- Scope: Collateral vault deposit caps
+- Files Modified:
+  - src/collateral/CollateralVaultStorage.sol
+  - src/collateral/CollateralVaultAdmin.sol
+  - src/collateral/CollateralVaultActions.sol
+  - src/collateral/CollateralVaultYield.sol
+  - test/unit/vault/CollateralVault.t.sol
+  - PROGRESS.md
+- Summary:
+  Added an owner-configurable per-token aggregate deposit cap to `CollateralVault`, with `totalDepositedByToken` tracking in token-native units, disabled-by-default `tokenDepositCap` semantics, deposit-only cap enforcement on both `deposit` and `depositFor`, and withdrawal-side aggregate reduction. Internal transfers remain unaffected by caps.
+- Invariants Impacted:
+  - Vault aggregate deposited accounting is now explicit per supported token in token-native units
+  - Deposit caps bound new external collateral inflows without changing withdrawals or internal account-to-account transfers
+  - No protocol economics, yield strategy movement rules, liquidation flows, collateral weights, or unit scaling changed
+- Validation:
+  - `forge build`: OK
+  - `forge test --match-path test/unit/vault/CollateralVault.t.sol`: OK (10 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-21
+- Scope: Options launch safety caps
+- Files Modified:
+  - src/margin/MarginEngineTypes.sol
+  - src/margin/MarginEngineStorage.sol
+  - src/margin/MarginEngineAdmin.sol
+  - src/margin/MarginEngineTrading.sol
+  - test/unit/margin/MarginEngine.t.sol
+  - PROGRESS.md
+- Summary:
+  Added an owner-configurable per-series aggregate short-open-interest cap to `MarginEngine`, with tracked `seriesShortOpenInterest`, disabled-by-default cap semantics, trade-time enforcement, and focused unit tests for cap rejection and reduce-through behavior after a cap is lowered.
+- Invariants Impacted:
+  - Aggregate option short exposure per series is now explicitly tracked and bounded when configured
+  - Option position indexing and per-trader short exposure remain synchronized through the existing position mutation helper
+  - No option pricing, margin, liquidation, settlement, fee, or unit-scaling economics changed
+- Validation:
+  - `forge build`: OK
+  - `forge test --match-path test/unit/margin/MarginEngine.t.sol`: OK (11 passed)
+- Status: DONE
+
+---
+
 - Date: 2026-04-17
 - Scope: Margin engine fuzz/property suite
 - Files Modified:

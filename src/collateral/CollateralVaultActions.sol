@@ -51,6 +51,8 @@ abstract contract CollateralVaultActions is CollateralVaultViews {
         uint256 received = IERC20(token).balanceOf(address(this)) - pre;
         if (received == 0) revert AmountZero();
 
+        _increaseTotalDeposited(token, received);
+
         balances[msg.sender][token] += received;
         idleBalances[msg.sender][token] += received;
 
@@ -79,6 +81,8 @@ abstract contract CollateralVaultActions is CollateralVaultViews {
         IERC20(token).safeTransferFrom(user, address(this), amount);
         uint256 received = IERC20(token).balanceOf(address(this)) - pre;
         if (received == 0) revert AmountZero();
+
+        _increaseTotalDeposited(token, received);
 
         balances[user][token] += received;
         idleBalances[user][token] += received;

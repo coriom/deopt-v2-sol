@@ -270,12 +270,57 @@ contract MarginEngineTest is Test {
     function testTotalShortExposureIsUpdatedCorrectlyOnOpenAndClose() external {
         _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
         assertEq(engine.totalShortContracts(BOB), 2);
+        assertEq(engine.seriesShortOpenInterest(callOptionId), 2);
 
         _trade(BOB, ALICE, callOptionId, 1, PREMIUM_PER_CONTRACT);
         assertEq(engine.totalShortContracts(BOB), 1);
+        assertEq(engine.seriesShortOpenInterest(callOptionId), 1);
 
         _trade(BOB, ALICE, callOptionId, 1, PREMIUM_PER_CONTRACT);
         assertEq(engine.totalShortContracts(BOB), 0);
+        assertEq(engine.seriesShortOpenInterest(callOptionId), 0);
+    }
+
+    function testSeriesShortOpenInterestCapBlocksNewShortExposureAboveCap() external {
+        vm.prank(OWNER);
+        engine.setSeriesShortOpenInterestCap(callOptionId, 2);
+
+        _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
+
+        vm.prank(MATCHING_ENGINE);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                MarginEngineTypes.SeriesShortOpenInterestCapExceeded.selector,
+                callOptionId,
+                3,
+                2
+            )
+        );
+        engine.applyTrade(
+            IMarginEngineTrade.Trade({
+                buyer: ALICE,
+                seller: CAROL,
+                optionId: callOptionId,
+                quantity: 1,
+                price: PREMIUM_PER_CONTRACT,
+                buyerIsMaker: true
+            })
+        );
+
+        assertEq(engine.seriesShortOpenInterest(callOptionId), 2);
+        assertEq(engine.positions(CAROL, callOptionId).quantity, 0);
+    }
+
+    function testLoweredSeriesShortOpenInterestCapStillAllowsReduction() external {
+        _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
+
+        vm.prank(OWNER);
+        engine.setSeriesShortOpenInterestCap(callOptionId, 1);
+
+        _trade(BOB, ALICE, callOptionId, 1, PREMIUM_PER_CONTRACT);
+
+        assertEq(engine.seriesShortOpenInterest(callOptionId), 1);
+        assertEq(engine.totalShortContracts(BOB), 1);
     }
 
     function testPremiumTransferBetweenBuyerAndSellerIsCorrect() external {

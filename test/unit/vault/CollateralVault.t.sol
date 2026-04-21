@@ -62,7 +62,51 @@ contract CollateralVaultTest is Test {
 
         assertEq(vault.balances(ALICE, address(usdc)), DEPOSIT_AMOUNT);
         assertEq(vault.idleBalances(ALICE, address(usdc)), DEPOSIT_AMOUNT);
+        assertEq(vault.totalDepositedByToken(address(usdc)), DEPOSIT_AMOUNT);
         assertEq(usdc.balanceOf(address(vault)), DEPOSIT_AMOUNT);
+    }
+
+    function testDepositCapBlocksDirectDepositsAboveCap() external {
+        vm.prank(OWNER);
+        vault.setTokenDepositCap(address(usdc), DEPOSIT_AMOUNT - 1);
+
+        vm.startPrank(ALICE);
+        usdc.approve(address(vault), DEPOSIT_AMOUNT);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                CollateralVaultStorage.DepositCapExceeded.selector,
+                address(usdc),
+                DEPOSIT_AMOUNT,
+                DEPOSIT_AMOUNT - 1
+            )
+        );
+        vault.deposit(address(usdc), DEPOSIT_AMOUNT);
+        vm.stopPrank();
+
+        assertEq(vault.totalDepositedByToken(address(usdc)), 0);
+        assertEq(vault.balances(ALICE, address(usdc)), 0);
+    }
+
+    function testDepositCapBlocksDepositForAboveCap() external {
+        vm.prank(OWNER);
+        vault.setTokenDepositCap(address(usdc), DEPOSIT_AMOUNT - 1);
+
+        vm.prank(ALICE);
+        usdc.approve(address(vault), DEPOSIT_AMOUNT);
+
+        vm.prank(ENGINE);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                CollateralVaultStorage.DepositCapExceeded.selector,
+                address(usdc),
+                DEPOSIT_AMOUNT,
+                DEPOSIT_AMOUNT - 1
+            )
+        );
+        vault.depositFor(ALICE, address(usdc), DEPOSIT_AMOUNT);
+
+        assertEq(vault.totalDepositedByToken(address(usdc)), 0);
+        assertEq(vault.balances(ALICE, address(usdc)), 0);
     }
 
     function testWithdrawSuccess() external {
@@ -73,8 +117,22 @@ contract CollateralVaultTest is Test {
 
         assertEq(vault.balances(ALICE, address(usdc)), DEPOSIT_AMOUNT - WITHDRAW_AMOUNT);
         assertEq(vault.idleBalances(ALICE, address(usdc)), DEPOSIT_AMOUNT - WITHDRAW_AMOUNT);
+        assertEq(vault.totalDepositedByToken(address(usdc)), DEPOSIT_AMOUNT - WITHDRAW_AMOUNT);
         assertEq(usdc.balanceOf(ALICE), 1_000e6 - DEPOSIT_AMOUNT + WITHDRAW_AMOUNT);
         assertEq(usdc.balanceOf(address(vault)), DEPOSIT_AMOUNT - WITHDRAW_AMOUNT);
+    }
+
+    function testLoweredDepositCapStillAllowsWithdrawals() external {
+        _deposit(ALICE, DEPOSIT_AMOUNT);
+
+        vm.prank(OWNER);
+        vault.setTokenDepositCap(address(usdc), DEPOSIT_AMOUNT - 1);
+
+        vm.prank(ALICE);
+        vault.withdraw(address(usdc), WITHDRAW_AMOUNT);
+
+        assertEq(vault.balances(ALICE, address(usdc)), DEPOSIT_AMOUNT - WITHDRAW_AMOUNT);
+        assertEq(vault.totalDepositedByToken(address(usdc)), DEPOSIT_AMOUNT - WITHDRAW_AMOUNT);
     }
 
     function testWithdrawInsufficientBalanceReverts() external {
@@ -107,7 +165,25 @@ contract CollateralVaultTest is Test {
         assertEq(vault.idleBalances(ALICE, address(usdc)), DEPOSIT_AMOUNT - TRANSFER_AMOUNT);
         assertEq(vault.idleBalances(BOB, address(usdc)), DEPOSIT_AMOUNT + TRANSFER_AMOUNT);
         assertEq(vault.balances(ALICE, address(usdc)) + vault.balances(BOB, address(usdc)), totalBefore);
+        assertEq(vault.totalDepositedByToken(address(usdc)), totalBefore);
         assertEq(usdc.balanceOf(address(vault)), totalBefore);
+    }
+
+    function testInternalTransferUnaffectedByLoweredDepositCap() external {
+        _deposit(ALICE, DEPOSIT_AMOUNT);
+        _deposit(BOB, DEPOSIT_AMOUNT);
+
+        uint256 totalBefore = vault.totalDepositedByToken(address(usdc));
+
+        vm.prank(OWNER);
+        vault.setTokenDepositCap(address(usdc), totalBefore - 1);
+
+        vm.prank(ENGINE);
+        vault.transferBetweenAccounts(address(usdc), ALICE, BOB, TRANSFER_AMOUNT);
+
+        assertEq(vault.balances(ALICE, address(usdc)), DEPOSIT_AMOUNT - TRANSFER_AMOUNT);
+        assertEq(vault.balances(BOB, address(usdc)), DEPOSIT_AMOUNT + TRANSFER_AMOUNT);
+        assertEq(vault.totalDepositedByToken(address(usdc)), totalBefore);
     }
 
     function testTokenConfigAndDecimalsSanity() external view {

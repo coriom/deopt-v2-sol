@@ -146,6 +146,7 @@ abstract contract CollateralVaultYield is CollateralVaultAdmin {
         uint256 idle = idleBalances[user][token];
         if (idle >= amount) {
             idleBalances[user][token] = idle - amount;
+            _decreaseTotalDeposited(token, amount);
             IERC20(token).safeTransfer(to, amount);
             emit Withdrawn(user, token, amount);
             return;
@@ -171,6 +172,7 @@ abstract contract CollateralVaultYield is CollateralVaultAdmin {
         if (sharesBurned != sharesNeeded) revert AdapterReturnedUnexpectedShares();
 
         tokenTotalStrategyShares[token] -= sharesBurned;
+        _decreaseTotalDeposited(token, amount);
 
         emit Withdrawn(user, token, amount);
 
