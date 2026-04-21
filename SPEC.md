@@ -1,19 +1,41 @@
+
+---
+
+## `SPEC.md`
+
+```md
 # SPEC.md
 
 ## System Overview
 
-DeOpt v2 is a modular derivatives protocol composed of:
+DeOpt v2 is a modular on-chain derivatives protocol composed of:
 
-- Options engine (calls/puts)
-- Perpetual engine
-- Unified collateral system
-- Risk and margin module
-- Oracle router
-- Liquidation engine
-- Insurance fund
-- Matching engine (off-chain → on-chain execution)
-- Fee system
-- Governance layer
+- options engine (calls / puts)
+- perpetual engine
+- unified collateral system
+- unified risk and margin module
+- oracle router
+- liquidation engine
+- insurance fund
+- matching engine (off-chain matching → on-chain execution)
+- fee system
+- governance / timelock layer
+
+The protocol is designed to support production-grade derivatives infrastructure with explicit accounting, conservative liquidation, bounded governance, and a shared collateral base.
+
+---
+
+## System Goals
+
+DeOpt v2 aims to provide:
+
+- shared collateral across products
+- coherent protocol-wide risk measurement
+- conservative liquidation and shortfall handling
+- explicit bad-debt accounting
+- auditable parameter governance
+- scalable modularity across options and perps
+- production-oriented operational safety
 
 ---
 
@@ -22,114 +44,235 @@ DeOpt v2 is a modular derivatives protocol composed of:
 ### Core Modules
 
 #### 1. CollateralVault
-- Holds user balances
-- Supports multiple tokens
-- Handles yield integration
-- Internal accounting:
-  - balances[user][token]
-- Must sync yield before reads
+Responsibilities:
+- holds user balances
+- supports multiple collateral tokens
+- supports yield integration
+- handles internal account-to-account transfers
+- acts as the common balance layer for protocol modules
+
+Internal accounting:
+- `balances[user][token]`
+
+Key constraints:
+- yield must be synced before reads where required
+- token support and decimals must remain explicit
+- authorized engine interactions must remain controlled
 
 ---
 
 #### 2. RiskModule
-- Computes:
-  - equityBase
-  - initialMarginBase
-  - maintenanceMarginBase
-- Applies haircuts
-- Converts all values into base collateral units
+Responsibilities:
+- computes:
+  - `equityBase`
+  - `initialMarginBase`
+  - `maintenanceMarginBase`
+  - free collateral
+  - withdraw previews
+  - decomposed collateral/product state
+- applies collateral haircuts
+- converts all values into base collateral units
+- serves as the unified protocol risk surface
+
+Key constraints:
+- all core outputs must remain expressed in base units
+- collateral valuation must remain conservative
+- oracle usage must remain explicit and safe
+- options and perp contributions must remain composable without unit ambiguity
 
 ---
 
 #### 3. MarginEngine
-- Validates positions
-- Enforces margin requirements
-- Interfaces with RiskModule
+Responsibilities:
+- manages option positions
+- validates option-side position transitions
+- enforces option-side margin requirements
+- interfaces with RiskModule
+- performs option settlement and liquidation flows
+- tracks open option series per trader
+
+Key constraints:
+- active series indexing must remain coherent
+- total short exposure must remain coherent
+- settlement must be explicit and single-use where intended
+- option lifecycle must remain bounded and auditable
 
 ---
 
 #### 4. PerpEngine
-- Manages perpetual positions
-- Tracks:
+Responsibilities:
+- manages perpetual positions
+- tracks:
   - size
-  - entry price
+  - entry/basis state
   - funding
   - realized PnL
+  - residual bad debt
+- executes trade application and liquidation logic
+- integrates fee routing and insurance shortfall handling
 
 Submodules:
-- Storage
-- Trading
-- Views
-- Admin
+- storage
+- trading
+- views
+- admin
+
+Key constraints:
+- open interest must remain coherent
+- realized/unrealized accounting must remain consistent
+- funding must remain bounded and inspectable
+- bad-debt gating must remain explicit
 
 ---
 
-#### 5. Option Engine
+#### 5. Option Product Layer
+Current scope:
 - European options only
-- Supports call and put
-- Uses:
-  - strike (1e8)
-  - expiry
-  - contract size (1e8)
+- call and put support
+- strike normalized to `1e8`
+- expiry-based lifecycle
+- contract size normalized to `1e8 = 1 underlying`
+
+Components:
+- `OptionProductRegistry`
+- option settlement configuration
+- per-underlying option risk policy
+
+Key constraints:
+- contract size assumptions must remain explicit
+- strike/settlement scaling must remain 1e8
+- settlement policy must remain auditable
 
 ---
 
 #### 6. OracleRouter
-- Aggregates price feeds:
+Responsibilities:
+- aggregates price feeds such as:
   - Chainlink
   - Pyth
-  - fallback sources
-- Enforces:
-  - staleness
+  - fallback / secondary sources
+- enforces:
+  - staleness checks
   - deviation checks
-- Returns normalized price (1e8)
+  - conservative failure handling
+- returns normalized price in `1e8`
+
+Key constraints:
+- no silent unsafe fallback
+- stale/future/invalid prices must be rejected or handled conservatively
+- all consumers must rely on explicit normalization assumptions
 
 ---
 
 #### 7. Liquidation Engine (CollateralSeizer)
-- Seizes collateral when margin violation
-- Applies:
+Responsibilities:
+- computes conservative seizure plans when margin is violated
+- applies:
   - haircut
   - liquidation spread
-- Computes seizure in base value
-- Transfers via CollateralVault
+- computes effective value in base units
+- leaves execution to calling engines via `CollateralVault`
+
+Key constraints:
+- planner must remain conservative
+- no implicit transfer side effects
+- effective seized value must remain bounded by real balances and configured discounts
 
 ---
 
 #### 8. InsuranceFund
-- Acts as system backstop
-- Receives penalties
-- Covers bad debt
+Responsibilities:
+- acts as system backstop
+- receives or holds treasury / reserve assets
+- covers shortfalls when authorized modules request bounded payout
+- optionally participates in yield/vault paths
+
+Key constraints:
+- payout must never exceed available balance
+- token allowlist must remain explicit
+- backstop usage must remain authorized and auditable
 
 ---
 
 #### 9. Matching Engine
-- Off-chain orderbook
-- On-chain settlement
-- Deterministic execution
+Responsibilities:
+- off-chain orderbook / matching path
+- deterministic on-chain settlement / application
+- routes matched trades into engines
+
+Key constraints:
+- execution semantics must remain deterministic
+- no hidden accounting outside engine state transitions
 
 ---
 
 #### 10. Fees System
+Responsibilities:
+- computes and routes fees for:
+  - options
+  - perps
+- supports:
+  - defaults
+  - caps
+  - overrides
+  - tiering / merkle-claim based policy
 
-Targets:
-- % of premium (options)
-- % of notional (perps)
+Key constraints:
+- fee routing must remain explicit
+- caps must remain enforceable
+- quotes must remain economically coherent
 
-Future:
-- volume-based fee tiers
-- fee routing to treasury
+---
+
+#### 11. Governance Layer
+Components:
+- `ProtocolTimelock`
+- `RiskGovernor`
+- governance interfaces for critical modules
+
+Responsibilities:
+- parameter updates
+- emergency control coordination
+- bounded delayed execution of sensitive actions
+
+Key constraints:
+- timelock semantics must remain explicit
+- guardian powers must remain bounded
+- queue/cancel/execute must remain auditable
 
 ---
 
 ## Data Flow
 
-1. User deposits collateral → CollateralVault
-2. User opens position → PerpEngine / OptionEngine
-3. Margin checked → MarginEngine → RiskModule
-4. Prices fetched → OracleRouter
-5. If undercollateralized → Liquidation Engine
-6. Shortfall → InsuranceFund
+Canonical high-level flow:
+
+1. user deposits collateral → `CollateralVault`
+2. user opens or updates position → `PerpEngine` / `MarginEngine`
+3. margin and solvency checked → `RiskModule`
+4. prices fetched → `OracleRouter`
+5. if undercollateralized → liquidation path triggered
+6. shortfall resolved via:
+   - collateral seizure
+   - insurance fund
+   - residual bad debt if necessary
+
+---
+
+## Accounting Model
+
+### Base Numeraire
+The protocol uses a central base collateral numeraire for risk calculations.
+
+All core risk quantities suffixed `...Base` must be denominated in native units of this base collateral token.
+
+### Token-Native Amounts
+All token balances and transfers remain denominated in native token units.
+
+### Normalized Price Space
+All normalized price-based quantities suffixed `...1e8` must remain scaled to `1e8`.
+
+### Ratios
+All ratios suffixed `...Bps` must remain in basis points using scale `10_000`.
 
 ---
 
@@ -137,48 +280,108 @@ Future:
 
 ### Financial
 
-- No creation/destruction of value
-- PnL must net to zero across participants (excluding fees)
-- Liquidation must reduce system risk
+- No creation or destruction of value through accounting mistakes.
+- PnL must net correctly across participants, excluding explicit fees and explicit shortfall paths.
+- Liquidation must reduce or explicitly account for system risk.
+- Insurance usage must remain bounded and explicit.
+- Residual bad debt must never appear silently.
 
 ### Accounting
 
-- Vault balances must reflect real state
-- No phantom equity
-- Yield and principal must be separable but consistent
+- Vault balances must reflect real state.
+- No phantom equity.
+- Yield and principal must remain separable but coherent.
+- Open position indexes must remain coherent with actual live positions.
+- Open interest aggregates must remain coherent with live perp positions.
 
 ### Safety
 
-- No overflow/underflow
-- No unsafe casts
-- No stale oracle usage
+- No overflow / underflow.
+- No unsafe casts.
+- No stale oracle usage where guarded paths require freshness.
+- No hidden unit changes.
+- No implicit economic fallback without explicit logic.
+
+### Governance
+
+- Sensitive actions must remain timelockable where intended.
+- Emergency actions must remain bounded.
+- Role semantics must remain explicit.
 
 ---
 
 ## Constraints
 
-- Base chain deployment
+### Deployment
+- Base chain target deployment
+
+### Initial Market Scope
 - USDC as base collateral
-- ETH/BTC as initial underlyings
+- ETH and BTC as initial underlyings
+
+### Initial Product Scope
+- European options only
+- Perps on bounded initial market set
 
 ---
 
 ## Non-Goals (for now)
 
 - American options
-- Cross-chain settlement
-- Advanced structured products
+- cross-chain settlement
+- advanced structured products
+- uncontrolled governance surface expansion
+- broad product sprawl before launch-hardening
 
 ---
 
-## Evolution
+## Evolution Path
 
-Future extensions:
+Potential future extensions:
 
-- Cross-margin across products
-- Dynamic risk parameters
-- Advanced fee tiers
-- DAO governance control
+- richer cross-margin across products
+- dynamic / adaptive risk parameters
+- more advanced fee tiers
+- richer market segmentation
+- DAO governance expansion
+- broader collateral universe
+- more advanced observability and portfolio views
+
+These extensions must preserve unit discipline and explicit economic accounting.
+
+---
+
+## Production-Readiness Requirements
+
+A production-ready DeOpt v2 requires not only correct core contracts, but also:
+
+- deterministic deployment and wiring
+- explicit environment configuration
+- bounded launch controls
+- emergency operating procedures
+- monitoring / observability support
+- rehearsal on staging/testnet
+- external audit
+
+---
+
+## Finalization Phase
+
+After core implementation and validation, the next protocol phase is controlled finalization.
+
+This phase focuses on:
+
+- bounded launch controls
+- emergency control granularity
+- preview / reporting surfaces
+- operationally useful protocol hooks
+- deployment/bootstrap readiness
+
+Rules:
+- incremental only
+- smallest safe patch
+- test-backed changes only
+- no broad unrelated refactors
 
 ---
 
@@ -186,14 +389,16 @@ Future extensions:
 
 Any agent modifying this system must:
 
-1. Respect all invariants
-2. Minimize diff size
-3. Explain economic impact before modifying logic
-4. Never introduce ambiguity in units or flows
-5. Validate after each change
+1. respect all invariants
+2. minimize diff size
+3. explain economic impact before modifying logic
+4. never introduce ambiguity in units or flows
+5. validate after each change
+6. prioritize production-readiness improvements over cosmetic cleanup
+7. keep launch-safety and operability in mind when proposing protocol changes
 
 ---
 
 ## Objective
 
-Deliver a robust, scalable, and auditable on-chain derivatives protocol.
+Deliver a robust, scalable, auditable, and production-ready on-chain derivatives protocol.
