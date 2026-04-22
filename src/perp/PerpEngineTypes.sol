@@ -187,6 +187,7 @@ abstract contract PerpEngineTypes {
     error PriceZero();
     error SizeZero();
     error SizeTooLarge();
+    error LaunchOpenInterestCapExceeded(uint256 marketId, uint256 openInterest1e8, uint256 cap1e8);
 
     error PausedError();
     error TradingPaused();
@@ -249,6 +250,7 @@ abstract contract PerpEngineTypes {
     event InsuranceFundSet(address indexed oldFund, address indexed newFund);
     event FeesManagerSet(address indexed newFeesManager);
     event FeeRecipientSet(address indexed oldRecipient, address indexed newRecipient);
+    event LaunchOpenInterestCapSet(uint256 indexed marketId, uint256 oldCap1e8, uint256 newCap1e8);
 
     event Paused(address indexed account);
     event Unpaused(address indexed account);

@@ -258,6 +258,17 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
         emit FeeRecipientSet(old, address(0));
     }
 
+    /// @notice Sets an optional engine-level launch cap for effective market open interest.
+    /// @dev `cap1e8 == 0` disables the cap. Lowering below current OI only blocks further OI increases.
+    function setLaunchOpenInterestCap(uint256 marketId, uint256 cap1e8) external onlyOwner {
+        _requireMarketExists(marketId);
+
+        uint256 oldCap = launchOpenInterestCap1e8[marketId];
+        launchOpenInterestCap1e8[marketId] = cap1e8;
+
+        emit LaunchOpenInterestCapSet(marketId, oldCap, cap1e8);
+    }
+
     /*//////////////////////////////////////////////////////////////
                     LIQUIDATION FALLBACK DEFAULTS
     //////////////////////////////////////////////////////////////*/

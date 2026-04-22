@@ -219,6 +219,53 @@ contract PerpEngineTest is Test {
         assertEq(alicePos.openNotional1e8, int256(6_500 * PRICE_SCALE));
     }
 
+    function testLaunchOpenInterestCapBlocksExposureIncreaseAboveCap() external {
+        vm.prank(OWNER);
+        engine.setLaunchOpenInterestCap(marketId, 2 * ONE);
+
+        _trade(ALICE, BOB, 2 * ONE, ENTRY_PRICE_1);
+
+        vm.prank(MATCHING_ENGINE);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                PerpEngineTypes.LaunchOpenInterestCapExceeded.selector,
+                marketId,
+                3 * ONE,
+                2 * ONE
+            )
+        );
+        engine.applyTrade(
+            IPerpEngineTrade.Trade({
+                buyer: ALICE,
+                seller: CAROL,
+                marketId: marketId,
+                sizeDelta1e8: ONE,
+                executionPrice1e8: uint128(ENTRY_PRICE_1),
+                buyerIsMaker: false
+            })
+        );
+
+        PerpEngineTypes.MarketState memory state = engine.marketState(marketId);
+        assertEq(state.longOpenInterest1e8, 2 * ONE);
+        assertEq(state.shortOpenInterest1e8, 2 * ONE);
+        assertEq(engine.positions(CAROL, marketId).size1e8, 0);
+    }
+
+    function testLoweredLaunchOpenInterestCapStillAllowsExposureReduction() external {
+        _trade(ALICE, BOB, 2 * ONE, ENTRY_PRICE_1);
+
+        vm.prank(OWNER);
+        engine.setLaunchOpenInterestCap(marketId, ONE);
+
+        _trade(BOB, ALICE, ONE, ENTRY_PRICE_1);
+
+        PerpEngineTypes.MarketState memory state = engine.marketState(marketId);
+        assertEq(state.longOpenInterest1e8, ONE);
+        assertEq(state.shortOpenInterest1e8, ONE);
+        assertEq(engine.positions(ALICE, marketId).size1e8, int256(uint256(ONE)));
+        assertEq(engine.positions(BOB, marketId).size1e8, -int256(uint256(ONE)));
+    }
+
     function testReducingExistingPositionRealizesPnlCorrectly() external {
         _trade(ALICE, BOB, 2 * ONE, ENTRY_PRICE_1);
 

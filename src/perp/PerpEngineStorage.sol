@@ -86,6 +86,9 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
     /// @notice Runtime market state.
     mapping(uint256 => MarketState) internal _marketStates;
 
+    /// @notice Optional engine-level launch cap for effective market OI, in 1e8 underlying units. 0 = disabled.
+    mapping(uint256 => uint256) public launchOpenInterestCap1e8;
+
     /// @notice List of markets with non-zero position for trader.
     mapping(address => uint256[]) internal traderMarkets;
     mapping(address => mapping(uint256 => uint256)) internal traderMarketIndexPlus1;
@@ -784,6 +787,25 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
             s.shortOpenInterest1e8 = _addChecked(s.shortOpenInterest1e8, newShort - oldShort);
         } else {
             s.shortOpenInterest1e8 = _subChecked(s.shortOpenInterest1e8, oldShort - newShort);
+        }
+    }
+
+    function _effectiveMarketOpenInterest1e8(uint256 marketId) internal view returns (uint256) {
+        MarketState storage s = _marketStates[marketId];
+        return s.longOpenInterest1e8 > s.shortOpenInterest1e8 ? s.longOpenInterest1e8 : s.shortOpenInterest1e8;
+    }
+
+    function _enforceLaunchOpenInterestCapIfIncreasing(uint256 marketId, uint256 previousOpenInterest1e8)
+        internal
+        view
+    {
+        uint256 cap = launchOpenInterestCap1e8[marketId];
+        if (cap == 0) return;
+
+        uint256 currentOpenInterest1e8 = _effectiveMarketOpenInterest1e8(marketId);
+        if (currentOpenInterest1e8 <= previousOpenInterest1e8) return;
+        if (currentOpenInterest1e8 > cap) {
+            revert LaunchOpenInterestCapExceeded(marketId, currentOpenInterest1e8, cap);
         }
     }
 

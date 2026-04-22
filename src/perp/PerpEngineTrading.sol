@@ -501,6 +501,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
 
         Position memory oldBuyer = _positions[t.buyer][t.marketId];
         Position memory oldSeller = _positions[t.seller][t.marketId];
+        uint256 previousOpenInterest1e8 = _effectiveMarketOpenInterest1e8(t.marketId);
 
         int256 buyerDelta = _toInt256(uint256(t.sizeDelta1e8));
         int256 sellerDelta = -buyerDelta;
@@ -538,6 +539,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
 
         _updateMarketOpenInterest(t.marketId, oldBuyer.size1e8, newBuyer.size1e8);
         _updateMarketOpenInterest(t.marketId, oldSeller.size1e8, newSeller.size1e8);
+        _enforceLaunchOpenInterestCapIfIncreasing(t.marketId, previousOpenInterest1e8);
 
         {
             MarketState memory s = _marketStates[t.marketId];

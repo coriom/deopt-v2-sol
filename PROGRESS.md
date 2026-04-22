@@ -66,6 +66,28 @@ Maintain a clear, auditable history of system evolution.
 ---
 
 - Date: 2026-04-21
+- Scope: Perp engine launch open-interest caps
+- Files Modified:
+  - src/perp/PerpEngineTypes.sol
+  - src/perp/PerpEngineStorage.sol
+  - src/perp/PerpEngineAdmin.sol
+  - src/perp/PerpEngineTrading.sol
+  - test/unit/perp/PerpEngine.t.sol
+  - PROGRESS.md
+- Summary:
+  Added an owner-configurable per-market engine-level launch open-interest cap for perp markets, with disabled-by-default `0` semantics and trade-time enforcement only when effective market open interest increases. Reducing or closing exposure remains allowed after a cap is lowered below current open interest.
+- Invariants Impacted:
+  - Market open interest remains tracked in 1e8 underlying units
+  - Launch caps bound new perp exposure increases without changing funding, liquidation, fee logic, or unit scaling
+  - Risk-reducing trade transitions remain allowed even when the configured launch cap is below current market open interest
+- Validation:
+  - `forge build`: OK
+  - `forge test --match-path test/unit/perp/PerpEngine.t.sol`: OK (10 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-21
 - Scope: Collateral vault deposit caps
 - Files Modified:
   - src/collateral/CollateralVaultStorage.sol
