@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {OptionProductRegistry} from "../OptionProductRegistry.sol";
 import {IRiskModule} from "../risk/IRiskModule.sol";
 import {IMarginEngineState} from "../risk/IMarginEngineState.sol";
@@ -94,6 +95,28 @@ abstract contract MarginEngineViews is MarginEngineTrading {
         uint256 liquidationPriceSpreadBps;
         uint256 minLiquidationPriceBpsOfIntrinsic;
         uint32 liquidationOracleMaxDelay;
+    }
+
+    /// @notice Read-only liquidation preview for an options liquidation request.
+    /// @dev
+    ///  - risk fields are denominated in base-collateral native units
+    ///  - `pricePerContract` and `cashRequestedByAsset` are settlement-asset native units
+    ///  - `maxCloseContracts`, `totalContractsPreviewed`, and `executedQuantities` are raw option-contract counts
+    struct OptionsLiquidationPreview {
+        bool liquidatable;
+        uint256 marginRatioBeforeBps;
+        int256 equityBeforeBase;
+        uint256 maintenanceMarginBeforeBase;
+        uint256 initialMarginBeforeBase;
+        uint256 totalShortContracts;
+        uint256 maxCloseContracts;
+        uint256 totalContractsPreviewed;
+        uint128[] executedQuantities;
+        uint256[] pricePerContract;
+        address[] settlementAssets;
+        uint256[] cashRequestedByAsset;
+        uint256 cashAssetCount;
+        uint256 penaltyBase;
     }
 
     /// @notice Cached options-side risk config mirrored from RiskModule.
@@ -193,6 +216,38 @@ abstract contract MarginEngineViews is MarginEngineTrading {
 
         p.residualBadDebtPreview = remainingAfterSink;
         p.canSettle = true;
+    }
+
+    function _previewLiquidationPricePerContract(OptionProductRegistry.OptionSeries memory s)
+        internal
+        view
+        returns (uint256 pricePerContract)
+    {
+        _requireStandardContractSize(s);
+
+        (uint256 spot, uint256 updatedAt, bool ok) = _oracle.getPriceSafe(s.underlying, s.settlementAsset);
+        if (!ok || spot == 0) revert OraclePriceUnavailable();
+
+        uint32 maxDelay = liquidationOracleMaxDelay;
+        if (maxDelay > 0) {
+            if (updatedAt == 0) revert OraclePriceStale();
+            if (updatedAt > block.timestamp) revert OraclePriceStale();
+            if (block.timestamp - updatedAt > maxDelay) revert OraclePriceStale();
+        }
+
+        uint256 intrinsicPrice1e8 = _intrinsic1e8(s, spot);
+        uint256 liqPrice1e8 = intrinsicPrice1e8;
+
+        if (intrinsicPrice1e8 > 0 && minLiquidationPriceBpsOfIntrinsic > 0) {
+            uint256 floorPx = (intrinsicPrice1e8 * minLiquidationPriceBpsOfIntrinsic) / BPS;
+            if (liqPrice1e8 < floorPx) liqPrice1e8 = floorPx;
+        }
+
+        if (liquidationPriceSpreadBps > 0) {
+            liqPrice1e8 = (liqPrice1e8 * (BPS + liquidationPriceSpreadBps)) / BPS;
+        }
+
+        pricePerContract = _price1e8ToSettlementUnits(s.settlementAsset, liqPrice1e8);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -295,6 +350,90 @@ abstract contract MarginEngineViews is MarginEngineTrading {
 
         uint256 ratioBps = (SafeCast.toUint256(risk.equityBase) * BPS) / risk.maintenanceMarginBase;
         return ratioBps < liquidationThresholdBps;
+    }
+
+    function previewLiquidation(address trader, uint256[] calldata optionIds, uint128[] calldata quantities)
+        external
+        view
+        returns (OptionsLiquidationPreview memory p)
+    {
+        if (trader == address(0)) revert ZeroAddress();
+        if (optionIds.length == 0 || optionIds.length != quantities.length) revert LengthMismatch();
+
+        p.executedQuantities = new uint128[](optionIds.length);
+        p.pricePerContract = new uint256[](optionIds.length);
+        p.settlementAssets = new address[](optionIds.length);
+        p.cashRequestedByAsset = new uint256[](optionIds.length);
+
+        p.marginRatioBeforeBps = type(uint256).max;
+        if (address(_riskModule) == address(0)) return p;
+
+        IRiskModule.AccountRisk memory riskBefore = _riskModule.computeAccountRisk(trader);
+        p.equityBeforeBase = riskBefore.equityBase;
+        p.maintenanceMarginBeforeBase = riskBefore.maintenanceMarginBase;
+        p.initialMarginBeforeBase = riskBefore.initialMarginBase;
+        p.marginRatioBeforeBps = _marginRatioBpsFromRisk(riskBefore.equityBase, riskBefore.maintenanceMarginBase);
+        p.liquidatable = (riskBefore.maintenanceMarginBase != 0)
+            && (riskBefore.equityBase <= 0 || p.marginRatioBeforeBps < liquidationThresholdBps);
+        if (!p.liquidatable) return p;
+
+        p.totalShortContracts = totalShortContracts[trader];
+        if (p.totalShortContracts == 0 || liquidationCloseFactorBps == 0) return p;
+
+        p.maxCloseContracts = Math.mulDiv(p.totalShortContracts, liquidationCloseFactorBps, BPS, Math.Rounding.Floor);
+        if (p.maxCloseContracts == 0) p.maxCloseContracts = 1;
+
+        for (uint256 i = 0; i < optionIds.length; i++) {
+            if (p.totalContractsPreviewed >= p.maxCloseContracts) break;
+
+            uint128 requestedQty = quantities[i];
+            if (requestedQty == 0) continue;
+
+            uint256 optionId = optionIds[i];
+            OptionProductRegistry.OptionSeries memory s = _optionRegistry.getSeries(optionId);
+            _requireStandardContractSize(s);
+
+            if (block.timestamp >= s.expiry) continue;
+            _requireSettlementAssetConfigured(s.settlementAsset);
+
+            int128 traderQty = _positionQuantityOf(trader, optionId);
+            if (traderQty >= 0) continue;
+
+            uint256 traderShortAbs = _absInt128(traderQty);
+            uint256 remainingAllowance = p.maxCloseContracts - p.totalContractsPreviewed;
+
+            uint256 liqQtyU = uint256(requestedQty);
+            if (liqQtyU > traderShortAbs) liqQtyU = traderShortAbs;
+            if (liqQtyU > remainingAllowance) liqQtyU = remainingAllowance;
+            if (liqQtyU == 0) continue;
+            if (liqQtyU > uint256(uint128(type(int128).max))) revert QuantityTooLarge();
+
+            uint128 liqQty = SafeCast.toUint128(liqQtyU);
+            uint256 pricePerContract = _previewLiquidationPricePerContract(s);
+            uint256 requestedCash = _mulChecked(pricePerContract, uint256(liqQty));
+
+            p.executedQuantities[i] = liqQty;
+            p.pricePerContract[i] = pricePerContract;
+            p.totalContractsPreviewed = _addChecked(p.totalContractsPreviewed, uint256(liqQty));
+
+            bool found;
+            for (uint256 k = 0; k < p.cashAssetCount; k++) {
+                if (p.settlementAssets[k] == s.settlementAsset) {
+                    p.cashRequestedByAsset[k] = _addChecked(p.cashRequestedByAsset[k], requestedCash);
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                p.settlementAssets[p.cashAssetCount] = s.settlementAsset;
+                p.cashRequestedByAsset[p.cashAssetCount] = requestedCash;
+                p.cashAssetCount++;
+            }
+        }
+
+        uint256 mmBase = _mulChecked(baseMaintenanceMarginPerContract, p.totalContractsPreviewed);
+        p.penaltyBase = Math.mulDiv(mmBase, liquidationPenaltyBps, BPS, Math.Rounding.Floor);
     }
 
     function getAccountState(address trader) external view returns (AccountState memory s) {

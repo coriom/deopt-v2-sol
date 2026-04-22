@@ -112,6 +112,7 @@ contract PerpEngineTest is Test {
     address internal constant ALICE = address(0xA1);
     address internal constant BOB = address(0xB2);
     address internal constant CAROL = address(0xC3);
+    address internal constant GUARDIAN = address(0x1234);
 
     uint256 internal constant ENTRY_PRICE_1 = 2_000 * PRICE_SCALE;
     uint256 internal constant ENTRY_PRICE_2 = 2_500 * PRICE_SCALE;
@@ -346,6 +347,37 @@ contract PerpEngineTest is Test {
         assertEq(alicePos.size1e8, int256(uint256(ONE)));
         assertEq(alicePos.openNotional1e8, int256(2_000 * PRICE_SCALE));
         assertEq(engine.getResidualBadDebt(ALICE), BAD_DEBT_BASE);
+    }
+
+    function testMarketEmergencyCloseOnlyBlocksExposureIncreaseWithoutGlobalTradingPause() external {
+        _trade(ALICE, BOB, ONE, ENTRY_PRICE_1);
+
+        vm.prank(OWNER);
+        engine.setMarketEmergencyCloseOnly(marketId, true);
+
+        assertFalse(engine.tradingPaused());
+        assertTrue(engine.marketEmergencyCloseOnly(marketId));
+
+        vm.expectRevert(abi.encodeWithSelector(PerpEngineTypes.ReduceOnlyViolation.selector));
+        _trade(ALICE, CAROL, ONE, ENTRY_PRICE_1);
+
+        assertEq(engine.positions(ALICE, marketId).size1e8, int256(uint256(ONE)));
+        assertEq(engine.positions(CAROL, marketId).size1e8, 0);
+    }
+
+    function testGuardianMarketEmergencyCloseOnlyStillAllowsTwoSidedReduction() external {
+        vm.prank(OWNER);
+        engine.setGuardian(GUARDIAN);
+
+        _trade(ALICE, BOB, 2 * ONE, ENTRY_PRICE_1);
+
+        vm.prank(GUARDIAN);
+        engine.setMarketEmergencyCloseOnly(marketId, true);
+
+        _trade(BOB, ALICE, ONE, ENTRY_PRICE_1);
+
+        assertEq(engine.positions(ALICE, marketId).size1e8, int256(uint256(ONE)));
+        assertEq(engine.positions(BOB, marketId).size1e8, -int256(uint256(ONE)));
     }
 
     function _trade(address buyer, address seller, uint128 sizeDelta1e8, uint256 executionPrice1e8) internal {

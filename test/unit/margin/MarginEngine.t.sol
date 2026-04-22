@@ -167,6 +167,7 @@ contract MarginEngineTest is Test {
     address internal constant BOB = address(0xB2);
     address internal constant CAROL = address(0xC3);
     address internal constant DAVE = address(0xD4);
+    address internal constant GUARDIAN = address(0x1234);
 
     CollateralVault internal vault;
     OptionProductRegistry internal registry;
@@ -323,6 +324,38 @@ contract MarginEngineTest is Test {
         assertEq(engine.totalShortContracts(BOB), 1);
     }
 
+    function testSeriesEmergencyCloseOnlyBlocksOpeningWithoutGlobalTradingPause() external {
+        _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
+
+        vm.prank(OWNER);
+        engine.setSeriesEmergencyCloseOnly(callOptionId, true);
+
+        assertFalse(engine.tradingPaused());
+        assertTrue(engine.seriesEmergencyCloseOnly(callOptionId));
+
+        vm.expectRevert(MarginEngineTypes.SeriesNotActiveCloseOnly.selector);
+        _trade(ALICE, CAROL, callOptionId, 1, PREMIUM_PER_CONTRACT);
+
+        assertEq(engine.positions(ALICE, callOptionId).quantity, 1);
+        assertEq(engine.positions(CAROL, callOptionId).quantity, 0);
+    }
+
+    function testGuardianSeriesEmergencyCloseOnlyStillAllowsTwoSidedClose() external {
+        vm.prank(OWNER);
+        engine.setGuardian(GUARDIAN);
+
+        _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
+
+        vm.prank(GUARDIAN);
+        engine.setSeriesEmergencyCloseOnly(callOptionId, true);
+
+        _trade(BOB, ALICE, callOptionId, 1, PREMIUM_PER_CONTRACT);
+
+        assertEq(engine.positions(ALICE, callOptionId).quantity, 1);
+        assertEq(engine.positions(BOB, callOptionId).quantity, -1);
+        assertEq(engine.seriesShortOpenInterest(callOptionId), 1);
+    }
+
     function testPremiumTransferBetweenBuyerAndSellerIsCorrect() external {
         uint256 aliceBefore = vault.balances(ALICE, address(usdc));
         uint256 bobBefore = vault.balances(BOB, address(usdc));
@@ -369,6 +402,54 @@ contract MarginEngineTest is Test {
         _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
         riskModule.setEquityBase(BOB, int256(LIQUIDATABLE_EQUITY));
         oracle.setPrice(address(weth), address(usdc), 1_900 * PRICE_SCALE, block.timestamp, true);
+
+        uint256[] memory optionIds = new uint256[](1);
+        uint128[] memory quantities = new uint128[](1);
+        optionIds[0] = callOptionId;
+        quantities[0] = 1;
+
+        vm.prank(CAROL);
+        engine.liquidate(BOB, optionIds, quantities);
+
+        assertEq(engine.positions(BOB, callOptionId).quantity, -1);
+        assertEq(engine.positions(CAROL, callOptionId).quantity, -1);
+        assertEq(engine.totalShortContracts(BOB), 1);
+    }
+
+    function testPreviewLiquidationBreaksDownRequestedCloseAndCash() external {
+        _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
+        riskModule.setEquityBase(BOB, int256(LIQUIDATABLE_EQUITY));
+        oracle.setPrice(address(weth), address(usdc), 2_500 * PRICE_SCALE, block.timestamp, true);
+
+        uint256[] memory optionIds = new uint256[](1);
+        uint128[] memory quantities = new uint128[](1);
+        optionIds[0] = callOptionId;
+        quantities[0] = 2;
+
+        MarginEngine.OptionsLiquidationPreview memory preview = engine.previewLiquidation(BOB, optionIds, quantities);
+
+        assertTrue(preview.liquidatable);
+        assertEq(preview.equityBeforeBase, int256(LIQUIDATABLE_EQUITY));
+        assertEq(preview.maintenanceMarginBeforeBase, 2 * BASE_MM_PER_CONTRACT);
+        assertEq(preview.initialMarginBeforeBase, (2 * BASE_MM_PER_CONTRACT * IM_FACTOR_BPS) / 10_000);
+        assertEq(preview.totalShortContracts, 2);
+        assertEq(preview.maxCloseContracts, 2);
+        assertEq(preview.totalContractsPreviewed, 2);
+        assertEq(preview.executedQuantities[0], 2);
+        assertEq(preview.pricePerContract[0], 500 * BASE_UNIT);
+        assertEq(preview.cashAssetCount, 1);
+        assertEq(preview.settlementAssets[0], address(usdc));
+        assertEq(preview.cashRequestedByAsset[0], 1_000 * BASE_UNIT);
+        assertEq(preview.penaltyBase, (2 * BASE_MM_PER_CONTRACT * 500) / 10_000);
+    }
+
+    function testSeriesEmergencyCloseOnlyStillAllowsLiquidation() external {
+        _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
+        riskModule.setEquityBase(BOB, int256(LIQUIDATABLE_EQUITY));
+        oracle.setPrice(address(weth), address(usdc), 1_900 * PRICE_SCALE, block.timestamp, true);
+
+        vm.prank(OWNER);
+        engine.setSeriesEmergencyCloseOnly(callOptionId, true);
 
         uint256[] memory optionIds = new uint256[](1);
         uint128[] memory quantities = new uint128[](1);

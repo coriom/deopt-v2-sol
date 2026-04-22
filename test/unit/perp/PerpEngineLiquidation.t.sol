@@ -331,6 +331,21 @@ contract PerpEngineLiquidationTest is Test {
         assertEq(engine.getResidualBadDebt(ALICE), 0);
     }
 
+    function testMarketEmergencyCloseOnlyStillAllowsLiquidation() external {
+        _depositUsdc(ALICE, 1_000 * BASE_UNIT);
+        _openLong(ALICE, BOB, TWO);
+        _mockImprovingLiquidationRisk(ALICE);
+
+        vm.prank(OWNER);
+        engine.setMarketEmergencyCloseOnly(marketId, true);
+
+        vm.prank(CAROL);
+        engine.liquidate(ALICE, marketId, ONE);
+
+        assertEq(engine.positions(ALICE, marketId).size1e8, int256(uint256(ONE)));
+        assertEq(engine.positions(CAROL, marketId).size1e8, int256(uint256(ONE)));
+    }
+
     function testLiquidationRespectsCloseFactor() external {
         _depositUsdc(ALICE, 2_000 * BASE_UNIT);
         _openLong(ALICE, BOB, FOUR);
@@ -445,6 +460,48 @@ contract PerpEngineLiquidationTest is Test {
         engine.liquidate(ALICE, marketId, ONE);
 
         assertEq(engine.getResidualBadDebt(ALICE), RESIDUAL_BAD_DEBT_BASE);
+    }
+
+    function testDetailedLiquidationPreviewBreaksDownShortfallResolution() external {
+        _depositUsdc(ALICE, REALIZED_TRANSFER_BASE_ONE);
+        _depositWeth(ALICE, 1 ether);
+        _fundInsurance(40 * BASE_UNIT);
+        _openLong(ALICE, BOB, TWO);
+        riskModule.setAccountRisk(ALICE, LIQUIDATABLE_EQUITY, LIQUIDATABLE_MM, 120 * BASE_UNIT);
+
+        address[] memory tokens = new address[](1);
+        uint256[] memory amounts = new uint256[](1);
+        tokens[0] = address(weth);
+        amounts[0] = 1 ether;
+
+        seizer.setPlan(tokens, amounts, SEIZER_COVER_BASE);
+        seizer.setPreview(address(weth), 1 ether, SEIZER_COVER_BASE, SEIZER_COVER_BASE, true);
+
+        PerpEngineTypes.DetailedLiquidationPreview memory preview =
+            engine.previewDetailedLiquidation(ALICE, marketId, ONE);
+
+        assertTrue(preview.isLiquidatable);
+        assertTrue(preview.hasPosition);
+        assertTrue(preview.insuranceFundConfigured);
+        assertEq(preview.requestedCloseSize1e8, ONE);
+        assertEq(preview.maxClosableSize1e8, ONE);
+        assertEq(preview.executableCloseSize1e8, ONE);
+        assertEq(preview.markPrice1e8, MARK_PRICE);
+        assertEq(preview.liquidationPrice1e8, LIQ_PRICE_LONG);
+        assertEq(preview.notionalClosed1e8, 1_980 * PRICE_SCALE);
+        assertEq(preview.notionalClosedBase, CLOSED_NOTIONAL_BASE_ONE);
+        assertEq(preview.traderRealizedPnl1e8, -20 * int256(PRICE_SCALE));
+        assertEq(preview.realizedCashflowBase, REALIZED_TRANSFER_BASE_ONE);
+        assertEq(preview.penaltyTargetBase, PENALTY_BASE_ONE);
+        assertEq(preview.seizerCoveredBase, SEIZER_COVER_BASE);
+        assertEq(preview.settlementAssetCoveredBase, 0);
+        assertEq(preview.insuranceCoveredBase, 40 * BASE_UNIT);
+        assertEq(preview.residualShortfallBase, RESIDUAL_BAD_DEBT_BASE);
+        assertEq(preview.residualBadDebtPreviewBase, RESIDUAL_BAD_DEBT_BASE);
+        assertEq(preview.riskBefore.equityBase, LIQUIDATABLE_EQUITY);
+        assertEq(preview.riskBefore.maintenanceMarginBase, LIQUIDATABLE_MM);
+        assertEq(preview.riskBefore.initialMarginBase, 120 * BASE_UNIT);
+        assertEq(preview.riskBefore.marginRatioBps, 9_000);
     }
 
     function testLiquidationMustImproveSolvencyOrRevert() external {

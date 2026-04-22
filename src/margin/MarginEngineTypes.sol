@@ -194,6 +194,7 @@ abstract contract MarginEngineTypes {
     /// @notice Launch-safety cap for aggregate short contracts on one option series.
     /// @dev `cap == 0` disables the cap. Values are raw option-contract counts.
     event SeriesShortOpenInterestCapSet(uint256 indexed optionId, uint256 oldCap, uint256 newCap);
+    event SeriesEmergencyCloseOnlySet(uint256 indexed optionId, bool oldCloseOnly, bool newCloseOnly);
 
     /// @notice Local cached risk parameters synchronized against the RiskModule source of truth.
     /// @dev

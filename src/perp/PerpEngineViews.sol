@@ -355,6 +355,247 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         p.penaltyBase = penaltyBase;
     }
 
+    function previewDetailedLiquidation(address trader, uint256 marketId, uint128 requestedCloseSize1e8)
+        external
+        view
+        returns (DetailedLiquidationPreview memory p)
+    {
+        p.requestedCloseSize1e8 = requestedCloseSize1e8;
+        p.insuranceFundConfigured = insuranceFund != address(0);
+
+        if (address(_riskModule) == address(0)) {
+            p.riskBefore.marginRatioBps = type(uint256).max;
+            return p;
+        }
+
+        IPerpRiskModule.AccountRisk memory riskBefore = _riskModule.computeAccountRisk(trader);
+        p.riskBefore = _liquidationRiskSnapshot(riskBefore);
+        p.isLiquidatable = _accountRiskIsLiquidatable(riskBefore);
+        if (!p.isLiquidatable) return p;
+
+        Position memory pos = _positions[trader][marketId];
+        p.hasPosition = pos.size1e8 != 0;
+        if (!p.hasPosition) return p;
+
+        PerpMarketRegistry.Market memory m = _requireMarketExists(marketId);
+
+        (uint256 closeFactorBps, uint256 penaltyBps, uint256 priceSpreadBps,, uint32 oracleMaxDelay) =
+            _loadEffectiveLiquidationParams(marketId);
+
+        p.maxClosableSize1e8 = _boundedLiquidationSize1e8(pos.size1e8, 0, closeFactorBps);
+        p.executableCloseSize1e8 = _boundedLiquidationSize1e8(pos.size1e8, requestedCloseSize1e8, closeFactorBps);
+        if (p.executableCloseSize1e8 == 0) return p;
+
+        p.markPrice1e8 = _getLiquidationMarkPrice1e8(marketId, oracleMaxDelay);
+        p.liquidationPrice1e8 = _liquidationPrice1e8FromMark(pos.size1e8, p.markPrice1e8, priceSpreadBps);
+
+        int256 deltaForTrader = pos.size1e8 > 0
+            ? -_toInt256(uint256(p.executableCloseSize1e8))
+            : _toInt256(uint256(p.executableCloseSize1e8));
+        (, p.traderRealizedPnl1e8) = _computeNextPosition(
+            pos, deltaForTrader, p.liquidationPrice1e8, _marketStates[marketId].cumulativeFundingRate1e18
+        );
+
+        p.notionalClosed1e8 =
+            Math.mulDiv(uint256(p.executableCloseSize1e8), p.liquidationPrice1e8, PRICE_1E8, Math.Rounding.Floor);
+        p.notionalClosedBase = _settlementAmount1e8ToBase(m.settlementAsset, p.notionalClosed1e8);
+        p.penaltyTargetBase = _liquidationPenaltyBaseValue(p.notionalClosedBase, penaltyBps);
+
+        if (p.penaltyTargetBase == 0) return p;
+
+        uint256 settlementAssetSeizedNative;
+        (p.seizerCoveredBase, settlementAssetSeizedNative) =
+            _previewSeizerPenaltyCoverage(trader, m.settlementAsset, p.penaltyTargetBase, p.traderRealizedPnl1e8);
+
+        uint256 remainingAfterSeizerBase = _remainingShortfall(p.penaltyTargetBase, p.seizerCoveredBase);
+        p.settlementAssetCoveredBase = _previewSettlementAssetPenaltyCoverage(
+            trader, m.settlementAsset, remainingAfterSeizerBase, p.traderRealizedPnl1e8, settlementAssetSeizedNative
+        );
+
+        if (p.traderRealizedPnl1e8 != 0) {
+            int256 liquidatorRealizedPnl1e8 = _checkedSubInt256(0, p.traderRealizedPnl1e8);
+            p.realizedCashflowBase = _settlementAmount1e8ToBase(
+                m.settlementAsset, _absInt256(_checkedSubInt256(liquidatorRealizedPnl1e8, p.traderRealizedPnl1e8))
+            );
+        }
+
+        uint256 remainingAfterCollateralBase = _remainingShortfall(
+            remainingAfterSeizerBase,
+            p.settlementAssetCoveredBase
+        );
+        p.insuranceCoveredBase = _previewInsuranceCoverageBase(remainingAfterCollateralBase);
+        p.residualShortfallBase = _remainingShortfall(remainingAfterCollateralBase, p.insuranceCoveredBase);
+        p.residualBadDebtPreviewBase = p.residualShortfallBase;
+    }
+
+    function _liquidationRiskSnapshot(IPerpRiskModule.AccountRisk memory risk)
+        internal
+        pure
+        returns (LiquidationRiskSnapshot memory snapshot)
+    {
+        snapshot.equityBase = risk.equityBase;
+        snapshot.maintenanceMarginBase = risk.maintenanceMarginBase;
+        snapshot.initialMarginBase = risk.initialMarginBase;
+        snapshot.marginRatioBps = _marginRatioBpsFromState(risk.equityBase, risk.maintenanceMarginBase);
+    }
+
+    function _accountRiskIsLiquidatable(IPerpRiskModule.AccountRisk memory risk) internal pure returns (bool) {
+        if (risk.maintenanceMarginBase == 0) return false;
+        if (risk.equityBase <= 0) return true;
+        return _marginRatioBpsFromState(risk.equityBase, risk.maintenanceMarginBase) < BPS;
+    }
+
+    function _getLiquidationMarkPrice1e8(uint256 marketId, uint32 oracleMaxDelay)
+        internal
+        view
+        returns (uint256 markPrice1e8)
+    {
+        PerpMarketRegistry.Market memory m = _requireMarketExists(marketId);
+        IOracle o = _marketOracle(m);
+
+        {
+            (bool success, bytes memory data) = address(o).staticcall(
+                abi.encodeWithSignature("getPriceSafe(address,address)", m.underlying, m.settlementAsset)
+            );
+
+            if (success && data.length >= 96) {
+                (uint256 safePrice, uint256 safeUpdatedAt, bool safeOk) = abi.decode(data, (uint256, uint256, bool));
+                if (safeOk && safePrice != 0) {
+                    if (oracleMaxDelay != 0) {
+                        if (safeUpdatedAt == 0) revert OraclePriceStale();
+                        if (safeUpdatedAt > block.timestamp) revert OraclePriceStale();
+                        if (block.timestamp - safeUpdatedAt > uint256(oracleMaxDelay)) revert OraclePriceStale();
+                    }
+                    return safePrice;
+                }
+            }
+        }
+
+        (uint256 px, uint256 updatedAt) = o.getPrice(m.underlying, m.settlementAsset);
+        if (px == 0) revert OraclePriceUnavailable();
+        if (oracleMaxDelay != 0) {
+            if (updatedAt == 0) revert OraclePriceStale();
+            if (updatedAt > block.timestamp) revert OraclePriceStale();
+            if (block.timestamp - updatedAt > uint256(oracleMaxDelay)) revert OraclePriceStale();
+        }
+        return px;
+    }
+
+    function _previewSeizerPenaltyCoverage(
+        address trader,
+        address settlementAsset,
+        uint256 penaltyTargetBase,
+        int256 traderRealizedPnl1e8
+    )
+        internal
+        view
+        returns (uint256 coveredBase, uint256 settlementAssetSeizedNative)
+    {
+        if (penaltyTargetBase == 0 || address(_collateralSeizer) == address(0)) return (0, 0);
+
+        address[] memory tokens;
+        uint256[] memory amounts;
+        uint256 plannedCoveredBase;
+
+        try _collateralSeizer.computeSeizurePlan(trader, penaltyTargetBase) returns (
+            address[] memory tokensOut,
+            uint256[] memory amountsOut,
+            uint256 baseCovered
+        ) {
+            if (tokensOut.length != amountsOut.length || tokensOut.length == 0 || baseCovered == 0) {
+                return (0, 0);
+            }
+
+            tokens = tokensOut;
+            amounts = amountsOut;
+            plannedCoveredBase = baseCovered;
+        } catch {
+            return (0, 0);
+        }
+
+        for (uint256 i = 0; i < tokens.length; i++) {
+            address token = tokens[i];
+            uint256 plannedAmount = amounts[i];
+            if (token == address(0) || plannedAmount == 0) continue;
+
+            uint256 bal = token == settlementAsset
+                ? _previewSettlementAssetBalanceAfterRealized(trader, settlementAsset, traderRealizedPnl1e8)
+                : _collateralVault.balances(trader, token);
+            uint256 previewAmount = plannedAmount <= bal ? plannedAmount : bal;
+            if (previewAmount == 0) continue;
+
+            try _collateralSeizer.previewEffectiveBaseValue(token, previewAmount) returns (
+                uint256,
+                uint256 effectiveBaseFloor,
+                bool okPreview
+            ) {
+                if (okPreview && effectiveBaseFloor != 0) {
+                    coveredBase = _addChecked(coveredBase, effectiveBaseFloor);
+                    if (token == settlementAsset) {
+                        settlementAssetSeizedNative = _addChecked(settlementAssetSeizedNative, previewAmount);
+                    }
+                }
+            } catch {}
+        }
+
+        if (coveredBase > plannedCoveredBase) coveredBase = plannedCoveredBase;
+        if (coveredBase > penaltyTargetBase) coveredBase = penaltyTargetBase;
+    }
+
+    function _previewSettlementAssetBalanceAfterRealized(
+        address trader,
+        address settlementAsset,
+        int256 traderRealizedPnl1e8
+    ) internal view returns (uint256 availableNative) {
+        availableNative = _collateralVault.balances(trader, settlementAsset);
+
+        int256 liquidatorRealizedPnl1e8 = _checkedSubInt256(0, traderRealizedPnl1e8);
+        int256 netToLiquidator1e8 = _checkedSubInt256(liquidatorRealizedPnl1e8, traderRealizedPnl1e8);
+
+        if (netToLiquidator1e8 > 0) {
+            uint256 realizedPaidNative = _value1e8ToSettlementNative(settlementAsset, _absInt256(netToLiquidator1e8));
+            availableNative = realizedPaidNative >= availableNative ? 0 : availableNative - realizedPaidNative;
+        } else if (netToLiquidator1e8 < 0) {
+            availableNative = _addChecked(
+                availableNative,
+                _value1e8ToSettlementNative(settlementAsset, _absInt256(netToLiquidator1e8))
+            );
+        }
+    }
+
+    function _previewSettlementAssetPenaltyCoverage(
+        address trader,
+        address settlementAsset,
+        uint256 remainingBase,
+        int256 traderRealizedPnl1e8,
+        uint256 settlementAssetSeizedNative
+    ) internal view returns (uint256 coveredBase) {
+        if (remainingBase == 0) return 0;
+
+        uint256 availableNative =
+            _previewSettlementAssetBalanceAfterRealized(trader, settlementAsset, traderRealizedPnl1e8);
+
+        if (settlementAssetSeizedNative >= availableNative) {
+            availableNative = 0;
+        } else {
+            availableNative -= settlementAssetSeizedNative;
+        }
+
+        uint256 penaltyNative = _penaltySettlementNative(settlementAsset, remainingBase);
+        if (penaltyNative == 0 || availableNative == 0) return 0;
+
+        uint256 paidNative = penaltyNative <= availableNative ? penaltyNative : availableNative;
+        coveredBase = settlementAsset == _baseToken() ? paidNative : _settlementNativeToBase(settlementAsset, paidNative);
+        if (coveredBase > remainingBase) coveredBase = remainingBase;
+    }
+
+    function _previewInsuranceCoverageBase(uint256 requestedBase) internal view returns (uint256 coveredBase) {
+        if (requestedBase == 0 || insuranceFund == address(0)) return 0;
+
+        uint256 bal = _collateralVault.balances(insuranceFund, _baseToken());
+        coveredBase = bal < requestedBase ? bal : requestedBase;
+    }
+
     /*//////////////////////////////////////////////////////////////
                         PRICE / POSITION VIEWS
     //////////////////////////////////////////////////////////////*/

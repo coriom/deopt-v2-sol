@@ -28,6 +28,9 @@ import "./RiskModuleAdmin.sol";
 ///   - options-side IM/MM/liability are sourced from `_computeOptionsMarginSnapshot(...)`
 ///     so they automatically reflect per-underlying `OptionRiskConfig`
 abstract contract RiskModuleViews is RiskModuleAdmin {
+    uint8 internal constant PRODUCT_OPTIONS = 1;
+    uint8 internal constant PRODUCT_PERPS = 2;
+
     /*//////////////////////////////////////////////////////////////
                                 TYPES
     //////////////////////////////////////////////////////////////*/
@@ -235,6 +238,77 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
         }
     }
 
+    function computeDetailedAccountRisk(address trader)
+        external
+        view
+        whenRiskChecksNotPaused
+        returns (DetailedAccountRisk memory detail)
+    {
+        AccountRiskBreakdown memory aggregate = computeAccountRiskBreakdown(trader);
+
+        detail.equityBase = aggregate.equityBase;
+        detail.maintenanceMarginBase = aggregate.maintenanceMarginBase;
+        detail.initialMarginBase = aggregate.initialMarginBase;
+        detail.freeCollateralBase = aggregate.initialMarginBase == 0
+            ? aggregate.equityBase
+            : _subInt256Sat(aggregate.equityBase, _uintToInt256Sat(aggregate.initialMarginBase));
+        detail.marginRatioBps = _marginRatioBps(aggregate.equityBase, aggregate.maintenanceMarginBase);
+
+        address base = baseCollateralToken;
+        uint256 tokenCount = collateralTokens.length;
+        detail.collateralContributions = new CollateralContribution[](tokenCount);
+
+        if (base != address(0)) {
+            (, uint8 baseDec, uint256 baseScale) = _loadBase();
+
+            for (uint256 i = 0; i < tokenCount; i++) {
+                address token = collateralTokens[i];
+                CollateralConfig memory rcfg = collateralConfigs[token];
+
+                CollateralContribution memory contribution;
+                contribution.token = token;
+                contribution.balance = _effectiveBalanceOf(trader, token);
+                contribution.weightBps = uint256(rcfg.weightBps);
+                contribution.isEnabled = rcfg.isEnabled;
+
+                (CollateralValue memory value, bool ok) =
+                    _tryComputeTokenCollateralValue(trader, base, baseDec, token);
+                contribution.valuationAvailable = ok;
+                contribution.grossCollateralValueBase = value.grossBaseValue;
+                contribution.adjustedCollateralValueBase = value.adjustedBaseValue;
+
+                detail.collateralContributions[i] = contribution;
+            }
+
+            OptionsMarginSnapshot memory optSnap = _computeOptionsMarginSnapshot(trader, base, baseScale);
+
+            detail.productContributions = new ProductContribution[](2);
+            detail.productContributions[0] = ProductContribution({
+                productId: PRODUCT_OPTIONS,
+                maintenanceMarginBase: aggregate.products.optionsMaintenanceMarginBase,
+                initialMarginBase: aggregate.products.optionsInitialMarginBase,
+                shortLiabilityBase: optSnap.shortLiabilityBase,
+                unrealizedPnlBase: 0,
+                fundingAccruedBase: 0,
+                residualBadDebtBase: 0
+            });
+            detail.productContributions[1] = ProductContribution({
+                productId: PRODUCT_PERPS,
+                maintenanceMarginBase: aggregate.products.perpsMaintenanceMarginBase,
+                initialMarginBase: aggregate.products.perpsInitialMarginBase,
+                shortLiabilityBase: 0,
+                unrealizedPnlBase: aggregate.products.unrealizedPnlBase,
+                fundingAccruedBase: aggregate.products.fundingAccruedBase,
+                residualBadDebtBase: aggregate.products.residualBadDebtBase
+            });
+        } else {
+            detail.marginRatioBps = type(uint256).max;
+            detail.productContributions = new ProductContribution[](2);
+            detail.productContributions[0].productId = PRODUCT_OPTIONS;
+            detail.productContributions[1].productId = PRODUCT_PERPS;
+        }
+    }
+
     function computeAccountRisk(address trader)
         public
         view
@@ -260,6 +334,12 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
 
         int256 imBase = _uintToInt256Sat(risk.initialMarginBase);
         return _subInt256Sat(risk.equityBase, imBase);
+    }
+
+    function _marginRatioBps(int256 equityBase, uint256 maintenanceMarginBase) internal pure returns (uint256) {
+        if (maintenanceMarginBase == 0) return type(uint256).max;
+        if (equityBase <= 0) return 0;
+        return (SafeCast.toUint256(equityBase) * BPS_U) / maintenanceMarginBase;
     }
 
     function getResidualBadDebt(address trader)
@@ -334,10 +414,7 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
 
         AccountRisk memory risk = computeAccountRisk(trader);
 
-        if (risk.maintenanceMarginBase == 0) return type(uint256).max;
-        if (risk.equityBase <= 0) return 0;
-
-        return (uint256(risk.equityBase) * BPS_U) / risk.maintenanceMarginBase;
+        return _marginRatioBps(risk.equityBase, risk.maintenanceMarginBase);
     }
 
     function previewWithdrawImpact(address trader, address token, uint256 amount)

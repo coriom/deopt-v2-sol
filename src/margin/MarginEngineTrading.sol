@@ -129,8 +129,8 @@ abstract contract MarginEngineTrading is MarginEngineAdmin {
         _ensureQtyAllowed(newBuyerQty);
         _ensureQtyAllowed(newSellerQty);
 
-        // Close-only when series inactive (no opening / no flip / no abs increase)
-        if (!series.isActive) {
+        // Close-only when series inactive or emergency-isolated (no opening / no flip / no abs increase)
+        if (!series.isActive || seriesEmergencyCloseOnly[t.optionId]) {
             bool okBuyer = _isCloseOnlyTransition(oldBuyerQty, newBuyerQty);
             bool okSeller = _isCloseOnlyTransition(oldSellerQty, newSellerQty);
             if (!okBuyer || !okSeller) revert SeriesNotActiveCloseOnly();

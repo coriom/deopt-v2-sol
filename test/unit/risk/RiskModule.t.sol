@@ -264,6 +264,7 @@ contract RiskModuleTest is Test {
     function testComputeAccountRiskReturnsConsistentEquityAndMarginValues() external view {
         IRiskModule.AccountRisk memory risk = riskModule.computeAccountRisk(ALICE);
         IRiskModule.AccountRiskBreakdown memory breakdown = riskModule.computeAccountRiskBreakdown(ALICE);
+        IRiskModule.DetailedAccountRisk memory detail = riskModule.computeDetailedAccountRisk(ALICE);
 
         assertEq(uint256(risk.equityBase), 150 * USDC_UNIT);
         assertEq(risk.maintenanceMarginBase, CALL_MM_BASE);
@@ -275,6 +276,20 @@ contract RiskModuleTest is Test {
         assertEq(breakdown.collateral.adjustedCollateralValueBase, 250 * USDC_UNIT);
         assertEq(breakdown.products.optionsMaintenanceMarginBase, CALL_MM_BASE);
         assertEq(breakdown.products.optionsInitialMarginBase, CALL_IM_BASE);
+
+        assertEq(detail.equityBase, risk.equityBase);
+        assertEq(detail.maintenanceMarginBase, risk.maintenanceMarginBase);
+        assertEq(detail.initialMarginBase, risk.initialMarginBase);
+        assertEq(detail.freeCollateralBase, SafeCast.toInt256(30 * USDC_UNIT));
+        assertEq(detail.marginRatioBps, 15_000);
+        assertEq(detail.productContributions.length, 2);
+        assertEq(detail.productContributions[0].productId, 1);
+        assertEq(detail.productContributions[0].shortLiabilityBase, CALL_INTRINSIC_BASE);
+        assertEq(detail.productContributions[0].maintenanceMarginBase, CALL_MM_BASE);
+        assertEq(detail.productContributions[0].initialMarginBase, CALL_IM_BASE);
+        assertEq(detail.productContributions[1].productId, 2);
+        assertEq(detail.productContributions[1].maintenanceMarginBase, 0);
+        assertEq(detail.productContributions[1].initialMarginBase, 0);
     }
 
     function testMarginRatioCalculationIsCorrectAboveEqualAndBelowThreshold() external view {
@@ -303,10 +318,43 @@ contract RiskModuleTest is Test {
     function testMultipleCollateralAggregationIsCorrect() external view {
         IRiskModule.CollateralState memory state = riskModule.computeCollateralState(FRANK);
         IRiskModule.AccountRisk memory risk = riskModule.computeAccountRisk(FRANK);
+        IRiskModule.DetailedAccountRisk memory detail = riskModule.computeDetailedAccountRisk(FRANK);
 
         assertEq(state.grossCollateralValueBase, 5_100 * USDC_UNIT);
         assertEq(state.adjustedCollateralValueBase, 4_250 * USDC_UNIT);
         assertEq(risk.equityBase, SafeCast.toInt256(4_250 * USDC_UNIT));
+
+        uint256 grossSum;
+        uint256 adjustedSum;
+        for (uint256 i = 0; i < detail.collateralContributions.length; i++) {
+            grossSum += detail.collateralContributions[i].grossCollateralValueBase;
+            adjustedSum += detail.collateralContributions[i].adjustedCollateralValueBase;
+        }
+
+        IRiskModule.CollateralContribution memory usdcContribution =
+            _findCollateralContribution(detail, address(usdc));
+        IRiskModule.CollateralContribution memory wethContribution =
+            _findCollateralContribution(detail, address(weth));
+        IRiskModule.CollateralContribution memory wbtcContribution =
+            _findCollateralContribution(detail, address(wbtc));
+
+        assertEq(grossSum, state.grossCollateralValueBase);
+        assertEq(adjustedSum, state.adjustedCollateralValueBase);
+
+        assertEq(usdcContribution.balance, 100 * USDC_UNIT);
+        assertEq(usdcContribution.grossCollateralValueBase, 100 * USDC_UNIT);
+        assertEq(usdcContribution.adjustedCollateralValueBase, 100 * USDC_UNIT);
+        assertTrue(usdcContribution.valuationAvailable);
+
+        assertEq(wethContribution.balance, WETH_UNIT);
+        assertEq(wethContribution.grossCollateralValueBase, 2_000 * USDC_UNIT);
+        assertEq(wethContribution.adjustedCollateralValueBase, 1_600 * USDC_UNIT);
+        assertTrue(wethContribution.valuationAvailable);
+
+        assertEq(wbtcContribution.balance, WBTC_UNIT / 10);
+        assertEq(wbtcContribution.grossCollateralValueBase, 3_000 * USDC_UNIT);
+        assertEq(wbtcContribution.adjustedCollateralValueBase, 2_550 * USDC_UNIT);
+        assertTrue(wbtcContribution.valuationAvailable);
     }
 
     function testFreeCollateralComputationIsConsistentWithEquityMinusInitialMargin() external view {
@@ -334,5 +382,19 @@ contract RiskModuleTest is Test {
         ERC20(token).approve(address(vault), amount);
         vault.deposit(token, amount);
         vm.stopPrank();
+    }
+
+    function _findCollateralContribution(IRiskModule.DetailedAccountRisk memory detail, address token)
+        internal
+        pure
+        returns (IRiskModule.CollateralContribution memory contribution)
+    {
+        for (uint256 i = 0; i < detail.collateralContributions.length; i++) {
+            if (detail.collateralContributions[i].token == token) {
+                return detail.collateralContributions[i];
+            }
+        }
+
+        revert("missing-contribution");
     }
 }

@@ -65,6 +65,111 @@ Maintain a clear, auditable history of system evolution.
 
 ---
 
+- Date: 2026-04-22
+- Scope: Perp liquidation preview observability
+- Files Modified:
+  - src/perp/PerpEngineTypes.sol
+  - src/perp/PerpEngineViews.sol
+  - test/unit/perp/PerpEngineLiquidation.t.sol
+  - PROGRESS.md
+- Summary:
+  Added `previewDetailedLiquidation`, a read-only perp liquidation breakdown that exposes account risk before liquidation, executable close size, liquidation price, closed notional, realized cashflow preview, penalty target, collateral-seizer coverage, direct settlement-asset fallback coverage, insurance coverage, and residual shortfall / bad-debt preview. The preview reuses existing liquidation price, close-factor, position transition, penalty, seizer, insurance-balance, and shortfall helpers without changing execution paths.
+- Invariants Impacted:
+  - Perp liquidation preview outputs preserve unit conventions: sizes/prices/notionals in 1e8-normalized units and risk/penalty/coverage/shortfall in base-collateral native units
+  - Penalty, seizer, insurance, and residual bad-debt routing are now observable before execution without mutating state
+  - Perp liquidation math, funding logic, fee logic, position mutation, insurance execution, residual bad-debt recording, protocol economics, and unit scaling are unchanged
+- Validation:
+  - `forge build`: OK (existing repository lint notes/warnings remain)
+  - `forge test --match-path test/unit/perp/PerpEngineLiquidation.t.sol`: OK (10 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-22
+- Scope: Rich account risk breakdown observability
+- Files Modified:
+  - src/risk/IRiskModule.sol
+  - src/risk/RiskModuleViews.sol
+  - test/unit/risk/RiskModule.t.sol
+  - PROGRESS.md
+- Summary:
+  Added `computeDetailedAccountRisk`, a read-only RiskModule view returning aggregate equity, initial margin, maintenance margin, free collateral, margin ratio, per-collateral token contributions, and options/perps product contributions. The view reuses existing collateral valuation, options margin snapshot, and product risk aggregation helpers.
+- Invariants Impacted:
+  - Risk outputs remain denominated in base-collateral native units and margin ratio remains in BPS
+  - Per-collateral contributions reuse existing haircut and conservative pricing helpers; disabled, zero-weight, zero-balance, or unpriced collateral contributes zero
+  - Options/perps product decomposition mirrors existing risk snapshot inputs without mutating state or changing economics
+- Validation:
+  - `forge build`: OK (existing repository lint notes/warnings remain)
+  - `forge test --match-path test/unit/risk/RiskModule.t.sol`: OK (7 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-22
+- Scope: Options liquidation preview observability
+- Files Modified:
+  - src/margin/MarginEngineViews.sol
+  - test/unit/margin/MarginEngine.t.sol
+  - PROGRESS.md
+- Summary:
+  Added a read-only options liquidation preview that exposes before-risk state, close-factor capacity, per-leg executable quantities and price-per-contract, aggregated settlement-asset cash requests, and penalty preview for a requested liquidation bundle. No execution path or economics changed.
+- Invariants Impacted:
+  - Options liquidation preview mirrors existing close-factor, oracle freshness, intrinsic/spread pricing, and penalty calculations without mutating state
+  - Outputs preserve unit conventions: risk and penalty in base-native units, option quantities as raw contracts, and liquidation prices/cash in settlement-asset native units
+  - Option pricing, settlement economics, liquidation execution math, fee logic, protocol economics, and unit scaling are unchanged
+- Validation:
+  - `forge build`: OK (compilation skipped because artifacts were current; existing repository warnings/notes remain)
+  - `forge test --match-path test/unit/margin/MarginEngine.t.sol`: OK (15 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-22
+- Scope: Options per-series emergency close-only controls
+- Files Modified:
+  - src/margin/MarginEngineTypes.sol
+  - src/margin/MarginEngineStorage.sol
+  - src/margin/MarginEngineAdmin.sol
+  - src/margin/MarginEngineTrading.sol
+  - test/unit/margin/MarginEngine.t.sol
+  - PROGRESS.md
+- Summary:
+  Added an engine-level per-series emergency close-only flag for option series, with guardian/owner controls and trade-time close-only enforcement when either the registry series is inactive or the engine emergency flag is active. Series emergency close-only does not require engine-wide trading pause and does not block liquidation.
+- Invariants Impacted:
+  - Option series emergency isolation now blocks new opening/flipping/increasing transitions for the isolated series while allowing strict two-sided reduce/close transitions
+  - Liquidation remains available under series emergency close-only; settlement remains governed by the existing settlement pause path
+  - Option pricing logic, settlement economics, liquidation math, fee logic, protocol economics, and unit scaling are unchanged
+- Validation:
+  - `forge build`: OK (compiler succeeded; existing repository warnings/notes remain)
+  - `forge test --match-path test/unit/margin/MarginEngine.t.sol`: OK (14 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-22
+- Scope: Perp per-market emergency close-only controls
+- Files Modified:
+  - src/perp/PerpEngineTypes.sol
+  - src/perp/PerpEngineStorage.sol
+  - src/perp/PerpEngineAdmin.sol
+  - src/perp/PerpEngineTrading.sol
+  - test/unit/perp/PerpEngine.t.sol
+  - test/unit/perp/PerpEngineLiquidation.t.sol
+  - PROGRESS.md
+- Summary:
+  Added an engine-level per-market emergency close-only flag for perp markets, with guardian/owner controls and trade-time reduce-only enforcement when either registry close-only or engine emergency close-only is active. Market emergency close-only does not require engine-wide trading pause and does not block liquidation.
+- Invariants Impacted:
+  - Perp market emergency isolation now blocks new exposure increases for the isolated market while allowing two-sided reduce/close transitions
+  - Liquidation remains available under market emergency close-only and liquidation math, funding math, fee logic, protocol economics, and unit scaling are unchanged
+  - Position sign and open-interest accounting continue through the existing position transition and OI update helpers
+- Validation:
+  - `forge build`: OK (compiler succeeded; existing repository warnings/notes remain)
+  - `forge test --match-path test/unit/perp/PerpEngine.t.sol`: OK (12 passed)
+  - `forge test --match-path test/unit/perp/PerpEngineLiquidation.t.sol`: OK (9 passed)
+- Status: DONE
+
+---
+
 - Date: 2026-04-21
 - Scope: Perp engine launch open-interest caps
 - Files Modified:

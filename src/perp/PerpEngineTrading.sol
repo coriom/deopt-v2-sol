@@ -517,7 +517,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         (newSeller, sellerRealized) =
             _computeNextPosition(oldSeller, sellerDelta, uint256(t.executionPrice1e8), currentFunding);
 
-        if (m.isCloseOnly) {
+        if (m.isCloseOnly || marketEmergencyCloseOnly[t.marketId]) {
             bool okBuyer = _isReduceOnlyTransition(oldBuyer.size1e8, newBuyer.size1e8);
             bool okSeller = _isReduceOnlyTransition(oldSeller.size1e8, newSeller.size1e8);
             if (!okBuyer || !okSeller) revert ReduceOnlyViolation();

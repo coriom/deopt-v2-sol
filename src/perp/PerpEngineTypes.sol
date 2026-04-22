@@ -130,6 +130,44 @@ abstract contract PerpEngineTypes {
         uint256 penaltyBase;
     }
 
+    /// @notice Account risk snapshot used by liquidation previews.
+    /// @dev All `...Base` fields are denominated in native units of the protocol base collateral token.
+    struct LiquidationRiskSnapshot {
+        int256 equityBase;
+        uint256 maintenanceMarginBase;
+        uint256 initialMarginBase;
+        uint256 marginRatioBps;
+    }
+
+    /// @notice Detailed read-only liquidation preview for perp liquidation paths.
+    /// @dev
+    ///  - `...1e8` fields use protocol normalized price/size/notional units
+    ///  - `...Base` fields are denominated in native units of the protocol base collateral token
+    ///  - `seizerCoveredBase` previews collateral-seizer recovery only
+    ///  - `settlementAssetCoveredBase` previews the direct settlement-asset fallback recovery
+    ///  - `residualBadDebtPreviewBase` is the residual shortfall that execution would record as bad debt
+    struct DetailedLiquidationPreview {
+        bool isLiquidatable;
+        bool hasPosition;
+        bool insuranceFundConfigured;
+        uint128 requestedCloseSize1e8;
+        uint128 maxClosableSize1e8;
+        uint128 executableCloseSize1e8;
+        uint256 markPrice1e8;
+        uint256 liquidationPrice1e8;
+        uint256 notionalClosed1e8;
+        uint256 notionalClosedBase;
+        int256 traderRealizedPnl1e8;
+        uint256 realizedCashflowBase;
+        uint256 penaltyTargetBase;
+        uint256 seizerCoveredBase;
+        uint256 settlementAssetCoveredBase;
+        uint256 insuranceCoveredBase;
+        uint256 residualShortfallBase;
+        uint256 residualBadDebtPreviewBase;
+        LiquidationRiskSnapshot riskBefore;
+    }
+
     /// @notice Resolution detail for the economic tail of a liquidation.
     /// @dev
     ///  - penaltyTargetBase     = target incentive intended for liquidator
@@ -251,6 +289,7 @@ abstract contract PerpEngineTypes {
     event FeesManagerSet(address indexed newFeesManager);
     event FeeRecipientSet(address indexed oldRecipient, address indexed newRecipient);
     event LaunchOpenInterestCapSet(uint256 indexed marketId, uint256 oldCap1e8, uint256 newCap1e8);
+    event MarketEmergencyCloseOnlySet(uint256 indexed marketId, bool oldCloseOnly, bool newCloseOnly);
 
     event Paused(address indexed account);
     event Unpaused(address indexed account);

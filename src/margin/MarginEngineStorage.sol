@@ -74,6 +74,9 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     /// @notice Optional launch-safety cap for aggregate short contracts per option series. 0 = disabled.
     mapping(uint256 => uint256) public seriesShortOpenInterestCap;
 
+    /// @notice Engine-level emergency close-only flag per option series.
+    mapping(uint256 => bool) public seriesEmergencyCloseOnly;
+
     /// -----------------------------------------------------------------------
     /// OPEN SERIES TRACKING
     /// -----------------------------------------------------------------------

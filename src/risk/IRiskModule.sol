@@ -77,6 +77,45 @@ interface IRiskModule {
         ProductRiskState products;
     }
 
+    /// @notice Per-token collateral contribution in base-token native units.
+    /// @dev
+    ///  - `balance` is denominated in token-native units
+    ///  - value fields are denominated in native units of the protocol base collateral token
+    ///  - `valuationAvailable == false` means the token contributed zero due to disabled config,
+    ///    zero weight, zero balance, or unavailable conservative pricing
+    struct CollateralContribution {
+        address token;
+        uint256 balance;
+        uint256 weightBps;
+        bool isEnabled;
+        bool valuationAvailable;
+        uint256 grossCollateralValueBase;
+        uint256 adjustedCollateralValueBase;
+    }
+
+    /// @notice Per-product risk contribution in base-token native units.
+    /// @dev `productId` values are implementation-defined labels; RiskModule uses 1=options, 2=perps.
+    struct ProductContribution {
+        uint8 productId;
+        uint256 maintenanceMarginBase;
+        uint256 initialMarginBase;
+        uint256 shortLiabilityBase;
+        int256 unrealizedPnlBase;
+        int256 fundingAccruedBase;
+        uint256 residualBadDebtBase;
+    }
+
+    /// @notice Rich account risk view with aggregate values plus collateral/product decomposition.
+    struct DetailedAccountRisk {
+        int256 equityBase;
+        uint256 maintenanceMarginBase;
+        uint256 initialMarginBase;
+        int256 freeCollateralBase;
+        uint256 marginRatioBps;
+        CollateralContribution[] collateralContributions;
+        ProductContribution[] productContributions;
+    }
+
     /*//////////////////////////////////////////////////////////////
                                 CORE VIEWS
     //////////////////////////////////////////////////////////////*/

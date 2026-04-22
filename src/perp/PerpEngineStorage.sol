@@ -89,6 +89,9 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
     /// @notice Optional engine-level launch cap for effective market OI, in 1e8 underlying units. 0 = disabled.
     mapping(uint256 => uint256) public launchOpenInterestCap1e8;
 
+    /// @notice Engine-level emergency close-only flag per market.
+    mapping(uint256 => bool) public marketEmergencyCloseOnly;
+
     /// @notice List of markets with non-zero position for trader.
     mapping(address => uint256[]) internal traderMarkets;
     mapping(address => mapping(uint256 => uint256)) internal traderMarketIndexPlus1;
