@@ -290,6 +290,12 @@ abstract contract PerpEngineTypes {
     event FeeRecipientSet(address indexed oldRecipient, address indexed newRecipient);
     event LaunchOpenInterestCapSet(uint256 indexed marketId, uint256 oldCap1e8, uint256 newCap1e8);
     event MarketEmergencyCloseOnlySet(uint256 indexed marketId, bool oldCloseOnly, bool newCloseOnly);
+    event MarketEmergencyCloseOnlyUpdated(
+        address indexed caller,
+        uint256 indexed marketId,
+        bool oldCloseOnly,
+        bool newCloseOnly
+    );
 
     event Paused(address indexed account);
     event Unpaused(address indexed account);
@@ -386,6 +392,22 @@ abstract contract PerpEngineTypes {
         uint256 residualBaseValue
     );
 
+    /// @notice Full liquidation resolution breakdown after collateral seizure and insurance coverage.
+    /// @dev All `...BaseValue` fields are denominated in native units of the protocol base collateral token.
+    event LiquidationResolved(
+        address indexed liquidator,
+        address indexed trader,
+        uint256 indexed marketId,
+        uint128 sizeClosed1e8,
+        uint256 executionPrice1e8,
+        uint256 closedNotionalBaseValue,
+        uint256 penaltyTargetBaseValue,
+        uint256 seizedPenaltyBaseValue,
+        uint256 insurancePaidBaseValue,
+        uint256 residualShortfallBaseValue,
+        uint256 totalPenaltyPaidBaseValue
+    );
+
     /// @notice Emitted when residual bad debt is repaid through an explicit protocol path.
     /// @dev
     ///  - `payer` = actor providing funds / initiating repayment
@@ -399,6 +421,17 @@ abstract contract PerpEngineTypes {
         uint256 requestedBaseValue,
         uint256 repaidBaseValue,
         uint256 remainingBaseValue
+    );
+
+    /// @notice Emitted on every residual bad debt balance mutation for one trader.
+    /// @dev All numeric fields are denominated in native units of the protocol base collateral token.
+    event ResidualBadDebtUpdated(
+        address indexed caller,
+        address indexed trader,
+        uint256 oldDebtBaseValue,
+        uint256 newDebtBaseValue,
+        uint256 oldTotalResidualBadDebtBaseValue,
+        uint256 newTotalResidualBadDebtBaseValue
     );
 
     /// @notice User collateral deposit into the protocol vault.

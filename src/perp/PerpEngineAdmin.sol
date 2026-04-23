@@ -184,6 +184,7 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
 
         marketEmergencyCloseOnly[marketId] = closeOnly;
         emit MarketEmergencyCloseOnlySet(marketId, oldCloseOnly, closeOnly);
+        emit MarketEmergencyCloseOnlyUpdated(msg.sender, marketId, oldCloseOnly, closeOnly);
     }
 
     /*//////////////////////////////////////////////////////////////

@@ -195,6 +195,12 @@ abstract contract MarginEngineTypes {
     /// @dev `cap == 0` disables the cap. Values are raw option-contract counts.
     event SeriesShortOpenInterestCapSet(uint256 indexed optionId, uint256 oldCap, uint256 newCap);
     event SeriesEmergencyCloseOnlySet(uint256 indexed optionId, bool oldCloseOnly, bool newCloseOnly);
+    event SeriesEmergencyCloseOnlyUpdated(
+        address indexed caller,
+        uint256 indexed optionId,
+        bool oldCloseOnly,
+        bool newCloseOnly
+    );
 
     /// @notice Local cached risk parameters synchronized against the RiskModule source of truth.
     /// @dev
@@ -298,6 +304,21 @@ abstract contract MarginEngineTypes {
         uint256 badDebt
     );
 
+    /// @notice Full settlement computation for one account before the cashflow resolution steps.
+    /// @dev
+    ///  - `settlementPrice` is normalized to 1e8
+    ///  - `payoffPerContract`, `grossSettlementAmount` are denominated in settlement-asset native units
+    event AccountSettlementResolved(
+        address indexed trader,
+        uint256 indexed optionId,
+        address indexed settlementAsset,
+        int128 positionQuantity,
+        uint256 settlementPrice,
+        uint256 payoffPerContract,
+        int256 pnl,
+        uint256 grossSettlementAmount
+    );
+
     /// @notice Running settlement accounting for a series.
     /// @dev
     ///  Aggregates are cumulative across all settled accounts of the series:
@@ -331,6 +352,16 @@ abstract contract MarginEngineTypes {
         uint256 indexed optionId,
         uint256 requestedAmount,
         uint256 paidAmount
+    );
+
+    /// @notice Options settlement collection shortfall observed for a losing short account.
+    /// @dev All amounts are denominated in settlement-asset native units.
+    event SettlementCollectionShortfall(
+        address indexed trader,
+        uint256 indexed optionId,
+        uint256 requestedAmount,
+        uint256 collectedAmount,
+        uint256 residualBadDebt
     );
 
     /// @notice Final residual bad debt recorded during options settlement.

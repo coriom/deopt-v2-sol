@@ -43,6 +43,7 @@ abstract contract CollateralVaultActions is CollateralVaultViews {
 
         CollateralTokenConfig memory cfg = _collateralConfigs[token];
         if (!cfg.isSupported) revert TokenNotSupported();
+        _requireLaunchActiveCollateral(token);
 
         _sync(msg.sender, token);
 
@@ -74,6 +75,7 @@ abstract contract CollateralVaultActions is CollateralVaultViews {
 
         CollateralTokenConfig memory cfg = _collateralConfigs[token];
         if (!cfg.isSupported) revert TokenNotSupported();
+        _requireLaunchActiveCollateral(token);
 
         _sync(user, token);
 

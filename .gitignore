@@ -12,6 +12,8 @@ PARAMETERS.md
 PROGRESS.md
 SPEC.md
 TEST_MATRIX.md
+PROTOCOL_GAP_REVIEW.md
+BUILD_AND_VALIDATE.md
 
 # Ignores development broadcast logs
 broadcast/
@@ -24,3 +26,6 @@ note_for_later.txt
 # Docs & System
 docs/
 .DS_Store
+
+thelegram.py
+

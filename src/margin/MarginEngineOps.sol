@@ -202,7 +202,7 @@ abstract contract MarginEngineOps is MarginEngineViews {
     ///      1) settlement sink
     ///      2) insurance fund top-up if sink != insuranceFund
     ///      3) residual becomes bad debt
-    function _resolveLongSettlementPayout(address settlementAsset, address trader, uint256 amountDue)
+    function _resolveLongSettlementPayout(uint256 optionId, address settlementAsset, address trader, uint256 amountDue)
         internal
         returns (uint256 paidToTrader, uint256 badDebt)
     {
@@ -211,22 +211,32 @@ abstract contract MarginEngineOps is MarginEngineViews {
         address sink = _settlementSink();
 
         paidToTrader = _payFromSettlementSinkUpTo(settlementAsset, sink, trader, amountDue);
+        if (sink == insuranceFund && insuranceFund != address(0) && paidToTrader != 0) {
+            emit SettlementInsuranceCoverage(trader, optionId, amountDue, paidToTrader);
+        }
 
         if (paidToTrader < amountDue && insuranceFund != address(0) && sink != insuranceFund) {
             uint256 remaining = amountDue - paidToTrader;
+            emit SettlementShortfall(trader, optionId, amountDue, paidToTrader, remaining);
             uint256 insurancePaid = _payFromInsuranceFundUpTo(settlementAsset, trader, remaining);
+            if (insurancePaid != 0) {
+                emit SettlementInsuranceCoverage(trader, optionId, remaining, insurancePaid);
+            }
             paidToTrader = _addChecked(paidToTrader, insurancePaid);
+        } else if (paidToTrader < amountDue) {
+            emit SettlementShortfall(trader, optionId, amountDue, paidToTrader, amountDue - paidToTrader);
         }
 
         if (paidToTrader < amountDue) {
             badDebt = amountDue - paidToTrader;
+            emit SettlementBadDebtRecorded(trader, optionId, badDebt);
         }
     }
 
     /// @dev Settlement hierarchy for a losing short:
     ///      1) collect what can actually be taken from trader
     ///      2) residual uncollectable remainder becomes bad debt
-    function _resolveShortSettlementCollection(address settlementAsset, address trader, uint256 amountOwed)
+    function _resolveShortSettlementCollection(uint256 optionId, address settlementAsset, address trader, uint256 amountOwed)
         internal
         returns (uint256 collectedFromTrader, uint256 badDebt)
     {
@@ -237,6 +247,8 @@ abstract contract MarginEngineOps is MarginEngineViews {
 
         if (collectedFromTrader < amountOwed) {
             badDebt = amountOwed - collectedFromTrader;
+            emit SettlementCollectionShortfall(trader, optionId, amountOwed, collectedFromTrader, badDebt);
+            emit SettlementBadDebtRecorded(trader, optionId, badDebt);
         }
     }
 
@@ -281,6 +293,19 @@ abstract contract MarginEngineOps is MarginEngineViews {
             pnl = q >= 0 ? SafeCast.toInt256(amount) : -SafeCast.toInt256(amount);
         }
 
+        address asset = series.settlementAsset;
+
+        emit AccountSettlementResolved(
+            trader,
+            optionId,
+            asset,
+            oldQty,
+            settlementPrice,
+            payoffPerContract,
+            pnl,
+            payoffPerContract == 0 ? 0 : _mulChecked(_absInt128(oldQty), payoffPerContract)
+        );
+
         // Close position before transfers so settlement cannot be replayed.
         pos.quantity = 0;
         _syncPositionIndexes(trader, optionId, oldQty, 0);
@@ -288,8 +313,6 @@ abstract contract MarginEngineOps is MarginEngineViews {
         uint256 collectedFromTrader = 0;
         uint256 paidToTrader = 0;
         uint256 badDebt = 0;
-
-        address asset = series.settlementAsset;
 
         _syncVaultBestEffort(trader, asset);
         _syncVaultBestEffort(_settlementSink(), asset);
@@ -299,10 +322,10 @@ abstract contract MarginEngineOps is MarginEngineViews {
 
         if (pnl > 0) {
             uint256 amountDue = SafeCast.toUint256(pnl);
-            (paidToTrader, badDebt) = _resolveLongSettlementPayout(asset, trader, amountDue);
+            (paidToTrader, badDebt) = _resolveLongSettlementPayout(optionId, asset, trader, amountDue);
         } else if (pnl < 0) {
             uint256 amountOwed = SafeCast.toUint256(-pnl);
-            (collectedFromTrader, badDebt) = _resolveShortSettlementCollection(asset, trader, amountOwed);
+            (collectedFromTrader, badDebt) = _resolveShortSettlementCollection(optionId, asset, trader, amountOwed);
         }
 
         _recordSeriesSettlementAccounting(optionId, collectedFromTrader, paidToTrader, badDebt);

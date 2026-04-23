@@ -137,7 +137,7 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
             address token = collateralTokens[i];
             CollateralConfig memory rcfg = collateralConfigs[token];
 
-            if (!rcfg.isEnabled) continue;
+            if (!rcfg.isEnabled || !_isLaunchActiveCollateral(token)) continue;
 
             uint256 bal = _effectiveBalanceOf(trader, token);
             if (bal == 0) continue;
@@ -372,7 +372,7 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
         CollateralConfig memory rcfg = collateralConfigs[token];
 
         // Non-enabled tokens do not contribute to collateral, so withdrawing them is unrestricted.
-        if (!rcfg.isEnabled || rcfg.weightBps == 0) return avail;
+        if (!rcfg.isEnabled || rcfg.weightBps == 0 || !_isLaunchActiveCollateral(token)) return avail;
 
         _requireTokenConfiguredIfEnabled(token, baseDec);
 
@@ -460,7 +460,7 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
         if (effectiveAmount > 0) {
             CollateralConfig memory rcfg = collateralConfigs[token];
 
-            if (rcfg.isEnabled && rcfg.weightBps > 0) {
+            if (rcfg.isEnabled && rcfg.weightBps > 0 && _isLaunchActiveCollateral(token)) {
                 (address base, uint8 baseDec,) = _loadBase();
                 _requireTokenConfiguredIfEnabled(token, baseDec);
 

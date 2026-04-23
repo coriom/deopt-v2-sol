@@ -327,6 +327,10 @@ contract MarginEngineTest is Test {
     function testSeriesEmergencyCloseOnlyBlocksOpeningWithoutGlobalTradingPause() external {
         _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
 
+        vm.expectEmit(true, false, false, true);
+        emit MarginEngineTypes.SeriesEmergencyCloseOnlySet(callOptionId, false, true);
+        vm.expectEmit(true, true, false, true);
+        emit MarginEngineTypes.SeriesEmergencyCloseOnlyUpdated(OWNER, callOptionId, false, true);
         vm.prank(OWNER);
         engine.setSeriesEmergencyCloseOnly(callOptionId, true);
 
@@ -396,6 +400,155 @@ contract MarginEngineTest is Test {
 
         vm.expectRevert(MarginEngineTypes.SettlementAlreadyProcessed.selector);
         engine.settleAccount(callOptionId, ALICE);
+    }
+
+    function testWinningLongSettlementEmitsShortfallInsuranceAndBadDebtEvents() external {
+        _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
+
+        vm.prank(OWNER);
+        engine.setInsuranceFund(DAVE);
+
+        vm.prank(address(engine));
+        vault.transferBetweenAccounts(address(usdc), DAVE, CAROL, 9_700 * BASE_UNIT);
+
+        vm.warp(block.timestamp + 8 days);
+        vm.prank(OWNER);
+        registry.setSettlementPrice(callOptionId, 2_500 * PRICE_SCALE);
+
+        vm.expectEmit(true, true, true, true);
+        emit MarginEngineTypes.AccountSettlementResolved(
+            ALICE,
+            callOptionId,
+            address(usdc),
+            1,
+            2_500 * PRICE_SCALE,
+            500 * BASE_UNIT,
+            int256(500 * BASE_UNIT),
+            500 * BASE_UNIT
+        );
+        vm.expectEmit(true, true, false, true);
+        emit MarginEngineTypes.SettlementInsuranceCoverage(ALICE, callOptionId, 500 * BASE_UNIT, 300 * BASE_UNIT);
+        vm.expectEmit(true, true, false, true);
+        emit MarginEngineTypes.SettlementShortfall(ALICE, callOptionId, 500 * BASE_UNIT, 300 * BASE_UNIT, 200 * BASE_UNIT);
+        vm.expectEmit(true, true, false, true);
+        emit MarginEngineTypes.SettlementBadDebtRecorded(ALICE, callOptionId, 200 * BASE_UNIT);
+
+        engine.settleAccount(callOptionId, ALICE);
+    }
+
+    function testShortSettlementEmitsCollectionShortfallAndBadDebtEvents() external {
+        _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
+
+        vm.prank(address(engine));
+        vault.transferBetweenAccounts(address(usdc), BOB, CAROL, 9_800 * BASE_UNIT);
+
+        vm.warp(block.timestamp + 8 days);
+        vm.prank(OWNER);
+        registry.setSettlementPrice(callOptionId, 2_500 * PRICE_SCALE);
+
+        vm.expectEmit(true, true, true, true);
+        emit MarginEngineTypes.AccountSettlementResolved(
+            BOB,
+            callOptionId,
+            address(usdc),
+            -2,
+            2_500 * PRICE_SCALE,
+            500 * BASE_UNIT,
+            -int256(1_000 * BASE_UNIT),
+            1_000 * BASE_UNIT
+        );
+        vm.expectEmit(true, true, false, true);
+        emit MarginEngineTypes.SettlementCollectionShortfall(
+            BOB, callOptionId, 1_000 * BASE_UNIT, 400 * BASE_UNIT, 600 * BASE_UNIT
+        );
+        vm.expectEmit(true, true, false, true);
+        emit MarginEngineTypes.SettlementBadDebtRecorded(BOB, callOptionId, 600 * BASE_UNIT);
+
+        engine.settleAccount(callOptionId, BOB);
+    }
+
+    function testPreviewDetailedSettlementShowsInsuranceCoverageForWinningLong() external {
+        _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
+
+        vm.prank(OWNER);
+        engine.setInsuranceFund(DAVE);
+
+        vm.prank(address(engine));
+        vault.transferBetweenAccounts(address(usdc), DAVE, CAROL, 9_700 * BASE_UNIT);
+
+        vm.warp(block.timestamp + 8 days);
+        vm.prank(OWNER);
+        registry.setSettlementPrice(callOptionId, 2_500 * PRICE_SCALE);
+
+        MarginEngine.DetailedSettlementPreview memory preview = engine.previewDetailedSettlement(callOptionId, ALICE);
+
+        assertTrue(preview.seriesExpired);
+        assertTrue(preview.settlementPriceSet);
+        assertTrue(preview.settlementReady);
+        assertFalse(preview.accountSettled);
+        assertEq(preview.positionQuantity, 1);
+        assertEq(preview.payoffPerContract, 500 * BASE_UNIT);
+        assertEq(preview.grossSettlementAmount, 500 * BASE_UNIT);
+        assertFalse(preview.isShortLiability);
+        assertEq(preview.shortLiabilityAmount, 0);
+        assertEq(preview.settlementSinkBalance, 300 * BASE_UNIT);
+        assertEq(preview.collateralCoveragePreview, 0);
+        assertEq(preview.insuranceCoveragePreview, 300 * BASE_UNIT);
+        assertEq(preview.residualShortfallPreview, 200 * BASE_UNIT);
+        assertEq(preview.residualBadDebtPreview, 200 * BASE_UNIT);
+        assertTrue(preview.grossSettlementAmountBaseAvailable);
+        assertEq(preview.grossSettlementAmountBase, 500 * BASE_UNIT);
+        assertTrue(preview.accountCashflowDeltaBaseAvailable);
+        assertEq(preview.accountCashflowDeltaBase, int256(300 * BASE_UNIT));
+        assertEq(preview.riskBefore.equityBase, int256(HEALTHY_EQUITY));
+        assertEq(preview.riskBefore.maintenanceMarginBase, 0);
+        assertEq(preview.riskBefore.initialMarginBase, 0);
+        assertEq(preview.riskBefore.marginRatioBps, type(uint256).max);
+        assertTrue(preview.riskAfterAvailable);
+        assertEq(preview.riskAfter.equityBase, int256(HEALTHY_EQUITY + (300 * BASE_UNIT)));
+        assertEq(preview.riskAfter.maintenanceMarginBase, 0);
+        assertEq(preview.riskAfter.initialMarginBase, 0);
+        assertEq(preview.riskAfter.marginRatioBps, type(uint256).max);
+    }
+
+    function testPreviewDetailedSettlementShowsShortLiabilityCoverageAndRiskRelease() external {
+        _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
+
+        vm.prank(address(engine));
+        vault.transferBetweenAccounts(address(usdc), BOB, CAROL, 9_800 * BASE_UNIT);
+
+        vm.warp(block.timestamp + 8 days);
+        vm.prank(OWNER);
+        registry.setSettlementPrice(callOptionId, 2_500 * PRICE_SCALE);
+
+        MarginEngine.DetailedSettlementPreview memory preview = engine.previewDetailedSettlement(callOptionId, BOB);
+
+        assertTrue(preview.seriesExpired);
+        assertTrue(preview.settlementPriceSet);
+        assertTrue(preview.settlementReady);
+        assertEq(preview.positionQuantity, -2);
+        assertEq(preview.payoffPerContract, 500 * BASE_UNIT);
+        assertEq(preview.pnl, -int256(1_000 * BASE_UNIT));
+        assertEq(preview.grossSettlementAmount, 1_000 * BASE_UNIT);
+        assertTrue(preview.isShortLiability);
+        assertEq(preview.shortLiabilityAmount, 1_000 * BASE_UNIT);
+        assertEq(preview.traderSettlementAssetBalance, 400 * BASE_UNIT);
+        assertEq(preview.collateralCoveragePreview, 400 * BASE_UNIT);
+        assertEq(preview.insuranceCoveragePreview, 0);
+        assertEq(preview.residualShortfallPreview, 600 * BASE_UNIT);
+        assertEq(preview.residualBadDebtPreview, 600 * BASE_UNIT);
+        assertTrue(preview.grossSettlementAmountBaseAvailable);
+        assertEq(preview.grossSettlementAmountBase, 1_000 * BASE_UNIT);
+        assertTrue(preview.accountCashflowDeltaBaseAvailable);
+        assertEq(preview.accountCashflowDeltaBase, -int256(400 * BASE_UNIT));
+        assertEq(preview.riskBefore.equityBase, int256(HEALTHY_EQUITY));
+        assertEq(preview.riskBefore.maintenanceMarginBase, 2 * BASE_MM_PER_CONTRACT);
+        assertEq(preview.riskBefore.initialMarginBase, (2 * BASE_MM_PER_CONTRACT * IM_FACTOR_BPS) / 10_000);
+        assertTrue(preview.riskAfterAvailable);
+        assertEq(preview.riskAfter.equityBase, int256(HEALTHY_EQUITY - (400 * BASE_UNIT)));
+        assertEq(preview.riskAfter.maintenanceMarginBase, 0);
+        assertEq(preview.riskAfter.initialMarginBase, 0);
+        assertEq(preview.riskAfter.marginRatioBps, type(uint256).max);
     }
 
     function testLiquidationReducesPositionSizeCorrectly() external {

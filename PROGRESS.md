@@ -65,6 +65,100 @@ Maintain a clear, auditable history of system evolution.
 
 ---
 
+- Date: 2026-04-23
+- Scope: Launch-time collateral universe restriction mode
+- Files Modified:
+  - src/collateral/CollateralVaultStorage.sol
+  - src/collateral/CollateralVaultAdmin.sol
+  - src/collateral/CollateralVaultActions.sol
+  - src/risk/RiskModuleCollateral.sol
+  - src/risk/RiskModuleViews.sol
+  - test/unit/vault/CollateralVault.t.sol
+  - test/unit/risk/RiskModule.t.sol
+  - PROGRESS.md
+- Summary:
+  Added an explicit launch restriction mode in `CollateralVault` with independent per-token `launchActiveCollateral` flags, so vault token support/configuration no longer automatically makes a token launch-active collateral. When restriction mode is enabled, `deposit` and `depositFor` reject non-launch-active tokens, while withdrawals and internal transfers remain available. `RiskModule` now excludes non-launch-active tokens from collateral contribution and withdraw-risk consumption, making them non-collateral balances that can still be exited safely.
+- Invariants Impacted:
+  - Supported/configured collateral tokens can now remain vault-supported without automatically becoming launch-active collateral tokens
+  - In restriction mode, only launch-active tokens contribute to adjusted collateral value and collateral-backed solvency; non-launch-active tokens remain fully withdrawable
+  - Protocol economics, liquidation math, fee logic, internal transfer accounting, and unit scaling are unchanged
+- Validation:
+  - `forge build`: OK (compiler succeeded; existing repository lint notes/warnings remain)
+  - `forge test --match-path test/unit/vault/CollateralVault.t.sol`: OK (11 passed)
+  - `forge test --match-path test/unit/risk/RiskModule.t.sol`: OK (8 passed)
+  - `forge test --match-path test/unit/margin/MarginEngine.t.sol`: OK (19 passed)
+  - `forge test --match-path test/unit/perp/PerpEngine.t.sol`: OK (13 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-23
+- Scope: Perp matching ingress emergency guardian and pause controls
+- Files Modified:
+  - src/matching/PerpMatchingEngine.sol
+  - test/unit/matching/PerpMatchingEngine.t.sol
+  - PROGRESS.md
+- Summary:
+  Added a minimal guardian-controlled emergency stop layer to `PerpMatchingEngine` with explicit guardian assignment, pause, and owner-only unpause controls. Matching ingress is now independently freezable through `executeTrade` and `executeBatch` without touching `PerpEngine`, while signature validation, nonce progression, trade forwarding, economics, fee behavior, liquidation behavior, and unit scaling remain unchanged when not paused.
+- Invariants Impacted:
+  - Perp matching ingress can now be halted independently from `PerpEngine` without altering core engine storage or execution paths
+  - Unpaused matching preserves existing signed-trade execution semantics, forwarded trade fields, and nonce advancement behavior
+  - No protocol economics, matching semantics, fee logic, liquidation logic, or unit scaling changed
+- Validation:
+  - `forge build`: OK (compiler succeeded; existing repository lint notes/warnings remain)
+  - `forge test --match-path test/unit/matching/PerpMatchingEngine.t.sol`: OK (2 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-23
+- Scope: Critical event enrichment for liquidation, settlement, and bad-debt observability
+- Files Modified:
+  - src/perp/PerpEngineTypes.sol
+  - src/perp/PerpEngineStorage.sol
+  - src/perp/PerpEngineAdmin.sol
+  - src/perp/PerpEngineTrading.sol
+  - src/margin/MarginEngineTypes.sol
+  - src/margin/MarginEngineAdmin.sol
+  - src/margin/MarginEngineOps.sol
+  - test/unit/perp/PerpEngine.t.sol
+  - test/unit/perp/PerpEngineLiquidation.t.sol
+  - test/unit/margin/MarginEngine.t.sol
+  - PROGRESS.md
+- Summary:
+  Added companion observability events for per-market and per-series emergency close-only changes with caller attribution; added a full perp liquidation resolution event; emitted a unified residual bad debt balance update event on every record/reduce/clear path; and enriched option settlement observability by emitting full settlement computation details plus explicit payout shortfall, insurance coverage, short collection shortfall, and bad-debt events on settlement paths.
+- Invariants Impacted:
+  - Event enrichment makes liquidation shortfall routing, settlement shortfall routing, insurance coverage, emergency close-only changes, and residual bad debt lifecycle transitions more auditable without changing execution math
+  - Perp liquidation, option settlement, residual bad debt accounting, fee logic, protocol economics, and unit scaling are unchanged
+  - New event payloads preserve existing unit conventions: perp liquidation and bad debt values remain in base-token native units, while option settlement values remain in settlement-asset native units except where already normalized
+- Validation:
+  - `forge build`: OK (compiler succeeded; existing repository warnings/notes remain)
+  - `forge test --match-path test/unit/margin/MarginEngine.t.sol`: OK (19 passed)
+  - `forge test --match-path test/unit/perp/PerpEngine.t.sol`: OK (13 passed)
+  - `forge test --match-path test/unit/perp/PerpEngineLiquidation.t.sol`: OK (10 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-23
+- Scope: Options settlement and settlement-shortfall preview observability
+- Files Modified:
+  - src/margin/MarginEngineViews.sol
+  - test/unit/margin/MarginEngine.t.sol
+  - PROGRESS.md
+- Summary:
+  Added `previewDetailedSettlement`, a read-only option-settlement preview that exposes series expiry/finalization/proposal readiness, account settlement readiness, payoff and gross settlement amount, short-liability classification, trader/sink balance coverage, insurance-backed payout coverage, residual shortfall/bad-debt preview, and before/after account-risk style snapshots. The preview reuses existing registry settlement state, payoff helpers, vault balances, cached option-risk params, and settlement shortfall logic without changing settlement execution, liquidation execution, fees, or unit scaling.
+- Invariants Impacted:
+  - Option settlement preview outputs preserve unit conventions: settlement amounts remain in settlement-asset native units and risk snapshots remain in base-collateral native units
+  - Settlement readiness, collateral coverage, insurance-backed payout coverage, and residual bad-debt paths are now inspectable before execution without mutating state
+  - Option settlement math, liquidation math, shortfall routing, fee logic, protocol economics, and unit scaling are unchanged
+- Validation:
+  - `forge build`: OK (compiler succeeded; existing repository lint notes/warnings remain)
+  - `forge test --match-path test/unit/margin/MarginEngine.t.sol`: OK (17 passed)
+- Status: DONE
+
+---
+
 - Date: 2026-04-22
 - Scope: Perp liquidation preview observability
 - Files Modified:

@@ -119,6 +119,57 @@ abstract contract MarginEngineViews is MarginEngineTrading {
         uint256 penaltyBase;
     }
 
+    /// @notice Account-risk style snapshot used by settlement previews.
+    /// @dev All amounts are denominated in native units of the protocol base collateral token.
+    struct SettlementRiskSnapshot {
+        int256 equityBase;
+        uint256 maintenanceMarginBase;
+        uint256 initialMarginBase;
+        uint256 marginRatioBps;
+    }
+
+    /// @notice Rich read-only preview for option settlement and settlement-side shortfall paths.
+    /// @dev
+    ///  - settlement amounts are denominated in settlement-asset native units
+    ///  - risk fields suffixed `Base` are denominated in native units of the protocol base collateral token
+    ///  - `insuranceCoveragePreview` includes the insurance fund balance when the insurance fund is the canonical sink
+    struct DetailedSettlementPreview {
+        uint256 optionId;
+        address settlementAsset;
+        bool seriesActive;
+        bool seriesExpired;
+        bool settlementPaused;
+        bool settlementPriceSet;
+        uint64 settlementFinalizedAt;
+        uint256 settlementPrice;
+        bool proposalExists;
+        uint256 proposedSettlementPrice;
+        uint64 proposalTimestamp;
+        uint256 settlementFinalityDelay;
+        bool proposalReady;
+        bool settlementReady;
+        bool accountSettled;
+        int128 positionQuantity;
+        uint256 payoffPerContract;
+        int256 pnl;
+        uint256 grossSettlementAmount;
+        bool isShortLiability;
+        uint256 shortLiabilityAmount;
+        uint256 traderSettlementAssetBalance;
+        uint256 settlementSinkBalance;
+        uint256 collateralCoveragePreview;
+        uint256 insuranceCoveragePreview;
+        uint256 residualShortfallPreview;
+        uint256 residualBadDebtPreview;
+        bool grossSettlementAmountBaseAvailable;
+        uint256 grossSettlementAmountBase;
+        bool accountCashflowDeltaBaseAvailable;
+        int256 accountCashflowDeltaBase;
+        bool riskAfterAvailable;
+        SettlementRiskSnapshot riskBefore;
+        SettlementRiskSnapshot riskAfter;
+    }
+
     /// @notice Cached options-side risk config mirrored from RiskModule.
     /// @dev
     ///  - `baseMaintenanceMarginPerContract` is denominated in native units
@@ -216,6 +267,89 @@ abstract contract MarginEngineViews is MarginEngineTrading {
 
         p.residualBadDebtPreview = remainingAfterSink;
         p.canSettle = true;
+    }
+
+    function _settlementRiskSnapshot(IRiskModule.AccountRisk memory risk)
+        internal
+        pure
+        returns (SettlementRiskSnapshot memory snapshot)
+    {
+        snapshot.equityBase = risk.equityBase;
+        snapshot.maintenanceMarginBase = risk.maintenanceMarginBase;
+        snapshot.initialMarginBase = risk.initialMarginBase;
+        snapshot.marginRatioBps = _marginRatioBpsFromRisk(risk.equityBase, risk.maintenanceMarginBase);
+    }
+
+    function _previewSettlementAmountBase(address settlementAsset, uint256 amountNative)
+        internal
+        view
+        returns (uint256 amountBase, bool available)
+    {
+        if (amountNative == 0) return (0, true);
+
+        address base = baseCollateralToken;
+        if (base == address(0)) return (0, false);
+
+        if (settlementAsset == base) {
+            return (amountNative, true);
+        }
+
+        (uint256 px, uint256 updatedAt, bool ok) = _oracle.getPriceSafe(settlementAsset, base);
+        if (!ok || px == 0) return (0, false);
+
+        uint32 maxDelay = liquidationOracleMaxDelay;
+        if (maxDelay > 0) {
+            if (updatedAt == 0 || updatedAt > block.timestamp) return (0, false);
+            if (block.timestamp - updatedAt > maxDelay) return (0, false);
+        }
+
+        return (_tokenAmountToBaseValueDown(settlementAsset, amountNative, px), true);
+    }
+
+    function _previewShortRiskRelease(int128 qty) internal view returns (uint256 mmReleaseBase, uint256 imReleaseBase) {
+        if (qty >= 0) return (0, 0);
+
+        uint256 shortAbs = _absInt128(qty);
+        mmReleaseBase = _mulChecked(shortAbs, baseMaintenanceMarginPerContract);
+        imReleaseBase = Math.mulDiv(mmReleaseBase, imFactorBps, BPS, Math.Rounding.Floor);
+    }
+
+    function _previewSettlementCashflowDelta(
+        SettlementPreview memory settlementPreview,
+        bool isShortLiability
+    ) internal pure returns (int256 cashflowDelta) {
+        if (isShortLiability) {
+            if (settlementPreview.collectibleAmount == 0) return 0;
+            cashflowDelta = -SafeCast.toInt256(settlementPreview.collectibleAmount);
+        } else {
+            uint256 credited = settlementPreview.payableFromSettlementSink + settlementPreview.insurancePreview;
+            if (credited == 0) return 0;
+            cashflowDelta = SafeCast.toInt256(credited);
+        }
+    }
+
+    function _previewRiskAfterSettlement(
+        SettlementRiskSnapshot memory beforeRisk,
+        int128 qty,
+        int256 cashflowDeltaBase,
+        bool cashflowDeltaBaseAvailable
+    ) internal view returns (SettlementRiskSnapshot memory afterRisk, bool available) {
+        (uint256 mmReleaseBase, uint256 imReleaseBase) = _previewShortRiskRelease(qty);
+
+        afterRisk.maintenanceMarginBase = beforeRisk.maintenanceMarginBase > mmReleaseBase
+            ? beforeRisk.maintenanceMarginBase - mmReleaseBase
+            : 0;
+        afterRisk.initialMarginBase = beforeRisk.initialMarginBase > imReleaseBase
+            ? beforeRisk.initialMarginBase - imReleaseBase
+            : 0;
+
+        if (!cashflowDeltaBaseAvailable) {
+            return (afterRisk, false);
+        }
+
+        afterRisk.equityBase = beforeRisk.equityBase + cashflowDeltaBase;
+        afterRisk.marginRatioBps = _marginRatioBpsFromRisk(afterRisk.equityBase, afterRisk.maintenanceMarginBase);
+        return (afterRisk, true);
     }
 
     function _previewLiquidationPricePerContract(OptionProductRegistry.OptionSeries memory s)
@@ -532,6 +666,94 @@ abstract contract MarginEngineViews is MarginEngineTrading {
 
         (, int256 pnl) = _previewAccountSettlementPnl(series, qty, settlementPrice);
         p = _previewSettlementResolution(optionId, trader, pnl, series.settlementAsset);
+    }
+
+    function previewDetailedSettlement(uint256 optionId, address trader)
+        external
+        view
+        returns (DetailedSettlementPreview memory p)
+    {
+        OptionProductRegistry.OptionSeries memory series = _optionRegistry.getSeries(optionId);
+        (uint256 settlementPrice, bool isSet) = _optionRegistry.getSettlementInfo(optionId);
+        (uint256 proposedPrice, uint64 proposedAt, bool proposalExists) = _optionRegistry.getSettlementProposal(optionId);
+
+        p.optionId = optionId;
+        p.settlementAsset = series.settlementAsset;
+        p.seriesActive = series.isActive;
+        p.seriesExpired = block.timestamp >= series.expiry;
+        p.settlementPaused = _optionRegistry.settlementPaused();
+        p.settlementPriceSet = isSet && settlementPrice != 0;
+        p.settlementFinalizedAt = _optionRegistry.getSettlementFinalizedAt(optionId);
+        p.settlementPrice = settlementPrice;
+        p.proposalExists = proposalExists;
+        p.proposedSettlementPrice = proposedPrice;
+        p.proposalTimestamp = proposedAt;
+        p.settlementFinalityDelay = _optionRegistry.settlementFinalityDelay();
+        p.proposalReady =
+            proposalExists && block.timestamp >= uint256(proposedAt) + p.settlementFinalityDelay;
+        p.accountSettled = isAccountSettled[optionId][trader];
+        p.positionQuantity = _positionQuantityOf(trader, optionId);
+
+        if (address(_riskModule) != address(0)) {
+            IRiskModule.AccountRisk memory beforeRisk = _riskModule.computeAccountRisk(trader);
+            p.riskBefore = _settlementRiskSnapshot(beforeRisk);
+        } else {
+            p.riskBefore.marginRatioBps = type(uint256).max;
+        }
+
+        p.settlementReady =
+            p.seriesExpired && p.settlementPriceSet && !p.settlementPaused && !p.accountSettled;
+
+        if (!p.settlementReady || p.positionQuantity == 0) {
+            p.riskAfter = p.riskBefore;
+            p.riskAfterAvailable = true;
+            return p;
+        }
+
+        (p.payoffPerContract, p.pnl) = _previewAccountSettlementPnl(series, p.positionQuantity, settlementPrice);
+
+        SettlementPreview memory resolution = _previewSettlementResolution(optionId, trader, p.pnl, series.settlementAsset);
+        p.grossSettlementAmount = resolution.grossAmount;
+        p.isShortLiability = p.pnl < 0;
+        p.shortLiabilityAmount = p.isShortLiability ? resolution.grossAmount : 0;
+        p.traderSettlementAssetBalance = _collateralVault.balances(trader, series.settlementAsset);
+
+        if (p.isShortLiability) {
+            p.collateralCoveragePreview = resolution.collectibleAmount;
+        } else {
+            address sink = insuranceFund != address(0) ? insuranceFund : address(this);
+            p.settlementSinkBalance = _collateralVault.balances(sink, series.settlementAsset);
+
+            if (sink == insuranceFund && insuranceFund != address(0)) {
+                p.insuranceCoveragePreview = resolution.payableFromSettlementSink;
+            } else {
+                p.collateralCoveragePreview = resolution.payableFromSettlementSink;
+                p.insuranceCoveragePreview = resolution.insurancePreview;
+            }
+        }
+
+        p.residualShortfallPreview = resolution.residualBadDebtPreview;
+        p.residualBadDebtPreview = resolution.residualBadDebtPreview;
+
+        (p.grossSettlementAmountBase, p.grossSettlementAmountBaseAvailable) =
+            _previewSettlementAmountBase(series.settlementAsset, p.grossSettlementAmount);
+
+        int256 cashflowDelta = _previewSettlementCashflowDelta(resolution, p.isShortLiability);
+        uint256 absCashflow = cashflowDelta >= 0
+            ? SafeCast.toUint256(cashflowDelta)
+            : SafeCast.toUint256(-cashflowDelta);
+        (uint256 cashflowDeltaBaseAbs, bool cashflowDeltaBaseAvailable) =
+            _previewSettlementAmountBase(series.settlementAsset, absCashflow);
+        if (cashflowDeltaBaseAvailable) {
+            p.accountCashflowDeltaBaseAvailable = true;
+            p.accountCashflowDeltaBase = cashflowDelta >= 0
+                ? SafeCast.toInt256(cashflowDeltaBaseAbs)
+                : -SafeCast.toInt256(cashflowDeltaBaseAbs);
+        }
+
+        (p.riskAfter, p.riskAfterAvailable) = _previewRiskAfterSettlement(
+            p.riskBefore, p.positionQuantity, p.accountCashflowDeltaBase, p.accountCashflowDeltaBaseAvailable
+        );
     }
 
     /*//////////////////////////////////////////////////////////////

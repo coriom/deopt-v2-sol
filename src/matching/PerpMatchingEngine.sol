@@ -30,8 +30,11 @@ contract PerpMatchingEngine is ReentrancyGuard, EIP712 {
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event OwnershipTransferStarted(address indexed previousOwner, address indexed pendingOwner);
 
+    event GuardianSet(address indexed oldGuardian, address indexed newGuardian);
     event ExecutorSet(address indexed executor, bool allowed);
     event EngineSet(address indexed oldEngine, address indexed newEngine);
+    event Paused(address indexed account);
+    event Unpaused(address indexed account);
 
     event TradeExecuted(
         address indexed buyer,
@@ -52,6 +55,7 @@ contract PerpMatchingEngine is ReentrancyGuard, EIP712 {
 
     error NotAuthorized();
     error ZeroAddress();
+    error PausedError();
     error InvalidSignature();
     error BadNonce();
     error InvalidTrade();
@@ -65,10 +69,12 @@ contract PerpMatchingEngine is ReentrancyGuard, EIP712 {
 
     address public owner;
     address public pendingOwner;
+    address public guardian;
 
     IPerpEngineTrade public perpEngine;
 
     mapping(address => bool) public isExecutor;
+    bool public paused;
     mapping(address => uint256) public nonces;
 
     bytes32 public constant TRADE_TYPEHASH = keccak256(
@@ -96,8 +102,18 @@ contract PerpMatchingEngine is ReentrancyGuard, EIP712 {
         _;
     }
 
+    modifier onlyGuardianOrOwner() {
+        if (msg.sender != guardian && msg.sender != owner) revert NotAuthorized();
+        _;
+    }
+
     modifier onlyExecutor() {
         if (!isExecutor[msg.sender]) revert NotAuthorized();
+        _;
+    }
+
+    modifier whenNotPaused() {
+        if (paused) revert PausedError();
         _;
     }
 
@@ -157,6 +173,12 @@ contract PerpMatchingEngine is ReentrancyGuard, EIP712 {
                                 ADMIN
     //////////////////////////////////////////////////////////////*/
 
+    function setGuardian(address newGuardian) external onlyOwner {
+        address old = guardian;
+        guardian = newGuardian;
+        emit GuardianSet(old, newGuardian);
+    }
+
     function setExecutor(address executor, bool allowed) external onlyOwner {
         if (executor == address(0)) revert ZeroAddress();
         isExecutor[executor] = allowed;
@@ -182,6 +204,20 @@ contract PerpMatchingEngine is ReentrancyGuard, EIP712 {
         address old = address(perpEngine);
         perpEngine = IPerpEngineTrade(_engine);
         emit EngineSet(old, _engine);
+    }
+
+    function pause() external onlyGuardianOrOwner {
+        if (!paused) {
+            paused = true;
+            emit Paused(msg.sender);
+        }
+    }
+
+    function unpause() external onlyOwner {
+        if (paused) {
+            paused = false;
+            emit Unpaused(msg.sender);
+        }
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -329,6 +365,7 @@ contract PerpMatchingEngine is ReentrancyGuard, EIP712 {
     function executeTrade(PerpTrade calldata t, bytes calldata buyerSig, bytes calldata sellerSig)
         external
         onlyExecutor
+        whenNotPaused
         nonReentrant
     {
         _requireEngineSet();
@@ -338,6 +375,7 @@ contract PerpMatchingEngine is ReentrancyGuard, EIP712 {
     function executeBatch(PerpTrade[] calldata trades, bytes[] calldata buyerSigs, bytes[] calldata sellerSigs)
         external
         onlyExecutor
+        whenNotPaused
         nonReentrant
     {
         _requireEngineSet();

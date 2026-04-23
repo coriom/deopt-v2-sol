@@ -45,6 +45,11 @@ abstract contract RiskModuleCollateral is RiskModuleOracle {
         tokenDec = _vaultCfg(token).decimals;
     }
 
+    function _isLaunchActiveCollateral(address token) internal view returns (bool) {
+        if (!collateralVault.collateralRestrictionMode()) return true;
+        return collateralVault.launchActiveCollateral(token);
+    }
+
     /*//////////////////////////////////////////////////////////////
                         VALUE CONVERSION HELPERS
     //////////////////////////////////////////////////////////////*/
@@ -137,6 +142,7 @@ abstract contract RiskModuleCollateral is RiskModuleOracle {
     {
         CollateralConfig memory rcfg = collateralConfigs[token];
         if (!rcfg.isEnabled || rcfg.weightBps == 0) return (value, false);
+        if (!_isLaunchActiveCollateral(token)) return (value, false);
 
         _requireTokenConfiguredIfEnabled(token, baseDec);
 
@@ -168,7 +174,9 @@ abstract contract RiskModuleCollateral is RiskModuleOracle {
         returns (CollateralValue memory total)
     {
         CollateralConfig memory baseRiskCfg = collateralConfigs[base];
-        if (!baseRiskCfg.isEnabled || baseRiskCfg.weightBps == 0) revert TokenNotConfigured(base);
+        if (!baseRiskCfg.isEnabled || baseRiskCfg.weightBps == 0 || !_isLaunchActiveCollateral(base)) {
+            revert TokenNotConfigured(base);
+        }
 
         uint256 n = collateralTokens.length;
 

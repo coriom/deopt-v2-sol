@@ -456,6 +456,24 @@ contract PerpEngineLiquidationTest is Test {
         seizer.setPlan(tokens, amounts, SEIZER_COVER_BASE);
         seizer.setPreview(address(weth), 1 ether, SEIZER_COVER_BASE, SEIZER_COVER_BASE, true);
 
+        vm.expectEmit(true, true, true, true);
+        emit PerpEngineTypes.ResidualBadDebtUpdated(
+            CAROL, ALICE, 0, RESIDUAL_BAD_DEBT_BASE, 0, RESIDUAL_BAD_DEBT_BASE
+        );
+        vm.expectEmit(true, true, true, true);
+        emit PerpEngineTypes.LiquidationResolved(
+            CAROL,
+            ALICE,
+            marketId,
+            ONE,
+            LIQ_PRICE_LONG,
+            CLOSED_NOTIONAL_BASE_ONE,
+            PENALTY_BASE_ONE,
+            SEIZER_COVER_BASE,
+            40 * BASE_UNIT,
+            RESIDUAL_BAD_DEBT_BASE,
+            SEIZER_COVER_BASE + (40 * BASE_UNIT)
+        );
         vm.prank(CAROL);
         engine.liquidate(ALICE, marketId, ONE);
 

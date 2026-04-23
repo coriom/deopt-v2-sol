@@ -846,10 +846,14 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         if (amountBase == 0) return;
 
         uint256 oldDebt = _residualBadDebtBase[trader];
+        uint256 oldTotalDebt = totalResidualBadDebtBase;
         uint256 newDebt = _addChecked(oldDebt, amountBase);
+        uint256 newTotalDebt = _addChecked(oldTotalDebt, amountBase);
 
         _residualBadDebtBase[trader] = newDebt;
-        totalResidualBadDebtBase = _addChecked(totalResidualBadDebtBase, amountBase);
+        totalResidualBadDebtBase = newTotalDebt;
+
+        emit ResidualBadDebtUpdated(msg.sender, trader, oldDebt, newDebt, oldTotalDebt, newTotalDebt);
     }
 
     function _reduceResidualBadDebt(address trader, uint256 amountBase) internal returns (uint256 repaidBase) {
@@ -861,9 +865,13 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
 
         repaidBase = amountBase < oldDebt ? amountBase : oldDebt;
         uint256 newDebt = oldDebt - repaidBase;
+        uint256 oldTotalDebt = totalResidualBadDebtBase;
+        uint256 newTotalDebt = _subChecked(oldTotalDebt, repaidBase);
 
         _residualBadDebtBase[trader] = newDebt;
-        totalResidualBadDebtBase = _subChecked(totalResidualBadDebtBase, repaidBase);
+        totalResidualBadDebtBase = newTotalDebt;
+
+        emit ResidualBadDebtUpdated(msg.sender, trader, oldDebt, newDebt, oldTotalDebt, newTotalDebt);
     }
 
     function _clearResidualBadDebt(address trader) internal returns (uint256 clearedBase) {
@@ -872,8 +880,13 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         clearedBase = _residualBadDebtBase[trader];
         if (clearedBase == 0) return 0;
 
+        uint256 oldTotalDebt = totalResidualBadDebtBase;
+        uint256 newTotalDebt = _subChecked(oldTotalDebt, clearedBase);
+
         _residualBadDebtBase[trader] = 0;
-        totalResidualBadDebtBase = _subChecked(totalResidualBadDebtBase, clearedBase);
+        totalResidualBadDebtBase = newTotalDebt;
+
+        emit ResidualBadDebtUpdated(msg.sender, trader, clearedBase, 0, oldTotalDebt, newTotalDebt);
     }
 
     function _residualBadDebtOf(address trader) internal view returns (uint256) {

@@ -1,0 +1,163 @@
+1. protocol code gaps
+
+Item 1
+title: Perp matching ingress lacks an emergency stop / guardian layer
+severity: critical
+why it matters: `src/matching/PerpMatchingEngine.sol` has executor controls but no `guardian`, no pause state, and no emergency kill switch. In production, this leaves the perp order-ingress path without the same fast containment mechanism already present in `src/matching/MatchingEngine.sol`. If an executor key, signer workflow, or upstream matching process is compromised, the perp matching entrypoint itself cannot be frozen independently.
+affected files/modules: src/matching/PerpMatchingEngine.sol; operational dependency with src/perp/PerpEngine.sol
+blocker before production launch: yes
+recommended implementation order: 1
+
+Item 2
+title: Collateral universe restriction mode is still missing
+severity: important
+why it matters: `PROTOCOL_GAP_REVIEW.md` explicitly keeps “collateral universe restriction mode” open, and the codebase currently relies on per-token support plus deposit caps in `CollateralVault` rather than a launch-phase mode that can hard-restrict collateral usage to a narrow approved subset. For a first launch, that leaves too much configuration freedom and increases the chance of activating a token path earlier than intended.
+affected files/modules: src/collateral/CollateralVaultStorage.sol; src/collateral/CollateralVaultAdmin.sol; src/risk/RiskModuleViews.sol; src/perp/PerpRiskModule.sol
+blocker before production launch: yes
+recommended implementation order: 2
+
+Item 3
+title: Progressive activation controls and tighter launch-only safety knobs are not implemented
+severity: important
+why it matters: the repo now has open-interest caps and close-only flags, but there is no explicit staged-activation framework for moving markets/series through bootstrap states. `PROTOCOL_GAP_REVIEW.md` still lists “progressive activation controls” and “tighter launch-only safety knobs” as open. Production launch would otherwise depend on manual operator discipline instead of enforceable code-level activation sequencing.
+affected files/modules: src/perp/PerpMarketRegistry.sol; src/perp/PerpEngineAdmin.sol; src/margin/MarginEngineAdmin.sol; src/OptionProductRegistry.sol
+blocker before production launch: yes
+recommended implementation order: 3
+
+Item 4
+title: Underlying-level emergency controls and finer settlement-freeze granularity remain absent
+severity: important
+why it matters: the code now supports per-market perp close-only and per-series options close-only, but not the “per-underlying emergency controls” and “finer close-only / settlement-freeze paths” still listed in `PROTOCOL_GAP_REVIEW.md`. That leaves incident response coarser than desired: operators can isolate a perp market or an option series, but not cleanly isolate all affected instruments under one underlying or separate more specific settlement freeze scopes.
+affected files/modules: src/OptionProductRegistry.sol; src/margin/MarginEngineAdmin.sol; src/perp/PerpMarketRegistry.sol; src/perp/PerpEngineAdmin.sol
+blocker before production launch: no
+recommended implementation order: 4
+
+2. deployment/bootstrap gaps
+
+Item 1
+title: No deployment scripts exist for the canonical stack
+severity: critical
+why it matters: `DEPLOYMENT_PLAN.md` is still marked “DEPLOYMENT PROCEDURE DRAFT” and explicitly says it should later include exact script names and transaction order. The `script/` directory is empty. That means there is no deterministic deployment implementation for local, testnet, staging, or mainnet, even though deployment order and dependency wiring are critical to protocol safety.
+affected files/modules: script/; DEPLOYMENT_PLAN.md
+blocker before production launch: yes
+recommended implementation order: 1
+
+Item 2
+title: No bootstrap transaction manifest or post-deploy sanity automation exists
+severity: critical
+why it matters: the deployment plan requires step-by-step wiring, parameter configuration, and post-deploy sanity checks, but the repository contains no executable bootstrap manifest, no scripted post-deploy assertions, and no environment-specific address handoff. Without that, production bootstrap would be manual and error-prone around owners, guardians, feeds, engines, fees, and insurance wiring.
+affected files/modules: DEPLOYMENT_PLAN.md; script/; modules named in sections 4, 8, and 9 of DEPLOYMENT_PLAN.md
+blocker before production launch: yes
+recommended implementation order: 2
+
+Item 3
+title: Address registry sections are still blank
+severity: important
+why it matters: sections 13.1 to 13.3 of `DEPLOYMENT_PLAN.md` are placeholders with no populated local, testnet, or mainnet addresses. This means there is no canonical environment registry for offchain tooling, governance handoff, monitoring, or operational validation.
+affected files/modules: DEPLOYMENT_PLAN.md
+blocker before production launch: yes
+recommended implementation order: 3
+
+3. configuration/environment gaps
+
+Item 1
+title: No environment-specific parameter manifests or oracle/feed maps are checked in
+severity: critical
+why it matters: there are no `.env` files, no chain-specific JSON/YAML manifests, and no checked-in feed map describing production token addresses, oracle sources, timelock settings, guardians, insurance settings, or market bootstrap values. The docs describe what must exist, but the repository does not carry environment-ready configuration artifacts.
+affected files/modules: repository root; foundry.toml; DEPLOYMENT_PLAN.md; PARAMETERS.md
+blocker before production launch: yes
+recommended implementation order: 1
+
+Item 2
+title: No production role matrix is captured in-repo
+severity: critical
+why it matters: production safety depends on explicit assignment of owner, guardian, proposers, executors, settlement operator, matching executors, and insurance backstop callers. The code supports those roles, but the repository contains no environment-specific role matrix tying those addresses to modules. That creates high risk of accidental EOA retention, missing guardian wiring, or incomplete governance migration.
+affected files/modules: src/gouvernance/ProtocolTimelock.sol; src/gouvernance/RiskGovernor.sol; src/core/InsuranceFund.sol; src/matching/MatchingEngine.sol; src/matching/PerpMatchingEngine.sol; DEPLOYMENT_PLAN.md
+blocker before production launch: yes
+recommended implementation order: 2
+
+Item 3
+title: Insurance funding and depletion thresholds are not defined per environment
+severity: important
+why it matters: the code and docs require insurance coverage to be explicit and bounded, but there is no checked-in minimum funding policy, no initial treasury target, and no low-balance threshold definitions for each environment. That leaves liquidation/backstop readiness underspecified even if the insurance contract itself is deployed.
+affected files/modules: src/core/InsuranceFund.sol; DEPLOYMENT_PLAN.md; PARAMETERS.md
+blocker before production launch: yes
+recommended implementation order: 3
+
+4. observability/monitoring gaps
+
+Item 1
+title: There is no offchain indexing or monitoring stack in the repository
+severity: critical
+why it matters: the contracts now emit richer events, but the repo contains no indexer, no subgraph, no event consumer, no monitoring service, and no dashboards. Without an offchain consumer, the new observability surfaces do not become operational visibility for production support, incident response, or treasury monitoring.
+affected files/modules: repository-wide non-code gap; no monitoring/indexing files present; event-heavy modules include src/perp/PerpEngineTypes.sol, src/margin/MarginEngineTypes.sol, src/core/InsuranceFund.sol, src/oracle/OracleRouter.sol
+blocker before production launch: yes
+recommended implementation order: 1
+
+Item 2
+title: No alert definitions exist for critical protocol conditions
+severity: critical
+why it matters: there are no checked-in alert thresholds or monitor definitions for stale oracle reads, paused modules, insurance depletion, residual bad debt creation, settlement shortfalls, or unauthorized role drift. Those are exactly the conditions that need immediate operator attention in a live derivatives system.
+affected files/modules: src/oracle/OracleRouter.sol; src/perp/PerpEngineTypes.sol; src/margin/MarginEngineTypes.sol; src/core/InsuranceFund.sol; deployment/ops layer absent from repo
+blocker before production launch: yes
+recommended implementation order: 2
+
+Item 3
+title: No production-facing health/status registry exists for deployed modules
+severity: useful
+why it matters: even after deployment, the repo provides no canonical machine-readable source for “what is live and what should be watched” across contracts, feeds, tokens, markets, and control roles. That makes it harder to wire monitors, run audits against deployed state, and keep dashboards in sync after upgrades or parameter changes.
+affected files/modules: DEPLOYMENT_PLAN.md; repository root configuration artifacts absent
+blocker before production launch: no
+recommended implementation order: 3
+
+5. operational/runbook gaps
+
+Item 1
+title: No incident runbooks are checked in for pause, oracle failure, settlement, or bad-debt handling
+severity: critical
+why it matters: the code contains many emergency controls and explicit bad-debt/shortfall paths, but the repo has no operator runbook telling humans exactly when and how to pause, who acts, what checks to run, how to top up insurance, how to finalize option settlement, or how to process residual bad debt repayment. `README.md` is still the generic Foundry template and does not serve operational needs.
+affected files/modules: README.md; DEPLOYMENT_PLAN.md; ops documentation layer absent from repo
+blocker before production launch: yes
+recommended implementation order: 1
+
+Item 2
+title: No launch-day or rollback procedure is documented beyond high-level checklist text
+severity: important
+why it matters: `DEPLOYMENT_PLAN.md` names rollback and pause planning as pre-launch requirements, but the repository does not contain a concrete launch-day sequence, abort criteria, communications owner, or rollback decision tree. That leaves a real operational gap between code readiness and safe market activation.
+affected files/modules: DEPLOYMENT_PLAN.md; repository docs/
+blocker before production launch: yes
+recommended implementation order: 2
+
+Item 3
+title: No operator onboarding material exists for ongoing parameter/governance changes
+severity: useful
+why it matters: governance and admin modules are present, but there is no concise operational guide showing how parameter changes should be proposed, queued, reviewed, executed, and verified across timelock/governor/module ownership. That increases the chance of procedural mistakes after launch even if the contracts are correct.
+affected files/modules: src/gouvernance/ProtocolTimelock.sol; src/gouvernance/RiskGovernor.sol; DEPLOYMENT_PLAN.md
+blocker before production launch: no
+recommended implementation order: 3
+
+6. audit/rehearsal gaps
+
+Item 1
+title: No audit artifacts or issue-closure record are present
+severity: critical
+why it matters: `DEPLOYMENT_PLAN.md` requires the code to be audited before mainnet, but the repository contains no audit report, no findings log, and no closure matrix linking code changes to resolved issues. For production readiness, that is a missing acceptance artifact rather than a nice-to-have.
+affected files/modules: repository-wide non-code gap
+blocker before production launch: yes
+recommended implementation order: 1
+
+Item 2
+title: No staging deployment rehearsal artifacts exist
+severity: critical
+why it matters: the docs call for exact production-like topology and emergency rehearsal in staging, but the repo contains no rehearsal script outputs, no filled address registry, and no recorded evidence of a full staged deploy-bootstrap-activate drill. Unit/scenario tests are useful, but they do not replace a real staged deployment rehearsal.
+affected files/modules: DEPLOYMENT_PLAN.md; script/; absent staging artifacts
+blocker before production launch: yes
+recommended implementation order: 2
+
+Item 3
+title: Invariant and scenario coverage is still incomplete relative to the stated test matrix
+severity: important
+why it matters: the repository has unit, fuzz, invariant, and scenario tests, but current invariant coverage is limited to engine position indexing, liquidation, and vault accounting. There is no invariant suite for oracle safety, governance/timelock correctness, or broader unified risk consistency, even though `TEST_MATRIX.md` explicitly expects those categories to exist. That leaves production-significant behaviors less stressed than the repository’s own standard requires.
+affected files/modules: TEST_MATRIX.md; test/invariant/engine/PositionIndexInvariants.t.sol; test/invariant/liquidation/LiquidationInvariants.t.sol; test/invariant/vault/CollateralVaultInvariants.t.sol; missing oracle/governance/risk invariant suites
+blocker before production launch: yes
+recommended implementation order: 3

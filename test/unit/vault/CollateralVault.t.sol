@@ -109,6 +109,35 @@ contract CollateralVaultTest is Test {
         assertEq(vault.balances(ALICE, address(usdc)), 0);
     }
 
+    function testCollateralRestrictionModeBlocksInactiveCollateralIngressButAllowsWithdraw() external {
+        _deposit(ALICE, DEPOSIT_AMOUNT);
+
+        vm.startPrank(OWNER);
+        vault.setCollateralRestrictionMode(true);
+        vault.setLaunchActiveCollateral(address(usdc), false);
+        vm.stopPrank();
+
+        vm.startPrank(ALICE);
+        usdc.approve(address(vault), DEPOSIT_AMOUNT);
+        vm.expectRevert(
+            abi.encodeWithSelector(CollateralVaultStorage.CollateralNotLaunchActive.selector, address(usdc))
+        );
+        vault.deposit(address(usdc), DEPOSIT_AMOUNT);
+        vm.stopPrank();
+
+        vm.prank(ENGINE);
+        vm.expectRevert(
+            abi.encodeWithSelector(CollateralVaultStorage.CollateralNotLaunchActive.selector, address(usdc))
+        );
+        vault.depositFor(ALICE, address(usdc), DEPOSIT_AMOUNT);
+
+        vm.prank(ALICE);
+        vault.withdraw(address(usdc), WITHDRAW_AMOUNT);
+
+        assertEq(vault.balances(ALICE, address(usdc)), DEPOSIT_AMOUNT - WITHDRAW_AMOUNT);
+        assertEq(vault.totalDepositedByToken(address(usdc)), DEPOSIT_AMOUNT - WITHDRAW_AMOUNT);
+    }
+
     function testWithdrawSuccess() external {
         _deposit(ALICE, DEPOSIT_AMOUNT);
 

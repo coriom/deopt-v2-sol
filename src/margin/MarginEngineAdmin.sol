@@ -201,6 +201,7 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
 
         seriesEmergencyCloseOnly[optionId] = closeOnly;
         emit SeriesEmergencyCloseOnlySet(optionId, oldCloseOnly, closeOnly);
+        emit SeriesEmergencyCloseOnlyUpdated(msg.sender, optionId, oldCloseOnly, closeOnly);
     }
 
     /*//////////////////////////////////////////////////////////////

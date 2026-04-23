@@ -42,6 +42,7 @@ abstract contract CollateralVaultStorage is ReentrancyGuard {
     error InternalTransfersPaused();
     error YieldOperationsPaused();
     error DepositCapExceeded(address token, uint256 aggregateDeposited, uint256 cap);
+    error CollateralNotLaunchActive(address token);
 
     error StrategyNotSet();
     error NotEnoughIdle();
@@ -83,6 +84,8 @@ abstract contract CollateralVaultStorage is ReentrancyGuard {
     event Withdrawn(address indexed user, address indexed token, uint256 amount);
     event InternalTransfer(address indexed token, address indexed from, address indexed to, uint256 amount);
     event TokenDepositCapSet(address indexed token, uint256 oldCap, uint256 newCap);
+    event CollateralRestrictionModeSet(bool enabled);
+    event LaunchActiveCollateralSet(address indexed token, bool isActive);
 
     event Paused(address indexed account);
     event Unpaused(address indexed account);
@@ -140,6 +143,12 @@ abstract contract CollateralVaultStorage is ReentrancyGuard {
 
     /// @notice Optional launch-safety cap for aggregate deposits per token, in token-native units. 0 = disabled.
     mapping(address => uint256) public tokenDepositCap;
+
+    /// @notice Launch restriction mode for narrowing the active collateral universe independently from token support.
+    bool public collateralRestrictionMode;
+
+    /// @notice Per-token launch activation flag used only when `collateralRestrictionMode` is enabled.
+    mapping(address => bool) public launchActiveCollateral;
 
     mapping(address => CollateralTokenConfig) internal _collateralConfigs;
     address[] public collateralTokens;
@@ -291,6 +300,10 @@ abstract contract CollateralVaultStorage is ReentrancyGuard {
             isCollateralTokenListed[token] = true;
             collateralTokens.push(token);
         }
+    }
+
+    function _requireLaunchActiveCollateral(address token) internal view {
+        if (collateralRestrictionMode && !launchActiveCollateral[token]) revert CollateralNotLaunchActive(token);
     }
 
     function _setRiskModule(address newRiskModule) internal {

@@ -715,6 +715,19 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         uint256 totalPenaltyPaidBase = resolution.seizedPenaltyBase + resolution.insurancePaidBase;
 
         emit Liquidation(liquidator, trader, marketId, sizeClosed1e8, liqPrice1e8, totalPenaltyPaidBase);
+        emit LiquidationResolved(
+            liquidator,
+            trader,
+            marketId,
+            sizeClosed1e8,
+            liqPrice1e8,
+            closedNotionalBase,
+            penaltyBase,
+            resolution.seizedPenaltyBase,
+            resolution.insurancePaidBase,
+            resolution.residualShortfallBase,
+            totalPenaltyPaidBase
+        );
         emit LiquidationPenaltyPaid(liquidator, trader, marketId, totalPenaltyPaidBase);
     }
 }

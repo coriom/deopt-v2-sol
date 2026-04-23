@@ -357,6 +357,42 @@ contract RiskModuleTest is Test {
         assertTrue(wbtcContribution.valuationAvailable);
     }
 
+    function testRestrictionModeExcludesInactiveCollateralFromRiskButKeepsFullWithdrawability() external {
+        vm.startPrank(OWNER);
+        vault.setCollateralRestrictionMode(true);
+        vault.setLaunchActiveCollateral(address(usdc), true);
+        vm.stopPrank();
+
+        IRiskModule.CollateralState memory state = riskModule.computeCollateralState(FRANK);
+        IRiskModule.AccountRisk memory risk = riskModule.computeAccountRisk(FRANK);
+        IRiskModule.DetailedAccountRisk memory detail = riskModule.computeDetailedAccountRisk(FRANK);
+        uint256 wethWithdrawable = riskModule.getWithdrawableAmount(FRANK, address(weth));
+
+        assertEq(state.grossCollateralValueBase, 100 * USDC_UNIT);
+        assertEq(state.adjustedCollateralValueBase, 100 * USDC_UNIT);
+        assertEq(risk.equityBase, SafeCast.toInt256(100 * USDC_UNIT));
+        assertEq(wethWithdrawable, WETH_UNIT);
+
+        IRiskModule.CollateralContribution memory usdcContribution =
+            _findCollateralContribution(detail, address(usdc));
+        IRiskModule.CollateralContribution memory wethContribution =
+            _findCollateralContribution(detail, address(weth));
+        IRiskModule.CollateralContribution memory wbtcContribution =
+            _findCollateralContribution(detail, address(wbtc));
+
+        assertEq(usdcContribution.grossCollateralValueBase, 100 * USDC_UNIT);
+        assertEq(usdcContribution.adjustedCollateralValueBase, 100 * USDC_UNIT);
+        assertTrue(usdcContribution.valuationAvailable);
+
+        assertEq(wethContribution.grossCollateralValueBase, 0);
+        assertEq(wethContribution.adjustedCollateralValueBase, 0);
+        assertFalse(wethContribution.valuationAvailable);
+
+        assertEq(wbtcContribution.grossCollateralValueBase, 0);
+        assertEq(wbtcContribution.adjustedCollateralValueBase, 0);
+        assertFalse(wbtcContribution.valuationAvailable);
+    }
+
     function testFreeCollateralComputationIsConsistentWithEquityMinusInitialMargin() external view {
         IRiskModule.AccountRisk memory risk = riskModule.computeAccountRisk(ALICE);
         int256 freeCollateralBase = riskModule.computeFreeCollateral(ALICE);

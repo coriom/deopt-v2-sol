@@ -334,6 +334,23 @@ contract PerpEngineTest is Test {
         );
     }
 
+    function testResidualBadDebtLifecycleEmitsUpdateEvents() external {
+        vm.expectEmit(true, true, false, true);
+        emit PerpEngineTypes.ResidualBadDebtUpdated(OWNER, ALICE, 0, BAD_DEBT_BASE, 0, BAD_DEBT_BASE);
+        vm.prank(OWNER);
+        engine.recordResidualBadDebt(ALICE, BAD_DEBT_BASE);
+
+        vm.expectEmit(true, true, false, true);
+        emit PerpEngineTypes.ResidualBadDebtUpdated(OWNER, ALICE, BAD_DEBT_BASE, 20 * BASE_UNIT, BAD_DEBT_BASE, 20 * BASE_UNIT);
+        vm.prank(OWNER);
+        engine.reduceResidualBadDebt(ALICE, 30 * BASE_UNIT);
+
+        vm.expectEmit(true, true, false, true);
+        emit PerpEngineTypes.ResidualBadDebtUpdated(OWNER, ALICE, 20 * BASE_UNIT, 0, 20 * BASE_UNIT, 0);
+        vm.prank(OWNER);
+        engine.clearResidualBadDebt(ALICE);
+    }
+
     function testReduceOnlyTransitionIsStillAllowedWhenResidualBadDebtExists() external {
         _trade(ALICE, BOB, 2 * ONE, ENTRY_PRICE_1);
 
@@ -352,6 +369,10 @@ contract PerpEngineTest is Test {
     function testMarketEmergencyCloseOnlyBlocksExposureIncreaseWithoutGlobalTradingPause() external {
         _trade(ALICE, BOB, ONE, ENTRY_PRICE_1);
 
+        vm.expectEmit(true, false, false, true);
+        emit PerpEngineTypes.MarketEmergencyCloseOnlySet(marketId, false, true);
+        vm.expectEmit(true, true, false, true);
+        emit PerpEngineTypes.MarketEmergencyCloseOnlyUpdated(OWNER, marketId, false, true);
         vm.prank(OWNER);
         engine.setMarketEmergencyCloseOnly(marketId, true);
 

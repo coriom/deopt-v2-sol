@@ -218,6 +218,21 @@ abstract contract CollateralVaultAdmin is CollateralVaultStorage {
         emit TokenDepositCapSet(token, oldCap, cap);
     }
 
+    /// @notice Enables or disables launch-time collateral-universe restriction mode.
+    /// @dev When enabled, only tokens flagged through `setLaunchActiveCollateral` may enter through deposit ingress.
+    function setCollateralRestrictionMode(bool enabled) external onlyOwner {
+        collateralRestrictionMode = enabled;
+        emit CollateralRestrictionModeSet(enabled);
+    }
+
+    /// @notice Marks a supported token as launch-active or launch-inactive collateral.
+    /// @dev Independent from support/configuration; only enforced when restriction mode is enabled.
+    function setLaunchActiveCollateral(address token, bool isActive) external onlyOwner {
+        _requireSupportedToken(token);
+        launchActiveCollateral[token] = isActive;
+        emit LaunchActiveCollateralSet(token, isActive);
+    }
+
     /*//////////////////////////////////////////////////////////////
                         ADMIN / YIELD STRATEGY
     //////////////////////////////////////////////////////////////*/
