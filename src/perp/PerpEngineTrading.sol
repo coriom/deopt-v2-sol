@@ -517,7 +517,12 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         (newSeller, sellerRealized) =
             _computeNextPosition(oldSeller, sellerDelta, uint256(t.executionPrice1e8), currentFunding);
 
-        if (m.isCloseOnly || marketEmergencyCloseOnly[t.marketId]) {
+        uint8 activationState = marketActivationState[t.marketId];
+        if (activationState == MARKET_ACTIVATION_INACTIVE) {
+            bool okBuyer = _isCloseToZeroTransition(oldBuyer.size1e8, newBuyer.size1e8);
+            bool okSeller = _isCloseToZeroTransition(oldSeller.size1e8, newSeller.size1e8);
+            if (!okBuyer || !okSeller) revert ReduceOnlyViolation();
+        } else if (m.isCloseOnly || marketEmergencyCloseOnly[t.marketId] || activationState == MARKET_ACTIVATION_RESTRICTED) {
             bool okBuyer = _isReduceOnlyTransition(oldBuyer.size1e8, newBuyer.size1e8);
             bool okSeller = _isReduceOnlyTransition(oldSeller.size1e8, newSeller.size1e8);
             if (!okBuyer || !okSeller) revert ReduceOnlyViolation();

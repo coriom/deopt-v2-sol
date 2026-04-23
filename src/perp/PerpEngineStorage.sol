@@ -54,6 +54,10 @@ interface IPerpMarketRegistryView {
 
 /// @notice Storage root for the perpetual engine.
 abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
+    uint8 internal constant MARKET_ACTIVATION_ACTIVE = 0;
+    uint8 internal constant MARKET_ACTIVATION_RESTRICTED = 1;
+    uint8 internal constant MARKET_ACTIVATION_INACTIVE = 2;
+
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
     //////////////////////////////////////////////////////////////*/
@@ -91,6 +95,10 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
 
     /// @notice Engine-level emergency close-only flag per market.
     mapping(uint256 => bool) public marketEmergencyCloseOnly;
+
+    /// @notice Launch-stage activation state per market.
+    /// @dev 0 = active, 1 = restricted reduce-only, 2 = inactive close-to-zero only.
+    mapping(uint256 => uint8) public marketActivationState;
 
     /// @notice List of markets with non-zero position for trader.
     mapping(address => uint256[]) internal traderMarkets;

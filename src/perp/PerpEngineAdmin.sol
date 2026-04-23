@@ -176,6 +176,17 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
         _setEmergencyModes(false, false, false, false);
     }
 
+    function setMarketActivationState(uint256 marketId, uint8 state) external onlyOwner {
+        _requireMarketExists(marketId);
+        if (state > MARKET_ACTIVATION_INACTIVE) revert InvalidActivationState();
+
+        uint8 oldState = marketActivationState[marketId];
+        if (oldState == state) return;
+
+        marketActivationState[marketId] = state;
+        emit MarketActivationStateSet(marketId, oldState, state);
+    }
+
     function setMarketEmergencyCloseOnly(uint256 marketId, bool closeOnly) external onlyGuardianOrOwner {
         _requireMarketExists(marketId);
 

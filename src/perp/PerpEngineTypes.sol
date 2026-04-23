@@ -226,6 +226,7 @@ abstract contract PerpEngineTypes {
     error SizeZero();
     error SizeTooLarge();
     error LaunchOpenInterestCapExceeded(uint256 marketId, uint256 openInterest1e8, uint256 cap1e8);
+    error InvalidActivationState();
 
     error PausedError();
     error TradingPaused();
@@ -289,6 +290,7 @@ abstract contract PerpEngineTypes {
     event FeesManagerSet(address indexed newFeesManager);
     event FeeRecipientSet(address indexed oldRecipient, address indexed newRecipient);
     event LaunchOpenInterestCapSet(uint256 indexed marketId, uint256 oldCap1e8, uint256 newCap1e8);
+    event MarketActivationStateSet(uint256 indexed marketId, uint8 oldState, uint8 newState);
     event MarketEmergencyCloseOnlySet(uint256 indexed marketId, bool oldCloseOnly, bool newCloseOnly);
     event MarketEmergencyCloseOnlyUpdated(
         address indexed caller,
@@ -607,6 +609,18 @@ abstract contract PerpEngineTypes {
         if (oldPos != newPos) return false;
 
         return _absInt256(newSize1e8) <= _absInt256(oldSize1e8);
+    }
+
+    /// @notice Checks whether a transition is strict close-to-zero only.
+    /// @dev
+    ///  - old == 0 => new must remain 0
+    ///  - old != 0 => new must become exactly 0
+    function _isCloseToZeroTransition(int256 oldSize1e8, int256 newSize1e8) internal pure returns (bool) {
+        _ensureInt256Allowed(oldSize1e8);
+        _ensureInt256Allowed(newSize1e8);
+
+        if (oldSize1e8 == 0) return newSize1e8 == 0;
+        return newSize1e8 == 0;
     }
 
     /*//////////////////////////////////////////////////////////////

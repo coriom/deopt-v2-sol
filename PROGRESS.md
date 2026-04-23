@@ -66,6 +66,29 @@ Maintain a clear, auditable history of system evolution.
 ---
 
 - Date: 2026-04-23
+- Scope: Progressive perp-market activation controls
+- Files Modified:
+  - src/perp/PerpEngineTypes.sol
+  - src/perp/PerpEngineStorage.sol
+  - src/perp/PerpEngineAdmin.sol
+  - src/perp/PerpEngineTrading.sol
+  - test/unit/perp/PerpEngine.t.sol
+  - PROGRESS.md
+- Summary:
+  Added a minimal engine-level staged activation framework for perp markets through `marketActivationState`: `active` (default), `restricted` (reduce-only), and `inactive` (strict close-to-zero only). The new owner-only `setMarketActivationState` control gates new risk-increasing and new opening flows inside `applyTrade` without changing pricing, funding, fee routing, liquidation execution, or unit scaling. Liquidations remain independently available, and matched risk-reducing exits remain possible under staged restrictions.
+- Invariants Impacted:
+  - Default market behavior remains unchanged because unset activation state resolves to `active`
+  - `restricted` only permits two-sided reduce-only transitions, while `inactive` only permits two-sided close-to-zero transitions; both block new exposure creation conservatively
+  - Liquidation logic, protocol economics, pricing, funding logic, fee logic, and unit scaling are unchanged
+- Validation:
+  - `forge build`: OK (compiler succeeded; existing repository warning/lint output remains, including pre-existing warnings outside this block)
+  - `forge test --match-path test/unit/perp/PerpEngine.t.sol`: OK (15 passed)
+  - `forge test --match-path test/unit/margin/MarginEngine.t.sol`: OK (19 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-23
 - Scope: Launch-time collateral universe restriction mode
 - Files Modified:
   - src/collateral/CollateralVaultStorage.sol

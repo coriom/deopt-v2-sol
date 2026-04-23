@@ -401,6 +401,47 @@ contract PerpEngineTest is Test {
         assertEq(engine.positions(BOB, marketId).size1e8, -int256(uint256(ONE)));
     }
 
+    function testRestrictedActivationBlocksExposureIncreaseButStillAllowsReduction() external {
+        _trade(ALICE, BOB, 2 * ONE, ENTRY_PRICE_1);
+
+        vm.expectEmit(true, false, false, true);
+        emit PerpEngineTypes.MarketActivationStateSet(marketId, 0, 1);
+        vm.prank(OWNER);
+        engine.setMarketActivationState(marketId, 1);
+
+        vm.expectRevert(abi.encodeWithSelector(PerpEngineTypes.ReduceOnlyViolation.selector));
+        _trade(ALICE, CAROL, ONE, ENTRY_PRICE_1);
+
+        _trade(BOB, ALICE, ONE, ENTRY_PRICE_1);
+
+        assertEq(engine.marketActivationState(marketId), 1);
+        assertEq(engine.positions(ALICE, marketId).size1e8, int256(uint256(ONE)));
+        assertEq(engine.positions(BOB, marketId).size1e8, -int256(uint256(ONE)));
+        assertEq(engine.positions(CAROL, marketId).size1e8, 0);
+    }
+
+    function testInactiveActivationAllowsOnlyStrictCloseToZero() external {
+        _trade(ALICE, BOB, ONE, ENTRY_PRICE_1);
+
+        vm.expectEmit(true, false, false, true);
+        emit PerpEngineTypes.MarketActivationStateSet(marketId, 0, 2);
+        vm.prank(OWNER);
+        engine.setMarketActivationState(marketId, 2);
+
+        vm.expectRevert(abi.encodeWithSelector(PerpEngineTypes.ReduceOnlyViolation.selector));
+        _trade(BOB, ALICE, ONE / 2, ENTRY_PRICE_1);
+
+        vm.expectRevert(abi.encodeWithSelector(PerpEngineTypes.ReduceOnlyViolation.selector));
+        _trade(ALICE, CAROL, ONE, ENTRY_PRICE_1);
+
+        _trade(BOB, ALICE, ONE, ENTRY_PRICE_1);
+
+        assertEq(engine.marketActivationState(marketId), 2);
+        assertEq(engine.positions(ALICE, marketId).size1e8, 0);
+        assertEq(engine.positions(BOB, marketId).size1e8, 0);
+        assertEq(engine.positions(CAROL, marketId).size1e8, 0);
+    }
+
     function _trade(address buyer, address seller, uint128 sizeDelta1e8, uint256 executionPrice1e8) internal {
         vm.prank(MATCHING_ENGINE);
         engine.applyTrade(
