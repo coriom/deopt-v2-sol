@@ -66,6 +66,42 @@ Maintain a clear, auditable history of system evolution.
 ---
 
 - Date: 2026-04-24
+- Scope: Core protocol configuration deployment script
+- Files Modified:
+  - script/ConfigureCore.s.sol
+  - PROGRESS.md
+- Summary:
+  Added `ConfigureCore.s.sol`, a configuration-only Foundry script for a deployed and wired DeOpt v2 core stack. The script reads module addresses and parameter values from environment variables, configures vault-supported collateral tokens, collateral factors, deposit caps, launch-active flags, collateral restriction mode, `RiskModule` base parameters and collateral weights, `PerpRiskModule` base collateral/max-delay settings, base settlement asset allowlists for option/perp registries, `MarginEngine` risk-parameter cache, `FeesManager` default fee settings, and `InsuranceFund` token/operator allowlists. Product creation, market creation, oracle feed configuration, and ownership transfer remain intentionally deferred.
+- Invariants Impacted:
+  - No protocol contracts or protocol logic changed
+  - No pricing, funding, liquidation, fee formula, collateral accounting, risk formula, governance, or unit-scaling behavior changed
+  - Script enforces explicit base collateral support, 100% base collateral factor/weight, bounded decimal exponents, and matching array lengths for multi-collateral env inputs
+- Validation:
+  - `forge build`: OK (compiler succeeded; existing repository warning/lint output remains)
+  - Local Anvil simulation: OK after sequentially deploying the core stack with `DeployCore.s.sol`, wiring it with `WireCore.s.sol`, and simulating `ConfigureCore.s.sol` against deployed contract bytecode
+- Status: DONE
+
+---
+
+- Date: 2026-04-24
+- Scope: Core dependency wiring deployment script
+- Files Modified:
+  - script/WireCore.s.sol
+  - PROGRESS.md
+- Summary:
+  Added `WireCore.s.sol`, a wiring-only Foundry script for an already deployed DeOpt v2 core stack. The script reads core addresses from environment variables, validates that each address has deployed code, wires vault risk and engine authorization, connects unified `RiskModule` to options/perps risk surfaces, sets engine oracle/risk/fees/insurance/seizer dependencies, authorizes insurance backstop callers, points matching engines to execution engines, and assigns guardians on supported operational modules. Market creation, option series creation, oracle feeds, collateral configuration, risk parameters, fee parameters, and activation remain intentionally deferred.
+- Invariants Impacted:
+  - No protocol contracts or protocol logic changed
+  - No pricing, funding, liquidation, fee, risk, collateral accounting, governance, or unit-scaling behavior changed
+  - Wiring script fails early on missing/no-code env addresses to avoid silently accepting malformed deployment inputs
+- Validation:
+  - `forge build`: OK (compiler succeeded; existing repository warning/lint output remains)
+  - Local Anvil simulation: OK after deploying the core stack locally with `DeployCore.s.sol`; `WireCore.s.sol` simulation completed successfully against deployed contract bytecode
+- Status: DONE
+
+---
+
+- Date: 2026-04-24
 - Scope: First Foundry core deployment script
 - Files Modified:
   - script/DeployCore.s.sol
