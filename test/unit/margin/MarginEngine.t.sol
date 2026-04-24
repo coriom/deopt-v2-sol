@@ -360,6 +360,49 @@ contract MarginEngineTest is Test {
         assertEq(engine.seriesShortOpenInterest(callOptionId), 1);
     }
 
+    function testRestrictedSeriesActivationBlocksOpeningButAllowsReduction() external {
+        _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
+
+        vm.expectEmit(true, false, false, true);
+        emit MarginEngineTypes.SeriesActivationStateSet(callOptionId, 0, 1);
+        vm.prank(OWNER);
+        engine.setSeriesActivationState(callOptionId, 1);
+
+        vm.expectRevert(MarginEngineTypes.SeriesNotActiveCloseOnly.selector);
+        _trade(ALICE, CAROL, callOptionId, 1, PREMIUM_PER_CONTRACT);
+
+        _trade(BOB, ALICE, callOptionId, 1, PREMIUM_PER_CONTRACT);
+
+        assertEq(engine.seriesActivationState(callOptionId), 1);
+        assertEq(engine.positions(ALICE, callOptionId).quantity, 1);
+        assertEq(engine.positions(BOB, callOptionId).quantity, -1);
+        assertEq(engine.positions(CAROL, callOptionId).quantity, 0);
+        assertEq(engine.seriesShortOpenInterest(callOptionId), 1);
+    }
+
+    function testInactiveSeriesActivationAllowsOnlyStrictCloseToZero() external {
+        _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
+
+        vm.expectEmit(true, false, false, true);
+        emit MarginEngineTypes.SeriesActivationStateSet(callOptionId, 0, 2);
+        vm.prank(OWNER);
+        engine.setSeriesActivationState(callOptionId, 2);
+
+        vm.expectRevert(MarginEngineTypes.SeriesNotActiveCloseOnly.selector);
+        _trade(BOB, ALICE, callOptionId, 1, PREMIUM_PER_CONTRACT);
+
+        vm.expectRevert(MarginEngineTypes.SeriesNotActiveCloseOnly.selector);
+        _trade(ALICE, CAROL, callOptionId, 1, PREMIUM_PER_CONTRACT);
+
+        _trade(BOB, ALICE, callOptionId, 2, PREMIUM_PER_CONTRACT);
+
+        assertEq(engine.seriesActivationState(callOptionId), 2);
+        assertEq(engine.positions(ALICE, callOptionId).quantity, 0);
+        assertEq(engine.positions(BOB, callOptionId).quantity, 0);
+        assertEq(engine.positions(CAROL, callOptionId).quantity, 0);
+        assertEq(engine.seriesShortOpenInterest(callOptionId), 0);
+    }
+
     function testPremiumTransferBetweenBuyerAndSellerIsCorrect() external {
         uint256 aliceBefore = vault.balances(ALICE, address(usdc));
         uint256 bobBefore = vault.balances(BOB, address(usdc));

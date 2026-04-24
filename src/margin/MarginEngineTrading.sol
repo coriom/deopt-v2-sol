@@ -129,8 +129,16 @@ abstract contract MarginEngineTrading is MarginEngineAdmin {
         _ensureQtyAllowed(newBuyerQty);
         _ensureQtyAllowed(newSellerQty);
 
-        // Close-only when series inactive or emergency-isolated (no opening / no flip / no abs increase)
-        if (!series.isActive || seriesEmergencyCloseOnly[t.optionId]) {
+        uint8 activationState = seriesActivationState[t.optionId];
+        if (activationState == SERIES_ACTIVATION_INACTIVE) {
+            bool okBuyer = _isCloseToZeroTransition(oldBuyerQty, newBuyerQty);
+            bool okSeller = _isCloseToZeroTransition(oldSellerQty, newSellerQty);
+            if (!okBuyer || !okSeller) revert SeriesNotActiveCloseOnly();
+        } else if (
+            !series.isActive || seriesEmergencyCloseOnly[t.optionId]
+                || activationState == SERIES_ACTIVATION_RESTRICTED
+        ) {
+            // Close-only: no opening, no flip, no absolute exposure increase.
             bool okBuyer = _isCloseOnlyTransition(oldBuyerQty, newBuyerQty);
             bool okSeller = _isCloseOnlyTransition(oldSellerQty, newSellerQty);
             if (!okBuyer || !okSeller) revert SeriesNotActiveCloseOnly();

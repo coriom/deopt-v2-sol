@@ -39,6 +39,9 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
 
     uint256 internal constant _ME_PRICE_1E8 = 1e8;
     uint256 internal constant _ME_MAX_POW10_EXP = 77;
+    uint8 internal constant SERIES_ACTIVATION_ACTIVE = 0;
+    uint8 internal constant SERIES_ACTIVATION_RESTRICTED = 1;
+    uint8 internal constant SERIES_ACTIVATION_INACTIVE = 2;
 
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
@@ -76,6 +79,10 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
 
     /// @notice Engine-level emergency close-only flag per option series.
     mapping(uint256 => bool) public seriesEmergencyCloseOnly;
+
+    /// @notice Launch-stage activation state per option series.
+    /// @dev 0 = active, 1 = restricted reduce-only, 2 = inactive close-to-zero only.
+    mapping(uint256 => uint8) public seriesActivationState;
 
     /// -----------------------------------------------------------------------
     /// OPEN SERIES TRACKING

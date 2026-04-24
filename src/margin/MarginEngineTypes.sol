@@ -121,6 +121,7 @@ abstract contract MarginEngineTypes {
     // Series / trading
     error SeriesExpired();
     error SeriesNotActiveCloseOnly();
+    error InvalidActivationState();
     error SeriesShortOpenInterestCapExceeded(uint256 optionId, uint256 openInterest, uint256 cap);
 
     // Contract size hardening (enforce fixed 1e8)
@@ -194,6 +195,7 @@ abstract contract MarginEngineTypes {
     /// @notice Launch-safety cap for aggregate short contracts on one option series.
     /// @dev `cap == 0` disables the cap. Values are raw option-contract counts.
     event SeriesShortOpenInterestCapSet(uint256 indexed optionId, uint256 oldCap, uint256 newCap);
+    event SeriesActivationStateSet(uint256 indexed optionId, uint8 oldState, uint8 newState);
     event SeriesEmergencyCloseOnlySet(uint256 indexed optionId, bool oldCloseOnly, bool newCloseOnly);
     event SeriesEmergencyCloseOnlyUpdated(
         address indexed caller,
@@ -477,6 +479,14 @@ abstract contract MarginEngineTypes {
         if (oldPos != newPos) return false;
 
         return _absInt128(newQty) <= _absInt128(oldQty);
+    }
+
+    /// @dev Inactive launch state: only exact close-to-zero transitions are allowed.
+    function _isCloseToZeroTransition(int128 oldQty, int128 newQty) internal pure returns (bool) {
+        _ensureQtyAllowed(oldQty);
+        _ensureQtyAllowed(newQty);
+
+        return oldQty != 0 && newQty == 0;
     }
 
     /// @notice Converts account risk into a margin ratio.

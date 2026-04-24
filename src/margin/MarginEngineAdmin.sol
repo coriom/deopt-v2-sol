@@ -204,6 +204,17 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
         emit SeriesEmergencyCloseOnlyUpdated(msg.sender, optionId, oldCloseOnly, closeOnly);
     }
 
+    function setSeriesActivationState(uint256 optionId, uint8 state) external onlyOwner {
+        _optionRegistry.getSeries(optionId);
+        if (state > SERIES_ACTIVATION_INACTIVE) revert InvalidActivationState();
+
+        uint8 oldState = seriesActivationState[optionId];
+        if (oldState == state) return;
+
+        seriesActivationState[optionId] = state;
+        emit SeriesActivationStateSet(optionId, oldState, state);
+    }
+
     /*//////////////////////////////////////////////////////////////
                                 CONFIG
     //////////////////////////////////////////////////////////////*/

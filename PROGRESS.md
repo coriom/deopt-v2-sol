@@ -65,6 +65,29 @@ Maintain a clear, auditable history of system evolution.
 
 ---
 
+- Date: 2026-04-24
+- Scope: Options launch-stage activation controls
+- Files Modified:
+  - src/margin/MarginEngineTypes.sol
+  - src/margin/MarginEngineStorage.sol
+  - src/margin/MarginEngineAdmin.sol
+  - src/margin/MarginEngineTrading.sol
+  - test/unit/margin/MarginEngine.t.sol
+  - PROGRESS.md
+- Summary:
+  Added minimal engine-level staged activation controls for option series through `seriesActivationState`: `active` (default), `restricted` (reduce-only), and `inactive` (strict close-to-zero only). The new owner-only `setSeriesActivationState` control gates matched option trades without changing premium transfer logic, fees, margin math, liquidation execution, settlement execution, pricing, or unit scaling. Existing perp-market staged activation remains unchanged.
+- Invariants Impacted:
+  - Default series behavior remains unchanged because unset activation state resolves to `active`
+  - `restricted` only permits two-sided reduce-only transitions, while `inactive` only permits two-sided close-to-zero transitions; both block new exposure creation conservatively
+  - Liquidations, settlements, withdrawals, protocol economics, pricing, fee logic, margin math, liquidation math, and unit scaling are unchanged
+- Validation:
+  - `forge build`: OK (compiler succeeded; existing repository warning/lint output remains)
+  - `forge test --match-path test/unit/perp/PerpEngine.t.sol`: OK (15 passed)
+  - `forge test --match-path test/unit/margin/MarginEngine.t.sol`: OK (21 passed)
+- Status: DONE
+
+---
+
 - Date: 2026-04-23
 - Scope: Progressive perp-market activation controls
 - Files Modified:
