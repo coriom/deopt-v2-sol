@@ -66,6 +66,25 @@ Maintain a clear, auditable history of system evolution.
 ---
 
 - Date: 2026-04-24
+- Scope: First Foundry core deployment script
+- Files Modified:
+  - script/DeployCore.s.sol
+  - PROGRESS.md
+- Summary:
+  Added `DeployCore.s.sol`, a deployment-only Foundry script for the core DeOpt v2 stack. The script uses `DEPLOYER_PRIVATE_KEY`, `INITIAL_OWNER`, `BASE_COLLATERAL_TOKEN`, optional `INITIAL_GUARDIAN`, optional `TIMELOCK_MIN_DELAY`, and optional fee default environment variables, deploys constructor-required dependencies in safe order, and prints all deployed addresses. Full post-deploy wiring, parameter bootstrap, market creation, and activation remain intentionally deferred.
+- Invariants Impacted:
+  - No protocol contracts or protocol logic changed
+  - No pricing, funding, liquidation, fee, risk, collateral accounting, governance, or unit-scaling behavior changed
+  - Deployment script keeps activation/configuration out of this block and only satisfies constructor dependency requirements
+- Validation:
+  - `forge build`: OK (compiler succeeded; existing repository warning/lint output remains)
+  - `forge script script/DeployCore.s.sol --dry-run`: not supported by the installed Foundry CLI
+  - `DEPLOYER_PRIVATE_KEY=... BASE_COLLATERAL_TOKEN=... forge script script/DeployCore.s.sol`: OK (local simulation, no broadcast/fork)
+- Status: DONE
+
+---
+
+- Date: 2026-04-24
 - Scope: Final v1 shared-risk production blockers
 - Files Modified:
   - src/risk/RiskModuleAdmin.sol
