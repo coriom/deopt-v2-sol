@@ -66,6 +66,34 @@ Maintain a clear, auditable history of system evolution.
 ---
 
 - Date: 2026-04-24
+- Scope: Final v1 shared-risk production blockers
+- Files Modified:
+  - src/risk/RiskModuleAdmin.sol
+  - src/collateral/CollateralVaultStorage.sol
+  - src/collateral/CollateralVaultYield.sol
+  - src/perp/PerpEngineTrading.sol
+  - src/perp/PerpRiskModule.sol
+  - test/unit/risk/RiskModule.t.sol
+  - test/unit/perp/PerpEngine.t.sol
+  - PROGRESS.md
+- Summary:
+  Added owner-only `RiskModule` wiring setters for the perp risk module and perp engine so the unified risk surface can aggregate options and perps. Perp trade entry now fails closed when the perp risk module is unset. `PerpRiskModule` now respects vault launch collateral restriction flags consistently with `RiskModule`, and configured vault risk checks now fail closed if the risk module call itself fails. Added focused tests for shared vault withdrawals under combined option/perp exposure, unset perp risk-module trade rejection, and options/perps collateral restriction consistency.
+- Invariants Impacted:
+  - Vault withdrawal limits now use the configured unified risk module result and no longer become permissive if a configured risk module call fails
+  - Perp trading cannot bypass post-trade margin enforcement through an unset risk module
+  - Launch-inactive collateral remains withdrawable but does not improve either options or perps collateral equity
+  - No pricing, funding, liquidation, fee, unit-scaling, or economic formula changed
+- Validation:
+  - `forge build`: OK (compiler succeeded; existing repository warning/lint output remains)
+  - `forge test --match-path test/unit/risk/RiskModule.t.sol`: OK (10 passed)
+  - `forge test --match-path test/unit/perp/PerpEngine.t.sol`: OK (16 passed)
+  - `forge test --match-path test/unit/vault/CollateralVault.t.sol`: OK (11 passed)
+  - `forge test`: OK (155 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-24
 - Scope: Options launch-stage activation controls
 - Files Modified:
   - src/margin/MarginEngineTypes.sol

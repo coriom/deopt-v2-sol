@@ -115,7 +115,7 @@ abstract contract CollateralVaultYield is CollateralVaultAdmin {
         (bool success, bytes memory data) =
             rm.staticcall(abi.encodeWithSignature("getWithdrawableAmount(address,address)", user, token));
 
-        if (!success || data.length < 32) return (type(uint256).max, false);
+        if (!success || data.length < 32) revert WithdrawRiskCheckFailed();
 
         maxAllowed = abi.decode(data, (uint256));
         return (maxAllowed, true);

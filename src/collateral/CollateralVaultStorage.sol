@@ -41,6 +41,7 @@ abstract contract CollateralVaultStorage is ReentrancyGuard {
     error WithdrawalsPaused();
     error InternalTransfersPaused();
     error YieldOperationsPaused();
+    error WithdrawRiskCheckFailed();
     error DepositCapExceeded(address token, uint256 aggregateDeposited, uint256 cap);
     error CollateralNotLaunchActive(address token);
 

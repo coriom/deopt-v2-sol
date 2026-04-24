@@ -334,6 +334,24 @@ contract PerpEngineTest is Test {
         );
     }
 
+    function testApplyTradeRevertsWhenRiskModuleUnset() external {
+        vm.prank(OWNER);
+        engine.clearRiskModule();
+
+        vm.prank(MATCHING_ENGINE);
+        vm.expectRevert(abi.encodeWithSelector(PerpEngineTypes.RiskModuleNotSet.selector));
+        engine.applyTrade(
+            IPerpEngineTrade.Trade({
+                buyer: ALICE,
+                seller: BOB,
+                marketId: marketId,
+                sizeDelta1e8: ONE,
+                executionPrice1e8: uint128(ENTRY_PRICE_1),
+                buyerIsMaker: false
+            })
+        );
+    }
+
     function testResidualBadDebtLifecycleEmitsUpdateEvents() external {
         vm.expectEmit(true, true, false, true);
         emit PerpEngineTypes.ResidualBadDebtUpdated(OWNER, ALICE, 0, BAD_DEBT_BASE, 0, BAD_DEBT_BASE);

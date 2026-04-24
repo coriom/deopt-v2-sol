@@ -159,6 +159,24 @@ abstract contract RiskModuleAdmin is RiskModuleMargin {
         emit OracleSet(old, _oracle);
     }
 
+    function setPerpRiskModule(address _perpRiskModule) external onlyOwner {
+        if (_perpRiskModule == address(0)) revert ZeroAddress();
+
+        address old = address(perpRiskModule);
+        perpRiskModule = IPerpRiskModule(_perpRiskModule);
+
+        emit PerpRiskModuleSet(old, _perpRiskModule);
+    }
+
+    function setPerpEngine(address _perpEngine) external onlyOwner {
+        if (_perpEngine == address(0)) revert ZeroAddress();
+
+        address old = perpEngine;
+        perpEngine = _perpEngine;
+
+        emit PerpEngineSet(old, _perpEngine);
+    }
+
     function setMaxOracleDelay(uint256 _maxOracleDelay) external onlyOwner {
         if (_maxOracleDelay > 3600) revert InvalidParams();
 

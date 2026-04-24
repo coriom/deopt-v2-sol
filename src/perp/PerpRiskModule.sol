@@ -16,6 +16,8 @@ interface ICollateralVaultPerpRiskView {
     function getCollateralConfig(address token) external view returns (CollateralTokenConfig memory cfg);
     function balances(address user, address token) external view returns (uint256);
     function balanceWithYield(address user, address token) external view returns (uint256);
+    function collateralRestrictionMode() external view returns (bool);
+    function launchActiveCollateral(address token) external view returns (bool);
 }
 
 interface IPerpEngineRiskView {
@@ -414,6 +416,11 @@ contract PerpRiskModule {
         }
     }
 
+    function _isLaunchActiveCollateral(address token) internal view returns (bool) {
+        if (!collateralVault.collateralRestrictionMode()) return true;
+        return collateralVault.launchActiveCollateral(token);
+    }
+
     function _isOracleDataFresh(uint256 updatedAt) internal view returns (bool) {
         uint256 d = maxOracleDelay;
         if (d == 0) return true;
@@ -591,6 +598,7 @@ contract PerpRiskModule {
 
             ICollateralVaultPerpRiskView.CollateralTokenConfig memory cfg = _vaultCfg(token);
             if (!cfg.isSupported || cfg.collateralFactorBps == 0) continue;
+            if (!_isLaunchActiveCollateral(token)) continue;
             if (cfg.decimals == 0) revert TokenDecimalsMissing(token);
             if (uint256(cfg.decimals) > MAX_POW10_EXP) revert TokenDecimalsOverflow(token);
 
@@ -702,6 +710,7 @@ contract PerpRiskModule {
 
         ICollateralVaultPerpRiskView.CollateralTokenConfig memory cfg = _vaultCfg(token);
         if (!cfg.isSupported || cfg.collateralFactorBps == 0) return 0;
+        if (!_isLaunchActiveCollateral(token)) return 0;
         if (cfg.decimals == 0) revert TokenDecimalsMissing(token);
         if (uint256(cfg.decimals) > MAX_POW10_EXP) revert TokenDecimalsOverflow(token);
 
@@ -790,6 +799,7 @@ contract PerpRiskModule {
         ICollateralVaultPerpRiskView.CollateralTokenConfig memory cfg = _vaultCfg(token);
         if (!cfg.isSupported) revert TokenNotSupported(token);
 
+        if (!_isLaunchActiveCollateral(token)) return avail;
         if (cfg.collateralFactorBps == 0) return avail;
         if (cfg.decimals == 0) revert TokenDecimalsMissing(token);
         if (uint256(cfg.decimals) > MAX_POW10_EXP) revert TokenDecimalsOverflow(token);

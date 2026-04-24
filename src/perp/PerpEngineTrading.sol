@@ -489,6 +489,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         if (t.buyer == address(0) || t.seller == address(0) || t.buyer == t.seller) revert InvalidTrade();
         if (t.sizeDelta1e8 == 0) revert SizeZero();
         if (t.executionPrice1e8 == 0) revert PriceZero();
+        _requireRiskModuleSet();
 
         PerpMarketRegistry.Market memory m = _requireMarketExists(t.marketId);
         if (!m.isActive) revert MarketInactive();

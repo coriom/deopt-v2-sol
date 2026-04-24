@@ -7,11 +7,13 @@ import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import {ProtocolConstants} from "../../../src/ProtocolConstants.sol";
 import {CollateralVault} from "../../../src/collateral/CollateralVault.sol";
+import {CollateralVaultStorage} from "../../../src/collateral/CollateralVaultStorage.sol";
 import {RiskModule} from "../../../src/risk/RiskModule.sol";
 import {IRiskModule} from "../../../src/risk/IRiskModule.sol";
 import {IOracle} from "../../../src/oracle/IOracle.sol";
 import {IMarginEngineState} from "../../../src/risk/IMarginEngineState.sol";
 import {OptionProductRegistry} from "../../../src/OptionProductRegistry.sol";
+import {PerpRiskModule} from "../../../src/perp/PerpRiskModule.sol";
 
 contract MockERC20Decimals is ERC20 {
     uint8 private immutable _decimals;
@@ -155,6 +157,97 @@ contract MockMarginEngineState is IMarginEngineState {
 
     function isOpenSeries(address trader, uint256 optionId) external view returns (bool) {
         return _positions[trader][optionId].quantity != 0;
+    }
+}
+
+contract MockUnifiedPerpRiskModule {
+    struct AccountRisk {
+        int256 equityBase;
+        uint256 maintenanceMarginBase;
+        uint256 initialMarginBase;
+    }
+
+    mapping(address => AccountRisk) internal risks;
+
+    function setAccountRisk(address trader, int256 equityBase, uint256 maintenanceMarginBase, uint256 initialMarginBase)
+        external
+    {
+        risks[trader] = AccountRisk({
+            equityBase: equityBase,
+            maintenanceMarginBase: maintenanceMarginBase,
+            initialMarginBase: initialMarginBase
+        });
+    }
+
+    function computeAccountRisk(address trader) external view returns (AccountRisk memory risk) {
+        return risks[trader];
+    }
+}
+
+contract MockUnifiedPerpEngineViews {
+    mapping(address => int256) internal pnl;
+    mapping(address => int256) internal funding;
+    mapping(address => uint256) internal debt;
+
+    function setAccountState(address trader, int256 pnlBase, int256 fundingBase, uint256 debtBase) external {
+        pnl[trader] = pnlBase;
+        funding[trader] = fundingBase;
+        debt[trader] = debtBase;
+    }
+
+    function getAccountNetPnl(address trader) external view returns (int256) {
+        return pnl[trader];
+    }
+
+    function getAccountFunding(address trader) external view returns (int256) {
+        return funding[trader];
+    }
+
+    function getResidualBadDebt(address trader) external view returns (uint256) {
+        return debt[trader];
+    }
+}
+
+contract MockPerpRiskEngineView {
+    struct PerpRiskConfig {
+        uint32 initialMarginBps;
+        uint32 maintenanceMarginBps;
+        uint32 liquidationPenaltyBps;
+        uint128 maxPositionSize1e8;
+        uint128 maxOpenInterest1e8;
+        bool reduceOnlyDuringCloseOnly;
+    }
+
+    function getTraderMarketsLength(address) external pure returns (uint256) {
+        return 0;
+    }
+
+    function getTraderMarketsSlice(address, uint256, uint256) external pure returns (uint256[] memory) {
+        return new uint256[](0);
+    }
+
+    function getPositionSize(address, uint256) external pure returns (int256) {
+        return 0;
+    }
+
+    function getMarkPrice(uint256) external pure returns (uint256) {
+        return 0;
+    }
+
+    function getRiskConfig(uint256) external pure returns (PerpRiskConfig memory cfg) {
+        return cfg;
+    }
+
+    function getUnrealizedPnl(address, uint256) external pure returns (int256) {
+        return 0;
+    }
+
+    function getPositionFundingAccrued(address, uint256) external pure returns (int256) {
+        return 0;
+    }
+
+    function getResidualBadDebt(address) external pure returns (uint256) {
+        return 0;
     }
 }
 
@@ -391,6 +484,52 @@ contract RiskModuleTest is Test {
         assertEq(wbtcContribution.grossCollateralValueBase, 0);
         assertEq(wbtcContribution.adjustedCollateralValueBase, 0);
         assertFalse(wbtcContribution.valuationAvailable);
+    }
+
+    function testVaultWithdrawalUsesUnifiedOptionsAndPerpRisk() external {
+        MockUnifiedPerpRiskModule perpRisk = new MockUnifiedPerpRiskModule();
+        MockUnifiedPerpEngineViews perpEngine = new MockUnifiedPerpEngineViews();
+
+        perpRisk.setAccountRisk(ALICE, 0, 50 * USDC_UNIT, 80 * USDC_UNIT);
+
+        vm.startPrank(OWNER);
+        riskModule.setPerpRiskModule(address(perpRisk));
+        riskModule.setPerpEngine(address(perpEngine));
+        vault.setRiskModule(address(riskModule));
+        vm.stopPrank();
+
+        IRiskModule.AccountRisk memory risk = riskModule.computeAccountRisk(ALICE);
+        IRiskModule.DetailedAccountRisk memory detail = riskModule.computeDetailedAccountRisk(ALICE);
+
+        assertEq(risk.equityBase, SafeCast.toInt256(150 * USDC_UNIT));
+        assertEq(risk.maintenanceMarginBase, 150 * USDC_UNIT);
+        assertEq(risk.initialMarginBase, 200 * USDC_UNIT);
+        assertEq(detail.productContributions[0].initialMarginBase, CALL_IM_BASE);
+        assertEq(detail.productContributions[1].initialMarginBase, 80 * USDC_UNIT);
+        assertEq(riskModule.getWithdrawableAmount(ALICE, address(usdc)), 0);
+
+        vm.prank(ALICE);
+        vm.expectRevert(CollateralVaultStorage.WithdrawExceedsRiskLimits.selector);
+        vault.withdraw(address(usdc), 1);
+    }
+
+    function testRestrictionModeAppliesConsistentlyAcrossOptionsAndPerpsRisk() external {
+        MockPerpRiskEngineView perpEngine = new MockPerpRiskEngineView();
+        PerpRiskModule perpRisk =
+            new PerpRiskModule(OWNER, address(vault), address(perpEngine), address(oracle), address(usdc));
+
+        vm.startPrank(OWNER);
+        vault.setCollateralRestrictionMode(true);
+        vault.setLaunchActiveCollateral(address(usdc), true);
+        vm.stopPrank();
+
+        IRiskModule.AccountRisk memory optionsRisk = riskModule.computeAccountRisk(FRANK);
+        PerpRiskModule.AccountRisk memory perpsRisk = perpRisk.computeAccountRisk(FRANK);
+
+        assertEq(optionsRisk.equityBase, SafeCast.toInt256(100 * USDC_UNIT));
+        assertEq(perpsRisk.equityBase, SafeCast.toInt256(100 * USDC_UNIT));
+        assertEq(riskModule.getWithdrawableAmount(FRANK, address(weth)), WETH_UNIT);
+        assertEq(perpRisk.getWithdrawableAmount(FRANK, address(weth)), WETH_UNIT);
     }
 
     function testFreeCollateralComputationIsConsistentWithEquityMinusInitialMargin() external view {
