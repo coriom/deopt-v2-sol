@@ -66,6 +66,78 @@ Maintain a clear, auditable history of system evolution.
 ---
 
 - Date: 2026-04-24
+- Scope: Accept ownership and final governance handoff verification script
+- Files Modified:
+  - script/AcceptOwnerships.s.sol
+  - PROGRESS.md
+- Summary:
+  Added `AcceptOwnerships.s.sol`, a seventh-pass Foundry handoff finalization script for a deployed DeOpt v2 stack after `TransferOwnerships.s.sol`. The script requires explicit env vars for all core protocol module addresses, final expected governance owners, deployer address, and the private key or timelock execution context needed to finalize pending transfers. It verifies module bytecode, accepts two-step ownership transfers from the correct final-owner context, supports already-transferred one-step price sources, supports timelock-executed `acceptOwnership` when queued and ready, verifies final owners and cleared pending owners across core modules, `ProtocolTimelock`, `RiskGovernor`, and optional price sources, and prints a final ownership verification summary.
+- Invariants Impacted:
+  - No protocol contracts or protocol logic changed
+  - No pricing, funding, liquidation, fee formula, collateral accounting, risk formula, market, series, or economic parameter behavior changed
+  - Handoff finalization fails loudly on missing env vars, missing bytecode, zero/deployer final owners, owner private-key mismatches, pending-owner mismatches, unsupported contract-owner execution paths, unavailable or unready timelock execution, uncleared pending owners, and any critical module remaining owned by the deployer unexpectedly
+- Validation:
+  - `forge build`: OK (compiler succeeded; existing repository warning/lint output remains)
+  - Local Anvil rehearsal: OK after broadcasting `DeployCore.s.sol`, deploying local ETH/BTC `MockPriceSource` contracts, broadcasting `TransferOwnerships.s.sol`, then broadcasting `AcceptOwnerships.s.sol`; final summary showed all core modules, `ProtocolTimelock`, and `RiskGovernor` owned by the configured final governance owner with pending owners cleared, and both mock price sources verified
+- Status: DONE
+
+---
+
+- Date: 2026-04-24
+- Scope: Ownership and governance handoff deployment script
+- Files Modified:
+  - script/TransferOwnerships.s.sol
+  - PROGRESS.md
+- Summary:
+  Added `TransferOwnerships.s.sol`, a sixth-pass Foundry handoff script for a deployed, wired, configured, market-configured, and verified DeOpt v2 stack. The script requires explicit env vars for all core protocol module addresses plus governance owner targets, timelock proposer/executor role arrays, guardian address, optional matching-engine executor arrays, and optional price-source owner transfer arrays. It configures guardians on modules that expose guardian controls, configures timelock proposer/executor roles with `RISK_GOVERNOR` required as an allowed proposer, configures optional matching/perp matching executors, transfers optional ownable price sources through their available ownership path, and begins two-step ownership transfers for the core modules, protocol timelock, and risk governor without accepting ownership.
+- Invariants Impacted:
+  - No protocol contracts or protocol logic changed
+  - No pricing, funding, liquidation, fee formula, collateral accounting, risk formula, market, series, or economic parameter behavior changed
+  - Handoff script fails loudly on missing env vars, missing bytecode, zero governance targets, role array length mismatches, missing allowed timelock executor, missing `RISK_GOVERNOR` proposer authorization, unavailable price-source ownership paths, non-deployer current owners, unexpected pending owners, and post-transfer owner/pending-owner mismatches
+- Validation:
+  - `forge build`: OK (compiler succeeded; existing repository warning/lint output remains)
+  - Local Anvil rehearsal: OK after broadcasting `DeployCore.s.sol`, `WireCore.s.sol`, `ConfigureCore.s.sol`, deploying local ETH/BTC `MockPriceSource` contracts, broadcasting `ConfigureMarkets.s.sol`, running `VerifyDeployment.s.sol` read-only, then broadcasting `TransferOwnerships.s.sol`; final summary showed protocol modules pending to the timelock, timelock/risk-governor pending to the configured governance owner, and two mock price sources transferred
+- Status: DONE
+
+---
+
+- Date: 2026-04-24
+- Scope: Post-deployment verification script
+- Files Modified:
+  - script/VerifyDeployment.s.sol
+  - PROGRESS.md
+- Summary:
+  Added `VerifyDeployment.s.sol`, a read-only fifth-pass verification script for a deployed, wired, core-configured, and market-configured DeOpt v2 stack. The script requires explicit env vars for all core addresses and expected parameters, verifies bytecode for core contracts, checks dependency wiring across the vault, risk modules, engines, collateral seizer, insurance fund, and matching engines, validates collateral support/decimals/factors/weights/caps/launch flags/restriction mode, verifies ETH/USDC and BTC/USDC oracle feed configuration and nonzero normalized prices when feeds are active, verifies ETH/BTC option underlying/risk profiles, configured option series activation states and short-OI caps, verifies ETH-PERP and BTC-PERP registry/engine risk, liquidation, funding, launch cap, and activation config, and checks basic fee and insurance token/backstop configuration. The script does not broadcast, transfer ownership, or modify protocol state.
+- Invariants Impacted:
+  - No protocol contracts or protocol logic changed
+  - No pricing, funding, liquidation, fee formula, collateral accounting, risk formula, governance, or unit-scaling behavior changed
+  - Verification fails loudly on missing env vars, missing bytecode, dependency drift, feed/config drift, zero active oracle prices, missing series/markets, and mismatched launch caps or activation states
+- Validation:
+  - `forge build`: OK (compiler succeeded; existing repository warning/lint output remains)
+  - Local Anvil rehearsal: OK after deploying core with `DeployCore.s.sol`, wiring with `WireCore.s.sol`, configuring core with `ConfigureCore.s.sol`, deploying local ETH/BTC `MockPriceSource` contracts, broadcasting `ConfigureMarkets.s.sol`, then running `VerifyDeployment.s.sol` read-only against the configured deployment
+- Status: DONE
+
+---
+
+- Date: 2026-04-24
+- Scope: Market, underlying, and oracle deployment configuration script
+- Files Modified:
+  - script/ConfigureMarkets.s.sol
+  - PROGRESS.md
+- Summary:
+  Added `ConfigureMarkets.s.sol`, a fourth-pass Foundry configuration script for a deployed and core-configured DeOpt v2 stack. The script reads all required module addresses, ETH/BTC underlying addresses, feed source addresses, oracle feed parameters, option underlying/risk parameters, option series parameters, perp risk/funding/liquidation parameters, launch caps, and activation states from environment variables. It configures ETH/USDC and BTC/USDC oracle feeds, configures ETH and BTC option underlying risk profiles, creates or updates configured ETH/BTC option series with registry active flags, engine activation states, and short-open-interest caps, creates or updates ETH-PERP and BTC-PERP markets with registry status, risk, liquidation, funding, engine launch OI caps, and engine activation state. Ownership transfer remains intentionally deferred.
+- Invariants Impacted:
+  - No protocol contracts or protocol logic changed
+  - No pricing, funding, liquidation, fee formula, collateral accounting, risk formula, governance, or unit-scaling behavior changed
+  - Script fails early on missing env vars, zero/no-code contract addresses where code is required, invalid activation states, duplicate/invalid underlyings, and mismatched option-series array lengths
+- Validation:
+  - `forge build`: OK (compiler succeeded; existing repository warning/lint output remains; no new `ConfigureMarkets.s.sol` unsafe-cast warnings after SafeCast cleanup)
+  - Local Anvil simulation: OK after deploying core, wiring core, configuring core, deploying local `MockPriceSource` instances for ETH/USDC and BTC/USDC, then broadcasting `ConfigureMarkets.s.sol`; a second broadcast rerun also succeeded against the same deployment and reused existing option series/perp markets
+- Status: DONE
+
+---
+
+- Date: 2026-04-24
 - Scope: Core protocol configuration deployment script
 - Files Modified:
   - script/ConfigureCore.s.sol
