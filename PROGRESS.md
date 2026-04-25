@@ -66,6 +66,24 @@ Maintain a clear, auditable history of system evolution.
 ---
 
 - Date: 2026-04-25
+- Scope: Production README rewrite
+- Files Modified:
+  - README.md
+  - PROGRESS.md
+- Summary:
+  Rewrote `README.md` into a production-grade repository entrypoint for DeOpt v2, covering protocol purpose, options/perps/unified collateral/risk/liquidation/insurance/governance scope, architecture overview, deployment scripts, docs map, developer quickstart, build/test commands, targeted tests, deployment flow, production readiness references, launch gates, and security notice.
+- Invariants Impacted:
+  - No protocol contracts or protocol logic changed
+  - No deployment scripts changed
+  - No pricing, funding, liquidation, fee formula, collateral accounting, risk formula, governance execution semantics, market, series, or economic parameter behavior changed
+- Validation:
+  - Markdown-only documentation change
+  - `forge build`: OK (compilation skipped because no Solidity files changed; existing repository warning/lint output remains)
+- Status: DONE
+
+---
+
+- Date: 2026-04-25
 - Scope: Final go/no-go launch checklist
 - Files Modified:
   - FINAL_LAUNCH_CHECKLIST.md
