@@ -66,6 +66,24 @@ Maintain a clear, auditable history of system evolution.
 ---
 
 - Date: 2026-04-25
+- Scope: Future architecture roadmap finalization
+- Files Modified:
+  - FUTURE_ARCHITECTURE_ROADMAP.md
+  - PROGRESS.md
+- Summary:
+  Added `FUTURE_ARCHITECTURE_ROADMAP.md`, a future architecture roadmap that separates v1 launch scope, post-v1 expansion scope, and explicitly deferred architecture work. The roadmap covers generalized product registry, product/risk adapters, futures, structured products, contextual fees, fee routing, collateral policy registry, collateral risk domains, portfolio margin, generalized execution, governance module adapters, observability/indexing standards, and a five-phase future architecture plan.
+- Invariants Impacted:
+  - No protocol contracts or protocol logic changed
+  - No deployment scripts changed
+  - No pricing, funding, liquidation, fee formula, collateral accounting, risk formula, governance execution semantics, market, series, or economic parameter behavior changed
+- Validation:
+  - Markdown-only documentation change
+  - `forge build`: OK (compilation skipped because no Solidity files changed; existing repository warning/lint output remains)
+- Status: DONE
+
+---
+
+- Date: 2026-04-25
 - Scope: Production README rewrite
 - Files Modified:
   - README.md
