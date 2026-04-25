@@ -66,6 +66,25 @@ Maintain a clear, auditable history of system evolution.
 ---
 
 - Date: 2026-04-25
+- Scope: Local Anvil deployment environment example
+- Files Modified:
+  - .env.local.example
+  - .gitignore
+  - PROGRESS.md
+- Summary:
+  Added `.env.local.example`, a grouped local Anvil rehearsal environment covering common chain values, deploy core, wire core, configure core, configure markets, verify deployment, transfer ownerships, and accept ownerships variables required by the deployment scripts. The example uses Anvil-only private keys and role addresses, clearly marks DeployCore-output placeholders, mock token/feed placeholders, and local-only values. Added a narrow `.gitignore` exception so the example file is trackable while real `.env` files remain ignored.
+- Invariants Impacted:
+  - No protocol contracts or protocol logic changed
+  - No deployment scripts changed
+  - No pricing, funding, liquidation, fee formula, collateral accounting, risk formula, governance execution semantics, market, series, or economic parameter behavior changed
+- Validation:
+  - dotenv syntax: OK (`bash -n .env.local.example` and shell source check passed)
+  - `forge build`: OK (compilation skipped because no Solidity files changed; existing repository warning/lint output remains)
+- Status: DONE
+
+---
+
+- Date: 2026-04-25
 - Scope: Future architecture roadmap finalization
 - Files Modified:
   - FUTURE_ARCHITECTURE_ROADMAP.md
