@@ -1,0 +1,369 @@
+{
+  "schemaVersion": 1,
+  "manifestType": "deployment-environment-template",
+  "environment": "mainnet",
+  "chainMetadata": {
+    "name": "Base Mainnet",
+    "chainId": 8453,
+    "rpcUrl": "TODO_REPLACE_MAINNET_RPC_URL",
+    "explorerUrl": "https://basescan.org",
+    "deploymentBlock": null,
+    "deployer": "TODO_REPLACE_MAINNET_DEPLOYER_ADDRESS",
+    "baseNumeraire": "USDC",
+    "priceScale": "1e8",
+    "bpsScale": 10000
+  },
+  "coreContractAddresses": {
+    "oracleRouter": "TODO_REPLACE_ORACLE_ROUTER",
+    "optionProductRegistry": "TODO_REPLACE_OPTION_PRODUCT_REGISTRY",
+    "perpMarketRegistry": "TODO_REPLACE_PERP_MARKET_REGISTRY",
+    "collateralVault": "TODO_REPLACE_COLLATERAL_VAULT",
+    "insuranceFund": "TODO_REPLACE_INSURANCE_FUND",
+    "riskModule": "TODO_REPLACE_RISK_MODULE",
+    "marginEngine": "TODO_REPLACE_MARGIN_ENGINE",
+    "perpRiskModule": "TODO_REPLACE_PERP_RISK_MODULE",
+    "collateralSeizer": "TODO_REPLACE_COLLATERAL_SEIZER",
+    "perpEngine": "TODO_REPLACE_PERP_ENGINE",
+    "feesManager": "TODO_REPLACE_FEES_MANAGER",
+    "matchingEngine": "TODO_REPLACE_MATCHING_ENGINE",
+    "perpMatchingEngine": "TODO_REPLACE_PERP_MATCHING_ENGINE",
+    "protocolTimelock": "TODO_REPLACE_PROTOCOL_TIMELOCK",
+    "riskGovernor": "TODO_REPLACE_RISK_GOVERNOR"
+  },
+  "tokenAddresses": {
+    "USDC": {
+      "address": "TODO_REPLACE_MAINNET_USDC",
+      "decimals": 6,
+      "role": "baseCollateral"
+    },
+    "ETH": {
+      "address": "TODO_REPLACE_MAINNET_ETH_UNDERLYING",
+      "decimals": 18,
+      "role": "underlyingAndCollateral"
+    },
+    "BTC": {
+      "address": "TODO_REPLACE_MAINNET_BTC_UNDERLYING",
+      "decimals": 8,
+      "role": "underlyingAndCollateral"
+    }
+  },
+  "oraclePriceSourceAddresses": {
+    "router": "TODO_REPLACE_ORACLE_ROUTER",
+    "sources": [
+      {
+        "pair": "ETH/USDC",
+        "primarySource": "TODO_REPLACE_MAINNET_ETH_USDC_PRIMARY_SOURCE",
+        "secondarySource": "TODO_REPLACE_MAINNET_ETH_USDC_SECONDARY_SOURCE_OR_ZERO",
+        "sourceType": "chainlink_or_pyth",
+        "maxDelaySeconds": 60,
+        "maxDeviationBps": 1000,
+        "active": false,
+        "expectedScale": "1e8"
+      },
+      {
+        "pair": "BTC/USDC",
+        "primarySource": "TODO_REPLACE_MAINNET_BTC_USDC_PRIMARY_SOURCE",
+        "secondarySource": "TODO_REPLACE_MAINNET_BTC_USDC_SECONDARY_SOURCE_OR_ZERO",
+        "sourceType": "chainlink_or_pyth",
+        "maxDelaySeconds": 60,
+        "maxDeviationBps": 1000,
+        "active": false,
+        "expectedScale": "1e8"
+      }
+    ]
+  },
+  "governanceRoles": {
+    "initialOwner": "TODO_REPLACE_MAINNET_INITIAL_OWNER",
+    "governanceOwner": "TODO_REPLACE_MAINNET_GOVERNANCE_OWNER",
+    "finalGovernanceOwner": "TODO_REPLACE_MAINNET_FINAL_GOVERNANCE_OWNER",
+    "timelockOwner": "TODO_REPLACE_MAINNET_TIMELOCK_OWNER",
+    "riskGovernorOwner": "TODO_REPLACE_MAINNET_RISK_GOVERNOR_OWNER",
+    "timelockMinDelaySeconds": 86400,
+    "timelockProposers": [
+      "TODO_REPLACE_MAINNET_TIMELOCK_PROPOSER"
+    ],
+    "timelockExecutors": [
+      "TODO_REPLACE_MAINNET_TIMELOCK_EXECUTOR"
+    ],
+    "seriesCreators": [
+      "TODO_REPLACE_MAINNET_SERIES_CREATOR"
+    ],
+    "marketCreators": [
+      "TODO_REPLACE_MAINNET_MARKET_CREATOR"
+    ],
+    "settlementOperators": [
+      "TODO_REPLACE_MAINNET_SETTLEMENT_OPERATOR"
+    ]
+  },
+  "guardians": {
+    "governanceGuardian": "TODO_REPLACE_MAINNET_GOVERNANCE_GUARDIAN",
+    "moduleGuardians": {
+      "collateralVault": "TODO_REPLACE_MAINNET_VAULT_GUARDIAN",
+      "oracleRouter": "TODO_REPLACE_MAINNET_ORACLE_GUARDIAN",
+      "marginEngine": "TODO_REPLACE_MAINNET_MARGIN_GUARDIAN",
+      "perpEngine": "TODO_REPLACE_MAINNET_PERP_GUARDIAN",
+      "feesManager": "TODO_REPLACE_MAINNET_FEES_GUARDIAN",
+      "insuranceFund": "TODO_REPLACE_MAINNET_INSURANCE_GUARDIAN",
+      "matchingEngine": "TODO_REPLACE_MAINNET_MATCHING_GUARDIAN",
+      "perpMatchingEngine": "TODO_REPLACE_MAINNET_PERP_MATCHING_GUARDIAN"
+    }
+  },
+  "matchingExecutors": {
+    "options": [
+      {
+        "executor": "TODO_REPLACE_MAINNET_OPTIONS_MATCHING_EXECUTOR",
+        "allowed": true
+      }
+    ],
+    "perps": [
+      {
+        "executor": "TODO_REPLACE_MAINNET_PERP_MATCHING_EXECUTOR",
+        "allowed": true
+      }
+    ]
+  },
+  "collateralConfiguration": {
+    "baseCollateralSymbol": "USDC",
+    "baseCollateralAddress": "TODO_REPLACE_MAINNET_USDC",
+    "baseCollateralDecimals": 6,
+    "collateralRestrictionMode": true,
+    "tokens": [
+      {
+        "symbol": "USDC",
+        "address": "TODO_REPLACE_MAINNET_USDC",
+        "decimals": 6,
+        "vaultFactorBps": 10000,
+        "riskWeightBps": 10000,
+        "depositCap": "TODO_REPLACE_MAINNET_USDC_DEPOSIT_CAP_NATIVE",
+        "launchActive": true,
+        "riskEnabled": true,
+        "insuranceAllowed": true
+      },
+      {
+        "symbol": "ETH",
+        "address": "TODO_REPLACE_MAINNET_ETH_UNDERLYING",
+        "decimals": 18,
+        "vaultFactorBps": 8000,
+        "riskWeightBps": 8000,
+        "depositCap": "TODO_REPLACE_MAINNET_ETH_DEPOSIT_CAP_NATIVE",
+        "launchActive": false,
+        "riskEnabled": false,
+        "insuranceAllowed": false
+      },
+      {
+        "symbol": "BTC",
+        "address": "TODO_REPLACE_MAINNET_BTC_UNDERLYING",
+        "decimals": 8,
+        "vaultFactorBps": 8500,
+        "riskWeightBps": 8500,
+        "depositCap": "TODO_REPLACE_MAINNET_BTC_DEPOSIT_CAP_NATIVE",
+        "launchActive": false,
+        "riskEnabled": false,
+        "insuranceAllowed": false
+      }
+    ]
+  },
+  "riskConfiguration": {
+    "globalOptionsRisk": {
+      "baseMaintenanceMarginPerContractBase": 10,
+      "imFactorBps": 12000,
+      "oracleDownMmMultiplierBps": 20000,
+      "riskMaxOracleDelaySeconds": 600
+    },
+    "perpRisk": {
+      "baseCollateralToken": "TODO_REPLACE_MAINNET_USDC",
+      "perpRiskMaxOracleDelaySeconds": 600
+    },
+    "liquidationDefaults": {
+      "liquidationThresholdBps": 10000,
+      "liquidationCloseFactorBps": 5000,
+      "liquidationPenaltyBps": 500,
+      "liquidationPriceSpreadBps": 100,
+      "minLiquidationImprovementBps": 50,
+      "minLiquidationPriceBpsOfIntrinsic": 9000,
+      "liquidationOracleMaxDelaySeconds": 60
+    }
+  },
+  "feesConfiguration": {
+    "feeBpsCap": 100,
+    "defaultMakerNotionalFeeBps": 2,
+    "defaultMakerPremiumCapBps": 4,
+    "defaultTakerNotionalFeeBps": 5,
+    "defaultTakerPremiumCapBps": 6,
+    "feeRecipient": "TODO_REPLACE_MAINNET_FEE_RECIPIENT",
+    "merkleRoot": "TODO_REPLACE_MAINNET_FEE_TIER_MERKLE_ROOT_OR_ZERO"
+  },
+  "insuranceConfiguration": {
+    "fundAddress": "TODO_REPLACE_INSURANCE_FUND",
+    "custodyToken": "TODO_REPLACE_MAINNET_USDC",
+    "initialFundingAmountBase": "TODO_REPLACE_MAINNET_INSURANCE_FUNDING_NATIVE",
+    "allowedTokens": [
+      "TODO_REPLACE_MAINNET_USDC"
+    ],
+    "operators": [
+      "TODO_REPLACE_MAINNET_INSURANCE_OPERATOR"
+    ],
+    "backstopCallers": [
+      "TODO_REPLACE_MARGIN_ENGINE",
+      "TODO_REPLACE_PERP_ENGINE"
+    ]
+  },
+  "optionUnderlyingsAndSeries": {
+    "underlyings": [
+      {
+        "symbol": "ETH",
+        "underlying": "TODO_REPLACE_MAINNET_ETH_UNDERLYING",
+        "oracle": "TODO_REPLACE_ORACLE_ROUTER",
+        "enabled": false,
+        "spotShockUpBps": 3000,
+        "spotShockDownBps": 3000,
+        "volShockUpBps": 2000,
+        "volShockDownBps": 0,
+        "baseMaintenanceMarginPerContractBase": 10,
+        "imFactorBps": 12000,
+        "oracleDownMmMultiplierBps": 20000,
+        "series": [
+          {
+            "label": "TODO_REPLACE_MAINNET_ETH_OPTION_SERIES_LABEL",
+            "expiryUnix": "TODO_REPLACE_EXPIRY_UNIX",
+            "strike1e8": "TODO_REPLACE_STRIKE_1E8",
+            "isCall": true,
+            "isEuropean": true,
+            "settlementAsset": "TODO_REPLACE_MAINNET_USDC",
+            "registryActive": false,
+            "engineActivationState": "inactive",
+            "shortOpenInterestCap1e8": "TODO_REPLACE_SHORT_OI_CAP_1E8"
+          }
+        ]
+      },
+      {
+        "symbol": "BTC",
+        "underlying": "TODO_REPLACE_MAINNET_BTC_UNDERLYING",
+        "oracle": "TODO_REPLACE_ORACLE_ROUTER",
+        "enabled": false,
+        "spotShockUpBps": 2500,
+        "spotShockDownBps": 2500,
+        "volShockUpBps": 1500,
+        "volShockDownBps": 0,
+        "baseMaintenanceMarginPerContractBase": 8,
+        "imFactorBps": 11000,
+        "oracleDownMmMultiplierBps": 20000,
+        "series": [
+          {
+            "label": "TODO_REPLACE_MAINNET_BTC_OPTION_SERIES_LABEL",
+            "expiryUnix": "TODO_REPLACE_EXPIRY_UNIX",
+            "strike1e8": "TODO_REPLACE_STRIKE_1E8",
+            "isCall": true,
+            "isEuropean": true,
+            "settlementAsset": "TODO_REPLACE_MAINNET_USDC",
+            "registryActive": false,
+            "engineActivationState": "inactive",
+            "shortOpenInterestCap1e8": "TODO_REPLACE_SHORT_OI_CAP_1E8"
+          }
+        ]
+      }
+    ]
+  },
+  "perpMarkets": [
+    {
+      "symbol": "ETH-PERP",
+      "underlying": "TODO_REPLACE_MAINNET_ETH_UNDERLYING",
+      "settlementAsset": "TODO_REPLACE_MAINNET_USDC",
+      "oracle": "TODO_REPLACE_ORACLE_ROUTER",
+      "registryActive": false,
+      "closeOnly": true,
+      "engineActivationState": "inactive",
+      "launchOpenInterestCap1e8": "TODO_REPLACE_ETH_PERP_LAUNCH_OI_CAP_1E8",
+      "initialMarginBps": "TODO_REPLACE_ETH_PERP_INITIAL_MARGIN_BPS",
+      "maintenanceMarginBps": "TODO_REPLACE_ETH_PERP_MAINTENANCE_MARGIN_BPS",
+      "liquidationPenaltyBps": 500,
+      "maxPositionSize1e8": "TODO_REPLACE_ETH_PERP_MAX_POSITION_SIZE_1E8",
+      "maxOpenInterest1e8": "TODO_REPLACE_ETH_PERP_MAX_OPEN_INTEREST_1E8",
+      "reduceOnlyDuringCloseOnly": true,
+      "liquidationCloseFactorBps": 5000,
+      "liquidationPriceSpreadBps": 100,
+      "minLiquidationImprovementBps": 50,
+      "liquidationOracleMaxDelaySeconds": 60,
+      "fundingEnabled": false,
+      "fundingIntervalSeconds": 3600,
+      "maxFundingRateBps": 75,
+      "maxSkewFundingBps": "TODO_REPLACE_ETH_PERP_MAX_SKEW_FUNDING_BPS",
+      "oracleClampBps": "TODO_REPLACE_ETH_PERP_ORACLE_CLAMP_BPS"
+    },
+    {
+      "symbol": "BTC-PERP",
+      "underlying": "TODO_REPLACE_MAINNET_BTC_UNDERLYING",
+      "settlementAsset": "TODO_REPLACE_MAINNET_USDC",
+      "oracle": "TODO_REPLACE_ORACLE_ROUTER",
+      "registryActive": false,
+      "closeOnly": true,
+      "engineActivationState": "inactive",
+      "launchOpenInterestCap1e8": "TODO_REPLACE_BTC_PERP_LAUNCH_OI_CAP_1E8",
+      "initialMarginBps": "TODO_REPLACE_BTC_PERP_INITIAL_MARGIN_BPS",
+      "maintenanceMarginBps": "TODO_REPLACE_BTC_PERP_MAINTENANCE_MARGIN_BPS",
+      "liquidationPenaltyBps": 400,
+      "maxPositionSize1e8": "TODO_REPLACE_BTC_PERP_MAX_POSITION_SIZE_1E8",
+      "maxOpenInterest1e8": "TODO_REPLACE_BTC_PERP_MAX_OPEN_INTEREST_1E8",
+      "reduceOnlyDuringCloseOnly": true,
+      "liquidationCloseFactorBps": 5000,
+      "liquidationPriceSpreadBps": 80,
+      "minLiquidationImprovementBps": 50,
+      "liquidationOracleMaxDelaySeconds": 60,
+      "fundingEnabled": false,
+      "fundingIntervalSeconds": 3600,
+      "maxFundingRateBps": 50,
+      "maxSkewFundingBps": "TODO_REPLACE_BTC_PERP_MAX_SKEW_FUNDING_BPS",
+      "oracleClampBps": "TODO_REPLACE_BTC_PERP_ORACLE_CLAMP_BPS"
+    }
+  ],
+  "launchSafetyControls": {
+    "allTradingStartsPaused": true,
+    "collateralRestrictionModeRequired": true,
+    "initialProductsInactive": true,
+    "initialPerpCloseOnly": true,
+    "launchCapsRequired": true,
+    "oracleSanityRequiredBeforeActivation": true,
+    "postDeployVerificationRequired": true,
+    "governanceHandoffRequiredBeforeTrading": true,
+    "externalAuditRequired": true,
+    "mainnetSignoffRequired": true
+  },
+  "emergencyControls": {
+    "pauseSurfaces": [
+      "collateralVault",
+      "oracleRouter",
+      "marginEngine",
+      "perpEngine",
+      "matchingEngine",
+      "perpMatchingEngine",
+      "feesManager",
+      "insuranceFund"
+    ],
+    "closeOnlySurfaces": [
+      "optionSeries",
+      "perpMarkets"
+    ],
+    "guardianCanPause": true,
+    "ownerOrGovernanceCanUnpause": true,
+    "incidentRunbook": "TODO_REPLACE_MAINNET_INCIDENT_RUNBOOK_REFERENCE"
+  },
+  "verificationStatusPlaceholders": {
+    "forgeBuild": "PENDING",
+    "deployCore": "PENDING",
+    "wireCore": "PENDING",
+    "configureCore": "PENDING",
+    "configureMarkets": "PENDING",
+    "verifyDeployment": "PENDING",
+    "transferOwnerships": "PENDING",
+    "acceptOwnerships": "PENDING",
+    "contractVerification": "PENDING",
+    "oracleSanity": "PENDING",
+    "vaultSanity": "PENDING",
+    "riskSanity": "PENDING",
+    "engineSanity": "PENDING",
+    "insuranceSanity": "PENDING",
+    "governanceSanity": "PENDING",
+    "auditSignoff": "PENDING",
+    "activationApproved": false
+  }
+}

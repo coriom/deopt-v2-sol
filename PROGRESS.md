@@ -65,6 +65,134 @@ Maintain a clear, auditable history of system evolution.
 
 ---
 
+- Date: 2026-04-25
+- Scope: Final go/no-go launch checklist
+- Files Modified:
+  - FINAL_LAUNCH_CHECKLIST.md
+  - PROGRESS.md
+- Summary:
+  Added `FINAL_LAUNCH_CHECKLIST.md`, a final launch decision checklist covering code, tests, deployment, configuration, ownership/governance, oracle, collateral/risk, insurance, monitoring, runbook, staging rehearsal, audit, market-maker/liquidity, and incident-response readiness. Each checklist item includes a status placeholder, required evidence artifact, responsible role, and blocking severity. The document also lists explicit no-go conditions and final sign-off fields.
+- Invariants Impacted:
+  - No protocol contracts or protocol logic changed
+  - No deployment scripts changed
+  - No pricing, funding, liquidation, fee formula, collateral accounting, risk formula, governance execution semantics, market, series, or economic parameter behavior changed
+- Validation:
+  - Markdown-only documentation change
+  - `forge build`: OK (compilation skipped because no Solidity files changed; existing repository warning/lint output remains)
+- Status: DONE
+
+---
+
+- Date: 2026-04-25
+- Scope: Audit preparation pack
+- Files Modified:
+  - AUDIT_PREP.md
+  - PROGRESS.md
+- Summary:
+  Added `AUDIT_PREP.md`, an audit preparation pack covering audit scope, protocol overview, critical invariants, high-risk review areas, testing summary, reproducibility commands, deployment rehearsal sequence, known non-goals and roadmap exclusions, expected auditor deliverables, and audit package inputs.
+- Invariants Impacted:
+  - No protocol contracts or protocol logic changed
+  - No deployment scripts changed
+  - No pricing, funding, liquidation, fee formula, collateral accounting, risk formula, governance execution semantics, market, series, or economic parameter behavior changed
+- Validation:
+  - Markdown-only documentation change
+  - `forge build`: OK (compilation skipped because no Solidity files changed; existing repository warning/lint output remains)
+- Status: DONE
+
+---
+
+- Date: 2026-04-25
+- Scope: Staging rehearsal plan
+- Files Modified:
+  - STAGING_REHEARSAL.md
+  - PROGRESS.md
+- Summary:
+  Added `STAGING_REHEARSAL.md`, a production-like staging rehearsal plan covering full deploy/wire/configure/verify/handoff/activation objectives, environment preparation, deployment and configuration phases, ownership/governance handoff, market activation, functional smoke tests, incident drills, rollback drills, final evidence collection, required scenarios, pass/fail criteria, required artifacts, and mainnet readiness gating.
+- Invariants Impacted:
+  - No protocol contracts or protocol logic changed
+  - No deployment scripts changed
+  - No pricing, funding, liquidation, fee formula, collateral accounting, risk formula, governance execution semantics, market, series, or economic parameter behavior changed
+- Validation:
+  - Markdown-only documentation change
+  - `forge build`: OK (compilation skipped because no Solidity files changed; existing repository warning/lint output remains)
+- Status: DONE
+
+---
+
+- Date: 2026-04-25
+- Scope: Production operations runbook
+- Files Modified:
+  - RUNBOOK.md
+  - PROGRESS.md
+- Summary:
+  Added `RUNBOOK.md`, a production operations runbook covering launch-day checks and sequencing, ownership handoff, activation and abort criteria, incident procedures for oracle, liquidation, bad debt, insurance, settlement, matching executor, guardian, role drift, market/collateral caps, emergency pause and close-only activation, governance operations, insurance operations, rollback/abort guidance, and required incident artifacts.
+- Invariants Impacted:
+  - No protocol contracts or protocol logic changed
+  - No deployment scripts changed
+  - No pricing, funding, liquidation, fee formula, collateral accounting, risk formula, governance execution semantics, market, series, or economic parameter behavior changed
+- Validation:
+  - Markdown-only documentation change
+  - `forge build`: OK (compilation skipped because no Solidity files changed; existing repository warning/lint output remains)
+- Status: DONE
+
+---
+
+- Date: 2026-04-25
+- Scope: Production monitoring and alerting specification
+- Files Modified:
+  - MONITORING_SPEC.md
+  - PROGRESS.md
+- Summary:
+  Added `MONITORING_SPEC.md`, a production monitoring and alerting specification covering critical event categories, required dashboards, alert rules with severity/source/trigger/operator response/escalation path, offchain indexing requirements, deployment manifest ingestion, role matrix ingestion, reorg handling, alert deduplication, and pre/post-launch monitoring checklists.
+- Invariants Impacted:
+  - No protocol contracts or protocol logic changed
+  - No deployment scripts changed
+  - No pricing, funding, liquidation, fee formula, collateral accounting, risk formula, governance execution semantics, market, series, or economic parameter behavior changed
+- Validation:
+  - Markdown-only documentation change
+  - `forge build`: OK (compilation skipped because no Solidity files changed; existing repository warning/lint output remains)
+- Status: DONE
+
+---
+
+- Date: 2026-04-25
+- Scope: Production role matrix documentation
+- Files Modified:
+  - ROLE_MATRIX.md
+  - PROGRESS.md
+- Summary:
+  Added `ROLE_MATRIX.md`, a production role matrix documenting deployer, final owner/timelock, multisig, governor, proposer, executor, guardian, settlement operator, matching executor, insurance operator, insurance backstop caller, oracle/feed admin, fee recipient/treasury, and emergency responder roles. The document covers each role's purpose, controlled modules, allowed and forbidden actions, local/testnet/mainnet holder guidance, compromise risk, rotation procedure, monitoring alerts, module-to-role mapping, pre-launch checklist, post-handoff checklist, and minimum alert set.
+- Invariants Impacted:
+  - No protocol contracts or protocol logic changed
+  - No deployment scripts changed
+  - No pricing, funding, liquidation, fee formula, collateral accounting, risk formula, governance execution semantics, market, series, or economic parameter behavior changed
+- Validation:
+  - Markdown-only documentation change
+  - `forge build`: OK (compilation skipped because no Solidity files changed; existing repository warning/lint output remains)
+- Status: DONE
+
+---
+
+- Date: 2026-04-25
+- Scope: Deployment environment manifest templates
+- Files Modified:
+  - deployments/local.template.json
+  - deployments/testnet.template.json
+  - deployments/mainnet.template.json
+  - PROGRESS.md
+- Summary:
+  Added local, testnet, and mainnet deployment manifest templates with explicit placeholder sections for chain metadata, core contract addresses, token addresses, oracle price sources, governance roles, guardians, matching executors, collateral configuration, risk configuration, fees, insurance, option underlyings and series, perp markets, launch safety controls, emergency controls, and verification status. No Solidity contracts or deployment scripts were modified.
+- Invariants Impacted:
+  - No protocol contracts or protocol logic changed
+  - No pricing, funding, liquidation, fee formula, collateral accounting, risk formula, governance, market, series, or economic parameter behavior changed
+  - Templates preserve existing unit labels for `1e8`, base-native, and BPS fields and keep launch activation placeholders conservative by default
+- Validation:
+  - JSON syntax parse for all three templates: OK
+  - `forge build`: OK (compilation skipped because no Solidity files changed; existing repository warning/lint output remains)
+- Status: DONE
+
+---
+
 - Date: 2026-04-24
 - Scope: Accept ownership and final governance handoff verification script
 - Files Modified:
