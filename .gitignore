@@ -21,6 +21,7 @@ broadcast/
 # Personal & Secrets
 .env
 .env.*
+!.env.local.example
 note_for_later.txt
 
 # Docs & System
@@ -28,4 +29,3 @@ docs/
 .DS_Store
 
 thelegram.py
-
