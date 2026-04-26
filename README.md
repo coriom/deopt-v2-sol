@@ -73,6 +73,7 @@ Deployment environment templates live in:
 | `PARAMETERS.md` | Human-readable target parameter baseline |
 | `TEST_MATRIX.md` | Required unit, scenario, invariant, fuzz, and launch test scope |
 | `DEPLOYMENT_PLAN.md` | Canonical deployment order and post-deploy checks |
+| `LOCAL_REHEARSAL.md` | Exact local Anvil rehearsal flow and helper scripts |
 | `ROLE_MATRIX.md` | Production role model, permissions, rotation, monitoring |
 | `MONITORING_SPEC.md` | Critical events, dashboards, alerts, indexing requirements |
 | `RUNBOOK.md` | Launch, incident, governance, insurance, rollback procedures |
@@ -145,6 +146,7 @@ forge test --match-path test/fuzz/perp/PerpEngineFuzz.t.sol
 ## Deployment Flow
 
 Use a filled manifest derived from `deployments/` and follow the exact staged sequence. Do not activate markets during deploy, wire, or handoff.
+For local Anvil rehearsal, use `LOCAL_REHEARSAL.md`.
 
 ```bash
 forge script script/DeployCore.s.sol --rpc-url $RPC_URL --broadcast

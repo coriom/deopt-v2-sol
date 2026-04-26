@@ -65,6 +65,32 @@ Maintain a clear, auditable history of system evolution.
 
 ---
 
+- Date: 2026-04-26
+- Scope: Local Anvil rehearsal hardening
+- Files Modified:
+  - .env.local.example
+  - LOCAL_REHEARSAL.md
+  - README.md
+  - script/DeployLocalMockFeeds.s.sol
+  - script/RefreshLocalMockFeeds.s.sol
+  - PROGRESS.md
+- Summary:
+  Hardened local-only Anvil rehearsal setup by correcting the account-1 ownership private key, clarifying env loading and DeployCore/mock-feed placeholders, separating option mock source oracles from perp router oracles, zeroing disabled funding parameters, marking timelock proposer replacement, leaving optional mock feed ownership transfer unset by default, adding local mock feed deploy/refresh helper scripts, and documenting the full successful local rehearsal sequence.
+- Invariants Impacted:
+  - No protocol contracts or protocol logic changed
+  - No pricing, funding, liquidation, fee formula, collateral accounting, risk formula, governance execution semantics, market, series, or economic parameter behavior changed
+  - Local helper scripts only deploy and refresh throwaway `MockPriceSource` contracts for Anvil rehearsal
+- Validation:
+  - `bash -n .env.local.example`: OK
+  - Account-1 private key derivation: OK (`0x70997970C51812dc3A010C7d01b50e0d17dc79C8`)
+  - `forge build`: OK (compiler succeeded; existing repository warning/lint output remains)
+  - `forge script script/DeployLocalMockFeeds.s.sol`: OK (local simulation, no RPC)
+  - `forge script script/DeployLocalMockFeeds.s.sol --rpc-url http://127.0.0.1:8545 --broadcast`: OK against throwaway local Anvil
+  - `forge script script/RefreshLocalMockFeeds.s.sol --rpc-url http://127.0.0.1:8545 --broadcast`: OK against throwaway local Anvil
+- Status: DONE
+
+---
+
 - Date: 2026-04-25
 - Scope: Local Anvil deployment environment example
 - Files Modified:
