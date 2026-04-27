@@ -26,6 +26,11 @@ note_for_later.txt
 
 # Docs & System
 docs/
+!docs/
+docs/*
+!docs/architecture/
+docs/architecture/*
+!docs/architecture/CONTRACT_SIZE_REDUCTION_PLAN.md
 .DS_Store
 
 thelegram.py

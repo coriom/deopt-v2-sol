@@ -65,6 +65,25 @@ Maintain a clear, auditable history of system evolution.
 
 ---
 
+- Date: 2026-04-27
+- Scope: Contract size reduction diagnosis
+- Files Modified:
+  - .gitignore
+  - docs/architecture/CONTRACT_SIZE_REDUCTION_PLAN.md
+  - PROGRESS.md
+- Summary:
+  Added a deployment-size diagnosis identifying `MarginEngine` and `PerpEngine` as the two DeployCore contracts above the EIP-170 runtime bytecode limit, mapped them to `Unknown3` and `Unknown6` by deployment order, documented DeployCore bytecode sizes, identified view-heavy root causes, recommended a minimum v1 lens-extraction plan before any stateful modularization, and added a narrow `.gitignore` exception for the report.
+- Invariants Impacted:
+  - No protocol contracts or protocol logic changed
+  - No storage layout, pricing, margin, liquidation, settlement, funding, fee, collateral accounting, oracle, or governance semantics changed
+  - Documentation-only diagnosis
+- Validation:
+  - `forge build --sizes`: confirmed expected EIP-170 failures for `MarginEngine` and `PerpEngine`
+  - `forge build`: OK (compilation skipped because no Solidity files changed; existing repository warning/lint output remains)
+- Status: DONE
+
+---
+
 - Date: 2026-04-26
 - Scope: Local Anvil rehearsal hardening
 - Files Modified:

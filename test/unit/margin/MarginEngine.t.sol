@@ -10,6 +10,7 @@ import {IOracle} from "../../../src/oracle/IOracle.sol";
 import {IRiskModule} from "../../../src/risk/IRiskModule.sol";
 import {IMarginEngineState} from "../../../src/risk/IMarginEngineState.sol";
 import {IMarginEngineTrade} from "../../../src/matching/IMarginEngineTrade.sol";
+import {MarginEngineLens} from "../../../src/lens/MarginEngineLens.sol";
 import {MarginEngine} from "../../../src/margin/MarginEngine.sol";
 import {MarginEngineTypes} from "../../../src/margin/MarginEngineTypes.sol";
 
@@ -172,6 +173,7 @@ contract MarginEngineTest is Test {
     CollateralVault internal vault;
     OptionProductRegistry internal registry;
     MarginEngine internal engine;
+    MarginEngineLens internal lens;
     MockOracle internal oracle;
     MockMarginRiskModule internal riskModule;
 
@@ -185,6 +187,7 @@ contract MarginEngineTest is Test {
         registry = new OptionProductRegistry(OWNER);
         oracle = new MockOracle();
         engine = new MarginEngine(OWNER, address(registry), address(vault), address(oracle));
+        lens = new MarginEngineLens();
 
         usdc = new MockERC20Decimals("Mock USDC", "mUSDC", 6);
         weth = new MockERC20Decimals("Mock WETH", "mWETH", 18);
@@ -523,7 +526,8 @@ contract MarginEngineTest is Test {
         vm.prank(OWNER);
         registry.setSettlementPrice(callOptionId, 2_500 * PRICE_SCALE);
 
-        MarginEngine.DetailedSettlementPreview memory preview = engine.previewDetailedSettlement(callOptionId, ALICE);
+        MarginEngineLens.DetailedSettlementPreview memory preview =
+            lens.previewDetailedSettlement(address(engine), callOptionId, ALICE);
 
         assertTrue(preview.seriesExpired);
         assertTrue(preview.settlementPriceSet);
@@ -564,7 +568,8 @@ contract MarginEngineTest is Test {
         vm.prank(OWNER);
         registry.setSettlementPrice(callOptionId, 2_500 * PRICE_SCALE);
 
-        MarginEngine.DetailedSettlementPreview memory preview = engine.previewDetailedSettlement(callOptionId, BOB);
+        MarginEngineLens.DetailedSettlementPreview memory preview =
+            lens.previewDetailedSettlement(address(engine), callOptionId, BOB);
 
         assertTrue(preview.seriesExpired);
         assertTrue(preview.settlementPriceSet);
@@ -622,7 +627,8 @@ contract MarginEngineTest is Test {
         optionIds[0] = callOptionId;
         quantities[0] = 2;
 
-        MarginEngine.OptionsLiquidationPreview memory preview = engine.previewLiquidation(BOB, optionIds, quantities);
+        MarginEngineLens.OptionsLiquidationPreview memory preview =
+            lens.previewLiquidation(address(engine), BOB, optionIds, quantities);
 
         assertTrue(preview.liquidatable);
         assertEq(preview.equityBeforeBase, int256(LIQUIDATABLE_EQUITY));
@@ -683,13 +689,35 @@ contract MarginEngineTest is Test {
 
     function testAccountWithNoPositionsReturnsEmptySeriesAndZeroExposure() external {
         uint256[] memory series = engine.getTraderSeries(DAVE);
-        MarginEngine.AccountState memory state = engine.getAccountState(DAVE);
+        MarginEngineLens.AccountState memory state = lens.getAccountState(address(engine), DAVE);
 
         assertEq(series.length, 0);
         assertEq(engine.getTraderSeriesLength(DAVE), 0);
         assertEq(engine.totalShortContracts(DAVE), 0);
         assertEq(state.openSeriesCount, 0);
         assertEq(state.totalShortOpenContracts, 0);
+    }
+
+    function testLensDetailedSettlementPreviewDoesNotMutateProtocolState() external {
+        _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
+
+        vm.warp(block.timestamp + 8 days);
+        vm.prank(OWNER);
+        registry.setSettlementPrice(callOptionId, 2_500 * PRICE_SCALE);
+
+        int128 aliceQtyBefore = engine.positions(ALICE, callOptionId).quantity;
+        bool settledBefore = engine.isAccountSettled(callOptionId, ALICE);
+        uint256 aliceBalanceBefore = vault.balances(ALICE, address(usdc));
+        uint256 seriesPaidBefore = engine.seriesPaid(callOptionId);
+
+        MarginEngineLens.DetailedSettlementPreview memory preview =
+            lens.previewDetailedSettlement(address(engine), callOptionId, ALICE);
+
+        assertEq(preview.payoffPerContract, 500 * BASE_UNIT);
+        assertEq(engine.positions(ALICE, callOptionId).quantity, aliceQtyBefore);
+        assertEq(engine.isAccountSettled(callOptionId, ALICE), settledBefore);
+        assertEq(vault.balances(ALICE, address(usdc)), aliceBalanceBefore);
+        assertEq(engine.seriesPaid(callOptionId), seriesPaidBefore);
     }
 
     function _trade(address buyer, address seller, uint256 optionId, uint128 quantity, uint128 premiumPerContract)
