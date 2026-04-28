@@ -335,12 +335,13 @@ contract PerpEngineTest is Test {
     }
 
     function testApplyTradeRevertsWhenRiskModuleUnset() external {
+        PerpEngine noRiskEngine = new PerpEngine(OWNER, address(registry), address(vault), address(oracle));
         vm.prank(OWNER);
-        engine.clearRiskModule();
+        noRiskEngine.setMatchingEngine(MATCHING_ENGINE);
 
         vm.prank(MATCHING_ENGINE);
         vm.expectRevert(abi.encodeWithSelector(PerpEngineTypes.RiskModuleNotSet.selector));
-        engine.applyTrade(
+        noRiskEngine.applyTrade(
             IPerpEngineTrade.Trade({
                 buyer: ALICE,
                 seller: BOB,

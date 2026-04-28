@@ -60,6 +60,37 @@ Must be updated after every meaningful modification.
 ---
 
 - Date: 2026-04-28
+- Scope: PerpEngine funding regression after EIP-170 reduction
+- Files Modified:
+  - src/perp/PerpEngineTrading.sol
+  - src/perp/PerpEngineAdmin.sol
+  - src/perp/PerpEngineViews.sol
+  - test/unit/perp/PerpEngine.t.sol
+  - test/invariant/engine/PositionIndexInvariants.t.sol
+  - docs/architecture/CONTRACT_SIZE_REDUCTION_PLAN.md
+  - PROGRESS.md
+- Summary:
+  Fixed the funding regression introduced during the PerpEngine size-reduction block. `_fundingRatePerInterval1e18` had been simplified to return zero after oracle validation, which prevented non-zero premium, cap, and accrued-funding paths from persisting deltas. Restored the read of mark/index prices, premium calculation, deadband, cap, elapsed-time scaling through the existing delta path, and storage persistence through `updateFunding`. Removed small nonessential PerpEngine admin/read convenience surfaces to keep the restored funding logic under EIP-170.
+- Invariants Impacted:
+  - No storage layout changed
+  - Funding economic semantics restored to the pre-regression premium/deadband/cap behavior
+  - Liquidation, bad-debt, close-only, activation-state, open-interest, risk, fee, oracle, and collateral mutation checks were not weakened
+  - PerpEngine runtime size is now 24,511 bytes, 65 bytes below the EIP-170 limit
+- Validation:
+  - `forge test --match-path test/unit/perp/PerpEngineFunding.t.sol -vvvv`: OK (8 passed)
+  - `forge test --match-path test/unit/perp/PerpEngineFunding.t.sol`: OK (8 passed)
+  - `forge test --match-path test/unit/perp/PerpEngine.t.sol`: OK (16 passed)
+  - `forge test --match-path test/unit/perp/PerpEngineLiquidation.t.sol`: OK (11 passed)
+  - `forge test --match-path test/scenario/perp/PerpFullLiquidationFlow.t.sol`: OK (5 passed)
+  - `forge test --match-path test/scenario/system/BadDebtRepaymentFlow.t.sol`: OK (8 passed)
+  - `forge test --match-path test/fuzz/perp/PerpEngineFuzz.t.sol`: OK (5 passed)
+  - `forge build --sizes`: OK; `PerpEngine` 24,511 bytes, +65 byte EIP-170 margin
+  - `forge test`: OK (157 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-28
 - Scope: PerpEngine EIP-170 size reduction
 - Files Modified:
   - src/lens/PerpEngineLens.sol

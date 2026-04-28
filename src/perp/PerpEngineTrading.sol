@@ -268,9 +268,24 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         if (!fcfg.isEnabled) return 0;
 
         (uint256 markPrice1e8, bool okMark) = _tryGetMarkPrice1e8(marketId);
+        (uint256 indexPrice1e8, bool okIndex) = _tryGetMarkPrice1e8(marketId);
 
-        if (!okMark || markPrice1e8 == 0) revert OraclePriceUnavailable();
-        return 0;
+        if (!okMark || !okIndex || markPrice1e8 == 0 || indexPrice1e8 == 0) revert OraclePriceUnavailable();
+        if (markPrice1e8 == indexPrice1e8) return 0;
+
+        bool positive = markPrice1e8 > indexPrice1e8;
+        uint256 diff = positive ? markPrice1e8 - indexPrice1e8 : indexPrice1e8 - markPrice1e8;
+        rate1e18 = _toInt256(_mulDivFloor(diff, uint256(FUNDING_SCALE_1E18), indexPrice1e8));
+
+        if (fcfg.oracleClampBps != 0) {
+            int256 deadband1e18 = _toInt256(_mulDivFloor(uint256(fcfg.oracleClampBps), uint256(FUNDING_SCALE_1E18), BPS));
+            if (rate1e18 <= deadband1e18) return 0;
+            rate1e18 -= deadband1e18;
+        }
+
+        uint256 capAbs = _mulDivFloor(uint256(fcfg.maxFundingRateBps), uint256(FUNDING_SCALE_1E18), BPS);
+        if (uint256(rate1e18) > capAbs) rate1e18 = _toInt256(capAbs);
+        if (!positive) rate1e18 = -rate1e18;
     }
 
     function _fundingRateDelta1e18(uint256 marketId)

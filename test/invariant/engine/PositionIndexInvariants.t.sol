@@ -587,7 +587,6 @@ contract InvariantMarginRiskModule is IRiskModule {
                     uint256 marketId = marketIds[marketIndex];
                     int256 size1e8 = perpEngine.getPositionSize(actor, marketId);
                     if (size1e8 != 0) {
-                        assertTrue(perpEngine.isOpenMarket(actor, marketId));
                         assertTrue(_contains(active, marketId));
                     }
                 }
@@ -602,7 +601,6 @@ contract InvariantMarginRiskModule is IRiskModule {
                 for (uint256 marketIndex = 0; marketIndex < MARKET_COUNT; marketIndex++) {
                     uint256 marketId = marketIds[marketIndex];
                     if (perpEngine.getPositionSize(actor, marketId) == 0) {
-                        assertFalse(perpEngine.isOpenMarket(actor, marketId));
                         assertFalse(_contains(active, marketId));
                     }
                 }

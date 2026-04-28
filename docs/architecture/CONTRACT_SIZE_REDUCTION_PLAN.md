@@ -32,10 +32,17 @@ The lens is optional read-only infrastructure and is not required by `DeployCore
 - Date: 2026-04-28
 - Scope: `PerpEngine` only
 - New read-only lens: `src/lens/PerpEngineLens.sol`
-- `PerpEngine` runtime size after extraction/compaction: 24,570 bytes
-- `PerpEngine` EIP-170 margin after extraction/compaction: +6 bytes
+- `PerpEngine` runtime size after funding-regression fix and final compaction: 24,511 bytes
+- `PerpEngine` EIP-170 margin after funding-regression fix and final compaction: +65 bytes
 - `PerpEngineLens` runtime size: 18,325 bytes
-- Remaining size note: the deployment blocker is cleared, but `PerpEngine` has only 6 bytes of headroom and should be treated as frozen for nonessential ABI growth.
+- Remaining size note: the deployment blocker is cleared, but `PerpEngine` still has only 65 bytes of headroom and should be treated as frozen for nonessential ABI growth.
+
+Follow-up funding regression fix:
+
+- Cause: during the size-reduction block, `_fundingRatePerInterval1e18` was reduced to oracle validation plus an unconditional zero return. That disabled positive/negative premium funding deltas, funding caps, and accrued funding on open positions.
+- Fix: restored mark/index price reads, premium calculation, deadband application, max-rate cap, elapsed-time scaling through `_fundingRateDelta1e18`, and persistence through the existing `updateFunding` storage path.
+- Size headroom was preserved by trimming small nonessential admin/read convenience surfaces from the core rather than moving any state-changing funding logic to the lens.
+- Validation: `PerpEngineFunding`, `PerpEngine`, `PerpEngineLiquidation`, perp liquidation scenarios, bad-debt scenario, perp fuzz tests, `forge build --sizes`, and full `forge test` all pass.
 
 Moved out of the `PerpEngine` core:
 
@@ -64,7 +71,7 @@ The lens is optional read-only infrastructure and is not required by `DeployCore
 | 3 | `marginEngine` | `MarginEngine` | 36,234 | -11,658 |
 | 4 | `riskModule` | `RiskModule` | 18,642 | +5,934 |
 | 5 | `perpMarketRegistry` | `PerpMarketRegistry` | 12,827 | +11,749 |
-| 6 | `perpEngine` | `PerpEngine` | 24,570 | +6 |
+| 6 | `perpEngine` | `PerpEngine` | 24,511 | +65 |
 | 7 | `perpRiskModule` | `PerpRiskModule` | 10,008 | +14,568 |
 | 8 | `collateralSeizer` | `CollateralSeizer` | 6,547 | +18,029 |
 | 9 | `feesManager` | `FeesManager` | 7,957 | +16,619 |

@@ -65,10 +65,6 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         }
     }
 
-    function isOpenMarket(address trader, uint256 marketId) external view returns (bool) {
-        return traderMarketIndexPlus1[trader][marketId] != 0;
-    }
-
     /*//////////////////////////////////////////////////////////////
                         BAD DEBT / SOLVENCY READS
     //////////////////////////////////////////////////////////////*/

@@ -176,11 +176,6 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
         emit RiskModuleSet(riskModule_);
     }
 
-    function clearRiskModule() external onlyOwner {
-        _riskModule = IPerpRiskModule(address(0));
-        emit RiskModuleSet(address(0));
-    }
-
     function setCollateralSeizer(address collateralSeizer_) external onlyOwner {
         if (collateralSeizer_ == address(0)) revert ZeroAddress();
         address old = address(_collateralSeizer);
@@ -205,13 +200,6 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
         if (feesManager_ == address(0)) revert ZeroAddress();
         feesManager = IFeesManager(feesManager_);
         emit FeesManagerSet(feesManager_);
-    }
-
-    function setFeeRecipient(address feeRecipient_) external onlyOwner {
-        if (feeRecipient_ == address(0)) revert ZeroAddress();
-        address old = feeRecipient;
-        feeRecipient = feeRecipient_;
-        emit FeeRecipientSet(old, feeRecipient_);
     }
 
     /// @notice Sets an optional engine-level launch cap for effective market open interest.
@@ -359,11 +347,6 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
     /*//////////////////////////////////////////////////////////////
                             REGISTRY / VAULT TARGETS
     //////////////////////////////////////////////////////////////*/
-
-    function setMarketRegistry(address registry_) external onlyOwner {
-        if (registry_ == address(0)) revert ZeroAddress();
-        _marketRegistry = PerpMarketRegistry(registry_);
-    }
 
     function setCollateralVault(address vault_) external onlyOwner {
         if (vault_ == address(0)) revert ZeroAddress();
