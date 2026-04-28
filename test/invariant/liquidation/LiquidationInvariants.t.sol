@@ -68,9 +68,7 @@ contract InvariantLiquidationRiskModule is IPerpRiskModule {
         external
     {
         healthyRisk[trader] = IPerpRiskModule.AccountRisk({
-            equityBase: equityBase,
-            maintenanceMarginBase: maintenanceMarginBase,
-            initialMarginBase: initialMarginBase
+            equityBase: equityBase, maintenanceMarginBase: maintenanceMarginBase, initialMarginBase: initialMarginBase
         });
     }
 
@@ -85,17 +83,13 @@ contract InvariantLiquidationRiskModule is IPerpRiskModule {
 
             if (absSize1e8 > 1e8) {
                 return IPerpRiskModule.AccountRisk({
-                    equityBase: 90 * 1e6,
-                    maintenanceMarginBase: 100 * 1e6,
-                    initialMarginBase: 0
+                    equityBase: 90 * 1e6, maintenanceMarginBase: 100 * 1e6, initialMarginBase: 0
                 });
             }
 
             if (absSize1e8 != 0) {
                 return IPerpRiskModule.AccountRisk({
-                    equityBase: 100 * 1e6,
-                    maintenanceMarginBase: 90 * 1e6,
-                    initialMarginBase: 0
+                    equityBase: 100 * 1e6, maintenanceMarginBase: 90 * 1e6, initialMarginBase: 0
                 });
             }
         }
@@ -163,11 +157,8 @@ contract InvariantLiquidationSeizer is ICollateralSeizer {
     function setPreview(address token, uint256 amountToken, uint256 valueBaseFloor, uint256 effectiveBaseFloor, bool ok)
         external
     {
-        _previews[keccak256(abi.encode(token, amountToken))] = Preview({
-            valueBaseFloor: valueBaseFloor,
-            effectiveBaseFloor: effectiveBaseFloor,
-            ok: ok
-        });
+        _previews[keccak256(abi.encode(token, amountToken))] =
+            Preview({valueBaseFloor: valueBaseFloor, effectiveBaseFloor: effectiveBaseFloor, ok: ok});
     }
 
     function computeSeizurePlan(address, uint256)
@@ -393,9 +384,8 @@ contract LiquidationInvariantHandler is Test {
         _totalPlannedCoverageBase += plannedCoverageBase;
         _totalEffectiveSeizedBase += actualSeizedEffectiveBase;
 
-        uint256 requestedInsuranceBase = PENALTY_TARGET_BASE > actualSeizedEffectiveBase
-            ? PENALTY_TARGET_BASE - actualSeizedEffectiveBase
-            : 0;
+        uint256 requestedInsuranceBase =
+            PENALTY_TARGET_BASE > actualSeizedEffectiveBase ? PENALTY_TARGET_BASE - actualSeizedEffectiveBase : 0;
 
         if (insuranceUsdcDebit > requestedInsuranceBase) {
             _insuranceRequestedViolation = true;
@@ -404,9 +394,8 @@ contract LiquidationInvariantHandler is Test {
             _insuranceAvailabilityViolation = true;
         }
 
-        uint256 expectedResidualBase = requestedInsuranceBase > insuranceUsdcDebit
-            ? requestedInsuranceBase - insuranceUsdcDebit
-            : 0;
+        uint256 expectedResidualBase =
+            requestedInsuranceBase > insuranceUsdcDebit ? requestedInsuranceBase - insuranceUsdcDebit : 0;
         _totalExplicitResidualBase += expectedResidualBase;
 
         if (residualDebtDelta != expectedResidualBase) {
@@ -593,17 +582,10 @@ contract LiquidationInvariantsTest is StdInvariant, Test {
                 reduceOnlyDuringCloseOnly: true
             }),
             PerpMarketRegistry.LiquidationConfig({
-                closeFactorBps: 5_000,
-                priceSpreadBps: 100,
-                minImprovementBps: 50,
-                oracleMaxDelay: 60
+                closeFactorBps: 5_000, priceSpreadBps: 100, minImprovementBps: 50, oracleMaxDelay: 60
             }),
             PerpMarketRegistry.FundingConfig({
-                isEnabled: false,
-                fundingInterval: 0,
-                maxFundingRateBps: 0,
-                maxSkewFundingBps: 0,
-                oracleClampBps: 0
+                isEnabled: false, fundingInterval: 0, maxFundingRateBps: 0, maxSkewFundingBps: 0, oracleClampBps: 0
             })
         );
 
@@ -670,7 +652,7 @@ contract LiquidationInvariantsTest is StdInvariant, Test {
 
     function invariant_residualBadDebtIsOnlyCreatedThroughExplicitShortfallPaths() external view {
         assertFalse(handler.debtPathViolation());
-        assertEq(engine.getTotalResidualBadDebt(), handler.totalExplicitResidualBase());
+        assertEq(engine.totalResidualBadDebtBase(), handler.totalExplicitResidualBase());
     }
 
     function invariant_insuranceCoverageNeverExceedsRequestedShortfall() external view {
@@ -686,7 +668,7 @@ contract LiquidationInvariantsTest is StdInvariant, Test {
         view
     {
         assertFalse(handler.bookkeepingViolation());
-        assertEq(engine.getTotalResidualBadDebt(), _sumTraderResidualBadDebt());
+        assertEq(engine.totalResidualBadDebtBase(), _sumTraderResidualBadDebt());
     }
 
     function _sumTraderResidualBadDebt() internal view returns (uint256 total) {

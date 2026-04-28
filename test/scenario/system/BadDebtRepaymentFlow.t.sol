@@ -7,6 +7,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {CollateralVault} from "../../../src/collateral/CollateralVault.sol";
 import {IOracle} from "../../../src/oracle/IOracle.sol";
 import {IPerpEngineTrade} from "../../../src/matching/IPerpEngineTrade.sol";
+import {PerpEngineLens} from "../../../src/lens/PerpEngineLens.sol";
 import {PerpEngine} from "../../../src/perp/PerpEngine.sol";
 import {PerpEngineTypes} from "../../../src/perp/PerpEngineTypes.sol";
 import {PerpMarketRegistry} from "../../../src/perp/PerpMarketRegistry.sol";
@@ -39,8 +40,7 @@ contract ScenarioSystemOracle is IOracle {
     mapping(bytes32 => PriceData) internal prices;
 
     function setPrice(address baseAsset, address quoteAsset, uint256 price, uint256 updatedAt, bool ok) external {
-        prices[keccak256(abi.encode(baseAsset, quoteAsset))] =
-            PriceData({price: price, updatedAt: updatedAt, ok: ok});
+        prices[keccak256(abi.encode(baseAsset, quoteAsset))] = PriceData({price: price, updatedAt: updatedAt, ok: ok});
     }
 
     function getPrice(address baseAsset, address quoteAsset) external view returns (uint256 price, uint256 updatedAt) {
@@ -74,9 +74,7 @@ contract ScenarioSystemPerpRiskModule is IPerpRiskModule {
         external
     {
         risks[trader] = AccountRisk({
-            equityBase: equityBase,
-            maintenanceMarginBase: maintenanceMarginBase,
-            initialMarginBase: initialMarginBase
+            equityBase: equityBase, maintenanceMarginBase: maintenanceMarginBase, initialMarginBase: initialMarginBase
         });
     }
 
@@ -138,11 +136,8 @@ contract ScenarioSystemCollateralSeizer is ICollateralSeizer {
     function setPreview(address token, uint256 amountToken, uint256 valueBaseFloor, uint256 effectiveBaseFloor, bool ok)
         external
     {
-        _previews[keccak256(abi.encode(token, amountToken))] = Preview({
-            valueBaseFloor: valueBaseFloor,
-            effectiveBaseFloor: effectiveBaseFloor,
-            ok: ok
-        });
+        _previews[keccak256(abi.encode(token, amountToken))] =
+            Preview({valueBaseFloor: valueBaseFloor, effectiveBaseFloor: effectiveBaseFloor, ok: ok});
     }
 
     function computeSeizurePlan(address, uint256)
@@ -240,6 +235,7 @@ contract BadDebtRepaymentFlowTest is Test {
     CollateralVault internal vault;
     PerpMarketRegistry internal registry;
     PerpEngine internal engine;
+    PerpEngineLens internal lens;
     ScenarioSystemOracle internal oracle;
     ScenarioSystemPerpRiskModule internal riskModule;
     ScenarioSystemCollateralSeizer internal seizer;
@@ -259,6 +255,7 @@ contract BadDebtRepaymentFlowTest is Test {
         seizer = new ScenarioSystemCollateralSeizer();
         insuranceFund = new ScenarioSystemInsuranceFund(address(vault));
         engine = new PerpEngine(OWNER, address(registry), address(vault), address(oracle));
+        lens = new PerpEngineLens();
 
         vm.startPrank(OWNER);
         vault.setCollateralToken(address(usdc), true, 6, 10_000);
@@ -281,17 +278,10 @@ contract BadDebtRepaymentFlowTest is Test {
                 reduceOnlyDuringCloseOnly: true
             }),
             PerpMarketRegistry.LiquidationConfig({
-                closeFactorBps: 5_000,
-                priceSpreadBps: 100,
-                minImprovementBps: 50,
-                oracleMaxDelay: 60
+                closeFactorBps: 5_000, priceSpreadBps: 100, minImprovementBps: 50, oracleMaxDelay: 60
             }),
             PerpMarketRegistry.FundingConfig({
-                isEnabled: false,
-                fundingInterval: 0,
-                maxFundingRateBps: 0,
-                maxSkewFundingBps: 0,
-                oracleClampBps: 0
+                isEnabled: false, fundingInterval: 0, maxFundingRateBps: 0, maxSkewFundingBps: 0, oracleClampBps: 0
             })
         );
 
@@ -314,19 +304,14 @@ contract BadDebtRepaymentFlowTest is Test {
     function testAccountAcquiresResidualBadDebtAfterUndercollateralizedLiquidationFlow() external {
         _createResidualBadDebtViaLiquidation();
 
-        (
-            uint256 residualBadDebtBase,
-            bool hasOpenPositions,
-            ,
-            bool reduceOnly,
-            bool canIncrease
-        ) = engine.getPerpAccountStatus(TRADER);
+        (uint256 residualBadDebtBase, bool hasOpenPositions,, bool reduceOnly, bool canIncrease) =
+            lens.getPerpAccountStatus(address(engine), TRADER);
 
         assertEq(residualBadDebtBase, RESIDUAL_BAD_DEBT_BASE);
         assertTrue(hasOpenPositions);
         assertTrue(reduceOnly);
         assertFalse(canIncrease);
-        assertEq(engine.getTotalResidualBadDebt(), RESIDUAL_BAD_DEBT_BASE);
+        assertEq(engine.totalResidualBadDebtBase(), RESIDUAL_BAD_DEBT_BASE);
     }
 
     function testAccountWithResidualBadDebtCannotIncreaseExposure() external {
@@ -358,7 +343,7 @@ contract BadDebtRepaymentFlowTest is Test {
         assertEq(traderPos.size1e8, int256(uint256(HALF)));
         assertEq(traderPos.openNotional1e8, int256(uint256(HALF) * uint256(ENTRY_PRICE) / PRICE_SCALE));
         assertEq(engine.getResidualBadDebt(TRADER), RESIDUAL_BAD_DEBT_BASE);
-        assertTrue(engine.isReduceOnlyByBadDebt(TRADER));
+        assertTrue(engine.getResidualBadDebt(TRADER) != 0);
     }
 
     function testIncomingCashflowIsRoutedDebtFirstBeforeNormalReceiverCredit() external {
@@ -374,7 +359,7 @@ contract BadDebtRepaymentFlowTest is Test {
         assertEq(vault.balances(address(insuranceFund), address(usdc)), insuranceBefore + RESIDUAL_BAD_DEBT_BASE);
         assertEq(vault.balances(TRADER, address(usdc)), traderBefore + RECEIVER_CREDIT_AFTER_DEBT);
         assertEq(engine.getResidualBadDebt(TRADER), 0);
-        assertFalse(engine.isReduceOnlyByBadDebt(TRADER));
+        assertFalse(engine.getResidualBadDebt(TRADER) != 0);
     }
 
     function testResidualBadDebtDecreasesCorrectlyAfterRepayment() external {
@@ -403,8 +388,7 @@ contract BadDebtRepaymentFlowTest is Test {
         uint256 insuranceBefore = vault.balances(address(insuranceFund), address(usdc));
 
         vm.prank(OWNER);
-        PerpEngineTypes.BadDebtRepayment memory repayment =
-            engine.repayResidualBadDebt(MAKER, TRADER, 100 * BASE_UNIT);
+        PerpEngineTypes.BadDebtRepayment memory repayment = engine.repayResidualBadDebt(MAKER, TRADER, 100 * BASE_UNIT);
 
         assertEq(repayment.requestedBase, 100 * BASE_UNIT);
         assertEq(repayment.outstandingBase, RESIDUAL_BAD_DEBT_BASE);
@@ -441,7 +425,7 @@ contract BadDebtRepaymentFlowTest is Test {
         engine.repayResidualBadDebt(MAKER, TRADER, RESIDUAL_BAD_DEBT_BASE);
 
         assertEq(engine.getResidualBadDebt(TRADER), 0);
-        assertTrue(engine.canIncreaseExposure(TRADER));
+        assertEq(engine.getResidualBadDebt(TRADER), 0);
 
         _trade(TRADER, LIQUIDATOR, HALF, REOPEN_PRICE);
 

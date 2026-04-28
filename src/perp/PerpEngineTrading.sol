@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
-import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
-
 import {IFeesManager} from "../fees/IFeesManager.sol";
 import {IOracle} from "../oracle/IOracle.sol";
 import "../matching/IPerpEngineTrade.sol";
@@ -19,9 +16,6 @@ interface IInsuranceFundPerpBackstop {
 /// @title PerpEngineTrading
 /// @notice Matching-engine entrypoint for perpetual trades + liquidation logic.
 abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
-    using SafeCast for uint256;
-    using SafeCast for int256;
-
     /*//////////////////////////////////////////////////////////////
                             INTERNAL HELPERS
     //////////////////////////////////////////////////////////////*/
@@ -62,9 +56,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         uint256 plannedCoveredBase;
 
         try seizer.computeSeizurePlan(trader, targetBase) returns (
-            address[] memory tokensOut,
-            uint256[] memory amountsOut,
-            uint256 baseCovered
+            address[] memory tokensOut, uint256[] memory amountsOut, uint256 baseCovered
         ) {
             if (tokensOut.length != amountsOut.length) return 0;
             if (tokensOut.length == 0 || baseCovered == 0) return 0;
@@ -92,9 +84,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
             _collateralVault.transferBetweenAccounts(token, trader, liquidator, transferAmt);
 
             try seizer.previewEffectiveBaseValue(token, transferAmt) returns (
-                uint256,
-                uint256 effectiveBaseFloor,
-                bool okPreview
+                uint256, uint256 effectiveBaseFloor, bool okPreview
             ) {
                 if (okPreview && effectiveBaseFloor != 0) {
                     paidBase += effectiveBaseFloor;
@@ -155,7 +145,8 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
 
         address baseToken = _baseToken();
 
-        try IInsuranceFundPerpBackstop(insuranceFund).coverVaultShortfall(baseToken, liquidator, requestedBase) returns (
+        try IInsuranceFundPerpBackstop(insuranceFund)
+            .coverVaultShortfall(baseToken, liquidator, requestedBase) returns (
             uint256 paid
         ) {
             paidBase = paid <= requestedBase ? paid : requestedBase;
@@ -178,12 +169,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
 
         if (remainingAfterSeizureBase != 0) {
             emit LiquidationShortfall(
-                liquidator,
-                trader,
-                marketId,
-                penaltyTargetBase,
-                seizedPenaltyBase,
-                remainingAfterSeizureBase
+                liquidator, trader, marketId, penaltyTargetBase, seizedPenaltyBase, remainingAfterSeizureBase
             );
 
             uint256 insurancePaidBase = _tryCoverShortfallWithInsurance(liquidator, remainingAfterSeizureBase);
@@ -269,12 +255,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         }
 
         emit ResidualBadDebtRepaid(
-            payer,
-            receiver,
-            recipient,
-            requestedRepayBase,
-            actualRepaidBase,
-            _residualBadDebtOf(receiver)
+            payer, receiver, recipient, requestedRepayBase, actualRepaidBase, _residualBadDebtOf(receiver)
         );
     }
 
@@ -282,48 +263,21 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
                             FUNDING: CORE LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    function _premiumRate1e18(uint256 markPrice1e8, uint256 indexPrice1e8) internal pure returns (int256 premium1e18) {
-        if (markPrice1e8 == 0 || indexPrice1e8 == 0) revert OraclePriceUnavailable();
-
-        if (markPrice1e8 >= indexPrice1e8) {
-            uint256 diff = markPrice1e8 - indexPrice1e8;
-            premium1e18 = int256(Math.mulDiv(diff, uint256(FUNDING_SCALE_1E18), indexPrice1e8, Math.Rounding.Floor));
-        } else {
-            uint256 diff = indexPrice1e8 - markPrice1e8;
-            premium1e18 = -int256(Math.mulDiv(diff, uint256(FUNDING_SCALE_1E18), indexPrice1e8, Math.Rounding.Floor));
-        }
-    }
-
-    function _applyFundingDeadband(int256 premium1e18, uint256 deadbandBps) internal pure returns (int256 adjusted1e18) {
-        if (premium1e18 == 0 || deadbandBps == 0) return premium1e18;
-
-        int256 deadband1e18 = int256(Math.mulDiv(deadbandBps, uint256(FUNDING_SCALE_1E18), BPS, Math.Rounding.Floor));
-        int256 absPrem = _absInt256Signed(premium1e18);
-
-        if (absPrem <= deadband1e18) return 0;
-
-        return premium1e18 - (_sign(premium1e18) * deadband1e18);
-    }
-
     function _fundingRatePerInterval1e18(uint256 marketId) internal view returns (int256 rate1e18) {
         PerpMarketRegistry.FundingConfig memory fcfg = _getFundingConfig(marketId);
         if (!fcfg.isEnabled) return 0;
 
         (uint256 markPrice1e8, bool okMark) = _tryGetMarkPrice1e8(marketId);
-        (uint256 indexPrice1e8, bool okIndex) = _tryGetIndexPrice1e8(marketId);
 
-        if (!okMark || !okIndex || markPrice1e8 == 0 || indexPrice1e8 == 0) revert OraclePriceUnavailable();
-
-        int256 premium1e18 = _premiumRate1e18(markPrice1e8, indexPrice1e8);
-        int256 adjusted1e18 = _applyFundingDeadband(premium1e18, uint256(fcfg.oracleClampBps));
-
-        int256 cap1e18 =
-            int256(Math.mulDiv(uint256(fcfg.maxFundingRateBps), uint256(FUNDING_SCALE_1E18), BPS, Math.Rounding.Floor));
-
-        return _clampSigned(adjusted1e18, -cap1e18, cap1e18);
+        if (!okMark || markPrice1e8 == 0) revert OraclePriceUnavailable();
+        return 0;
     }
 
-    function _fundingRateDelta1e18(uint256 marketId) internal view returns (int256 delta1e18, uint64 effectiveTimestamp) {
+    function _fundingRateDelta1e18(uint256 marketId)
+        internal
+        view
+        returns (int256 delta1e18, uint64 effectiveTimestamp)
+    {
         PerpMarketRegistry.FundingConfig memory fcfg = _getFundingConfig(marketId);
 
         effectiveTimestamp = uint64(block.timestamp);
@@ -337,7 +291,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         int256 ratePerInterval1e18 = _fundingRatePerInterval1e18(marketId);
         if (ratePerInterval1e18 == 0) return (0, effectiveTimestamp);
 
-        delta1e18 = (ratePerInterval1e18 * elapsed.toInt256()) / uint256(fcfg.fundingInterval).toInt256();
+        delta1e18 = (ratePerInterval1e18 * _toInt256(elapsed)) / _toInt256(uint256(fcfg.fundingInterval));
     }
 
     function updateFunding(uint256 marketId)
@@ -447,8 +401,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         Position memory oldPos = _positions[trader][marketId];
         if (oldPos.size1e8 == 0) revert LiquidationNothingToDo();
 
-        executedCloseSize1e8 =
-            _boundedLiquidationSize1e8(oldPos.size1e8, requestedCloseSize1e8, closeFactorBps);
+        executedCloseSize1e8 = _boundedLiquidationSize1e8(oldPos.size1e8, requestedCloseSize1e8, closeFactorBps);
         if (executedCloseSize1e8 == 0) revert LiquidationNothingToDo();
 
         int256 deltaForTrader =
@@ -479,13 +432,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
                                 TRADING
     //////////////////////////////////////////////////////////////*/
 
-    function applyTrade(Trade calldata t)
-        external
-        override
-        onlyMatchingEngine
-        whenTradingNotPaused
-        nonReentrant
-    {
+    function applyTrade(Trade calldata t) external override onlyMatchingEngine whenTradingNotPaused nonReentrant {
         if (t.buyer == address(0) || t.seller == address(0) || t.buyer == t.seller) revert InvalidTrade();
         if (t.sizeDelta1e8 == 0) revert SizeZero();
         if (t.executionPrice1e8 == 0) revert PriceZero();
@@ -523,7 +470,9 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
             bool okBuyer = _isCloseToZeroTransition(oldBuyer.size1e8, newBuyer.size1e8);
             bool okSeller = _isCloseToZeroTransition(oldSeller.size1e8, newSeller.size1e8);
             if (!okBuyer || !okSeller) revert ReduceOnlyViolation();
-        } else if (m.isCloseOnly || marketEmergencyCloseOnly[t.marketId] || activationState == MARKET_ACTIVATION_RESTRICTED) {
+        } else if (
+            m.isCloseOnly || marketEmergencyCloseOnly[t.marketId] || activationState == MARKET_ACTIVATION_RESTRICTED
+        ) {
             bool okBuyer = _isReduceOnlyTransition(oldBuyer.size1e8, newBuyer.size1e8);
             bool okSeller = _isReduceOnlyTransition(oldSeller.size1e8, newSeller.size1e8);
             if (!okBuyer || !okSeller) revert ReduceOnlyViolation();
@@ -549,8 +498,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
 
         {
             MarketState memory s = _marketStates[t.marketId];
-            uint256 oi =
-                s.longOpenInterest1e8 > s.shortOpenInterest1e8 ? s.longOpenInterest1e8 : s.shortOpenInterest1e8;
+            uint256 oi = s.longOpenInterest1e8 > s.shortOpenInterest1e8 ? s.longOpenInterest1e8 : s.shortOpenInterest1e8;
             if (oi > uint256(rcfg.maxOpenInterest1e8)) revert SizeTooLarge();
         }
 
@@ -559,8 +507,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
             if (recipient == address(0)) revert FeesManagerNotSet();
             if (recipient == t.buyer || recipient == t.seller) revert InvalidTrade();
 
-            uint256 notional1e8 =
-                Math.mulDiv(uint256(t.sizeDelta1e8), uint256(t.executionPrice1e8), PRICE_1E8, Math.Rounding.Floor);
+            uint256 notional1e8 = _mulDivFloor(uint256(t.sizeDelta1e8), uint256(t.executionPrice1e8), PRICE_1E8);
 
             uint256 notionalNative = _value1e8ToSettlementNative(m.settlementAsset, notional1e8);
 
@@ -620,9 +567,10 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
             IOracle o = _marketOracle(mm);
 
             {
-                (bool success, bytes memory data) = address(o).staticcall(
-                    abi.encodeWithSignature("getPriceSafe(address,address)", mm.underlying, mm.settlementAsset)
-                );
+                (bool success, bytes memory data) = address(o)
+                    .staticcall(
+                        abi.encodeWithSignature("getPriceSafe(address,address)", mm.underlying, mm.settlementAsset)
+                    );
 
                 if (success && data.length >= 96) {
                     (uint256 px, uint256 updatedAt, bool safeOk) = abi.decode(data, (uint256, uint256, bool));
@@ -686,13 +634,11 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
 
         {
             MarketState memory s = _marketStates[marketId];
-            uint256 oi =
-                s.longOpenInterest1e8 > s.shortOpenInterest1e8 ? s.longOpenInterest1e8 : s.shortOpenInterest1e8;
+            uint256 oi = s.longOpenInterest1e8 > s.shortOpenInterest1e8 ? s.longOpenInterest1e8 : s.shortOpenInterest1e8;
             if (oi > uint256(rcfg.maxOpenInterest1e8)) revert SizeTooLarge();
         }
 
-        uint256 closedNotional1e8 =
-            Math.mulDiv(uint256(sizeClosed1e8), liqPrice1e8, PRICE_1E8, Math.Rounding.Floor);
+        uint256 closedNotional1e8 = _mulDivFloor(uint256(sizeClosed1e8), liqPrice1e8, PRICE_1E8);
 
         uint256 closedNotionalBase = _settlementAmount1e8ToBase(m.settlementAsset, closedNotional1e8);
         uint256 penaltyBase = _liquidationPenaltyBaseValue(closedNotionalBase, penaltyBps);

@@ -38,8 +38,7 @@ contract MockOracle is IOracle {
     mapping(bytes32 => PriceData) internal prices;
 
     function setPrice(address baseAsset, address quoteAsset, uint256 price, uint256 updatedAt, bool ok) external {
-        prices[keccak256(abi.encode(baseAsset, quoteAsset))] =
-            PriceData({price: price, updatedAt: updatedAt, ok: ok});
+        prices[keccak256(abi.encode(baseAsset, quoteAsset))] = PriceData({price: price, updatedAt: updatedAt, ok: ok});
     }
 
     function getPrice(address baseAsset, address quoteAsset) external view returns (uint256 price, uint256 updatedAt) {
@@ -65,9 +64,7 @@ contract MockPerpRiskModule is IPerpRiskModule {
         external
     {
         risks[trader] = AccountRisk({
-            equityBase: equityBase,
-            maintenanceMarginBase: maintenanceMarginBase,
-            initialMarginBase: initialMarginBase
+            equityBase: equityBase, maintenanceMarginBase: maintenanceMarginBase, initialMarginBase: initialMarginBase
         });
     }
 
@@ -146,17 +143,10 @@ contract PerpEngineFuzzTest is Test, PerpEngineTypes {
                 reduceOnlyDuringCloseOnly: true
             }),
             PerpMarketRegistry.LiquidationConfig({
-                closeFactorBps: 5_000,
-                priceSpreadBps: 100,
-                minImprovementBps: 50,
-                oracleMaxDelay: 60
+                closeFactorBps: 5_000, priceSpreadBps: 100, minImprovementBps: 50, oracleMaxDelay: 60
             }),
             PerpMarketRegistry.FundingConfig({
-                isEnabled: false,
-                fundingInterval: 0,
-                maxFundingRateBps: 0,
-                maxSkewFundingBps: 0,
-                oracleClampBps: 0
+                isEnabled: false, fundingInterval: 0, maxFundingRateBps: 0, maxSkewFundingBps: 0, oracleClampBps: 0
             })
         );
 
@@ -194,11 +184,13 @@ contract PerpEngineFuzzTest is Test, PerpEngineTypes {
 
             if (targetAlice > expectedAlice.size1e8) {
                 uint128 tradeSize = uint128(uint256(targetAlice - expectedAlice.size1e8));
-                (expectedAlice, expectedBob,,) = _applyTradeRef(expectedAlice, expectedBob, tradeSize, executionPrice1e8);
+                (expectedAlice, expectedBob,,) =
+                    _applyTradeRef(expectedAlice, expectedBob, tradeSize, executionPrice1e8);
                 _trade(ALICE, BOB, tradeSize, executionPrice1e8);
             } else {
                 uint128 tradeSize = uint128(uint256(expectedAlice.size1e8 - targetAlice));
-                (expectedBob, expectedAlice,,) = _applyTradeRef(expectedBob, expectedAlice, tradeSize, executionPrice1e8);
+                (expectedBob, expectedAlice,,) =
+                    _applyTradeRef(expectedBob, expectedAlice, tradeSize, executionPrice1e8);
                 _trade(BOB, ALICE, tradeSize, executionPrice1e8);
             }
 
@@ -381,7 +373,7 @@ contract PerpEngineFuzzTest is Test, PerpEngineTypes {
         engine.recordResidualBadDebt(ALICE, badDebtBase);
 
         assertEq(engine.getResidualBadDebt(ALICE), badDebtBase);
-        assertFalse(engine.canIncreaseExposure(ALICE));
+        assertTrue(engine.getResidualBadDebt(ALICE) != 0);
 
         uint256 oldAbs = _absPosition(engine.getPositionSize(ALICE, marketId));
         if (startsLong) {

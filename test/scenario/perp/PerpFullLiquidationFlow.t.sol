@@ -7,6 +7,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {CollateralVault} from "../../../src/collateral/CollateralVault.sol";
 import {IOracle} from "../../../src/oracle/IOracle.sol";
 import {IPerpEngineTrade} from "../../../src/matching/IPerpEngineTrade.sol";
+import {PerpEngineLens} from "../../../src/lens/PerpEngineLens.sol";
 import {PerpEngine} from "../../../src/perp/PerpEngine.sol";
 import {PerpEngineTypes} from "../../../src/perp/PerpEngineTypes.sol";
 import {PerpMarketRegistry} from "../../../src/perp/PerpMarketRegistry.sol";
@@ -39,8 +40,7 @@ contract ScenarioOracle is IOracle {
     mapping(bytes32 => PriceData) internal prices;
 
     function setPrice(address baseAsset, address quoteAsset, uint256 price, uint256 updatedAt, bool ok) external {
-        prices[keccak256(abi.encode(baseAsset, quoteAsset))] =
-            PriceData({price: price, updatedAt: updatedAt, ok: ok});
+        prices[keccak256(abi.encode(baseAsset, quoteAsset))] = PriceData({price: price, updatedAt: updatedAt, ok: ok});
     }
 
     function getPrice(address baseAsset, address quoteAsset) external view returns (uint256 price, uint256 updatedAt) {
@@ -74,9 +74,7 @@ contract ScenarioPerpRiskModule is IPerpRiskModule {
         external
     {
         risks[trader] = AccountRisk({
-            equityBase: equityBase,
-            maintenanceMarginBase: maintenanceMarginBase,
-            initialMarginBase: initialMarginBase
+            equityBase: equityBase, maintenanceMarginBase: maintenanceMarginBase, initialMarginBase: initialMarginBase
         });
     }
 
@@ -138,11 +136,8 @@ contract ScenarioCollateralSeizer is ICollateralSeizer {
     function setPreview(address token, uint256 amountToken, uint256 valueBaseFloor, uint256 effectiveBaseFloor, bool ok)
         external
     {
-        _previews[keccak256(abi.encode(token, amountToken))] = Preview({
-            valueBaseFloor: valueBaseFloor,
-            effectiveBaseFloor: effectiveBaseFloor,
-            ok: ok
-        });
+        _previews[keccak256(abi.encode(token, amountToken))] =
+            Preview({valueBaseFloor: valueBaseFloor, effectiveBaseFloor: effectiveBaseFloor, ok: ok});
     }
 
     function computeSeizurePlan(address, uint256)
@@ -230,6 +225,7 @@ contract PerpFullLiquidationFlowTest is Test {
     CollateralVault internal vault;
     PerpMarketRegistry internal registry;
     PerpEngine internal engine;
+    PerpEngineLens internal lens;
     ScenarioOracle internal oracle;
     ScenarioPerpRiskModule internal riskModule;
     ScenarioCollateralSeizer internal seizer;
@@ -249,6 +245,7 @@ contract PerpFullLiquidationFlowTest is Test {
         seizer = new ScenarioCollateralSeizer();
         insuranceFund = new ScenarioInsuranceFund(address(vault));
         engine = new PerpEngine(OWNER, address(registry), address(vault), address(oracle));
+        lens = new PerpEngineLens();
 
         vm.startPrank(OWNER);
         vault.setCollateralToken(address(usdc), true, 6, 10_000);
@@ -271,17 +268,10 @@ contract PerpFullLiquidationFlowTest is Test {
                 reduceOnlyDuringCloseOnly: true
             }),
             PerpMarketRegistry.LiquidationConfig({
-                closeFactorBps: 5_000,
-                priceSpreadBps: 100,
-                minImprovementBps: 50,
-                oracleMaxDelay: 60
+                closeFactorBps: 5_000, priceSpreadBps: 100, minImprovementBps: 50, oracleMaxDelay: 60
             }),
             PerpMarketRegistry.FundingConfig({
-                isEnabled: false,
-                fundingInterval: 0,
-                maxFundingRateBps: 0,
-                maxSkewFundingBps: 0,
-                oracleClampBps: 0
+                isEnabled: false, fundingInterval: 0, maxFundingRateBps: 0, maxSkewFundingBps: 0, oracleClampBps: 0
             })
         );
 
@@ -304,7 +294,8 @@ contract PerpFullLiquidationFlowTest is Test {
         oracle.setPrice(address(weth), address(usdc), ADVERSE_MARK_PRICE, block.timestamp, true);
         riskModule.setAccountRisk(TRADER, LIQUIDATABLE_EQUITY, LIQUIDATABLE_MM, 0);
 
-        assertTrue(engine.isLiquidatable(TRADER));
+        (,, bool liquidatable) = lens.getPerpSolvencyState(address(engine), TRADER);
+        assertTrue(liquidatable);
 
         _mockImprovingLiquidationRisk(TRADER);
 

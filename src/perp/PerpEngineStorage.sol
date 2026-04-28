@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-
 import {CollateralVault} from "../collateral/CollateralVault.sol";
 import {IOracle} from "../oracle/IOracle.sol";
 import {IFeesManager} from "../fees/IFeesManager.sol";
@@ -53,10 +50,14 @@ interface IPerpMarketRegistryView {
 }
 
 /// @notice Storage root for the perpetual engine.
-abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
+abstract contract PerpEngineStorage is PerpEngineTypes {
     uint8 internal constant MARKET_ACTIVATION_ACTIVE = 0;
     uint8 internal constant MARKET_ACTIVATION_RESTRICTED = 1;
     uint8 internal constant MARKET_ACTIVATION_INACTIVE = 2;
+    uint256 private constant NOT_ENTERED = 1;
+    uint256 private constant ENTERED = 2;
+    bytes32 private constant REENTRANCY_GUARD_STORAGE =
+        0x9b779b17422d0df92223018b32b4d1fa46e071723d6817e2486d003becc55f00;
 
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
@@ -154,43 +155,49 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
 
     modifier onlyOwner() {
-        if (msg.sender != owner) revert NotAuthorized();
+        _requireOwner();
         _;
     }
 
     modifier onlyGuardianOrOwner() {
-        if (msg.sender != owner && msg.sender != guardian) revert GuardianNotAuthorized();
+        _requireGuardianOrOwner();
         _;
     }
 
     modifier onlyMatchingEngine() {
-        if (msg.sender != matchingEngine) revert NotAuthorized();
+        _requireMatchingEngineSender();
         _;
     }
 
     modifier whenNotPaused() {
-        if (_isAnyPauseActive()) revert PausedError();
+        _requireNotPaused();
         _;
     }
 
     modifier whenTradingNotPaused() {
-        if (_isTradingPaused()) revert TradingPaused();
+        _requireTradingNotPaused();
         _;
     }
 
     modifier whenLiquidationNotPaused() {
-        if (_isLiquidationPaused()) revert LiquidationPaused();
+        _requireLiquidationNotPaused();
         _;
     }
 
     modifier whenFundingNotPaused() {
-        if (_isFundingPaused()) revert FundingPaused();
+        _requireFundingNotPaused();
         _;
     }
 
     modifier whenCollateralOpsNotPaused() {
-        if (_isCollateralOpsPaused()) revert CollateralOpsPaused();
+        _requireCollateralOpsNotPaused();
         _;
+    }
+
+    modifier nonReentrant() {
+        _nonReentrantBefore();
+        _;
+        _nonReentrantAfter();
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -207,6 +214,7 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         _marketRegistry = PerpMarketRegistry(registry_);
         _collateralVault = CollateralVault(vault_);
         _oracle = IOracle(oracle_);
+        _nonReentrantAfter();
 
         paused = false;
         tradingPaused = false;
@@ -243,6 +251,57 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
 
     function _isCollateralOpsPaused() internal view returns (bool) {
         return paused || collateralOpsPaused;
+    }
+
+    function _requireOwner() internal view {
+        if (msg.sender != owner) revert NotAuthorized();
+    }
+
+    function _requireGuardianOrOwner() internal view {
+        if (msg.sender != owner && msg.sender != guardian) revert GuardianNotAuthorized();
+    }
+
+    function _requireMatchingEngineSender() internal view {
+        if (msg.sender != matchingEngine) revert NotAuthorized();
+    }
+
+    function _requireNotPaused() internal view {
+        if (_isAnyPauseActive()) revert PausedError();
+    }
+
+    function _requireTradingNotPaused() internal view {
+        if (_isTradingPaused()) revert TradingPaused();
+    }
+
+    function _requireLiquidationNotPaused() internal view {
+        if (_isLiquidationPaused()) revert LiquidationPaused();
+    }
+
+    function _requireFundingNotPaused() internal view {
+        if (_isFundingPaused()) revert FundingPaused();
+    }
+
+    function _requireCollateralOpsNotPaused() internal view {
+        if (_isCollateralOpsPaused()) revert CollateralOpsPaused();
+    }
+
+    function _nonReentrantBefore() internal {
+        uint256 status;
+        bytes32 slot = REENTRANCY_GUARD_STORAGE;
+        assembly {
+            status := sload(slot)
+        }
+        if (status == ENTERED) revert ReentrancyGuardReentrantCall();
+        assembly {
+            sstore(slot, ENTERED)
+        }
+    }
+
+    function _nonReentrantAfter() internal {
+        bytes32 slot = REENTRANCY_GUARD_STORAGE;
+        assembly {
+            sstore(slot, NOT_ENTERED)
+        }
     }
 
     function _setEmergencyModes(
@@ -461,7 +520,7 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
     {
         CollateralVault.CollateralTokenConfig memory cfg = _requireSettlementAssetConfigured(settlementAsset);
         uint256 scale = _pow10(uint256(cfg.decimals));
-        amountNative = Math.mulDiv(amount1e8, scale, PRICE_1E8, Math.Rounding.Floor);
+        amountNative = _mulDivFloor(amount1e8, scale, PRICE_1E8);
     }
 
     function _signedNotional1e8(int256 size1e8, uint256 executionPrice1e8) internal pure returns (int256 notional1e8) {
@@ -506,13 +565,13 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         uint8 baseDec = baseCfg.decimals;
         uint8 tokenDec = tokCfg.decimals;
 
-        uint256 tmp = Math.mulDiv(baseValue, PRICE_1E8, price1e8, Math.Rounding.Floor);
+        uint256 tmp = _mulDivFloor(baseValue, PRICE_1E8, price1e8);
 
         if (baseDec == tokenDec) return tmp;
 
         if (tokenDec > baseDec) {
             uint256 factor = _pow10(uint256(tokenDec - baseDec));
-            return Math.mulDiv(tmp, factor, 1, Math.Rounding.Floor);
+            return _mulChecked(tmp, factor);
         }
 
         uint256 factor2 = _pow10(uint256(baseDec - tokenDec));
@@ -541,13 +600,13 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         (uint256 px, bool ok) = _tryGetMarkPrice1e8FromPair(settlementAsset, baseToken);
         if (!ok || px == 0) revert OraclePriceUnavailable();
 
-        uint256 tmp = Math.mulDiv(settlementAmountNative, px, PRICE_1E8, Math.Rounding.Floor);
+        uint256 tmp = _mulDivFloor(settlementAmountNative, px, PRICE_1E8);
 
         if (baseCfg.decimals == setCfg.decimals) return tmp;
 
         if (baseCfg.decimals > setCfg.decimals) {
             uint256 factor = _pow10(uint256(baseCfg.decimals - setCfg.decimals));
-            return Math.mulDiv(tmp, factor, 1, Math.Rounding.Floor);
+            return _mulChecked(tmp, factor);
         }
 
         uint256 factor2 = _pow10(uint256(setCfg.decimals - baseCfg.decimals));
@@ -582,7 +641,11 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         penaltyNative = _baseValueToTokenAmount(settlementAsset, penaltyBase, px);
     }
 
-    function _tryGetMarkPrice1e8FromPair(address base, address quote) internal view returns (uint256 price1e8, bool ok) {
+    function _tryGetMarkPrice1e8FromPair(address base, address quote)
+        internal
+        view
+        returns (uint256 price1e8, bool ok)
+    {
         {
             (bool success, bytes memory data) =
                 address(_oracle).staticcall(abi.encodeWithSignature("getPriceSafe(address,address)", base, quote));
@@ -611,16 +674,15 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         returns (int256 funding1e8)
     {
         if (oldPos.size1e8 == 0) return 0;
-        return _fundingPayment1e8(
-            oldPos.size1e8, currentCumulativeFundingRate1e18, oldPos.lastCumulativeFundingRate1e18
-        );
+        return
+            _fundingPayment1e8(oldPos.size1e8, currentCumulativeFundingRate1e18, oldPos.lastCumulativeFundingRate1e18);
     }
 
-    function _closedFundingPortion1e8(
-        Position memory oldPos,
-        uint256 closeAbs,
-        int256 currentCumulativeFundingRate1e18
-    ) internal pure returns (int256 closedFunding1e8) {
+    function _closedFundingPortion1e8(Position memory oldPos, uint256 closeAbs, int256 currentCumulativeFundingRate1e18)
+        internal
+        pure
+        returns (int256 closedFunding1e8)
+    {
         if (oldPos.size1e8 == 0 || closeAbs == 0) return 0;
 
         uint256 absOld = _absInt256(oldPos.size1e8);
@@ -930,9 +992,8 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         IOracle o = _marketOracle(m);
 
         {
-            (bool success, bytes memory data) = address(o).staticcall(
-                abi.encodeWithSignature("getPriceSafe(address,address)", m.underlying, m.settlementAsset)
-            );
+            (bool success, bytes memory data) = address(o)
+                .staticcall(abi.encodeWithSignature("getPriceSafe(address,address)", m.underlying, m.settlementAsset));
 
             if (success && data.length >= 96) {
                 (uint256 px,, bool safeOk) = abi.decode(data, (uint256, uint256, bool));
@@ -946,14 +1007,6 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         } catch {
             return (0, false);
         }
-    }
-
-    function _getIndexPrice1e8(uint256 marketId) internal view returns (uint256 price1e8) {
-        return _getMarkPrice1e8(marketId);
-    }
-
-    function _tryGetIndexPrice1e8(uint256 marketId) internal view returns (uint256 price1e8, bool ok) {
-        return _tryGetMarkPrice1e8(marketId);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -992,20 +1045,6 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         emit PositionFundingSettled(trader, marketId, fundingPayment1e8, cumNow);
     }
 
-    function _grossTraderNotional1e8(address trader) internal view returns (uint256 total) {
-        uint256[] memory markets = traderMarkets[trader];
-
-        for (uint256 i = 0; i < markets.length; i++) {
-            uint256 marketId = markets[i];
-            Position memory p = _positions[trader][marketId];
-            if (p.size1e8 == 0) continue;
-
-            uint256 absSize = p.size1e8 > 0 ? uint256(p.size1e8) : uint256(-p.size1e8);
-            uint256 mark = _getMarkPrice1e8(marketId);
-            total = _addChecked(total, Math.mulDiv(absSize, mark, PRICE_1E8, Math.Rounding.Floor));
-        }
-    }
-
     /*//////////////////////////////////////////////////////////////
                           OPTIONAL COLLATERAL HELPERS
     //////////////////////////////////////////////////////////////*/
@@ -1014,33 +1053,5 @@ abstract contract PerpEngineStorage is PerpEngineTypes, ReentrancyGuard {
         (bool ok,) =
             address(_collateralVault).call(abi.encodeWithSignature("syncAccountFor(address,address)", user, token));
         ok;
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                                READ HELPERS
-    //////////////////////////////////////////////////////////////*/
-
-    function _position(address trader, uint256 marketId) internal view returns (Position memory p) {
-        p = _positions[trader][marketId];
-    }
-
-    function _marketRegistryAddress() internal view returns (address) {
-        return address(_marketRegistry);
-    }
-
-    function _collateralVaultAddress() internal view returns (address) {
-        return address(_collateralVault);
-    }
-
-    function _oracleAddress() internal view returns (address) {
-        return address(_oracle);
-    }
-
-    function _riskModuleAddress() internal view returns (address) {
-        return address(_riskModule);
-    }
-
-    function _collateralSeizerAddress() internal view returns (address) {
-        return address(_collateralSeizer);
     }
 }

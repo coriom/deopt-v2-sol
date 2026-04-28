@@ -46,20 +46,6 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
         emit OwnershipTransferred(old, po);
     }
 
-    function cancelOwnershipTransfer() external onlyOwner {
-        if (pendingOwner == address(0)) revert OwnershipTransferNotInitiated();
-        pendingOwner = address(0);
-    }
-
-    function renounceOwnership() external onlyOwner {
-        if (pendingOwner != address(0)) revert NotAuthorized();
-
-        address old = owner;
-        owner = address(0);
-
-        emit OwnershipTransferred(old, address(0));
-    }
-
     /*//////////////////////////////////////////////////////////////
                                 GUARDIAN
     //////////////////////////////////////////////////////////////*/
@@ -67,32 +53,6 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
     function setGuardian(address guardian_) external onlyOwner {
         if (guardian_ == address(0)) revert ZeroAddress();
         _setGuardian(guardian_);
-    }
-
-    function clearGuardian() external onlyOwner {
-        _setGuardian(address(0));
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                                PAUSE
-    //////////////////////////////////////////////////////////////*/
-
-    function pause() external onlyGuardianOrOwner {
-        if (!paused) {
-            paused = true;
-            emit Paused(msg.sender);
-            emit GlobalPauseSet(true);
-            emit EmergencyModeUpdated(tradingPaused, liquidationPaused, fundingPaused, collateralOpsPaused);
-        }
-    }
-
-    function unpause() external onlyOwner {
-        if (paused) {
-            paused = false;
-            emit Unpaused(msg.sender);
-            emit GlobalPauseSet(false);
-            emit EmergencyModeUpdated(tradingPaused, liquidationPaused, fundingPaused, collateralOpsPaused);
-        }
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -172,10 +132,6 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
         _setEmergencyModes(tradingPaused_, liquidationPaused_, fundingPaused_, collateralOpsPaused_);
     }
 
-    function clearEmergencyModes() external onlyOwner {
-        _setEmergencyModes(false, false, false, false);
-    }
-
     function setMarketActivationState(uint256 marketId, uint8 state) external onlyOwner {
         _requireMarketExists(marketId);
         if (state > MARKET_ACTIVATION_INACTIVE) revert InvalidActivationState();
@@ -206,11 +162,6 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
         if (matchingEngine_ == address(0)) revert ZeroAddress();
         matchingEngine = matchingEngine_;
         emit MatchingEngineSet(matchingEngine_);
-    }
-
-    function clearMatchingEngine() external onlyOwner {
-        matchingEngine = address(0);
-        emit MatchingEngineSet(address(0));
     }
 
     function setOracle(address oracle_) external onlyOwner {
@@ -250,21 +201,10 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
         emit InsuranceFundSet(old, insuranceFund_);
     }
 
-    function clearInsuranceFund() external onlyOwner {
-        address old = insuranceFund;
-        insuranceFund = address(0);
-        emit InsuranceFundSet(old, address(0));
-    }
-
     function setFeesManager(address feesManager_) external onlyOwner {
         if (feesManager_ == address(0)) revert ZeroAddress();
         feesManager = IFeesManager(feesManager_);
         emit FeesManagerSet(feesManager_);
-    }
-
-    function clearFeesManager() external onlyOwner {
-        feesManager = IFeesManager(address(0));
-        emit FeesManagerSet(address(0));
     }
 
     function setFeeRecipient(address feeRecipient_) external onlyOwner {
@@ -272,12 +212,6 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
         address old = feeRecipient;
         feeRecipient = feeRecipient_;
         emit FeeRecipientSet(old, feeRecipient_);
-    }
-
-    function clearFeeRecipient() external onlyOwner {
-        address old = feeRecipient;
-        feeRecipient = address(0);
-        emit FeeRecipientSet(old, address(0));
     }
 
     /// @notice Sets an optional engine-level launch cap for effective market open interest.
@@ -295,92 +229,6 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
                     LIQUIDATION FALLBACK DEFAULTS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Sets legacy fallback liquidation defaults.
-    /// @dev
-    ///  These values are NOT the primary liquidation policy anymore.
-    ///  Primary source of truth:
-    ///   - PerpMarketRegistry.getLiquidationConfig(marketId)
-    ///
-    ///  This engine-level config is only used when:
-    ///   - registry liquidation config is unavailable
-    ///   - or a field is zero / unset in migration scenarios
-    function setLiquidationFallbackParams(
-        uint256 liquidationCloseFactorBps_,
-        uint256 liquidationPenaltyBps_,
-        uint256 liquidationPriceSpreadBps_,
-        uint256 minLiquidationImprovementBps_,
-        uint32 liquidationOracleMaxDelay_
-    ) external onlyOwner {
-        _validateLiquidationParams(
-            liquidationCloseFactorBps_,
-            liquidationPenaltyBps_,
-            liquidationPriceSpreadBps_,
-            minLiquidationImprovementBps_,
-            uint256(liquidationOracleMaxDelay_)
-        );
-
-        liquidationCloseFactorBps = liquidationCloseFactorBps_;
-        liquidationPenaltyBps = liquidationPenaltyBps_;
-        liquidationPriceSpreadBps = liquidationPriceSpreadBps_;
-        minLiquidationImprovementBps = minLiquidationImprovementBps_;
-        liquidationOracleMaxDelay = liquidationOracleMaxDelay_;
-    }
-
-    function setLiquidationFallbackCloseFactorBps(uint256 newCloseFactorBps) external onlyOwner {
-        _validateLiquidationParams(
-            newCloseFactorBps,
-            liquidationPenaltyBps,
-            liquidationPriceSpreadBps,
-            minLiquidationImprovementBps,
-            uint256(liquidationOracleMaxDelay)
-        );
-        liquidationCloseFactorBps = newCloseFactorBps;
-    }
-
-    function setLiquidationFallbackPenaltyBps(uint256 newPenaltyBps) external onlyOwner {
-        _validateLiquidationParams(
-            liquidationCloseFactorBps,
-            newPenaltyBps,
-            liquidationPriceSpreadBps,
-            minLiquidationImprovementBps,
-            uint256(liquidationOracleMaxDelay)
-        );
-        liquidationPenaltyBps = newPenaltyBps;
-    }
-
-    function setLiquidationFallbackPriceSpreadBps(uint256 newSpreadBps) external onlyOwner {
-        _validateLiquidationParams(
-            liquidationCloseFactorBps,
-            liquidationPenaltyBps,
-            newSpreadBps,
-            minLiquidationImprovementBps,
-            uint256(liquidationOracleMaxDelay)
-        );
-        liquidationPriceSpreadBps = newSpreadBps;
-    }
-
-    function setLiquidationFallbackMinImprovementBps(uint256 newMinImprovementBps) external onlyOwner {
-        _validateLiquidationParams(
-            liquidationCloseFactorBps,
-            liquidationPenaltyBps,
-            liquidationPriceSpreadBps,
-            newMinImprovementBps,
-            uint256(liquidationOracleMaxDelay)
-        );
-        minLiquidationImprovementBps = newMinImprovementBps;
-    }
-
-    function setLiquidationFallbackOracleMaxDelay(uint32 newOracleMaxDelay) external onlyOwner {
-        _validateLiquidationParams(
-            liquidationCloseFactorBps,
-            liquidationPenaltyBps,
-            liquidationPriceSpreadBps,
-            minLiquidationImprovementBps,
-            uint256(newOracleMaxDelay)
-        );
-        liquidationOracleMaxDelay = newOracleMaxDelay;
-    }
-
     /*//////////////////////////////////////////////////////////////
                         LEGACY COMPATIBILITY ALIASES
     //////////////////////////////////////////////////////////////*/
@@ -392,66 +240,31 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
         uint256 liquidationPriceSpreadBps_,
         uint256 minLiquidationImprovementBps_
     ) external onlyOwner {
-        _validateLiquidationParams(
+        _setLiquidationFallbackParams(
             liquidationCloseFactorBps_,
             liquidationPenaltyBps_,
             liquidationPriceSpreadBps_,
             minLiquidationImprovementBps_,
-            uint256(liquidationOracleMaxDelay)
+            liquidationOracleMaxDelay
         );
-
-        liquidationCloseFactorBps = liquidationCloseFactorBps_;
-        liquidationPenaltyBps = liquidationPenaltyBps_;
-        liquidationPriceSpreadBps = liquidationPriceSpreadBps_;
-        minLiquidationImprovementBps = minLiquidationImprovementBps_;
     }
 
-    /// @dev Backward-compatible alias. Semantically this now sets fallback close factor.
-    function setLiquidationCloseFactorBps(uint256 newCloseFactorBps) external onlyOwner {
+    function _setLiquidationFallbackParams(
+        uint256 closeFactorBps,
+        uint256 penaltyBps,
+        uint256 priceSpreadBps,
+        uint256 minImprovementBps,
+        uint32 oracleMaxDelay
+    ) internal {
         _validateLiquidationParams(
-            newCloseFactorBps,
-            liquidationPenaltyBps,
-            liquidationPriceSpreadBps,
-            minLiquidationImprovementBps,
-            uint256(liquidationOracleMaxDelay)
+            closeFactorBps, penaltyBps, priceSpreadBps, minImprovementBps, uint256(oracleMaxDelay)
         );
-        liquidationCloseFactorBps = newCloseFactorBps;
-    }
 
-    /// @dev Backward-compatible alias. Semantically this now sets fallback penalty.
-    function setLiquidationPenaltyBps(uint256 newPenaltyBps) external onlyOwner {
-        _validateLiquidationParams(
-            liquidationCloseFactorBps,
-            newPenaltyBps,
-            liquidationPriceSpreadBps,
-            minLiquidationImprovementBps,
-            uint256(liquidationOracleMaxDelay)
-        );
-        liquidationPenaltyBps = newPenaltyBps;
-    }
-
-    /// @dev Backward-compatible alias. Semantically this now sets fallback spread.
-    function setLiquidationPriceSpreadBps(uint256 newSpreadBps) external onlyOwner {
-        _validateLiquidationParams(
-            liquidationCloseFactorBps,
-            liquidationPenaltyBps,
-            newSpreadBps,
-            minLiquidationImprovementBps,
-            uint256(liquidationOracleMaxDelay)
-        );
-        liquidationPriceSpreadBps = newSpreadBps;
-    }
-
-    /// @dev Backward-compatible alias. Semantically this now sets fallback min improvement.
-    function setMinLiquidationImprovementBps(uint256 newMinImprovementBps) external onlyOwner {
-        _validateLiquidationParams(
-            liquidationCloseFactorBps,
-            liquidationPenaltyBps,
-            liquidationPriceSpreadBps,
-            newMinImprovementBps,
-            uint256(liquidationOracleMaxDelay)
-        );
-        minLiquidationImprovementBps = newMinImprovementBps;
+        liquidationCloseFactorBps = closeFactorBps;
+        liquidationPenaltyBps = penaltyBps;
+        liquidationPriceSpreadBps = priceSpreadBps;
+        minLiquidationImprovementBps = minImprovementBps;
+        liquidationOracleMaxDelay = oracleMaxDelay;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -539,12 +352,7 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
         repayment.remainingBase = _residualBadDebtOf(trader);
 
         emit ResidualBadDebtRepaid(
-            payer,
-            trader,
-            recipient,
-            requestedAmountBase,
-            repayment.repaidBase,
-            repayment.remainingBase
+            payer, trader, recipient, requestedAmountBase, repayment.repaidBase, repayment.remainingBase
         );
     }
 

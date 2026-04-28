@@ -59,6 +59,40 @@ Must be updated after every meaningful modification.
 
 ---
 
+- Date: 2026-04-28
+- Scope: PerpEngine EIP-170 size reduction
+- Files Modified:
+  - src/lens/PerpEngineLens.sol
+  - src/perp/PerpEngineViews.sol
+  - src/perp/PerpEngineAdmin.sol
+  - src/perp/PerpEngineStorage.sol
+  - src/perp/PerpEngineTrading.sol
+  - src/perp/PerpEngineTypes.sol
+  - test/unit/perp/PerpEngineLiquidation.t.sol
+  - test/scenario/perp/PerpFullLiquidationFlow.t.sol
+  - test/scenario/system/BadDebtRepaymentFlow.t.sol
+  - test/fuzz/perp/PerpEngineFuzz.t.sol
+  - test/invariant/engine/PositionIndexInvariants.t.sol
+  - test/invariant/liquidation/LiquidationInvariants.t.sol
+  - docs/architecture/CONTRACT_SIZE_REDUCTION_PLAN.md
+  - PROGRESS.md
+- Summary:
+  Added `PerpEngineLens` for detailed read-only perp diagnostics and moved rich account, policy, insurance, and liquidation preview views out of `PerpEngine`. Reduced `PerpEngine` to the essential execution/risk read surface, compacted repeated access-control checks, removed nonessential rich getters, and trimmed compatibility/admin surfaces enough for deployment bytecode to fit EIP-170.
+- Invariants Impacted:
+  - Storage layout unchanged
+  - Trade, liquidation, collateral-transfer, bad-debt execution paths preserved in `PerpEngine`
+  - Detailed liquidation previews are read-only lens calculations and covered by a no-mutation unit test
+  - PerpEngine runtime size is now 24,570 bytes, 6 bytes below the EIP-170 limit
+- Validation:
+  - `forge build src/perp/PerpEngine.sol --sizes`: OK
+  - `forge build src/lens/PerpEngineLens.sol --sizes`: OK
+  - `forge test --match-path test/unit/perp/PerpEngine.t.sol`: OK (16 passed)
+  - `forge test --match-path test/unit/perp/PerpEngineLiquidation.t.sol`: OK (11 passed)
+  - `forge build`: OK
+- Status: DONE
+
+---
+
 ## Objective
 
 Maintain a clear, auditable history of system evolution.

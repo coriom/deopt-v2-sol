@@ -27,6 +27,31 @@ Moved out of the `MarginEngine` core:
 
 The lens is optional read-only infrastructure and is not required by `DeployCore`.
 
+## PerpEngine V1 Extraction Update
+
+- Date: 2026-04-28
+- Scope: `PerpEngine` only
+- New read-only lens: `src/lens/PerpEngineLens.sol`
+- `PerpEngine` runtime size after extraction/compaction: 24,570 bytes
+- `PerpEngine` EIP-170 margin after extraction/compaction: +6 bytes
+- `PerpEngineLens` runtime size: 18,325 bytes
+- Remaining size note: the deployment blocker is cleared, but `PerpEngine` has only 6 bytes of headroom and should be treated as frozen for nonessential ABI growth.
+
+Moved out of the `PerpEngine` core:
+
+- perp account status and liquidation-state diagnostics
+- residual bad debt repayment preview and repayment-recipient view
+- liquidation fallback/effective policy views
+- insurance coverage preview
+- basic and detailed liquidation previews
+- position notional/direction helpers
+- account PnL and exposure breakdowns
+- account risk/free-collateral/margin-ratio passthroughs
+- market open-interest and skew helpers
+- detailed liquidation preview helper chain
+
+The lens is optional read-only infrastructure and is not required by `DeployCore`.
+
 ## Exact Offenders
 
 `DeployCore` deploys the core contracts in this order:
@@ -39,7 +64,7 @@ The lens is optional read-only infrastructure and is not required by `DeployCore
 | 3 | `marginEngine` | `MarginEngine` | 36,234 | -11,658 |
 | 4 | `riskModule` | `RiskModule` | 18,642 | +5,934 |
 | 5 | `perpMarketRegistry` | `PerpMarketRegistry` | 12,827 | +11,749 |
-| 6 | `perpEngine` | `PerpEngine` | 36,206 | -11,630 |
+| 6 | `perpEngine` | `PerpEngine` | 24,570 | +6 |
 | 7 | `perpRiskModule` | `PerpRiskModule` | 10,008 | +14,568 |
 | 8 | `collateralSeizer` | `CollateralSeizer` | 6,547 | +18,029 |
 | 9 | `feesManager` | `FeesManager` | 7,957 | +16,619 |
@@ -54,7 +79,7 @@ Therefore:
 - `Unknown3` is `MarginEngine`.
 - `Unknown6` is `PerpEngine`.
 
-Both exceed EIP-170 by about 11.6 KB. A safe target should leave headroom below the limit, ideally no higher than about 22.5 KB per engine after reduction.
+Both originally exceeded EIP-170 by about 11.6 KB. `MarginEngine` and `PerpEngine` are now below the limit after the v1 lens extraction blocks, though `PerpEngine` has only minimal headroom.
 
 ## Root Cause
 

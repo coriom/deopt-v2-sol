@@ -7,6 +7,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {CollateralVault} from "../../../src/collateral/CollateralVault.sol";
 import {IOracle} from "../../../src/oracle/IOracle.sol";
 import {IPerpEngineTrade} from "../../../src/matching/IPerpEngineTrade.sol";
+import {PerpEngineLens} from "../../../src/lens/PerpEngineLens.sol";
 import {PerpEngine} from "../../../src/perp/PerpEngine.sol";
 import {PerpEngineTypes} from "../../../src/perp/PerpEngineTypes.sol";
 import {PerpMarketRegistry} from "../../../src/perp/PerpMarketRegistry.sol";
@@ -39,8 +40,7 @@ contract MockOracle is IOracle {
     mapping(bytes32 => PriceData) internal prices;
 
     function setPrice(address baseAsset, address quoteAsset, uint256 price, uint256 updatedAt, bool ok) external {
-        prices[keccak256(abi.encode(baseAsset, quoteAsset))] =
-            PriceData({price: price, updatedAt: updatedAt, ok: ok});
+        prices[keccak256(abi.encode(baseAsset, quoteAsset))] = PriceData({price: price, updatedAt: updatedAt, ok: ok});
     }
 
     function getPrice(address baseAsset, address quoteAsset) external view returns (uint256 price, uint256 updatedAt) {
@@ -74,9 +74,7 @@ contract MockPerpRiskModule is IPerpRiskModule {
         external
     {
         risks[trader] = AccountRisk({
-            equityBase: equityBase,
-            maintenanceMarginBase: maintenanceMarginBase,
-            initialMarginBase: initialMarginBase
+            equityBase: equityBase, maintenanceMarginBase: maintenanceMarginBase, initialMarginBase: initialMarginBase
         });
     }
 
@@ -138,11 +136,8 @@ contract MockCollateralSeizer is ICollateralSeizer {
     function setPreview(address token, uint256 amountToken, uint256 valueBaseFloor, uint256 effectiveBaseFloor, bool ok)
         external
     {
-        _previews[keccak256(abi.encode(token, amountToken))] = Preview({
-            valueBaseFloor: valueBaseFloor,
-            effectiveBaseFloor: effectiveBaseFloor,
-            ok: ok
-        });
+        _previews[keccak256(abi.encode(token, amountToken))] =
+            Preview({valueBaseFloor: valueBaseFloor, effectiveBaseFloor: effectiveBaseFloor, ok: ok});
     }
 
     function computeSeizurePlan(address, uint256)
@@ -237,6 +232,7 @@ contract PerpEngineLiquidationTest is Test {
     CollateralVault internal vault;
     PerpMarketRegistry internal registry;
     PerpEngine internal engine;
+    PerpEngineLens internal lens;
     MockOracle internal oracle;
     MockPerpRiskModule internal riskModule;
     MockCollateralSeizer internal seizer;
@@ -257,6 +253,7 @@ contract PerpEngineLiquidationTest is Test {
         seizer = new MockCollateralSeizer();
         insuranceFund = new MockInsuranceFund(address(vault));
         engine = new PerpEngine(OWNER, address(registry), address(vault), address(oracle));
+        lens = new PerpEngineLens();
 
         vm.startPrank(OWNER);
         vault.setCollateralToken(address(usdc), true, 6, 10_000);
@@ -279,17 +276,10 @@ contract PerpEngineLiquidationTest is Test {
                 reduceOnlyDuringCloseOnly: true
             }),
             PerpMarketRegistry.LiquidationConfig({
-                closeFactorBps: 5_000,
-                priceSpreadBps: 100,
-                minImprovementBps: 50,
-                oracleMaxDelay: 60
+                closeFactorBps: 5_000, priceSpreadBps: 100, minImprovementBps: 50, oracleMaxDelay: 60
             }),
             PerpMarketRegistry.FundingConfig({
-                isEnabled: false,
-                fundingInterval: 0,
-                maxFundingRateBps: 0,
-                maxSkewFundingBps: 0,
-                oracleClampBps: 0
+                isEnabled: false, fundingInterval: 0, maxFundingRateBps: 0, maxSkewFundingBps: 0, oracleClampBps: 0
             })
         );
 
@@ -376,9 +366,7 @@ contract PerpEngineLiquidationTest is Test {
         engine.liquidate(ALICE, marketId, ONE);
 
         assertEq(vault.balances(ALICE, address(usdc)), traderBefore - REALIZED_TRANSFER_BASE_ONE - PENALTY_BASE_ONE);
-        assertEq(
-            vault.balances(CAROL, address(usdc)), liquidatorBefore + REALIZED_TRANSFER_BASE_ONE + PENALTY_BASE_ONE
-        );
+        assertEq(vault.balances(CAROL, address(usdc)), liquidatorBefore + REALIZED_TRANSFER_BASE_ONE + PENALTY_BASE_ONE);
     }
 
     function testLiquidationUsesCollateralSeizerPlanWhenConfigured() external {
@@ -396,7 +384,8 @@ contract PerpEngineLiquidationTest is Test {
         seizer.setPreview(address(weth), 1 ether, PENALTY_BASE_ONE, PENALTY_BASE_ONE, true);
 
         vm.expectCall(
-            address(seizer), abi.encodeWithSelector(ICollateralSeizer.computeSeizurePlan.selector, ALICE, PENALTY_BASE_ONE)
+            address(seizer),
+            abi.encodeWithSelector(ICollateralSeizer.computeSeizurePlan.selector, ALICE, PENALTY_BASE_ONE)
         );
 
         vm.prank(CAROL);
@@ -426,7 +415,9 @@ contract PerpEngineLiquidationTest is Test {
 
         vm.expectCall(
             address(insuranceFund),
-            abi.encodeWithSignature("coverVaultShortfall(address,address,uint256)", address(usdc), CAROL, INSURANCE_COVER_BASE)
+            abi.encodeWithSignature(
+                "coverVaultShortfall(address,address,uint256)", address(usdc), CAROL, INSURANCE_COVER_BASE
+            )
         );
 
         vm.prank(CAROL);
@@ -434,8 +425,7 @@ contract PerpEngineLiquidationTest is Test {
 
         assertEq(vault.balances(address(insuranceFund), address(usdc)), insuranceBefore - INSURANCE_COVER_BASE);
         assertEq(
-            vault.balances(CAROL, address(usdc)),
-            liquidatorBefore + REALIZED_TRANSFER_BASE_ONE + INSURANCE_COVER_BASE
+            vault.balances(CAROL, address(usdc)), liquidatorBefore + REALIZED_TRANSFER_BASE_ONE + INSURANCE_COVER_BASE
         );
         assertEq(vault.balances(CAROL, address(weth)), 1 ether);
         assertEq(engine.getResidualBadDebt(ALICE), 0);
@@ -457,9 +447,7 @@ contract PerpEngineLiquidationTest is Test {
         seizer.setPreview(address(weth), 1 ether, SEIZER_COVER_BASE, SEIZER_COVER_BASE, true);
 
         vm.expectEmit(true, true, true, true);
-        emit PerpEngineTypes.ResidualBadDebtUpdated(
-            CAROL, ALICE, 0, RESIDUAL_BAD_DEBT_BASE, 0, RESIDUAL_BAD_DEBT_BASE
-        );
+        emit PerpEngineTypes.ResidualBadDebtUpdated(CAROL, ALICE, 0, RESIDUAL_BAD_DEBT_BASE, 0, RESIDUAL_BAD_DEBT_BASE);
         vm.expectEmit(true, true, true, true);
         emit PerpEngineTypes.LiquidationResolved(
             CAROL,
@@ -496,7 +484,7 @@ contract PerpEngineLiquidationTest is Test {
         seizer.setPreview(address(weth), 1 ether, SEIZER_COVER_BASE, SEIZER_COVER_BASE, true);
 
         PerpEngineTypes.DetailedLiquidationPreview memory preview =
-            engine.previewDetailedLiquidation(ALICE, marketId, ONE);
+            lens.previewDetailedLiquidation(address(engine), ALICE, marketId, ONE);
 
         assertTrue(preview.isLiquidatable);
         assertTrue(preview.hasPosition);
@@ -520,6 +508,33 @@ contract PerpEngineLiquidationTest is Test {
         assertEq(preview.riskBefore.maintenanceMarginBase, LIQUIDATABLE_MM);
         assertEq(preview.riskBefore.initialMarginBase, 120 * BASE_UNIT);
         assertEq(preview.riskBefore.marginRatioBps, 9_000);
+    }
+
+    function testDetailedLiquidationPreviewDoesNotMutateEngineState() external {
+        _depositUsdc(ALICE, REALIZED_TRANSFER_BASE_ONE);
+        _depositWeth(ALICE, 1 ether);
+        _fundInsurance(40 * BASE_UNIT);
+        _openLong(ALICE, BOB, TWO);
+        riskModule.setAccountRisk(ALICE, LIQUIDATABLE_EQUITY, LIQUIDATABLE_MM, 120 * BASE_UNIT);
+
+        PerpEngineTypes.Position memory traderBefore = engine.positions(ALICE, marketId);
+        PerpEngineTypes.MarketState memory marketBefore = engine.marketState(marketId);
+        uint256 debtBefore = engine.getResidualBadDebt(ALICE);
+        uint256 aliceUsdcBefore = vault.balances(ALICE, address(usdc));
+
+        lens.previewDetailedLiquidation(address(engine), ALICE, marketId, ONE);
+
+        PerpEngineTypes.Position memory traderAfter = engine.positions(ALICE, marketId);
+        PerpEngineTypes.MarketState memory marketAfter = engine.marketState(marketId);
+        assertEq(traderAfter.size1e8, traderBefore.size1e8);
+        assertEq(traderAfter.openNotional1e8, traderBefore.openNotional1e8);
+        assertEq(traderAfter.lastCumulativeFundingRate1e18, traderBefore.lastCumulativeFundingRate1e18);
+        assertEq(marketAfter.longOpenInterest1e8, marketBefore.longOpenInterest1e8);
+        assertEq(marketAfter.shortOpenInterest1e8, marketBefore.shortOpenInterest1e8);
+        assertEq(marketAfter.cumulativeFundingRate1e18, marketBefore.cumulativeFundingRate1e18);
+        assertEq(marketAfter.lastFundingTimestamp, marketBefore.lastFundingTimestamp);
+        assertEq(engine.getResidualBadDebt(ALICE), debtBefore);
+        assertEq(vault.balances(ALICE, address(usdc)), aliceUsdcBefore);
     }
 
     function testLiquidationMustImproveSolvencyOrRevert() external {

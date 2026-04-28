@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
-
 /// @title PerpEngineTypes
 /// @notice Types / constants / errors / events / pure helpers for DeOpt v2 perpetuals.
 /// @dev Canonical unit conventions used by this module:
@@ -264,6 +262,7 @@ abstract contract PerpEngineTypes {
     error InsuranceFundNotSet();
     error FeesManagerNotSet();
     error CollateralSeizerNotSet();
+    error ReentrancyGuardReentrantCall();
 
     error InsuranceFundCoverageFailed();
     error BadDebtOutstanding(address trader, uint256 residualBaseValue);
@@ -293,10 +292,7 @@ abstract contract PerpEngineTypes {
     event MarketActivationStateSet(uint256 indexed marketId, uint8 oldState, uint8 newState);
     event MarketEmergencyCloseOnlySet(uint256 indexed marketId, bool oldCloseOnly, bool newCloseOnly);
     event MarketEmergencyCloseOnlyUpdated(
-        address indexed caller,
-        uint256 indexed marketId,
-        bool oldCloseOnly,
-        bool newCloseOnly
+        address indexed caller, uint256 indexed marketId, bool oldCloseOnly, bool newCloseOnly
     );
 
     event Paused(address indexed account);
@@ -309,10 +305,7 @@ abstract contract PerpEngineTypes {
     event CollateralOpsPauseSet(bool paused);
 
     event EmergencyModeUpdated(
-        bool tradingPaused,
-        bool liquidationPaused,
-        bool fundingPaused,
-        bool collateralOpsPaused
+        bool tradingPaused, bool liquidationPaused, bool fundingPaused, bool collateralOpsPaused
     );
 
     /// @notice Perp trade execution.
@@ -358,10 +351,7 @@ abstract contract PerpEngineTypes {
     /// @notice Total penalty effectively paid toward the liquidator incentive.
     /// @dev `penaltyBaseValue` is denominated in native units of the protocol base collateral token.
     event LiquidationPenaltyPaid(
-        address indexed liquidator,
-        address indexed trader,
-        uint256 indexed marketId,
-        uint256 penaltyBaseValue
+        address indexed liquidator, address indexed trader, uint256 indexed marketId, uint256 penaltyBaseValue
     );
 
     /// @notice Emitted when trader collateral does not fully cover the penalty target.
@@ -388,10 +378,7 @@ abstract contract PerpEngineTypes {
     /// @notice Emitted when liquidation still leaves a final uncovered bad debt.
     /// @dev `residualBaseValue` is denominated in native units of the protocol base collateral token.
     event LiquidationBadDebtRecorded(
-        address indexed liquidator,
-        address indexed trader,
-        uint256 indexed marketId,
-        uint256 residualBaseValue
+        address indexed liquidator, address indexed trader, uint256 indexed marketId, uint256 residualBaseValue
     );
 
     /// @notice Full liquidation resolution breakdown after collateral seizure and insurance coverage.
@@ -444,7 +431,9 @@ abstract contract PerpEngineTypes {
     /// @dev
     ///  - `amount` is denominated in token-native units
     ///  - `marginRatioAfterBps` is in basis points
-    event CollateralWithdrawn(address indexed trader, address indexed token, uint256 amount, uint256 marginRatioAfterBps);
+    event CollateralWithdrawn(
+        address indexed trader, address indexed token, uint256 amount, uint256 marginRatioAfterBps
+    );
 
     /*//////////////////////////////////////////////////////////////
                           PURE / SAFE HELPERS
@@ -489,17 +478,17 @@ abstract contract PerpEngineTypes {
 
     function _toInt256(uint256 x) internal pure returns (int256 y) {
         if (x > uint256(type(int256).max)) revert CastOverflow();
-        y = SafeCast.toInt256(x);
+        y = int256(x);
     }
 
     function _toUint256(int256 x) internal pure returns (uint256 y) {
         if (x < 0) revert CastOverflow();
-        y = SafeCast.toUint256(x);
+        y = uint256(x);
     }
 
     function _toInt128(uint128 x) internal pure returns (int128 y) {
         if (x > uint128(type(int128).max)) revert CastOverflow();
-        y = SafeCast.toInt128(int256(uint256(x)));
+        y = int128(int256(uint256(x)));
         _ensureInt128Allowed(y);
     }
 
@@ -526,6 +515,11 @@ abstract contract PerpEngineTypes {
     function _pow10(uint256 exp) internal pure returns (uint256) {
         if (exp > MAX_POW10_EXP) revert MathOverflow();
         return 10 ** exp;
+    }
+
+    function _mulDivFloor(uint256 a, uint256 b, uint256 denominator) internal pure returns (uint256) {
+        if (denominator == 0) revert MathOverflow();
+        return _mulChecked(a, b) / denominator;
     }
 
     /// @notice Absolute notional in normalized quote 1e8 units.
@@ -585,10 +579,14 @@ abstract contract PerpEngineTypes {
     /// @notice Margin ratio helper in basis points.
     /// @dev
     ///  - `equityBase` and `maintenanceMarginBase` are denominated in native units of the protocol base collateral token
-    function _marginRatioBpsFromState(int256 equityBase, uint256 maintenanceMarginBase) internal pure returns (uint256) {
+    function _marginRatioBpsFromState(int256 equityBase, uint256 maintenanceMarginBase)
+        internal
+        pure
+        returns (uint256)
+    {
         if (maintenanceMarginBase == 0) return type(uint256).max;
         if (equityBase <= 0) return 0;
-        return (SafeCast.toUint256(equityBase) * BPS) / maintenanceMarginBase;
+        return (uint256(equityBase) * BPS) / maintenanceMarginBase;
     }
 
     /// @notice Checks whether a transition is strictly reduce-only.
@@ -644,15 +642,15 @@ abstract contract PerpEngineTypes {
         if (raw == 0) raw = 1;
 
         if (raw > uint256(type(uint128).max)) revert SizeTooLarge();
-        return SafeCast.toUint128(raw);
+        return uint128(raw);
     }
 
     /// @notice Clamps a requested liquidation clip to the protocol maximum.
-    function _boundedLiquidationSize1e8(
-        int256 positionSize1e8,
-        uint128 requestedCloseSize1e8,
-        uint256 closeFactorBps
-    ) internal pure returns (uint128 executedCloseSize1e8) {
+    function _boundedLiquidationSize1e8(int256 positionSize1e8, uint128 requestedCloseSize1e8, uint256 closeFactorBps)
+        internal
+        pure
+        returns (uint128 executedCloseSize1e8)
+    {
         uint128 maxClose = _maxLiquidatableSize1e8(positionSize1e8, closeFactorBps);
         if (maxClose == 0) return 0;
         if (requestedCloseSize1e8 == 0) return maxClose;
