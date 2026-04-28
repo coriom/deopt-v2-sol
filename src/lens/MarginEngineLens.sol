@@ -363,6 +363,17 @@ contract MarginEngineLens is MarginEngineTypes {
         }
     }
 
+    function getSeriesSettlementAccounting(address marginEngine, uint256 optionId)
+        external
+        view
+        returns (SeriesSettlementState memory state)
+    {
+        IMarginEngineLensSource engine = IMarginEngineLensSource(marginEngine);
+        state.totalCollected = engine.seriesCollected(optionId);
+        state.totalPaid = engine.seriesPaid(optionId);
+        state.totalBadDebt = engine.seriesBadDebt(optionId);
+    }
+
     function previewTradeFees(
         address marginEngine,
         uint256 optionId,

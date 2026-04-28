@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {IRiskModule} from "../risk/IRiskModule.sol";
 import {IMarginEngineState} from "../risk/IMarginEngineState.sol";
 
 import {MarginEngineTrading} from "./MarginEngineTrading.sol";
@@ -60,13 +59,4 @@ abstract contract MarginEngineViews is MarginEngineTrading {
         return _isOpenSeriesInternal(trader, optionId);
     }
 
-    function _isLiquidatableAccount(address trader) internal view returns (bool) {
-        if (address(_riskModule) == address(0)) return false;
-
-        IRiskModule.AccountRisk memory risk = _riskModule.computeAccountRisk(trader);
-        if (risk.maintenanceMarginBase == 0) return false;
-        if (risk.equityBase <= 0) return true;
-
-        return _marginRatioBpsFromRisk(risk.equityBase, risk.maintenanceMarginBase) < liquidationThresholdBps;
-    }
 }

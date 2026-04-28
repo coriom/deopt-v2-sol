@@ -138,43 +138,66 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     //////////////////////////////////////////////////////////////*/
 
     modifier onlyOwner() {
-        if (msg.sender != owner) revert NotAuthorized();
+        _onlyOwner();
         _;
     }
 
     modifier onlyGuardianOrOwner() {
-        if (msg.sender != owner && msg.sender != guardian) revert GuardianNotAuthorized();
+        _onlyGuardianOrOwner();
         _;
     }
 
     modifier onlyMatchingEngine() {
-        if (msg.sender != matchingEngine) revert NotAuthorized();
-        _;
-    }
-
-    modifier whenNotPaused() {
-        if (_isAnyPauseActive()) revert PausedError();
+        _onlyMatchingEngine();
         _;
     }
 
     modifier whenTradingNotPaused() {
-        if (_isTradingPaused()) revert TradingPaused();
+        _whenTradingNotPaused();
         _;
     }
 
     modifier whenLiquidationNotPaused() {
-        if (_isLiquidationPaused()) revert LiquidationPaused();
+        _whenLiquidationNotPaused();
         _;
     }
 
     modifier whenSettlementNotPaused() {
-        if (_isSettlementPaused()) revert SettlementPaused();
+        _whenSettlementNotPaused();
         _;
     }
 
     modifier whenCollateralOpsNotPaused() {
-        if (_isCollateralOpsPaused()) revert CollateralOpsPaused();
+        _whenCollateralOpsNotPaused();
         _;
+    }
+
+    function _onlyOwner() internal view {
+        if (msg.sender != owner) revert NotAuthorized();
+    }
+
+    function _onlyGuardianOrOwner() internal view {
+        if (msg.sender != owner && msg.sender != guardian) revert GuardianNotAuthorized();
+    }
+
+    function _onlyMatchingEngine() internal view {
+        if (msg.sender != matchingEngine) revert NotAuthorized();
+    }
+
+    function _whenTradingNotPaused() internal view {
+        if (_isTradingPaused()) revert TradingPaused();
+    }
+
+    function _whenLiquidationNotPaused() internal view {
+        if (_isLiquidationPaused()) revert LiquidationPaused();
+    }
+
+    function _whenSettlementNotPaused() internal view {
+        if (_isSettlementPaused()) revert SettlementPaused();
+    }
+
+    function _whenCollateralOpsNotPaused() internal view {
+        if (_isCollateralOpsPaused()) revert CollateralOpsPaused();
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -248,10 +271,6 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     /*//////////////////////////////////////////////////////////////
                           INTERNAL EMERGENCY HELPERS
     //////////////////////////////////////////////////////////////*/
-
-    function _isAnyPauseActive() internal view returns (bool) {
-        return paused || tradingPaused || liquidationPaused || settlementPaused || collateralOpsPaused;
-    }
 
     function _isTradingPaused() internal view returns (bool) {
         return paused || tradingPaused;

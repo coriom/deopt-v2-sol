@@ -11,6 +11,17 @@ import {IMarginEngineState} from "../risk/IMarginEngineState.sol";
 
 import {MarginEngineViews} from "./MarginEngineViews.sol";
 
+interface ICollateralVaultMarginOps {
+    function depositFor(address user, address token, uint256 amount) external;
+    function withdrawFor(address user, address token, uint256 amount) external;
+}
+
+interface IInsuranceFundMarginBackstop {
+    function coverVaultShortfall(address token, address toAccount, uint256 requestedAmount)
+        external
+        returns (uint256 paidAmount);
+}
+
 /// @title MarginEngineOps
 /// @notice Stateful collateral / settlement / liquidation layer for the options engine.
 /// @dev
@@ -39,21 +50,17 @@ abstract contract MarginEngineOps is MarginEngineViews {
                         USER COLLATERAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Correct deposit path via CollateralVault.depositFor(user, token, amount).
-    ///      If not implemented in CollateralVault => revert.
     function depositCollateral(address token, uint256 amount) external whenCollateralOpsNotPaused nonReentrant {
         if (amount == 0) revert AmountZero();
 
         (bool ok,) = address(_collateralVault).call(
-            abi.encodeWithSignature("depositFor(address,address,uint256)", msg.sender, token, amount)
+            abi.encodeWithSelector(ICollateralVaultMarginOps.depositFor.selector, msg.sender, token, amount)
         );
         if (!ok) revert VaultDepositForNotSupported();
 
         emit CollateralDeposited(msg.sender, token, amount);
     }
 
-    /// @dev IMPORTANT: never call collateralVault.withdraw() here (msg.sender = MarginEngine).
-    ///      Force withdrawFor(user, token, amount). If unsupported => revert.
     function withdrawCollateral(address token, uint256 amount) external whenCollateralOpsNotPaused nonReentrant {
         if (address(_riskModule) == address(0)) revert RiskModuleNotSet();
         if (amount == 0) revert AmountZero();
@@ -64,7 +71,7 @@ abstract contract MarginEngineOps is MarginEngineViews {
         if (preview.marginRatioAfterBps < liquidationThresholdBps) revert WithdrawWouldBreachMargin();
 
         (bool ok,) = address(_collateralVault).call(
-            abi.encodeWithSignature("withdrawFor(address,address,uint256)", msg.sender, token, amount)
+            abi.encodeWithSelector(ICollateralVaultMarginOps.withdrawFor.selector, msg.sender, token, amount)
         );
         if (!ok) revert VaultWithdrawForNotSupported();
 
@@ -84,15 +91,7 @@ abstract contract MarginEngineOps is MarginEngineViews {
         _requireStandardContractSize(series);
         if (settlementPrice == 0) return 0;
 
-        uint256 intrinsicPrice1e8;
-        if (series.isCall) {
-            intrinsicPrice1e8 =
-                settlementPrice > uint256(series.strike) ? (settlementPrice - uint256(series.strike)) : 0;
-        } else {
-            intrinsicPrice1e8 =
-                uint256(series.strike) > settlementPrice ? (uint256(series.strike) - settlementPrice) : 0;
-        }
-
+        uint256 intrinsicPrice1e8 = _intrinsic1e8(series, settlementPrice);
         if (intrinsicPrice1e8 == 0) return 0;
         payoffPerContract = _price1e8ToSettlementUnits(series.settlementAsset, intrinsicPrice1e8);
     }
@@ -155,7 +154,9 @@ abstract contract MarginEngineOps is MarginEngineViews {
         _syncVaultBestEffort(insuranceFund, asset);
 
         (bool ok, bytes memory data) = insuranceFund.call(
-            abi.encodeWithSignature("coverVaultShortfall(address,address,uint256)", asset, toAccount, requestedAmount)
+            abi.encodeWithSelector(
+                IInsuranceFundMarginBackstop.coverVaultShortfall.selector, asset, toAccount, requestedAmount
+            )
         );
 
         if (ok && data.length >= 32) {
@@ -202,13 +203,14 @@ abstract contract MarginEngineOps is MarginEngineViews {
     ///      1) settlement sink
     ///      2) insurance fund top-up if sink != insuranceFund
     ///      3) residual becomes bad debt
-    function _resolveLongSettlementPayout(uint256 optionId, address settlementAsset, address trader, uint256 amountDue)
-        internal
-        returns (uint256 paidToTrader, uint256 badDebt)
-    {
+    function _resolveLongSettlementPayout(
+        uint256 optionId,
+        address settlementAsset,
+        address trader,
+        uint256 amountDue,
+        address sink
+    ) internal returns (uint256 paidToTrader, uint256 badDebt) {
         if (amountDue == 0) return (0, 0);
-
-        address sink = _settlementSink();
 
         paidToTrader = _payFromSettlementSinkUpTo(settlementAsset, sink, trader, amountDue);
         if (sink == insuranceFund && insuranceFund != address(0) && paidToTrader != 0) {
@@ -236,13 +238,15 @@ abstract contract MarginEngineOps is MarginEngineViews {
     /// @dev Settlement hierarchy for a losing short:
     ///      1) collect what can actually be taken from trader
     ///      2) residual uncollectable remainder becomes bad debt
-    function _resolveShortSettlementCollection(uint256 optionId, address settlementAsset, address trader, uint256 amountOwed)
-        internal
-        returns (uint256 collectedFromTrader, uint256 badDebt)
-    {
+    function _resolveShortSettlementCollection(
+        uint256 optionId,
+        address settlementAsset,
+        address trader,
+        uint256 amountOwed,
+        address sink
+    ) internal returns (uint256 collectedFromTrader, uint256 badDebt) {
         if (amountOwed == 0) return (0, 0);
 
-        address sink = _settlementSink();
         collectedFromTrader = _collectFromTraderUpTo(trader, sink, settlementAsset, amountOwed);
 
         if (collectedFromTrader < amountOwed) {
@@ -281,16 +285,17 @@ abstract contract MarginEngineOps is MarginEngineViews {
         uint256 payoffPerContract = _computePerContractPayoff(series, settlementPrice);
 
         int256 pnl;
+        uint256 grossSettlementAmount;
         if (payoffPerContract == 0) {
             pnl = 0;
         } else {
             int256 q = int256(oldQty);
             uint256 absQty = _absInt128(oldQty);
 
-            uint256 amount = _mulChecked(absQty, payoffPerContract);
-            if (amount > uint256(type(int256).max)) revert PnlOverflow();
+            grossSettlementAmount = _mulChecked(absQty, payoffPerContract);
+            if (grossSettlementAmount > uint256(type(int256).max)) revert PnlOverflow();
 
-            pnl = q >= 0 ? SafeCast.toInt256(amount) : -SafeCast.toInt256(amount);
+            pnl = q >= 0 ? SafeCast.toInt256(grossSettlementAmount) : -SafeCast.toInt256(grossSettlementAmount);
         }
 
         address asset = series.settlementAsset;
@@ -303,7 +308,7 @@ abstract contract MarginEngineOps is MarginEngineViews {
             settlementPrice,
             payoffPerContract,
             pnl,
-            payoffPerContract == 0 ? 0 : _mulChecked(_absInt128(oldQty), payoffPerContract)
+            grossSettlementAmount
         );
 
         // Close position before transfers so settlement cannot be replayed.
@@ -314,18 +319,19 @@ abstract contract MarginEngineOps is MarginEngineViews {
         uint256 paidToTrader = 0;
         uint256 badDebt = 0;
 
+        address sink = _settlementSink();
         _syncVaultBestEffort(trader, asset);
-        _syncVaultBestEffort(_settlementSink(), asset);
+        _syncVaultBestEffort(sink, asset);
         if (insuranceFund != address(0)) {
             _syncVaultBestEffort(insuranceFund, asset);
         }
 
         if (pnl > 0) {
-            uint256 amountDue = SafeCast.toUint256(pnl);
-            (paidToTrader, badDebt) = _resolveLongSettlementPayout(optionId, asset, trader, amountDue);
+            (paidToTrader, badDebt) =
+                _resolveLongSettlementPayout(optionId, asset, trader, grossSettlementAmount, sink);
         } else if (pnl < 0) {
-            uint256 amountOwed = SafeCast.toUint256(-pnl);
-            (collectedFromTrader, badDebt) = _resolveShortSettlementCollection(optionId, asset, trader, amountOwed);
+            (collectedFromTrader, badDebt) =
+                _resolveShortSettlementCollection(optionId, asset, trader, grossSettlementAmount, sink);
         }
 
         _recordSeriesSettlementAccounting(optionId, collectedFromTrader, paidToTrader, badDebt);
@@ -398,7 +404,8 @@ abstract contract MarginEngineOps is MarginEngineViews {
         IRiskModule.AccountRisk memory riskBefore = _riskModule.computeAccountRisk(trader);
         uint256 ratioBeforeBps = _marginRatioBpsFromRisk(riskBefore.equityBase, riskBefore.maintenanceMarginBase);
 
-        if (!isLiquidatable(trader)) revert NotLiquidatable();
+        if (riskBefore.maintenanceMarginBase == 0) revert NotLiquidatable();
+        if (riskBefore.equityBase > 0 && ratioBeforeBps >= liquidationThresholdBps) revert NotLiquidatable();
 
         uint256 traderTotalShort = totalShortContracts[trader];
         if (traderTotalShort == 0) revert NotLiquidatable();
@@ -414,9 +421,6 @@ abstract contract MarginEngineOps is MarginEngineViews {
         address[] memory cashAssets = new address[](optionIds.length);
         uint256[] memory cashRequested = new uint256[](optionIds.length);
         uint256 assetsCount;
-
-        address[] memory touchedAssets = new address[](optionIds.length);
-        uint256 touchedCount;
 
         for (uint256 i = 0; i < optionIds.length; i++) {
             if (totalContractsClosed >= maxCloseOverall) break;
@@ -470,20 +474,6 @@ abstract contract MarginEngineOps is MarginEngineViews {
                     cashAssets[assetsCount] = s.settlementAsset;
                     cashRequested[assetsCount] = req;
                     assetsCount++;
-                }
-            }
-
-            {
-                bool tfound;
-                for (uint256 k2 = 0; k2 < touchedCount; k2++) {
-                    if (touchedAssets[k2] == s.settlementAsset) {
-                        tfound = true;
-                        break;
-                    }
-                }
-                if (!tfound) {
-                    touchedAssets[touchedCount] = s.settlementAsset;
-                    touchedCount++;
                 }
             }
 
@@ -541,10 +531,10 @@ abstract contract MarginEngineOps is MarginEngineViews {
         }
 
         if (remainingBase > 0) {
-            for (uint256 i = 0; i < touchedCount; i++) {
+            for (uint256 i = 0; i < assetsCount; i++) {
                 if (remainingBase == 0) break;
 
-                address tok = touchedAssets[i];
+                address tok = cashAssets[i];
                 if (tok == address(0) || tok == baseCollateralToken) continue;
 
                 CollateralVault.CollateralTokenConfig memory cfg = _vaultCfg(tok);

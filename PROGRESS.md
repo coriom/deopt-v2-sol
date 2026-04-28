@@ -65,6 +65,35 @@ Maintain a clear, auditable history of system evolution.
 
 ---
 
+- Date: 2026-04-28
+- Scope: MarginEngine contract-size reduction
+- Files Modified:
+  - foundry.toml
+  - docs/architecture/CONTRACT_SIZE_REDUCTION_PLAN.md
+  - PROGRESS.md
+  - src/lens/MarginEngineLens.sol
+  - src/margin/MarginEngineOps.sol
+  - src/margin/MarginEngineStorage.sol
+  - src/margin/MarginEngineViews.sol
+  - test/scenario/options/OptionSettlementFlow.t.sol
+- Summary:
+  Completed the existing rich options read/diagnostic split into `MarginEngineLens` by making the core compile cleanly under the size limit while preserving state-changing entrypoints and essential `IMarginEngineState` reads. Removed the core `getSeriesSettlementAccounting` aggregation view in favor of existing simple public settlement-accounting mappings/lens aggregation, tightened duplicated preview-only code out of the core, wrapped MarginEngine modifiers to reduce repeated bytecode, and switched production compilation to size-oriented optimizer metadata settings. `MarginEngine` now measures 24,401 bytes, below the 24,576-byte EIP-170 runtime limit.
+- Invariants Impacted:
+  - No storage layout changed
+  - No option payoff, settlement, liquidation, fee, oracle, collateral accounting, or unit-scaling semantics changed
+  - Read-only preview/diagnostic surfaces moved to optional lens infrastructure
+  - State-changing MarginEngine trade, settlement, liquidation, collateral wrapper, admin, and emergency-control entrypoints remain in core
+- Validation:
+  - `forge build src/margin/MarginEngine.sol --sizes`: OK; `MarginEngine` 24,401 bytes, +175 byte EIP-170 margin
+  - `forge build src/lens/MarginEngineLens.sol --sizes`: OK; `MarginEngineLens` 17,771 bytes
+  - `forge test --match-path test/unit/margin/MarginEngine.t.sol`: OK
+  - `forge test --match-path test/scenario/options/OptionSettlementFlow.t.sol`: OK
+  - `forge build --sizes`: compilation OK, exits non-zero because `PerpEngine` remains above EIP-170 and is out of scope
+  - `forge build`: OK
+- Status: DONE
+
+---
+
 - Date: 2026-04-27
 - Scope: Contract size reduction diagnosis
 - Files Modified:

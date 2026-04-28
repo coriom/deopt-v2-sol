@@ -339,14 +339,12 @@ contract OptionSettlementFlowTest is Test {
         engine.settleAccount(callOptionId, SELLER);
         engine.settleAccount(callOptionId, BUYER);
 
-        MarginEngineTypes.SeriesSettlementState memory accounting = engine.getSeriesSettlementAccounting(callOptionId);
-
         assertEq(vault.balances(BUYER, address(usdc)), buyerStart - PREMIUM_PER_CONTRACT + ITM_PAYOFF);
         assertEq(vault.balances(SELLER, address(usdc)), sellerStart + PREMIUM_PER_CONTRACT - ITM_PAYOFF);
         assertEq(vault.balances(BUYER, address(usdc)) + vault.balances(SELLER, address(usdc)), buyerStart + sellerStart);
-        assertEq(accounting.totalCollected, ITM_PAYOFF);
-        assertEq(accounting.totalPaid, ITM_PAYOFF);
-        assertEq(accounting.totalBadDebt, 0);
+        assertEq(engine.seriesCollected(callOptionId), ITM_PAYOFF);
+        assertEq(engine.seriesPaid(callOptionId), ITM_PAYOFF);
+        assertEq(engine.seriesBadDebt(callOptionId), 0);
     }
 
     function testInsuranceFundIsUsedWhenSettlementShortfallExists() external {
@@ -360,13 +358,11 @@ contract OptionSettlementFlowTest is Test {
 
         engine.settleAccount(callOptionId, BUYER);
 
-        MarginEngineTypes.SeriesSettlementState memory accounting = engine.getSeriesSettlementAccounting(callOptionId);
-
         assertEq(vault.balances(BUYER, address(usdc)), buyerBefore + ITM_PAYOFF);
         assertEq(vault.balances(address(insuranceFund), address(usdc)), insuranceBefore - ITM_PAYOFF);
-        assertEq(accounting.totalCollected, 0);
-        assertEq(accounting.totalPaid, ITM_PAYOFF);
-        assertEq(accounting.totalBadDebt, 0);
+        assertEq(engine.seriesCollected(callOptionId), 0);
+        assertEq(engine.seriesPaid(callOptionId), ITM_PAYOFF);
+        assertEq(engine.seriesBadDebt(callOptionId), 0);
     }
 
     function testResidualBadDebtIsRecordedWhenCollateralAndInsuranceAreBothInsufficient() external {
@@ -379,12 +375,10 @@ contract OptionSettlementFlowTest is Test {
 
         engine.settleAccount(callOptionId, BUYER);
 
-        MarginEngineTypes.SeriesSettlementState memory accounting = engine.getSeriesSettlementAccounting(callOptionId);
-
         assertEq(vault.balances(BUYER, address(usdc)), buyerBefore + (200 * BASE_UNIT));
-        assertEq(accounting.totalCollected, 0);
-        assertEq(accounting.totalPaid, 200 * BASE_UNIT);
-        assertEq(accounting.totalBadDebt, 300 * BASE_UNIT);
+        assertEq(engine.seriesCollected(callOptionId), 0);
+        assertEq(engine.seriesPaid(callOptionId), 200 * BASE_UNIT);
+        assertEq(engine.seriesBadDebt(callOptionId), 300 * BASE_UNIT);
     }
 
     function _trade(address buyer, address seller, uint128 quantity) internal {

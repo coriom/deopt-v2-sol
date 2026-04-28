@@ -4,7 +4,28 @@
 
 Diagnose the minimum safe contract-size reduction required for real network deployment under the EIP-170 deployed bytecode limit of 24,576 bytes.
 
-This is a diagnosis and recommendation only. No Solidity protocol contracts were modified.
+This began as a diagnosis and recommendation. The MarginEngine v1 size-reduction block has now been implemented.
+
+## MarginEngine V1 Extraction Update
+
+- Date: 2026-04-28
+- Scope: `MarginEngine` only
+- New read-only lens: `src/lens/MarginEngineLens.sol`
+- `MarginEngine` runtime size after extraction/config hardening: 24,401 bytes
+- `MarginEngine` EIP-170 margin after extraction/config hardening: +175 bytes
+- `MarginEngineLens` runtime size: 17,771 bytes
+- Remaining known blocker: `PerpEngine` runtime size is 35,656 bytes, still +11,080 bytes above EIP-170 and intentionally out of scope for this block.
+
+Moved out of the `MarginEngine` core:
+
+- rich account state diagnostics
+- account settlement preview
+- detailed settlement preview
+- options liquidation preview
+- protocol settlement accounting slice
+- trade fee preview
+
+The lens is optional read-only infrastructure and is not required by `DeployCore`.
 
 ## Exact Offenders
 
@@ -273,4 +294,3 @@ The following may become useful after v1 launch, but are not recommended for the
 - Ran `forge build --sizes`.
   - Normal compilation artifacts were current.
   - The size command reports the two expected EIP-170 failures: `MarginEngine` and `PerpEngine`.
-
