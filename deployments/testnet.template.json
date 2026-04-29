@@ -8,10 +8,54 @@
     "rpcUrl": "TODO_REPLACE_TESTNET_RPC_URL",
     "explorerUrl": "https://sepolia.basescan.org",
     "deploymentBlock": null,
+    "deploymentStartBlock": null,
+    "deploymentEndBlock": null,
     "deployer": "TODO_REPLACE_TESTNET_DEPLOYER_ADDRESS",
     "baseNumeraire": "USDC",
     "priceScale": "1e8",
     "bpsScale": 10000
+  },
+  "rehearsalTransactions": {
+    "deployTestnetAssets": {
+      "blockNumber": null,
+      "txHashes": []
+    },
+    "deployCore": {
+      "blockNumber": null,
+      "txHashes": []
+    },
+    "wireCore": {
+      "blockNumber": null,
+      "txHashes": []
+    },
+    "configureCore": {
+      "blockNumber": null,
+      "txHashes": []
+    },
+    "deployTestnetMockFeeds": {
+      "blockNumber": null,
+      "txHashes": []
+    },
+    "refreshTestnetMockFeeds": {
+      "blockNumber": null,
+      "txHashes": []
+    },
+    "configureMarkets": {
+      "blockNumber": null,
+      "txHashes": []
+    },
+    "transferOwnerships": {
+      "blockNumber": null,
+      "txHashes": []
+    },
+    "acceptOwnerships": {
+      "blockNumber": null,
+      "txHashes": []
+    },
+    "explorerVerification": {
+      "blockNumber": null,
+      "txHashes": []
+    }
   },
   "coreContractAddresses": {
     "oracleRouter": "TODO_REPLACE_ORACLE_ROUTER",
@@ -45,6 +89,30 @@
       "address": "TODO_REPLACE_TESTNET_BTC_UNDERLYING",
       "decimals": 8,
       "role": "underlyingAndCollateral"
+    }
+  },
+  "testnetAssets": {
+    "usesMocks": false,
+    "mockUsdc": {
+      "address": "TODO_REPLACE_TESTNET_MOCK_USDC_OR_NULL",
+      "decimals": 6,
+      "owner": "TODO_REPLACE_TESTNET_MOCK_TOKEN_OWNER_OR_NULL",
+      "deploymentTxHash": "TODO_REPLACE_TX_HASH_OR_NULL",
+      "deploymentBlock": null
+    },
+    "mockEth": {
+      "address": "TODO_REPLACE_TESTNET_MOCK_WETH_OR_NULL",
+      "decimals": 18,
+      "owner": "TODO_REPLACE_TESTNET_MOCK_TOKEN_OWNER_OR_NULL",
+      "deploymentTxHash": "TODO_REPLACE_TX_HASH_OR_NULL",
+      "deploymentBlock": null
+    },
+    "mockBtc": {
+      "address": "TODO_REPLACE_TESTNET_MOCK_WBTC_OR_NULL",
+      "decimals": 8,
+      "owner": "TODO_REPLACE_TESTNET_MOCK_TOKEN_OWNER_OR_NULL",
+      "deploymentTxHash": "TODO_REPLACE_TX_HASH_OR_NULL",
+      "deploymentBlock": null
     }
   },
   "oraclePriceSourceAddresses": {
@@ -225,6 +293,7 @@
         "series": [
           {
             "label": "TODO_REPLACE_TESTNET_ETH_OPTION_SERIES_LABEL",
+            "optionId": "TODO_REPLACE_ETH_OPTION_ID",
             "expiryUnix": "TODO_REPLACE_EXPIRY_UNIX",
             "strike1e8": "TODO_REPLACE_STRIKE_1E8",
             "isCall": true,
@@ -251,6 +320,7 @@
         "series": [
           {
             "label": "TODO_REPLACE_TESTNET_BTC_OPTION_SERIES_LABEL",
+            "optionId": "TODO_REPLACE_BTC_OPTION_ID",
             "expiryUnix": "TODO_REPLACE_EXPIRY_UNIX",
             "strike1e8": "TODO_REPLACE_STRIKE_1E8",
             "isCall": true,
@@ -266,6 +336,7 @@
   },
   "perpMarkets": [
     {
+      "marketId": "TODO_REPLACE_ETH_PERP_MARKET_ID",
       "symbol": "ETH-PERP",
       "underlying": "TODO_REPLACE_TESTNET_ETH_UNDERLYING",
       "settlementAsset": "TODO_REPLACE_TESTNET_USDC",
@@ -291,6 +362,7 @@
       "oracleClampBps": "TODO_REPLACE_ETH_PERP_ORACLE_CLAMP_BPS"
     },
     {
+      "marketId": "TODO_REPLACE_BTC_PERP_MARKET_ID",
       "symbol": "BTC-PERP",
       "underlying": "TODO_REPLACE_TESTNET_BTC_UNDERLYING",
       "settlementAsset": "TODO_REPLACE_TESTNET_USDC",
@@ -362,5 +434,24 @@
     "insuranceSanity": "PENDING",
     "governanceSanity": "PENDING",
     "activationApproved": false
+  },
+  "explorerVerification": {
+    "collateralVault": "PENDING",
+    "oracleRouter": "PENDING",
+    "optionProductRegistry": "PENDING",
+    "marginEngine": "PENDING",
+    "riskModule": "PENDING",
+    "perpMarketRegistry": "PENDING",
+    "perpEngine": "PENDING",
+    "perpRiskModule": "PENDING",
+    "collateralSeizer": "PENDING",
+    "feesManager": "PENDING",
+    "insuranceFund": "PENDING",
+    "matchingEngine": "PENDING",
+    "perpMatchingEngine": "PENDING",
+    "protocolTimelock": "PENDING",
+    "riskGovernor": "PENDING",
+    "testnetMockAssets": "PENDING_OR_NOT_USED",
+    "testnetMockFeeds": "PENDING_OR_NOT_USED"
   }
 }

@@ -60,6 +60,37 @@ Must be updated after every meaningful modification.
 ---
 
 - Date: 2026-04-28
+- Scope: Base Sepolia deployment rehearsal preparation
+- Files Modified:
+  - .env.base-sepolia.example
+  - .gitignore
+  - BASE_SEPOLIA_REHEARSAL.md
+  - README.md
+  - deployments/testnet.template.json
+  - script/DeployTestnetAssets.s.sol
+  - script/DeployTestnetMockFeeds.s.sol
+  - script/RefreshTestnetMockFeeds.s.sol
+  - PROGRESS.md
+- Summary:
+  Added a commit-safe Base Sepolia env template, a focused Base Sepolia rehearsal runbook, expanded the testnet deployment artifact template with block/tx evidence, mock assets, option IDs, market IDs, and explorer verification status, and added testnet/mock-only helper scripts for optional mock ERC20 assets and mock oracle feed deployment/refresh. Local Anvil mock feed scripts and core protocol contracts were left unchanged.
+- Invariants Impacted:
+  - No protocol contracts or core protocol behavior changed
+  - No MarginEngine or PerpEngine changes
+  - No pricing, funding, liquidation, fee formula, collateral accounting, risk formula, governance execution semantics, market, series, or economic parameter behavior changed
+  - Added scripts are testnet/mock-only deployment helpers guarded by explicit TESTNET_MOCKS_ENABLED and Base mainnet rejection
+- Validation:
+  - `bash -n .env.base-sepolia.example`: OK
+  - `node -e "JSON.parse(require('fs').readFileSync('deployments/testnet.template.json','utf8')); console.log('json ok')"`: OK
+  - `forge build`: OK
+  - `forge build --sizes`: OK; `MarginEngine` 24,401 bytes and `PerpEngine` 24,511 bytes
+  - `forge test --match-path test/unit/perp/PerpEngineFunding.t.sol`: OK (8 passed)
+  - `forge test --match-path test/unit/perp/PerpEngine.t.sol`: OK (16 passed)
+  - `forge test --match-path test/unit/margin/MarginEngine.t.sol`: OK (22 passed)
+- Status: DONE
+
+---
+
+- Date: 2026-04-28
 - Scope: PerpEngine funding regression after EIP-170 reduction
 - Files Modified:
   - src/perp/PerpEngineTrading.sol

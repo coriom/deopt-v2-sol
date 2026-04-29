@@ -22,6 +22,7 @@ broadcast/
 .env
 .env.*
 !.env.local.example
+!.env.base-sepolia.example
 note_for_later.txt
 
 # Docs & System
