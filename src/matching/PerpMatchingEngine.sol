@@ -37,9 +37,10 @@ contract PerpMatchingEngine is ReentrancyGuard, EIP712 {
     event Unpaused(address indexed account);
 
     event TradeExecuted(
+        bytes32 indexed intentId,
         address indexed buyer,
         address indexed seller,
-        uint256 indexed marketId,
+        uint256 marketId,
         uint128 sizeDelta1e8,
         uint128 executionPrice1e8,
         bool buyerIsMaker,
@@ -78,10 +79,11 @@ contract PerpMatchingEngine is ReentrancyGuard, EIP712 {
     mapping(address => uint256) public nonces;
 
     bytes32 public constant TRADE_TYPEHASH = keccak256(
-        "PerpTrade(address buyer,address seller,uint256 marketId,uint128 sizeDelta1e8,uint128 executionPrice1e8,bool buyerIsMaker,uint256 buyerNonce,uint256 sellerNonce,uint256 deadline)"
+        "PerpTrade(bytes32 intentId,address buyer,address seller,uint256 marketId,uint128 sizeDelta1e8,uint128 executionPrice1e8,bool buyerIsMaker,uint256 buyerNonce,uint256 sellerNonce,uint256 deadline)"
     );
 
     struct PerpTrade {
+        bytes32 intentId;
         address buyer;
         address seller;
         uint256 marketId;
@@ -248,6 +250,7 @@ contract PerpMatchingEngine is ReentrancyGuard, EIP712 {
         bytes32 structHash = keccak256(
             abi.encode(
                 TRADE_TYPEHASH,
+                t.intentId,
                 t.buyer,
                 t.seller,
                 t.marketId,
@@ -302,6 +305,7 @@ contract PerpMatchingEngine is ReentrancyGuard, EIP712 {
     }
 
     function _isStructurallyValid(PerpTrade calldata t) internal pure returns (bool) {
+        if (t.intentId == bytes32(0)) return false;
         if (t.buyer == address(0) || t.seller == address(0)) return false;
         if (t.buyer == t.seller) return false;
         if (t.sizeDelta1e8 == 0) return false;
@@ -347,6 +351,7 @@ contract PerpMatchingEngine is ReentrancyGuard, EIP712 {
         perpEngine.applyTrade(_toEngineTrade(t));
 
         emit TradeExecuted(
+            t.intentId,
             t.buyer,
             t.seller,
             t.marketId,

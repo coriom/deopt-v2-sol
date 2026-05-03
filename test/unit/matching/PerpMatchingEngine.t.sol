@@ -28,6 +28,7 @@ contract PerpMatchingEngineTest is Test {
     uint256 internal constant OWNER_PK = 0xA11CE;
     uint256 internal constant BUYER_PK = 0xB0B;
     uint256 internal constant SELLER_PK = 0xCA11;
+    bytes32 internal constant INTENT_ID = keccak256("test-intent");
 
     address internal OWNER;
     address internal BUYER;
@@ -36,6 +37,18 @@ contract PerpMatchingEngineTest is Test {
 
     MockPerpEngineTrade internal perpEngine;
     PerpMatchingEngine internal matchingEngine;
+
+    event TradeExecuted(
+        bytes32 indexed intentId,
+        address indexed buyer,
+        address indexed seller,
+        uint256 marketId,
+        uint128 sizeDelta1e8,
+        uint128 executionPrice1e8,
+        bool buyerIsMaker,
+        uint256 buyerNonce,
+        uint256 sellerNonce
+    );
 
     function setUp() external {
         OWNER = vm.addr(OWNER_PK);
@@ -78,6 +91,9 @@ contract PerpMatchingEngineTest is Test {
     function testExecuteTradePreservesExistingSemanticsWhenNotPaused() external {
         (PerpMatchingEngine.PerpTrade memory t, bytes memory buyerSig, bytes memory sellerSig) = _signedTrade();
 
+        vm.expectEmit(true, true, true, true);
+        emit TradeExecuted(INTENT_ID, BUYER, SELLER, 7, uint128(2e8), uint128(2_000e8), true, uint256(0), uint256(0));
+
         vm.prank(OWNER);
         matchingEngine.executeTrade(t, buyerSig, sellerSig);
 
@@ -93,11 +109,35 @@ contract PerpMatchingEngineTest is Test {
         assertEq(matchingEngine.nonces(SELLER), 1);
     }
 
+    function testExecuteTradeRejectsZeroIntentId() external {
+        (PerpMatchingEngine.PerpTrade memory t, bytes memory buyerSig, bytes memory sellerSig) = _signedTrade();
+        t.intentId = bytes32(0);
+
+        vm.prank(OWNER);
+        vm.expectRevert(PerpMatchingEngine.InvalidTrade.selector);
+        matchingEngine.executeTrade(t, buyerSig, sellerSig);
+
+        assertEq(perpEngine.applyCount(), 0);
+        assertEq(matchingEngine.nonces(BUYER), 0);
+        assertEq(matchingEngine.nonces(SELLER), 0);
+    }
+
+    function testTradeTypehashIncludesIntentId() external view {
+        assertEq(
+            matchingEngine.TRADE_TYPEHASH(),
+            keccak256(
+                "PerpTrade(bytes32 intentId,address buyer,address seller,uint256 marketId,uint128 sizeDelta1e8,uint128 executionPrice1e8,bool buyerIsMaker,uint256 buyerNonce,uint256 sellerNonce,uint256 deadline)"
+            )
+        );
+    }
+
     function _signedTrade()
         internal
+        view
         returns (PerpMatchingEngine.PerpTrade memory t, bytes memory buyerSig, bytes memory sellerSig)
     {
         t = PerpMatchingEngine.PerpTrade({
+            intentId: INTENT_ID,
             buyer: BUYER,
             seller: SELLER,
             marketId: 7,
