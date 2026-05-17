@@ -14,6 +14,8 @@ SPEC.md
 TEST_MATRIX.md
 PROTOCOL_GAP_REVIEW.md
 BUILD_AND_VALIDATE.md
+NEXT_TASK.md
+
 
 # Ignores development broadcast logs
 broadcast/

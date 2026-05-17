@@ -115,6 +115,16 @@ forge install
 forge build
 ```
 
+### Local Validation
+
+```bash
+forge fmt --check
+forge build
+forge test
+```
+
+The Solidity CI workflow is validation-only. It does not deploy, broadcast transactions, require RPC access, or require secrets.
+
 ### Test
 
 Run the full test suite:
