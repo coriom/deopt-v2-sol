@@ -46,12 +46,7 @@ contract ProtocolTimelock {
     event TransactionCancelled(bytes32 indexed txHash, address indexed target, uint256 value, bytes data, uint256 eta);
 
     event TransactionExecuted(
-        bytes32 indexed txHash,
-        address indexed target,
-        uint256 value,
-        bytes data,
-        uint256 eta,
-        bytes returnData
+        bytes32 indexed txHash, address indexed target, uint256 value, bytes data, uint256 eta, bytes returnData
     );
 
     /*//////////////////////////////////////////////////////////////

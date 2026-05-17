@@ -178,8 +178,7 @@ contract VerifyDeployment is Script {
 
     function _readCoreParams() internal view returns (CoreParams memory params) {
         params.baseDecimals = _toUint8(_envUint("BASE_COLLATERAL_DECIMALS"), "BASE_COLLATERAL_DECIMALS");
-        params.baseMaintenanceMarginPerContractBase =
-            _envUint("BASE_MAINTENANCE_MARGIN_PER_CONTRACT_BASE");
+        params.baseMaintenanceMarginPerContractBase = _envUint("BASE_MAINTENANCE_MARGIN_PER_CONTRACT_BASE");
         params.imFactorBps = _envUint("IM_FACTOR_BPS");
         params.oracleDownMmMultiplierBps = _envUint("ORACLE_DOWN_MM_MULTIPLIER_BPS");
         params.riskMaxOracleDelay = _envUint("RISK_MAX_ORACLE_DELAY");
@@ -397,17 +396,20 @@ contract VerifyDeployment is Script {
         _assertAddress("insurance.vault", address(fund.collateralVault()), addrs.collateralVault);
         _assertBool("insurance margin backstop", fund.isBackstopCaller(addrs.marginEngine), true);
         _assertBool("insurance perp backstop", fund.isBackstopCaller(addrs.perpEngine), true);
-        _assertAddress("matching.marginEngine", address(MatchingEngine(addrs.matchingEngine).marginEngine()), addrs.marginEngine);
         _assertAddress(
-            "perpMatching.perpEngine", address(PerpMatchingEngine(addrs.perpMatchingEngine).perpEngine()), addrs.perpEngine
+            "matching.marginEngine", address(MatchingEngine(addrs.matchingEngine).marginEngine()), addrs.marginEngine
+        );
+        _assertAddress(
+            "perpMatching.perpEngine",
+            address(PerpMatchingEngine(addrs.perpMatchingEngine).perpEngine()),
+            addrs.perpEngine
         );
     }
 
-    function _verifyCollateral(
-        CoreAddresses memory addrs,
-        CoreParams memory core,
-        CollateralParams memory collateral
-    ) internal view {
+    function _verifyCollateral(CoreAddresses memory addrs, CoreParams memory core, CollateralParams memory collateral)
+        internal
+        view
+    {
         CollateralVault vault = CollateralVault(addrs.collateralVault);
         RiskModule risk = RiskModule(addrs.riskModule);
         PerpRiskModule perpRisk = PerpRiskModule(addrs.perpRiskModule);
@@ -419,7 +421,9 @@ contract VerifyDeployment is Script {
         _assertUint("risk.maxOracleDelay", risk.maxOracleDelay(), core.riskMaxOracleDelay);
         _assertAddress("perpRisk.baseCollateralToken", perpRisk.baseCollateralToken(), addrs.baseCollateralToken);
         _assertUint("perpRisk.maxOracleDelay", perpRisk.maxOracleDelay(), core.perpRiskMaxOracleDelay);
-        _assertBool("vault.collateralRestrictionMode", vault.collateralRestrictionMode(), core.collateralRestrictionMode);
+        _assertBool(
+            "vault.collateralRestrictionMode", vault.collateralRestrictionMode(), core.collateralRestrictionMode
+        );
 
         _assertBool("vault has base token", _contains(vault.getCollateralTokens(), addrs.baseCollateralToken), true);
         _assertBool("risk has base token", _contains(risk.getCollateralTokens(), addrs.baseCollateralToken), true);
@@ -432,7 +436,9 @@ contract VerifyDeployment is Script {
             _assertUint("vault collateral decimals", vaultCfg.decimals, collateral.decimals[i]);
             _assertUint("vault collateral factor", vaultCfg.collateralFactorBps, collateral.vaultFactorsBps[i]);
             _assertUint("vault token deposit cap", vault.tokenDepositCap(token), collateral.depositCaps[i]);
-            _assertBool("vault launch-active collateral", vault.launchActiveCollateral(token), collateral.launchActive[i]);
+            _assertBool(
+                "vault launch-active collateral", vault.launchActiveCollateral(token), collateral.launchActive[i]
+            );
             _assertBool("vault collateral token listed", _contains(vault.getCollateralTokens(), token), true);
 
             (uint64 weightBps, bool isEnabled) = risk.collateralConfigs(token);
@@ -461,7 +467,9 @@ contract VerifyDeployment is Script {
         address baseToken,
         FeedParams memory expected
     ) internal view {
-        if (expected.primarySource != address(0)) _requireContract(string.concat(label, "_PRIMARY_SOURCE"), expected.primarySource);
+        if (expected.primarySource != address(0)) {
+            _requireContract(string.concat(label, "_PRIMARY_SOURCE"), expected.primarySource);
+        }
         if (expected.secondarySource != address(0)) {
             _requireContract(string.concat(label, "_SECONDARY_SOURCE"), expected.secondarySource);
         }
@@ -491,9 +499,7 @@ contract VerifyDeployment is Script {
         MarginEngine margin = MarginEngine(addrs.marginEngine);
 
         _assertBool(
-            "option settlement asset allowed",
-            registry.isSettlementAssetAllowed(addrs.baseCollateralToken),
-            true
+            "option settlement asset allowed", registry.isSettlementAssetAllowed(addrs.baseCollateralToken), true
         );
         _verifyOptionUnderlying("ETH_OPTION", registry, addrs.ethUnderlying, ethOption);
         _verifyOptionUnderlying("BTC_OPTION", registry, addrs.btcUnderlying, btcOption);
@@ -560,9 +566,13 @@ contract VerifyDeployment is Script {
             _assertBool("option series isCall", s.isCall, expected.isCalls[i]);
             _assertBool("option series isEuropean", s.isEuropean, expected.isEuropean[i]);
             _assertBool("option series registry active", s.isActive, expected.registryActive[i]);
-            _assertUint("option series activation state", margin.seriesActivationState(optionId), expected.activationStates[i]);
             _assertUint(
-                "option series short OI cap", margin.seriesShortOpenInterestCap(optionId), expected.shortOpenInterestCaps[i]
+                "option series activation state", margin.seriesActivationState(optionId), expected.activationStates[i]
+            );
+            _assertUint(
+                "option series short OI cap",
+                margin.seriesShortOpenInterestCap(optionId),
+                expected.shortOpenInterestCaps[i]
             );
         }
     }
@@ -609,12 +619,16 @@ contract VerifyDeployment is Script {
         _assertUint("perp liquidation penalty", riskCfg.liquidationPenaltyBps, expected.liquidationPenaltyBps);
         _assertUint("perp max position", riskCfg.maxPositionSize1e8, expected.maxPositionSize1e8);
         _assertUint("perp max OI", riskCfg.maxOpenInterest1e8, expected.maxOpenInterest1e8);
-        _assertBool("perp reduce-only during close-only", riskCfg.reduceOnlyDuringCloseOnly, expected.reduceOnlyDuringCloseOnly);
+        _assertBool(
+            "perp reduce-only during close-only", riskCfg.reduceOnlyDuringCloseOnly, expected.reduceOnlyDuringCloseOnly
+        );
 
         PerpMarketRegistry.LiquidationConfig memory liquidationCfg = registry.getLiquidationConfig(marketId);
         _assertUint("perp close factor", liquidationCfg.closeFactorBps, expected.liquidationCloseFactorBps);
         _assertUint("perp liquidation spread", liquidationCfg.priceSpreadBps, expected.liquidationPriceSpreadBps);
-        _assertUint("perp min liquidation improvement", liquidationCfg.minImprovementBps, expected.minLiquidationImprovementBps);
+        _assertUint(
+            "perp min liquidation improvement", liquidationCfg.minImprovementBps, expected.minLiquidationImprovementBps
+        );
         _assertUint("perp liquidation oracle delay", liquidationCfg.oracleMaxDelay, expected.liquidationOracleMaxDelay);
 
         PerpMarketRegistry.FundingConfig memory fundingCfg = registry.getFundingConfig(marketId);
@@ -648,8 +662,12 @@ contract VerifyDeployment is Script {
         _assertUint("fees taker premium cap", fees.defaultTakerPremiumCapBps(), core.takerPremiumCapBps);
 
         for (uint256 i = 0; i < collateral.tokens.length; i++) {
-            _assertBool("insurance token allowed", fund.isTokenAllowed(collateral.tokens[i]), collateral.insuranceAllowed[i]);
-            _assertBool("insurance usable token", fund.isUsableToken(collateral.tokens[i]), collateral.insuranceAllowed[i]);
+            _assertBool(
+                "insurance token allowed", fund.isTokenAllowed(collateral.tokens[i]), collateral.insuranceAllowed[i]
+            );
+            _assertBool(
+                "insurance usable token", fund.isUsableToken(collateral.tokens[i]), collateral.insuranceAllowed[i]
+            );
         }
     }
 

@@ -165,7 +165,7 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
         address base = baseCollateralToken;
         if (base == address(0)) return state;
 
-        (, , uint256 baseScale) = _loadBase();
+        (,, uint256 baseScale) = _loadBase();
 
         OptionsMarginSnapshot memory optSnap = _computeOptionsMarginSnapshot(trader, base, baseScale);
         state.optionsMaintenanceMarginBase = optSnap.maintenanceMarginBase;
@@ -222,15 +222,11 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
             breakdown.equityBase = _subInt256Sat(breakdown.equityBase, -breakdown.products.unrealizedPnlBase);
         }
 
-        breakdown.maintenanceMarginBase = _addChecked(
-            breakdown.products.optionsMaintenanceMarginBase,
-            breakdown.products.perpsMaintenanceMarginBase
-        );
+        breakdown.maintenanceMarginBase =
+            _addChecked(breakdown.products.optionsMaintenanceMarginBase, breakdown.products.perpsMaintenanceMarginBase);
 
-        breakdown.initialMarginBase = _addChecked(
-            breakdown.products.optionsInitialMarginBase,
-            breakdown.products.perpsInitialMarginBase
-        );
+        breakdown.initialMarginBase =
+            _addChecked(breakdown.products.optionsInitialMarginBase, breakdown.products.perpsInitialMarginBase);
 
         if (breakdown.products.residualBadDebtBase != 0) {
             breakdown.equityBase =
@@ -271,8 +267,7 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
                 contribution.weightBps = uint256(rcfg.weightBps);
                 contribution.isEnabled = rcfg.isEnabled;
 
-                (CollateralValue memory value, bool ok) =
-                    _tryComputeTokenCollateralValue(trader, base, baseDec, token);
+                (CollateralValue memory value, bool ok) = _tryComputeTokenCollateralValue(trader, base, baseDec, token);
                 contribution.valuationAvailable = ok;
                 contribution.grossCollateralValueBase = value.grossBaseValue;
                 contribution.adjustedCollateralValueBase = value.adjustedBaseValue;
@@ -342,12 +337,7 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
         return (SafeCast.toUint256(equityBase) * BPS_U) / maintenanceMarginBase;
     }
 
-    function getResidualBadDebt(address trader)
-        external
-        view
-        override
-        returns (uint256 amountBase)
-    {
+    function getResidualBadDebt(address trader) external view override returns (uint256 amountBase) {
         if (!_hasPerpRiskModule() || perpEngine == address(0)) return 0;
 
         (, uint256 debtBase) = _tryGetPerpResidualBadDebt(trader);
@@ -403,13 +393,7 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
         withdrawable = maxToken < avail ? maxToken : avail;
     }
 
-    function computeMarginRatioBps(address trader)
-        external
-        view
-        override
-        whenRiskChecksNotPaused
-        returns (uint256)
-    {
+    function computeMarginRatioBps(address trader) external view override whenRiskChecksNotPaused returns (uint256) {
         if (baseCollateralToken == address(0)) return type(uint256).max;
 
         AccountRisk memory risk = computeAccountRisk(trader);
@@ -465,8 +449,7 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
                 _requireTokenConfiguredIfEnabled(token, baseDec);
 
                 if (token == base) {
-                    deltaEquityBase =
-                        Math.mulDiv(effectiveAmount, uint256(rcfg.weightBps), BPS_U, Math.Rounding.Floor);
+                    deltaEquityBase = Math.mulDiv(effectiveAmount, uint256(rcfg.weightBps), BPS_U, Math.Rounding.Floor);
                 } else {
                     (uint256 price, bool ok) = _tryGetPrice(token, base);
                     if (ok) {
@@ -535,7 +518,6 @@ abstract contract RiskModuleViews is RiskModuleAdmin {
         policy.oracleDownMmMultiplierBps = oracleDownMmMultiplierBps;
         policy.usesGlobalFallback = true;
     }
-
 
     function getOptionRiskConfig(address underlying)
         external

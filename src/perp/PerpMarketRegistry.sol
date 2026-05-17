@@ -420,11 +420,7 @@ contract PerpMarketRegistry {
         _liquidationConfigs[marketId] = cfg;
 
         emit LiquidationConfigSet(
-            marketId,
-            cfg.closeFactorBps,
-            cfg.priceSpreadBps,
-            cfg.minImprovementBps,
-            cfg.oracleMaxDelay
+            marketId, cfg.closeFactorBps, cfg.priceSpreadBps, cfg.minImprovementBps, cfg.oracleMaxDelay
         );
     }
 

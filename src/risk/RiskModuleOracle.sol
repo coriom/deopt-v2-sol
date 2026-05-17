@@ -148,8 +148,7 @@ abstract contract RiskModuleOracle is RiskModuleUtils {
         if (uint256(setCfg.decimals) > MAX_POW10_EXP) return (0, false);
 
         uint256 settlementScale = _pow10(uint256(setCfg.decimals));
-        uint256 settlementAmountNative =
-            Math.mulDiv(amount1e8, settlementScale, PRICE_SCALE_U, Math.Rounding.Floor);
+        uint256 settlementAmountNative = Math.mulDiv(amount1e8, settlementScale, PRICE_SCALE_U, Math.Rounding.Floor);
 
         (uint256 px, bool okPx) = _tryGetPrice(settlementAsset, base);
         if (!okPx || px == 0) return (0, false);

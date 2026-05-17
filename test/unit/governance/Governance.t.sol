@@ -24,14 +24,7 @@ contract GovernanceTest is Test {
 
     function setUp() external {
         timelock = new ProtocolTimelock(OWNER, GUARDIAN, MIN_DELAY);
-        feesManager = new FeesManager(
-            address(timelock),
-            2,
-            4,
-            5,
-            6,
-            100
-        );
+        feesManager = new FeesManager(address(timelock), 2, 4, 5, 6, 100);
 
         governor = new RiskGovernor(
             OWNER,
@@ -92,7 +85,7 @@ contract GovernanceTest is Test {
         vm.prank(OWNER);
         governor.cancelOperation(address(feesManager), 0, data, eta);
 
-        (, , , , RiskGovernorStorage.OperationState state) = governor.getQueuedOperation(txHash);
+        (,,,, RiskGovernorStorage.OperationState state) = governor.getQueuedOperation(txHash);
 
         assertFalse(timelock.queuedTransactions(txHash));
         assertEq(uint256(state), uint256(RiskGovernorStorage.OperationState.Cancelled));
@@ -111,7 +104,7 @@ contract GovernanceTest is Test {
         vm.expectRevert(ProtocolTimelock.TransactionNotReady.selector);
         governor.executeOperation(address(feesManager), 0, data, eta);
 
-        (, , , , RiskGovernorStorage.OperationState state) = governor.getQueuedOperation(txHash);
+        (,,,, RiskGovernorStorage.OperationState state) = governor.getQueuedOperation(txHash);
         assertTrue(timelock.queuedTransactions(txHash));
         assertEq(uint256(state), uint256(RiskGovernorStorage.OperationState.Queued));
     }
@@ -128,7 +121,7 @@ contract GovernanceTest is Test {
         vm.prank(OWNER);
         governor.executeOperation(address(feesManager), 0, data, eta);
 
-        (, , , , RiskGovernorStorage.OperationState state) = governor.getQueuedOperation(txHash);
+        (,,,, RiskGovernorStorage.OperationState state) = governor.getQueuedOperation(txHash);
 
         assertEq(feesManager.guardian(), NEW_GUARDIAN);
         assertFalse(timelock.queuedTransactions(txHash));
@@ -148,7 +141,7 @@ contract GovernanceTest is Test {
         vm.prank(OWNER);
         governor.executeOperation(address(feesManager), 0, data, eta);
 
-        (, , , , RiskGovernorStorage.OperationState state) = governor.getQueuedOperation(txHash);
+        (,,,, RiskGovernorStorage.OperationState state) = governor.getQueuedOperation(txHash);
 
         assertEq(feesManager.feeBpsCap(), 77);
         assertEq(uint256(state), uint256(RiskGovernorStorage.OperationState.Executed));
@@ -186,7 +179,7 @@ contract GovernanceTest is Test {
         vm.prank(GUARDIAN);
         governor.cancelOperation(address(feesManager), 0, dataA, etaA);
 
-        (, , , , RiskGovernorStorage.OperationState stateA) = governor.getQueuedOperation(hashA);
+        (,,,, RiskGovernorStorage.OperationState stateA) = governor.getQueuedOperation(hashA);
         assertEq(uint256(stateA), uint256(RiskGovernorStorage.OperationState.Cancelled));
 
         uint256 etaB = etaA + 1;
@@ -198,7 +191,7 @@ contract GovernanceTest is Test {
         vm.prank(OWNER);
         governor.cancelOperation(address(feesManager), 0, dataB, etaB);
 
-        (, , , , RiskGovernorStorage.OperationState stateB) = governor.getQueuedOperation(hashB);
+        (,,,, RiskGovernorStorage.OperationState stateB) = governor.getQueuedOperation(hashB);
         assertEq(uint256(stateB), uint256(RiskGovernorStorage.OperationState.Cancelled));
     }
 
@@ -215,7 +208,7 @@ contract GovernanceTest is Test {
         vm.expectRevert(abi.encodeWithSelector(ProtocolTimelock.TransactionExecutionFailed.selector, bytes("")));
         governor.executeOperation(address(feesManager), 0, malformedData, eta);
 
-        (, , , , RiskGovernorStorage.OperationState state) = governor.getQueuedOperation(txHash);
+        (,,,, RiskGovernorStorage.OperationState state) = governor.getQueuedOperation(txHash);
         assertEq(feesManager.feeBpsCap(), 100);
         assertTrue(timelock.queuedTransactions(txHash));
         assertEq(uint256(state), uint256(RiskGovernorStorage.OperationState.Queued));

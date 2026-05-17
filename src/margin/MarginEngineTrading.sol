@@ -85,13 +85,7 @@ abstract contract MarginEngineTrading is MarginEngineAdmin {
         nonReentrant
     {
         // Basic validation
-        if (
-            t.buyer == address(0)
-                || t.seller == address(0)
-                || t.buyer == t.seller
-                || t.quantity == 0
-                || t.price == 0
-        ) {
+        if (t.buyer == address(0) || t.seller == address(0) || t.buyer == t.seller || t.quantity == 0 || t.price == 0) {
             revert InvalidTrade();
         }
 
@@ -135,8 +129,7 @@ abstract contract MarginEngineTrading is MarginEngineAdmin {
             bool okSeller = _isCloseToZeroTransition(oldSellerQty, newSellerQty);
             if (!okBuyer || !okSeller) revert SeriesNotActiveCloseOnly();
         } else if (
-            !series.isActive || seriesEmergencyCloseOnly[t.optionId]
-                || activationState == SERIES_ACTIVATION_RESTRICTED
+            !series.isActive || seriesEmergencyCloseOnly[t.optionId] || activationState == SERIES_ACTIVATION_RESTRICTED
         ) {
             // Close-only: no opening, no flip, no absolute exposure increase.
             bool okBuyer = _isCloseOnlyTransition(oldBuyerQty, newBuyerQty);
@@ -170,23 +163,11 @@ abstract contract MarginEngineTrading is MarginEngineAdmin {
             bool sellerIsMaker = !buyerIsMaker;
 
             _chargeTradingFee(
-                t.buyer,
-                buyerIsMaker,
-                series.settlementAsset,
-                t.optionId,
-                premium,
-                notionalImplicit,
-                recipient
+                t.buyer, buyerIsMaker, series.settlementAsset, t.optionId, premium, notionalImplicit, recipient
             );
 
             _chargeTradingFee(
-                t.seller,
-                sellerIsMaker,
-                series.settlementAsset,
-                t.optionId,
-                premium,
-                notionalImplicit,
-                recipient
+                t.seller, sellerIsMaker, series.settlementAsset, t.optionId, premium, notionalImplicit, recipient
             );
         }
 

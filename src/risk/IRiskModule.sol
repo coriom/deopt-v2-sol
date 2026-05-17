@@ -130,10 +130,7 @@ interface IRiskModule {
     function computeMarginRatioBps(address trader) external view returns (uint256);
 
     /// @notice Full decomposed unified account risk.
-    function computeAccountRiskBreakdown(address trader)
-        external
-        view
-        returns (AccountRiskBreakdown memory breakdown);
+    function computeAccountRiskBreakdown(address trader) external view returns (AccountRiskBreakdown memory breakdown);
 
     /*//////////////////////////////////////////////////////////////
                             WITHDRAW HOOKS

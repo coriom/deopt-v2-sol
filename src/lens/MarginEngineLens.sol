@@ -133,8 +133,8 @@ contract MarginEngineLens is MarginEngineTypes {
         s.initialMarginBase = r.initialMarginBase;
         s.freeCollateralBase = riskModule.computeFreeCollateral(trader);
         s.marginRatioBps = _marginRatioBpsFromRisk(r.equityBase, r.maintenanceMarginBase);
-        s.liquidatable =
-            (r.maintenanceMarginBase != 0) && (r.equityBase <= 0 || s.marginRatioBps < engine.liquidationThresholdBps());
+        s.liquidatable = (r.maintenanceMarginBase != 0)
+            && (r.equityBase <= 0 || s.marginRatioBps < engine.liquidationThresholdBps());
     }
 
     /// @notice Deterministic preview of account settlement. Diagnostic only; settlement execution remains in MarginEngine.
@@ -210,8 +210,7 @@ contract MarginEngineLens is MarginEngineTypes {
             return p;
         }
 
-        (p.payoffPerContract, p.pnl) =
-            _previewAccountSettlementPnl(engine, series, p.positionQuantity, settlementPrice);
+        (p.payoffPerContract, p.pnl) = _previewAccountSettlementPnl(engine, series, p.positionQuantity, settlementPrice);
 
         SettlementPreview memory resolution =
             _previewSettlementResolution(engine, optionId, trader, p.pnl, series.settlementAsset);
@@ -241,16 +240,14 @@ contract MarginEngineLens is MarginEngineTypes {
             _previewSettlementAmountBase(engine, series.settlementAsset, p.grossSettlementAmount);
 
         int256 cashflowDelta = _previewSettlementCashflowDelta(resolution, p.isShortLiability);
-        uint256 absCashflow = cashflowDelta >= 0
-            ? SafeCast.toUint256(cashflowDelta)
-            : SafeCast.toUint256(-cashflowDelta);
+        uint256 absCashflow =
+            cashflowDelta >= 0 ? SafeCast.toUint256(cashflowDelta) : SafeCast.toUint256(-cashflowDelta);
         (uint256 cashflowDeltaBaseAbs, bool cashflowDeltaBaseAvailable) =
             _previewSettlementAmountBase(engine, series.settlementAsset, absCashflow);
         if (cashflowDeltaBaseAvailable) {
             p.accountCashflowDeltaBaseAvailable = true;
-            p.accountCashflowDeltaBase = cashflowDelta >= 0
-                ? SafeCast.toInt256(cashflowDeltaBaseAbs)
-                : -SafeCast.toInt256(cashflowDeltaBaseAbs);
+            p.accountCashflowDeltaBase =
+                cashflowDelta >= 0 ? SafeCast.toInt256(cashflowDeltaBaseAbs) : -SafeCast.toInt256(cashflowDeltaBaseAbs);
         }
 
         (p.riskAfter, p.riskAfterAvailable) = _previewRiskAfterSettlement(
@@ -258,11 +255,12 @@ contract MarginEngineLens is MarginEngineTypes {
         );
     }
 
-    function previewLiquidation(address marginEngine, address trader, uint256[] calldata optionIds, uint128[] calldata quantities)
-        external
-        view
-        returns (OptionsLiquidationPreview memory p)
-    {
+    function previewLiquidation(
+        address marginEngine,
+        address trader,
+        uint256[] calldata optionIds,
+        uint128[] calldata quantities
+    ) external view returns (OptionsLiquidationPreview memory p) {
         if (trader == address(0)) revert ZeroAddress();
         if (optionIds.length == 0 || optionIds.length != quantities.length) revert LengthMismatch();
 
@@ -398,8 +396,7 @@ contract MarginEngineLens is MarginEngineTypes {
         if (quantity == 0 || price == 0) revert InvalidTrade();
 
         IMarginEngineLensSource engine = IMarginEngineLensSource(marginEngine);
-        OptionProductRegistry.OptionSeries memory s =
-            OptionProductRegistry(engine.optionRegistry()).getSeries(optionId);
+        OptionProductRegistry.OptionSeries memory s = OptionProductRegistry(engine.optionRegistry()).getSeries(optionId);
         _requireStandardContractSize(s);
         _requireSettlementAssetConfigured(engine, s.settlementAsset);
 
@@ -410,7 +407,9 @@ contract MarginEngineLens is MarginEngineTypes {
         notionalImplicit = _computeStrikeNotionalImplicit(engine, s, uint256(quantity));
 
         IFeesManager fm = engine.feesManager();
-        if (address(fm) == address(0)) return (settlementAsset, recipient, premium, notionalImplicit, buyerQuote, sellerQuote);
+        if (address(fm) == address(0)) {
+            return (settlementAsset, recipient, premium, notionalImplicit, buyerQuote, sellerQuote);
+        }
 
         buyerQuote = fm.quoteFee(buyer, buyerIsMaker, premium, notionalImplicit);
         sellerQuote = fm.quoteFee(seller, !buyerIsMaker, premium, notionalImplicit);
@@ -504,19 +503,18 @@ contract MarginEngineLens is MarginEngineTypes {
         snapshot.marginRatioBps = _marginRatioBpsFromRisk(risk.equityBase, risk.maintenanceMarginBase);
     }
 
-    function _previewSettlementAmountBase(
-        IMarginEngineLensSource engine,
-        address settlementAsset,
-        uint256 amountNative
-    ) internal view returns (uint256 amountBase, bool available) {
+    function _previewSettlementAmountBase(IMarginEngineLensSource engine, address settlementAsset, uint256 amountNative)
+        internal
+        view
+        returns (uint256 amountBase, bool available)
+    {
         if (amountNative == 0) return (0, true);
 
         address base = engine.baseCollateralToken();
         if (base == address(0)) return (0, false);
         if (settlementAsset == base) return (amountNative, true);
 
-        (uint256 px, uint256 updatedAt, bool ok) =
-            IOracle(engine.oracle()).getPriceSafe(settlementAsset, base);
+        (uint256 px, uint256 updatedAt, bool ok) = IOracle(engine.oracle()).getPriceSafe(settlementAsset, base);
         if (!ok || px == 0) return (0, false);
 
         uint32 maxDelay = engine.liquidationOracleMaxDelay();
@@ -564,12 +562,10 @@ contract MarginEngineLens is MarginEngineTypes {
     ) internal view returns (SettlementRiskSnapshot memory afterRisk, bool available) {
         (uint256 mmReleaseBase, uint256 imReleaseBase) = _previewShortRiskRelease(engine, qty);
 
-        afterRisk.maintenanceMarginBase = beforeRisk.maintenanceMarginBase > mmReleaseBase
-            ? beforeRisk.maintenanceMarginBase - mmReleaseBase
-            : 0;
-        afterRisk.initialMarginBase = beforeRisk.initialMarginBase > imReleaseBase
-            ? beforeRisk.initialMarginBase - imReleaseBase
-            : 0;
+        afterRisk.maintenanceMarginBase =
+            beforeRisk.maintenanceMarginBase > mmReleaseBase ? beforeRisk.maintenanceMarginBase - mmReleaseBase : 0;
+        afterRisk.initialMarginBase =
+            beforeRisk.initialMarginBase > imReleaseBase ? beforeRisk.initialMarginBase - imReleaseBase : 0;
 
         if (!cashflowDeltaBaseAvailable) return (afterRisk, false);
 
@@ -584,7 +580,8 @@ contract MarginEngineLens is MarginEngineTypes {
     ) internal view returns (uint256 pricePerContract) {
         _requireStandardContractSize(s);
 
-        (uint256 spot, uint256 updatedAt, bool ok) = IOracle(engine.oracle()).getPriceSafe(s.underlying, s.settlementAsset);
+        (uint256 spot, uint256 updatedAt, bool ok) =
+            IOracle(engine.oracle()).getPriceSafe(s.underlying, s.settlementAsset);
         if (!ok || spot == 0) revert OraclePriceUnavailable();
 
         uint32 maxDelay = engine.liquidationOracleMaxDelay();
@@ -628,11 +625,11 @@ contract MarginEngineLens is MarginEngineTypes {
         if (uint256(cfg.decimals) > MAX_POW10_EXP) revert DecimalsOverflow(settlementAsset);
     }
 
-    function _price1e8ToSettlementUnits(
-        IMarginEngineLensSource engine,
-        address settlementAsset,
-        uint256 value1e8
-    ) internal view returns (uint256 valueNative) {
+    function _price1e8ToSettlementUnits(IMarginEngineLensSource engine, address settlementAsset, uint256 value1e8)
+        internal
+        view
+        returns (uint256 valueNative)
+    {
         CollateralVault.CollateralTokenConfig memory cfg =
             CollateralVault(engine.collateralVault()).getCollateralConfig(settlementAsset);
         if (!cfg.isSupported || cfg.decimals == 0) revert SettlementAssetNotConfigured();

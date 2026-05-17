@@ -355,12 +355,7 @@ contract InsuranceFund is ReentrancyGuard {
 
     /// @notice Pull tokens from owner, then deposit them into CollateralVault under this fund account.
     /// @dev Owner must approve this contract beforehand.
-    function fundAndDepositToVault(address token, uint256 amount)
-        external
-        onlyOwner
-        whenFundingNotPaused
-        nonReentrant
-    {
+    function fundAndDepositToVault(address token, uint256 amount) external onlyOwner whenFundingNotPaused nonReentrant {
         _requireAllowedAndSupportedToken(token);
         if (amount == 0) revert AmountZero();
 
@@ -466,7 +461,11 @@ contract InsuranceFund is ReentrancyGuard {
 
     /// @notice Preview how much this fund could currently pay from its vault balance.
     /// @dev This is intentionally a bounded preview only; the actual transfer remains capped again at execution time.
-    function previewVaultCoverage(address token, uint256 requestedAmount) external view returns (uint256 payableAmount) {
+    function previewVaultCoverage(address token, uint256 requestedAmount)
+        external
+        view
+        returns (uint256 payableAmount)
+    {
         if (requestedAmount == 0) return 0;
         if (!isTokenAllowed[token]) return 0;
 
@@ -487,12 +486,7 @@ contract InsuranceFund is ReentrancyGuard {
         emit YieldOptInSet(token, optedIn);
     }
 
-    function moveToStrategy(address token, uint256 amount)
-        external
-        onlyOwner
-        whenYieldOpsNotPaused
-        nonReentrant
-    {
+    function moveToStrategy(address token, uint256 amount) external onlyOwner whenYieldOpsNotPaused nonReentrant {
         _requireAllowedAndSupportedToken(token);
         if (amount == 0) revert AmountZero();
 
@@ -500,12 +494,7 @@ contract InsuranceFund is ReentrancyGuard {
         emit MovedToStrategy(token, amount);
     }
 
-    function moveToIdle(address token, uint256 amount)
-        external
-        onlyOwner
-        whenYieldOpsNotPaused
-        nonReentrant
-    {
+    function moveToIdle(address token, uint256 amount) external onlyOwner whenYieldOpsNotPaused nonReentrant {
         _requireAllowedAndSupportedToken(token);
         if (amount == 0) revert AmountZero();
 

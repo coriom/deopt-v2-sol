@@ -331,14 +331,7 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
         marginEngine.applyTrade(mt);
 
         emit TradeSubmitted(
-            t.buyer,
-            t.seller,
-            t.optionId,
-            t.quantity,
-            t.price,
-            t.buyerIsMaker,
-            t.buyerNonce,
-            t.sellerNonce
+            t.buyer, t.seller, t.optionId, t.quantity, t.price, t.buyerIsMaker, t.buyerNonce, t.sellerNonce
         );
     }
 
@@ -375,14 +368,7 @@ contract MatchingEngine is ReentrancyGuard, EIP712 {
             marginEngine.applyTrade(mt);
 
             emit TradeSubmitted(
-                t.buyer,
-                t.seller,
-                t.optionId,
-                t.quantity,
-                t.price,
-                t.buyerIsMaker,
-                t.buyerNonce,
-                t.sellerNonce
+                t.buyer, t.seller, t.optionId, t.quantity, t.price, t.buyerIsMaker, t.buyerNonce, t.sellerNonce
             );
         }
     }

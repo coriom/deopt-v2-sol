@@ -58,5 +58,4 @@ abstract contract MarginEngineViews is MarginEngineTrading {
     function isOpenSeries(address trader, uint256 optionId) external view override returns (bool) {
         return _isOpenSeriesInternal(trader, optionId);
     }
-
 }

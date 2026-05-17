@@ -279,8 +279,8 @@ contract CollateralSeizer is ICollateralSeizer {
 
     function _tryPrice(address baseAsset, address quoteAsset) internal view returns (uint256 px, bool ok) {
         {
-            (bool success, bytes memory data) =
-                address(oracle).staticcall(abi.encodeWithSignature("getPriceSafe(address,address)", baseAsset, quoteAsset));
+            (bool success, bytes memory data) = address(oracle)
+                .staticcall(abi.encodeWithSignature("getPriceSafe(address,address)", baseAsset, quoteAsset));
 
             if (success && data.length >= 96) {
                 (uint256 p, uint256 updatedAt, bool safeOk) = abi.decode(data, (uint256, uint256, bool));

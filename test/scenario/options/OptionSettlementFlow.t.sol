@@ -39,8 +39,7 @@ contract ScenarioOptionOracle is IOracle {
     mapping(bytes32 => PriceData) internal prices;
 
     function setPrice(address baseAsset, address quoteAsset, uint256 price, uint256 updatedAt, bool ok) external {
-        prices[keccak256(abi.encode(baseAsset, quoteAsset))] =
-            PriceData({price: price, updatedAt: updatedAt, ok: ok});
+        prices[keccak256(abi.encode(baseAsset, quoteAsset))] = PriceData({price: price, updatedAt: updatedAt, ok: ok});
     }
 
     function getPrice(address baseAsset, address quoteAsset) external view returns (uint256 price, uint256 updatedAt) {
@@ -125,11 +124,7 @@ contract ScenarioMarginRiskModule is IRiskModule {
         return (uint256(risk.equityBase) * 10_000) / risk.maintenanceMarginBase;
     }
 
-    function computeAccountRiskBreakdown(address trader)
-        external
-        view
-        returns (AccountRiskBreakdown memory breakdown)
-    {
+    function computeAccountRiskBreakdown(address trader) external view returns (AccountRiskBreakdown memory breakdown) {
         AccountRisk memory risk = computeAccountRisk(trader);
         breakdown.equityBase = risk.equityBase;
         breakdown.maintenanceMarginBase = risk.maintenanceMarginBase;
@@ -263,12 +258,7 @@ contract OptionSettlementFlowTest is Test {
 
         vm.prank(OWNER);
         callOptionId = registry.createSeries(
-            address(weth),
-            address(usdc),
-            uint64(block.timestamp + 7 days),
-            uint64(STRIKE),
-            true,
-            true
+            address(weth), address(usdc), uint64(block.timestamp + 7 days), uint64(STRIKE), true, true
         );
 
         oracle.setPrice(address(weth), address(usdc), STRIKE, block.timestamp, true);

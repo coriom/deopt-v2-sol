@@ -21,11 +21,8 @@ interface IRiskModuleGov {
     function pauseWithdrawPreviews() external;
     function unpauseWithdrawPreviews() external;
 
-    function setEmergencyModes(
-        bool riskChecksPaused_,
-        bool collateralValuationPaused_,
-        bool withdrawPreviewPaused_
-    ) external;
+    function setEmergencyModes(bool riskChecksPaused_, bool collateralValuationPaused_, bool withdrawPreviewPaused_)
+        external;
 
     function clearEmergencyModes() external;
 

@@ -56,9 +56,7 @@ contract ScenarioOracleFailurePerpRiskModule is IPerpRiskModule {
         external
     {
         risks[trader] = AccountRisk({
-            equityBase: equityBase,
-            maintenanceMarginBase: maintenanceMarginBase,
-            initialMarginBase: initialMarginBase
+            equityBase: equityBase, maintenanceMarginBase: maintenanceMarginBase, initialMarginBase: initialMarginBase
         });
     }
 
@@ -183,17 +181,10 @@ contract OracleFailureFlowTest is Test {
                 reduceOnlyDuringCloseOnly: true
             }),
             PerpMarketRegistry.LiquidationConfig({
-                closeFactorBps: 5_000,
-                priceSpreadBps: 100,
-                minImprovementBps: 50,
-                oracleMaxDelay: 60
+                closeFactorBps: 5_000, priceSpreadBps: 100, minImprovementBps: 50, oracleMaxDelay: 60
             }),
             PerpMarketRegistry.FundingConfig({
-                isEnabled: false,
-                fundingInterval: 0,
-                maxFundingRateBps: 0,
-                maxSkewFundingBps: 0,
-                oracleClampBps: 0
+                isEnabled: false, fundingInterval: 0, maxFundingRateBps: 0, maxSkewFundingBps: 0, oracleClampBps: 0
             })
         );
 
@@ -268,7 +259,8 @@ contract OracleFailureFlowTest is Test {
         vm.expectRevert(OracleRouter.DeviationTooHigh.selector);
         router.getPrice(address(weth), address(usdc));
 
-        (uint256 rejectedPrice, uint256 rejectedUpdatedAt, bool rejectedOk) = router.getPriceSafe(address(weth), address(usdc));
+        (uint256 rejectedPrice, uint256 rejectedUpdatedAt, bool rejectedOk) =
+            router.getPriceSafe(address(weth), address(usdc));
         assertEq(rejectedPrice, 0);
         assertEq(rejectedUpdatedAt, 0);
         assertFalse(rejectedOk);

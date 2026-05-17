@@ -75,10 +75,7 @@ abstract contract CollateralVaultStorage is ReentrancyGuard {
     event RiskModuleSet(address indexed newRiskModule);
 
     event CollateralTokenConfigured(
-        address indexed token,
-        bool isSupported,
-        uint8 decimals,
-        uint16 collateralFactorBps
+        address indexed token, bool isSupported, uint8 decimals, uint16 collateralFactorBps
     );
 
     event Deposited(address indexed user, address indexed token, uint256 amount);
@@ -97,10 +94,7 @@ abstract contract CollateralVaultStorage is ReentrancyGuard {
     event InternalTransferPauseSet(bool isPaused);
     event YieldOpsPauseSet(bool isPaused);
     event EmergencyModeUpdated(
-        bool depositsPaused,
-        bool withdrawalsPaused,
-        bool internalTransfersPaused,
-        bool yieldOpsPaused
+        bool depositsPaused, bool withdrawalsPaused, bool internalTransfersPaused, bool yieldOpsPaused
     );
 
     event TokenStrategySet(address indexed token, address indexed adapter);

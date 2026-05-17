@@ -289,10 +289,7 @@ abstract contract RiskModuleStorage is IRiskModule {
     ) internal {
         if (owner != address(0)) revert NotAuthorized();
         if (
-            owner_ == address(0)
-                || vault_ == address(0)
-                || registry_ == address(0)
-                || marginEngine_ == address(0)
+            owner_ == address(0) || vault_ == address(0) || registry_ == address(0) || marginEngine_ == address(0)
                 || oracle_ == address(0)
         ) {
             revert ZeroAddress();

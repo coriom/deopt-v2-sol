@@ -216,13 +216,7 @@ contract PerpRiskModule {
                                 CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor(
-        address _owner,
-        address _vault,
-        address _perpEngine,
-        address _oracle,
-        address _baseCollateralToken
-    ) {
+    constructor(address _owner, address _vault, address _perpEngine, address _oracle, address _baseCollateralToken) {
         if (
             _owner == address(0) || _vault == address(0) || _perpEngine == address(0) || _oracle == address(0)
                 || _baseCollateralToken == address(0)
@@ -614,8 +608,7 @@ contract PerpRiskModule {
                 valueBase = _tokenAmountToBaseValue(token, bal, px);
             }
 
-            uint256 adjusted =
-                Math.mulDiv(valueBase, uint256(cfg.collateralFactorBps), BPS, Math.Rounding.Floor);
+            uint256 adjusted = Math.mulDiv(valueBase, uint256(cfg.collateralFactorBps), BPS, Math.Rounding.Floor);
 
             totalEquityBase += adjusted;
         }
@@ -644,10 +637,8 @@ contract PerpRiskModule {
 
                 IPerpEngineRiskView.RiskConfig memory rcfg = perpEngine.getRiskConfig(marketId);
 
-                uint256 mm1e8 =
-                    Math.mulDiv(notional1e8, uint256(rcfg.maintenanceMarginBps), BPS, Math.Rounding.Ceil);
-                uint256 im1e8 =
-                    Math.mulDiv(notional1e8, uint256(rcfg.initialMarginBps), BPS, Math.Rounding.Ceil);
+                uint256 mm1e8 = Math.mulDiv(notional1e8, uint256(rcfg.maintenanceMarginBps), BPS, Math.Rounding.Ceil);
+                uint256 im1e8 = Math.mulDiv(notional1e8, uint256(rcfg.initialMarginBps), BPS, Math.Rounding.Ceil);
 
                 (address settlementAsset, bool hasSettlementAsset) = _tryGetSettlementAsset(marketId);
                 address effectiveSettlement = hasSettlementAsset ? settlementAsset : baseCollateralToken;
@@ -705,7 +696,11 @@ contract PerpRiskModule {
         return amount1e8 >= 0 ? absBase : -absBase;
     }
 
-    function _withdrawDeltaEquityBase(address token, uint256 amountNative) internal view returns (uint256 deltaEquityBase) {
+    function _withdrawDeltaEquityBase(address token, uint256 amountNative)
+        internal
+        view
+        returns (uint256 deltaEquityBase)
+    {
         if (amountNative == 0) return 0;
 
         ICollateralVaultPerpRiskView.CollateralTokenConfig memory cfg = _vaultCfg(token);
@@ -771,12 +766,7 @@ contract PerpRiskModule {
         return _checkedSubInt256(risk.equityBase, _toInt256(risk.initialMarginBase));
     }
 
-    function computeMarginRatioBps(address trader)
-        external
-        view
-        whenRiskComputationNotPaused
-        returns (uint256)
-    {
+    function computeMarginRatioBps(address trader) external view whenRiskComputationNotPaused returns (uint256) {
         AccountRisk memory risk = computeAccountRisk(trader);
         return _marginRatioBps(risk.equityBase, risk.maintenanceMarginBase);
     }
@@ -813,8 +803,7 @@ contract PerpRiskModule {
         if (freeBase <= 0) return 0;
 
         uint256 freeBaseU = SafeCast.toUint256(freeBase);
-        uint256 valueBaseMax =
-            Math.mulDiv(freeBaseU, BPS, uint256(cfg.collateralFactorBps), Math.Rounding.Floor);
+        uint256 valueBaseMax = Math.mulDiv(freeBaseU, BPS, uint256(cfg.collateralFactorBps), Math.Rounding.Floor);
 
         uint256 maxToken;
         if (token == baseCollateralToken) {

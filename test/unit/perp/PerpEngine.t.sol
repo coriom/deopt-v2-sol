@@ -38,8 +38,7 @@ contract MockOracle is IOracle {
     mapping(bytes32 => PriceData) internal prices;
 
     function setPrice(address baseAsset, address quoteAsset, uint256 price, uint256 updatedAt, bool ok) external {
-        prices[keccak256(abi.encode(baseAsset, quoteAsset))] =
-            PriceData({price: price, updatedAt: updatedAt, ok: ok});
+        prices[keccak256(abi.encode(baseAsset, quoteAsset))] = PriceData({price: price, updatedAt: updatedAt, ok: ok});
     }
 
     function getPrice(address baseAsset, address quoteAsset) external view returns (uint256 price, uint256 updatedAt) {
@@ -73,9 +72,7 @@ contract MockPerpRiskModule is IPerpRiskModule {
         external
     {
         risks[trader] = AccountRisk({
-            equityBase: equityBase,
-            maintenanceMarginBase: maintenanceMarginBase,
-            initialMarginBase: initialMarginBase
+            equityBase: equityBase, maintenanceMarginBase: maintenanceMarginBase, initialMarginBase: initialMarginBase
         });
     }
 
@@ -159,17 +156,10 @@ contract PerpEngineTest is Test {
                 reduceOnlyDuringCloseOnly: true
             }),
             PerpMarketRegistry.LiquidationConfig({
-                closeFactorBps: 5_000,
-                priceSpreadBps: 100,
-                minImprovementBps: 50,
-                oracleMaxDelay: 60
+                closeFactorBps: 5_000, priceSpreadBps: 100, minImprovementBps: 50, oracleMaxDelay: 60
             }),
             PerpMarketRegistry.FundingConfig({
-                isEnabled: false,
-                fundingInterval: 0,
-                maxFundingRateBps: 0,
-                maxSkewFundingBps: 0,
-                oracleClampBps: 0
+                isEnabled: false, fundingInterval: 0, maxFundingRateBps: 0, maxSkewFundingBps: 0, oracleClampBps: 0
             })
         );
 
@@ -228,12 +218,7 @@ contract PerpEngineTest is Test {
 
         vm.prank(MATCHING_ENGINE);
         vm.expectRevert(
-            abi.encodeWithSelector(
-                PerpEngineTypes.LaunchOpenInterestCapExceeded.selector,
-                marketId,
-                3 * ONE,
-                2 * ONE
-            )
+            abi.encodeWithSelector(PerpEngineTypes.LaunchOpenInterestCapExceeded.selector, marketId, 3 * ONE, 2 * ONE)
         );
         engine.applyTrade(
             IPerpEngineTrade.Trade({
@@ -360,7 +345,9 @@ contract PerpEngineTest is Test {
         engine.recordResidualBadDebt(ALICE, BAD_DEBT_BASE);
 
         vm.expectEmit(true, true, false, true);
-        emit PerpEngineTypes.ResidualBadDebtUpdated(OWNER, ALICE, BAD_DEBT_BASE, 20 * BASE_UNIT, BAD_DEBT_BASE, 20 * BASE_UNIT);
+        emit PerpEngineTypes.ResidualBadDebtUpdated(
+            OWNER, ALICE, BAD_DEBT_BASE, 20 * BASE_UNIT, BAD_DEBT_BASE, 20 * BASE_UNIT
+        );
         vm.prank(OWNER);
         engine.reduceResidualBadDebt(ALICE, 30 * BASE_UNIT);
 

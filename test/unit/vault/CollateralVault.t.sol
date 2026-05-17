@@ -74,10 +74,7 @@ contract CollateralVaultTest is Test {
         usdc.approve(address(vault), DEPOSIT_AMOUNT);
         vm.expectRevert(
             abi.encodeWithSelector(
-                CollateralVaultStorage.DepositCapExceeded.selector,
-                address(usdc),
-                DEPOSIT_AMOUNT,
-                DEPOSIT_AMOUNT - 1
+                CollateralVaultStorage.DepositCapExceeded.selector, address(usdc), DEPOSIT_AMOUNT, DEPOSIT_AMOUNT - 1
             )
         );
         vault.deposit(address(usdc), DEPOSIT_AMOUNT);
@@ -97,10 +94,7 @@ contract CollateralVaultTest is Test {
         vm.prank(ENGINE);
         vm.expectRevert(
             abi.encodeWithSelector(
-                CollateralVaultStorage.DepositCapExceeded.selector,
-                address(usdc),
-                DEPOSIT_AMOUNT,
-                DEPOSIT_AMOUNT - 1
+                CollateralVaultStorage.DepositCapExceeded.selector, address(usdc), DEPOSIT_AMOUNT, DEPOSIT_AMOUNT - 1
             )
         );
         vault.depositFor(ALICE, address(usdc), DEPOSIT_AMOUNT);

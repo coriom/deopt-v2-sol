@@ -13,8 +13,6 @@ pragma solidity ^0.8.20;
 ///       - buyerIsMaker permet d’appliquer un vrai modèle maker/taker côté MarginEngine
 ///         sans convention implicite fragile
 interface IMarginEngineTrade {
-
-
     /// @notice Trade atomique appliqué par le MarginEngine.
     /// @param buyer Adresse de l’acheteur
     /// @param seller Adresse du vendeur

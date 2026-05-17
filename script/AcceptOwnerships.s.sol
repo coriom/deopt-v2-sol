@@ -167,9 +167,11 @@ contract AcceptOwnerships is Script {
         _acceptTwoStep("PERP_MATCHING_ENGINE", addrs.perpMatchingEngine, owners.protocolOwner, owners, ctx);
     }
 
-    function _acceptGovernanceModules(CoreAddresses memory addrs, ExpectedOwners memory owners, AcceptContext memory ctx)
-        internal
-    {
+    function _acceptGovernanceModules(
+        CoreAddresses memory addrs,
+        ExpectedOwners memory owners,
+        AcceptContext memory ctx
+    ) internal {
         _acceptTwoStep("PROTOCOL_TIMELOCK", addrs.protocolTimelock, owners.timelockOwner, owners, ctx);
         _acceptTwoStep("RISK_GOVERNOR", addrs.riskGovernor, owners.riskGovernorOwner, owners, ctx);
     }
@@ -248,7 +250,9 @@ contract AcceptOwnerships is Script {
     function _verifyProtocolModules(CoreAddresses memory addrs, ExpectedOwners memory owners) internal view {
         _verifyTwoStepOwner("COLLATERAL_VAULT", addrs.collateralVault, owners.protocolOwner, owners.deployer);
         _verifyTwoStepOwner("ORACLE_ROUTER", addrs.oracleRouter, owners.protocolOwner, owners.deployer);
-        _verifyTwoStepOwner("OPTION_PRODUCT_REGISTRY", addrs.optionProductRegistry, owners.protocolOwner, owners.deployer);
+        _verifyTwoStepOwner(
+            "OPTION_PRODUCT_REGISTRY", addrs.optionProductRegistry, owners.protocolOwner, owners.deployer
+        );
         _verifyTwoStepOwner("MARGIN_ENGINE", addrs.marginEngine, owners.protocolOwner, owners.deployer);
         _verifyTwoStepOwner("RISK_MODULE", addrs.riskModule, owners.protocolOwner, owners.deployer);
         _verifyTwoStepOwner("PERP_MARKET_REGISTRY", addrs.perpMarketRegistry, owners.protocolOwner, owners.deployer);

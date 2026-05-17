@@ -40,8 +40,7 @@ contract MockOracle is IOracle {
     mapping(bytes32 => PriceData) internal prices;
 
     function setPrice(address baseAsset, address quoteAsset, uint256 price, uint256 updatedAt, bool ok) external {
-        prices[keccak256(abi.encode(baseAsset, quoteAsset))] =
-            PriceData({price: price, updatedAt: updatedAt, ok: ok});
+        prices[keccak256(abi.encode(baseAsset, quoteAsset))] = PriceData({price: price, updatedAt: updatedAt, ok: ok});
     }
 
     function getPrice(address baseAsset, address quoteAsset) external view returns (uint256 price, uint256 updatedAt) {
@@ -110,11 +109,7 @@ contract MockMarginRiskModule is IRiskModule {
         return (uint256(risk.equityBase) * 10_000) / risk.maintenanceMarginBase;
     }
 
-    function computeAccountRiskBreakdown(address trader)
-        external
-        view
-        returns (AccountRiskBreakdown memory breakdown)
-    {
+    function computeAccountRiskBreakdown(address trader) external view returns (AccountRiskBreakdown memory breakdown) {
         AccountRisk memory risk = computeAccountRisk(trader);
         breakdown.equityBase = risk.equityBase;
         breakdown.maintenanceMarginBase = risk.maintenanceMarginBase;
@@ -152,599 +147,594 @@ contract MockMarginRiskModule is IRiskModule {
     }
 }
 
-contract MarginEngineTest is Test {
-    uint256 internal constant PRICE_SCALE = 1e8;
-    uint256 internal constant BASE_UNIT = 1e6;
-    uint256 internal constant STRIKE = 2_000 * PRICE_SCALE;
-    uint128 internal constant PREMIUM_PER_CONTRACT = 100 * 1e6;
-    uint256 internal constant BASE_MM_PER_CONTRACT = 10 * BASE_UNIT;
-    uint256 internal constant IM_FACTOR_BPS = 12_000;
-    uint256 internal constant HEALTHY_EQUITY = 1_000_000 * BASE_UNIT;
-    uint256 internal constant LIQUIDATABLE_EQUITY = 9 * BASE_UNIT;
+    contract MarginEngineTest is Test {
+        uint256 internal constant PRICE_SCALE = 1e8;
+        uint256 internal constant BASE_UNIT = 1e6;
+        uint256 internal constant STRIKE = 2_000 * PRICE_SCALE;
+        uint128 internal constant PREMIUM_PER_CONTRACT = 100 * 1e6;
+        uint256 internal constant BASE_MM_PER_CONTRACT = 10 * BASE_UNIT;
+        uint256 internal constant IM_FACTOR_BPS = 12_000;
+        uint256 internal constant HEALTHY_EQUITY = 1_000_000 * BASE_UNIT;
+        uint256 internal constant LIQUIDATABLE_EQUITY = 9 * BASE_UNIT;
 
-    address internal constant OWNER = address(0xA11CE);
-    address internal constant MATCHING_ENGINE = address(0xBEEF);
-    address internal constant ALICE = address(0xA1);
-    address internal constant BOB = address(0xB2);
-    address internal constant CAROL = address(0xC3);
-    address internal constant DAVE = address(0xD4);
-    address internal constant GUARDIAN = address(0x1234);
+        address internal constant OWNER = address(0xA11CE);
+        address internal constant MATCHING_ENGINE = address(0xBEEF);
+        address internal constant ALICE = address(0xA1);
+        address internal constant BOB = address(0xB2);
+        address internal constant CAROL = address(0xC3);
+        address internal constant DAVE = address(0xD4);
+        address internal constant GUARDIAN = address(0x1234);
 
-    CollateralVault internal vault;
-    OptionProductRegistry internal registry;
-    MarginEngine internal engine;
-    MarginEngineLens internal lens;
-    MockOracle internal oracle;
-    MockMarginRiskModule internal riskModule;
+        CollateralVault internal vault;
+        OptionProductRegistry internal registry;
+        MarginEngine internal engine;
+        MarginEngineLens internal lens;
+        MockOracle internal oracle;
+        MockMarginRiskModule internal riskModule;
 
-    MockERC20Decimals internal usdc;
-    MockERC20Decimals internal weth;
+        MockERC20Decimals internal usdc;
+        MockERC20Decimals internal weth;
 
-    uint256 internal callOptionId;
+        uint256 internal callOptionId;
 
-    function setUp() external {
-        vault = new CollateralVault(OWNER);
-        registry = new OptionProductRegistry(OWNER);
-        oracle = new MockOracle();
-        engine = new MarginEngine(OWNER, address(registry), address(vault), address(oracle));
-        lens = new MarginEngineLens();
+        function setUp() external {
+            vault = new CollateralVault(OWNER);
+            registry = new OptionProductRegistry(OWNER);
+            oracle = new MockOracle();
+            engine = new MarginEngine(OWNER, address(registry), address(vault), address(oracle));
+            lens = new MarginEngineLens();
 
-        usdc = new MockERC20Decimals("Mock USDC", "mUSDC", 6);
-        weth = new MockERC20Decimals("Mock WETH", "mWETH", 18);
+            usdc = new MockERC20Decimals("Mock USDC", "mUSDC", 6);
+            weth = new MockERC20Decimals("Mock WETH", "mWETH", 18);
 
-        riskModule =
-            new MockMarginRiskModule(address(engine), address(usdc), 6, BASE_MM_PER_CONTRACT, IM_FACTOR_BPS);
+            riskModule = new MockMarginRiskModule(
+                address(engine), address(usdc), 6, BASE_MM_PER_CONTRACT, IM_FACTOR_BPS
+            );
 
-        vm.startPrank(OWNER);
-        vault.setCollateralToken(address(usdc), true, 6, 10_000);
-        vault.setMarginEngine(address(engine));
+            vm.startPrank(OWNER);
+            vault.setCollateralToken(address(usdc), true, 6, 10_000);
+            vault.setMarginEngine(address(engine));
 
-        registry.setSettlementAssetAllowed(address(usdc), true);
-        registry.setUnderlyingConfig(
-            address(weth),
-            OptionProductRegistry.UnderlyingConfig({
-                oracle: address(oracle),
-                spotShockDownBps: 3_000,
-                spotShockUpBps: 3_000,
-                volShockDownBps: 0,
-                volShockUpBps: 2_000,
-                isEnabled: true
-            })
-        );
+            registry.setSettlementAssetAllowed(address(usdc), true);
+            registry.setUnderlyingConfig(
+                address(weth),
+                OptionProductRegistry.UnderlyingConfig({
+                    oracle: address(oracle),
+                    spotShockDownBps: 3_000,
+                    spotShockUpBps: 3_000,
+                    volShockDownBps: 0,
+                    volShockUpBps: 2_000,
+                    isEnabled: true
+                })
+            );
 
-        engine.setMatchingEngine(MATCHING_ENGINE);
-        engine.setRiskModule(address(riskModule));
-        engine.syncRiskParamsFromRiskModule();
-        engine.setLiquidationParams(10_050, 500);
-        engine.setLiquidationHardenParams(10_000, 1);
-        engine.setLiquidationPricingParams(0, 0);
-        engine.setLiquidationOracleMaxDelay(600);
-        vm.stopPrank();
+            engine.setMatchingEngine(MATCHING_ENGINE);
+            engine.setRiskModule(address(riskModule));
+            engine.syncRiskParamsFromRiskModule();
+            engine.setLiquidationParams(10_050, 500);
+            engine.setLiquidationHardenParams(10_000, 1);
+            engine.setLiquidationPricingParams(0, 0);
+            engine.setLiquidationOracleMaxDelay(600);
+            vm.stopPrank();
 
-        vm.prank(OWNER);
-        callOptionId = registry.createSeries(
-            address(weth),
-            address(usdc),
-            uint64(block.timestamp + 7 days),
-            uint64(STRIKE),
-            true,
-            true
-        );
+            vm.prank(OWNER);
+            callOptionId = registry.createSeries(
+                address(weth), address(usdc), uint64(block.timestamp + 7 days), uint64(STRIKE), true, true
+            );
 
-        oracle.setPrice(address(weth), address(usdc), STRIKE, block.timestamp, true);
+            oracle.setPrice(address(weth), address(usdc), STRIKE, block.timestamp, true);
 
-        _setHealthyEquity(ALICE);
-        _setHealthyEquity(BOB);
-        _setHealthyEquity(CAROL);
-        _setHealthyEquity(DAVE);
+            _setHealthyEquity(ALICE);
+            _setHealthyEquity(BOB);
+            _setHealthyEquity(CAROL);
+            _setHealthyEquity(DAVE);
 
-        _deposit(ALICE, 10_000 * BASE_UNIT);
-        _deposit(BOB, 10_000 * BASE_UNIT);
-        _deposit(CAROL, 10_000 * BASE_UNIT);
-        _deposit(DAVE, 10_000 * BASE_UNIT);
-    }
+            _deposit(ALICE, 10_000 * BASE_UNIT);
+            _deposit(BOB, 10_000 * BASE_UNIT);
+            _deposit(CAROL, 10_000 * BASE_UNIT);
+            _deposit(DAVE, 10_000 * BASE_UNIT);
+        }
 
-    function testOpeningPositionUpdatesTraderSeriesCorrectly() external {
-        _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
+        function testOpeningPositionUpdatesTraderSeriesCorrectly() external {
+            _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
 
-        uint256[] memory aliceSeries = engine.getTraderSeries(ALICE);
-        uint256[] memory bobSeries = engine.getTraderSeries(BOB);
+            uint256[] memory aliceSeries = engine.getTraderSeries(ALICE);
+            uint256[] memory bobSeries = engine.getTraderSeries(BOB);
 
-        assertEq(aliceSeries.length, 1);
-        assertEq(aliceSeries[0], callOptionId);
-        assertTrue(engine.isOpenSeries(ALICE, callOptionId));
+            assertEq(aliceSeries.length, 1);
+            assertEq(aliceSeries[0], callOptionId);
+            assertTrue(engine.isOpenSeries(ALICE, callOptionId));
 
-        assertEq(bobSeries.length, 1);
-        assertEq(bobSeries[0], callOptionId);
-        assertTrue(engine.isOpenSeries(BOB, callOptionId));
-    }
+            assertEq(bobSeries.length, 1);
+            assertEq(bobSeries[0], callOptionId);
+            assertTrue(engine.isOpenSeries(BOB, callOptionId));
+        }
 
-    function testClosingPositionRemovesItFromActiveSeries() external {
-        _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
-        _trade(BOB, ALICE, callOptionId, 1, PREMIUM_PER_CONTRACT);
+        function testClosingPositionRemovesItFromActiveSeries() external {
+            _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
+            _trade(BOB, ALICE, callOptionId, 1, PREMIUM_PER_CONTRACT);
 
-        assertEq(engine.getTraderSeriesLength(ALICE), 0);
-        assertEq(engine.getTraderSeriesLength(BOB), 0);
-        assertFalse(engine.isOpenSeries(ALICE, callOptionId));
-        assertFalse(engine.isOpenSeries(BOB, callOptionId));
-        assertEq(engine.positions(ALICE, callOptionId).quantity, 0);
-        assertEq(engine.positions(BOB, callOptionId).quantity, 0);
-    }
+            assertEq(engine.getTraderSeriesLength(ALICE), 0);
+            assertEq(engine.getTraderSeriesLength(BOB), 0);
+            assertFalse(engine.isOpenSeries(ALICE, callOptionId));
+            assertFalse(engine.isOpenSeries(BOB, callOptionId));
+            assertEq(engine.positions(ALICE, callOptionId).quantity, 0);
+            assertEq(engine.positions(BOB, callOptionId).quantity, 0);
+        }
 
-    function testTotalShortExposureIsUpdatedCorrectlyOnOpenAndClose() external {
-        _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
-        assertEq(engine.totalShortContracts(BOB), 2);
-        assertEq(engine.seriesShortOpenInterest(callOptionId), 2);
+        function testTotalShortExposureIsUpdatedCorrectlyOnOpenAndClose() external {
+            _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
+            assertEq(engine.totalShortContracts(BOB), 2);
+            assertEq(engine.seriesShortOpenInterest(callOptionId), 2);
 
-        _trade(BOB, ALICE, callOptionId, 1, PREMIUM_PER_CONTRACT);
-        assertEq(engine.totalShortContracts(BOB), 1);
-        assertEq(engine.seriesShortOpenInterest(callOptionId), 1);
+            _trade(BOB, ALICE, callOptionId, 1, PREMIUM_PER_CONTRACT);
+            assertEq(engine.totalShortContracts(BOB), 1);
+            assertEq(engine.seriesShortOpenInterest(callOptionId), 1);
 
-        _trade(BOB, ALICE, callOptionId, 1, PREMIUM_PER_CONTRACT);
-        assertEq(engine.totalShortContracts(BOB), 0);
-        assertEq(engine.seriesShortOpenInterest(callOptionId), 0);
-    }
+            _trade(BOB, ALICE, callOptionId, 1, PREMIUM_PER_CONTRACT);
+            assertEq(engine.totalShortContracts(BOB), 0);
+            assertEq(engine.seriesShortOpenInterest(callOptionId), 0);
+        }
 
-    function testSeriesShortOpenInterestCapBlocksNewShortExposureAboveCap() external {
-        vm.prank(OWNER);
-        engine.setSeriesShortOpenInterestCap(callOptionId, 2);
+        function testSeriesShortOpenInterestCapBlocksNewShortExposureAboveCap() external {
+            vm.prank(OWNER);
+            engine.setSeriesShortOpenInterestCap(callOptionId, 2);
 
-        _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
+            _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
 
-        vm.prank(MATCHING_ENGINE);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                MarginEngineTypes.SeriesShortOpenInterestCapExceeded.selector,
+            vm.prank(MATCHING_ENGINE);
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    MarginEngineTypes.SeriesShortOpenInterestCapExceeded.selector, callOptionId, 3, 2
+                )
+            );
+            engine.applyTrade(
+                IMarginEngineTrade.Trade({
+                    buyer: ALICE,
+                    seller: CAROL,
+                    optionId: callOptionId,
+                    quantity: 1,
+                    price: PREMIUM_PER_CONTRACT,
+                    buyerIsMaker: true
+                })
+            );
+
+            assertEq(engine.seriesShortOpenInterest(callOptionId), 2);
+            assertEq(engine.positions(CAROL, callOptionId).quantity, 0);
+        }
+
+        function testLoweredSeriesShortOpenInterestCapStillAllowsReduction() external {
+            _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
+
+            vm.prank(OWNER);
+            engine.setSeriesShortOpenInterestCap(callOptionId, 1);
+
+            _trade(BOB, ALICE, callOptionId, 1, PREMIUM_PER_CONTRACT);
+
+            assertEq(engine.seriesShortOpenInterest(callOptionId), 1);
+            assertEq(engine.totalShortContracts(BOB), 1);
+        }
+
+        function testSeriesEmergencyCloseOnlyBlocksOpeningWithoutGlobalTradingPause() external {
+            _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
+
+            vm.expectEmit(true, false, false, true);
+            emit MarginEngineTypes.SeriesEmergencyCloseOnlySet(callOptionId, false, true);
+            vm.expectEmit(true, true, false, true);
+            emit MarginEngineTypes.SeriesEmergencyCloseOnlyUpdated(OWNER, callOptionId, false, true);
+            vm.prank(OWNER);
+            engine.setSeriesEmergencyCloseOnly(callOptionId, true);
+
+            assertFalse(engine.tradingPaused());
+            assertTrue(engine.seriesEmergencyCloseOnly(callOptionId));
+
+            vm.expectRevert(MarginEngineTypes.SeriesNotActiveCloseOnly.selector);
+            _trade(ALICE, CAROL, callOptionId, 1, PREMIUM_PER_CONTRACT);
+
+            assertEq(engine.positions(ALICE, callOptionId).quantity, 1);
+            assertEq(engine.positions(CAROL, callOptionId).quantity, 0);
+        }
+
+        function testGuardianSeriesEmergencyCloseOnlyStillAllowsTwoSidedClose() external {
+            vm.prank(OWNER);
+            engine.setGuardian(GUARDIAN);
+
+            _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
+
+            vm.prank(GUARDIAN);
+            engine.setSeriesEmergencyCloseOnly(callOptionId, true);
+
+            _trade(BOB, ALICE, callOptionId, 1, PREMIUM_PER_CONTRACT);
+
+            assertEq(engine.positions(ALICE, callOptionId).quantity, 1);
+            assertEq(engine.positions(BOB, callOptionId).quantity, -1);
+            assertEq(engine.seriesShortOpenInterest(callOptionId), 1);
+        }
+
+        function testRestrictedSeriesActivationBlocksOpeningButAllowsReduction() external {
+            _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
+
+            vm.expectEmit(true, false, false, true);
+            emit MarginEngineTypes.SeriesActivationStateSet(callOptionId, 0, 1);
+            vm.prank(OWNER);
+            engine.setSeriesActivationState(callOptionId, 1);
+
+            vm.expectRevert(MarginEngineTypes.SeriesNotActiveCloseOnly.selector);
+            _trade(ALICE, CAROL, callOptionId, 1, PREMIUM_PER_CONTRACT);
+
+            _trade(BOB, ALICE, callOptionId, 1, PREMIUM_PER_CONTRACT);
+
+            assertEq(engine.seriesActivationState(callOptionId), 1);
+            assertEq(engine.positions(ALICE, callOptionId).quantity, 1);
+            assertEq(engine.positions(BOB, callOptionId).quantity, -1);
+            assertEq(engine.positions(CAROL, callOptionId).quantity, 0);
+            assertEq(engine.seriesShortOpenInterest(callOptionId), 1);
+        }
+
+        function testInactiveSeriesActivationAllowsOnlyStrictCloseToZero() external {
+            _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
+
+            vm.expectEmit(true, false, false, true);
+            emit MarginEngineTypes.SeriesActivationStateSet(callOptionId, 0, 2);
+            vm.prank(OWNER);
+            engine.setSeriesActivationState(callOptionId, 2);
+
+            vm.expectRevert(MarginEngineTypes.SeriesNotActiveCloseOnly.selector);
+            _trade(BOB, ALICE, callOptionId, 1, PREMIUM_PER_CONTRACT);
+
+            vm.expectRevert(MarginEngineTypes.SeriesNotActiveCloseOnly.selector);
+            _trade(ALICE, CAROL, callOptionId, 1, PREMIUM_PER_CONTRACT);
+
+            _trade(BOB, ALICE, callOptionId, 2, PREMIUM_PER_CONTRACT);
+
+            assertEq(engine.seriesActivationState(callOptionId), 2);
+            assertEq(engine.positions(ALICE, callOptionId).quantity, 0);
+            assertEq(engine.positions(BOB, callOptionId).quantity, 0);
+            assertEq(engine.positions(CAROL, callOptionId).quantity, 0);
+            assertEq(engine.seriesShortOpenInterest(callOptionId), 0);
+        }
+
+        function testPremiumTransferBetweenBuyerAndSellerIsCorrect() external {
+            uint256 aliceBefore = vault.balances(ALICE, address(usdc));
+            uint256 bobBefore = vault.balances(BOB, address(usdc));
+
+            _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
+
+            assertEq(vault.balances(ALICE, address(usdc)), aliceBefore - (2 * PREMIUM_PER_CONTRACT));
+            assertEq(vault.balances(BOB, address(usdc)), bobBefore + (2 * PREMIUM_PER_CONTRACT));
+        }
+
+        function testSettlementProducesCorrectPayoffAtExpiry() external {
+            _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
+
+            uint256 aliceBefore = vault.balances(ALICE, address(usdc));
+            uint256 bobBefore = vault.balances(BOB, address(usdc));
+
+            vm.warp(block.timestamp + 8 days);
+            vm.prank(OWNER);
+            registry.setSettlementPrice(callOptionId, 2_500 * PRICE_SCALE);
+
+            engine.settleAccount(callOptionId, BOB);
+            engine.settleAccount(callOptionId, ALICE);
+
+            assertEq(vault.balances(ALICE, address(usdc)), aliceBefore + (500 * BASE_UNIT));
+            assertEq(vault.balances(BOB, address(usdc)), bobBefore - (500 * BASE_UNIT));
+            assertEq(engine.positions(ALICE, callOptionId).quantity, 0);
+            assertEq(engine.positions(BOB, callOptionId).quantity, 0);
+        }
+
+        function testExpiredOptionCannotBeExercisedTwice() external {
+            _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
+
+            vm.warp(block.timestamp + 8 days);
+            vm.prank(OWNER);
+            registry.setSettlementPrice(callOptionId, 2_500 * PRICE_SCALE);
+
+            engine.settleAccount(callOptionId, ALICE);
+
+            vm.expectRevert(MarginEngineTypes.SettlementAlreadyProcessed.selector);
+            engine.settleAccount(callOptionId, ALICE);
+        }
+
+        function testWinningLongSettlementEmitsShortfallInsuranceAndBadDebtEvents() external {
+            _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
+
+            vm.prank(OWNER);
+            engine.setInsuranceFund(DAVE);
+
+            vm.prank(address(engine));
+            vault.transferBetweenAccounts(address(usdc), DAVE, CAROL, 9_700 * BASE_UNIT);
+
+            vm.warp(block.timestamp + 8 days);
+            vm.prank(OWNER);
+            registry.setSettlementPrice(callOptionId, 2_500 * PRICE_SCALE);
+
+            vm.expectEmit(true, true, true, true);
+            emit MarginEngineTypes.AccountSettlementResolved(
+                ALICE,
                 callOptionId,
-                3,
-                2
-            )
-        );
-        engine.applyTrade(
-            IMarginEngineTrade.Trade({
-                buyer: ALICE,
-                seller: CAROL,
-                optionId: callOptionId,
-                quantity: 1,
-                price: PREMIUM_PER_CONTRACT,
-                buyerIsMaker: true
-            })
-        );
+                address(usdc),
+                1,
+                2_500 * PRICE_SCALE,
+                500 * BASE_UNIT,
+                int256(500 * BASE_UNIT),
+                500 * BASE_UNIT
+            );
+            vm.expectEmit(true, true, false, true);
+            emit MarginEngineTypes.SettlementInsuranceCoverage(ALICE, callOptionId, 500 * BASE_UNIT, 300 * BASE_UNIT);
+            vm.expectEmit(true, true, false, true);
+            emit MarginEngineTypes.SettlementShortfall(
+                ALICE, callOptionId, 500 * BASE_UNIT, 300 * BASE_UNIT, 200 * BASE_UNIT
+            );
+            vm.expectEmit(true, true, false, true);
+            emit MarginEngineTypes.SettlementBadDebtRecorded(ALICE, callOptionId, 200 * BASE_UNIT);
 
-        assertEq(engine.seriesShortOpenInterest(callOptionId), 2);
-        assertEq(engine.positions(CAROL, callOptionId).quantity, 0);
+            engine.settleAccount(callOptionId, ALICE);
+        }
+
+        function testShortSettlementEmitsCollectionShortfallAndBadDebtEvents() external {
+            _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
+
+            vm.prank(address(engine));
+            vault.transferBetweenAccounts(address(usdc), BOB, CAROL, 9_800 * BASE_UNIT);
+
+            vm.warp(block.timestamp + 8 days);
+            vm.prank(OWNER);
+            registry.setSettlementPrice(callOptionId, 2_500 * PRICE_SCALE);
+
+            vm.expectEmit(true, true, true, true);
+            emit MarginEngineTypes.AccountSettlementResolved(
+                BOB,
+                callOptionId,
+                address(usdc),
+                -2,
+                2_500 * PRICE_SCALE,
+                500 * BASE_UNIT,
+                -int256(1_000 * BASE_UNIT),
+                1_000 * BASE_UNIT
+            );
+            vm.expectEmit(true, true, false, true);
+            emit MarginEngineTypes.SettlementCollectionShortfall(
+                BOB, callOptionId, 1_000 * BASE_UNIT, 400 * BASE_UNIT, 600 * BASE_UNIT
+            );
+            vm.expectEmit(true, true, false, true);
+            emit MarginEngineTypes.SettlementBadDebtRecorded(BOB, callOptionId, 600 * BASE_UNIT);
+
+            engine.settleAccount(callOptionId, BOB);
+        }
+
+        function testPreviewDetailedSettlementShowsInsuranceCoverageForWinningLong() external {
+            _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
+
+            vm.prank(OWNER);
+            engine.setInsuranceFund(DAVE);
+
+            vm.prank(address(engine));
+            vault.transferBetweenAccounts(address(usdc), DAVE, CAROL, 9_700 * BASE_UNIT);
+
+            vm.warp(block.timestamp + 8 days);
+            vm.prank(OWNER);
+            registry.setSettlementPrice(callOptionId, 2_500 * PRICE_SCALE);
+
+            MarginEngineLens.DetailedSettlementPreview memory preview =
+                lens.previewDetailedSettlement(address(engine), callOptionId, ALICE);
+
+            assertTrue(preview.seriesExpired);
+            assertTrue(preview.settlementPriceSet);
+            assertTrue(preview.settlementReady);
+            assertFalse(preview.accountSettled);
+            assertEq(preview.positionQuantity, 1);
+            assertEq(preview.payoffPerContract, 500 * BASE_UNIT);
+            assertEq(preview.grossSettlementAmount, 500 * BASE_UNIT);
+            assertFalse(preview.isShortLiability);
+            assertEq(preview.shortLiabilityAmount, 0);
+            assertEq(preview.settlementSinkBalance, 300 * BASE_UNIT);
+            assertEq(preview.collateralCoveragePreview, 0);
+            assertEq(preview.insuranceCoveragePreview, 300 * BASE_UNIT);
+            assertEq(preview.residualShortfallPreview, 200 * BASE_UNIT);
+            assertEq(preview.residualBadDebtPreview, 200 * BASE_UNIT);
+            assertTrue(preview.grossSettlementAmountBaseAvailable);
+            assertEq(preview.grossSettlementAmountBase, 500 * BASE_UNIT);
+            assertTrue(preview.accountCashflowDeltaBaseAvailable);
+            assertEq(preview.accountCashflowDeltaBase, int256(300 * BASE_UNIT));
+            assertEq(preview.riskBefore.equityBase, int256(HEALTHY_EQUITY));
+            assertEq(preview.riskBefore.maintenanceMarginBase, 0);
+            assertEq(preview.riskBefore.initialMarginBase, 0);
+            assertEq(preview.riskBefore.marginRatioBps, type(uint256).max);
+            assertTrue(preview.riskAfterAvailable);
+            assertEq(preview.riskAfter.equityBase, int256(HEALTHY_EQUITY + (300 * BASE_UNIT)));
+            assertEq(preview.riskAfter.maintenanceMarginBase, 0);
+            assertEq(preview.riskAfter.initialMarginBase, 0);
+            assertEq(preview.riskAfter.marginRatioBps, type(uint256).max);
+        }
+
+        function testPreviewDetailedSettlementShowsShortLiabilityCoverageAndRiskRelease() external {
+            _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
+
+            vm.prank(address(engine));
+            vault.transferBetweenAccounts(address(usdc), BOB, CAROL, 9_800 * BASE_UNIT);
+
+            vm.warp(block.timestamp + 8 days);
+            vm.prank(OWNER);
+            registry.setSettlementPrice(callOptionId, 2_500 * PRICE_SCALE);
+
+            MarginEngineLens.DetailedSettlementPreview memory preview =
+                lens.previewDetailedSettlement(address(engine), callOptionId, BOB);
+
+            assertTrue(preview.seriesExpired);
+            assertTrue(preview.settlementPriceSet);
+            assertTrue(preview.settlementReady);
+            assertEq(preview.positionQuantity, -2);
+            assertEq(preview.payoffPerContract, 500 * BASE_UNIT);
+            assertEq(preview.pnl, -int256(1_000 * BASE_UNIT));
+            assertEq(preview.grossSettlementAmount, 1_000 * BASE_UNIT);
+            assertTrue(preview.isShortLiability);
+            assertEq(preview.shortLiabilityAmount, 1_000 * BASE_UNIT);
+            assertEq(preview.traderSettlementAssetBalance, 400 * BASE_UNIT);
+            assertEq(preview.collateralCoveragePreview, 400 * BASE_UNIT);
+            assertEq(preview.insuranceCoveragePreview, 0);
+            assertEq(preview.residualShortfallPreview, 600 * BASE_UNIT);
+            assertEq(preview.residualBadDebtPreview, 600 * BASE_UNIT);
+            assertTrue(preview.grossSettlementAmountBaseAvailable);
+            assertEq(preview.grossSettlementAmountBase, 1_000 * BASE_UNIT);
+            assertTrue(preview.accountCashflowDeltaBaseAvailable);
+            assertEq(preview.accountCashflowDeltaBase, -int256(400 * BASE_UNIT));
+            assertEq(preview.riskBefore.equityBase, int256(HEALTHY_EQUITY));
+            assertEq(preview.riskBefore.maintenanceMarginBase, 2 * BASE_MM_PER_CONTRACT);
+            assertEq(preview.riskBefore.initialMarginBase, (2 * BASE_MM_PER_CONTRACT * IM_FACTOR_BPS) / 10_000);
+            assertTrue(preview.riskAfterAvailable);
+            assertEq(preview.riskAfter.equityBase, int256(HEALTHY_EQUITY - (400 * BASE_UNIT)));
+            assertEq(preview.riskAfter.maintenanceMarginBase, 0);
+            assertEq(preview.riskAfter.initialMarginBase, 0);
+            assertEq(preview.riskAfter.marginRatioBps, type(uint256).max);
+        }
+
+        function testLiquidationReducesPositionSizeCorrectly() external {
+            _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
+            riskModule.setEquityBase(BOB, int256(LIQUIDATABLE_EQUITY));
+            oracle.setPrice(address(weth), address(usdc), 1_900 * PRICE_SCALE, block.timestamp, true);
+
+            uint256[] memory optionIds = new uint256[](1);
+            uint128[] memory quantities = new uint128[](1);
+            optionIds[0] = callOptionId;
+            quantities[0] = 1;
+
+            vm.prank(CAROL);
+            engine.liquidate(BOB, optionIds, quantities);
+
+            assertEq(engine.positions(BOB, callOptionId).quantity, -1);
+            assertEq(engine.positions(CAROL, callOptionId).quantity, -1);
+            assertEq(engine.totalShortContracts(BOB), 1);
+        }
+
+        function testPreviewLiquidationBreaksDownRequestedCloseAndCash() external {
+            _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
+            riskModule.setEquityBase(BOB, int256(LIQUIDATABLE_EQUITY));
+            oracle.setPrice(address(weth), address(usdc), 2_500 * PRICE_SCALE, block.timestamp, true);
+
+            uint256[] memory optionIds = new uint256[](1);
+            uint128[] memory quantities = new uint128[](1);
+            optionIds[0] = callOptionId;
+            quantities[0] = 2;
+
+            MarginEngineLens.OptionsLiquidationPreview memory preview =
+                lens.previewLiquidation(address(engine), BOB, optionIds, quantities);
+
+            assertTrue(preview.liquidatable);
+            assertEq(preview.equityBeforeBase, int256(LIQUIDATABLE_EQUITY));
+            assertEq(preview.maintenanceMarginBeforeBase, 2 * BASE_MM_PER_CONTRACT);
+            assertEq(preview.initialMarginBeforeBase, (2 * BASE_MM_PER_CONTRACT * IM_FACTOR_BPS) / 10_000);
+            assertEq(preview.totalShortContracts, 2);
+            assertEq(preview.maxCloseContracts, 2);
+            assertEq(preview.totalContractsPreviewed, 2);
+            assertEq(preview.executedQuantities[0], 2);
+            assertEq(preview.pricePerContract[0], 500 * BASE_UNIT);
+            assertEq(preview.cashAssetCount, 1);
+            assertEq(preview.settlementAssets[0], address(usdc));
+            assertEq(preview.cashRequestedByAsset[0], 1_000 * BASE_UNIT);
+            assertEq(preview.penaltyBase, (2 * BASE_MM_PER_CONTRACT * 500) / 10_000);
+        }
+
+        function testSeriesEmergencyCloseOnlyStillAllowsLiquidation() external {
+            _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
+            riskModule.setEquityBase(BOB, int256(LIQUIDATABLE_EQUITY));
+            oracle.setPrice(address(weth), address(usdc), 1_900 * PRICE_SCALE, block.timestamp, true);
+
+            vm.prank(OWNER);
+            engine.setSeriesEmergencyCloseOnly(callOptionId, true);
+
+            uint256[] memory optionIds = new uint256[](1);
+            uint128[] memory quantities = new uint128[](1);
+            optionIds[0] = callOptionId;
+            quantities[0] = 1;
+
+            vm.prank(CAROL);
+            engine.liquidate(BOB, optionIds, quantities);
+
+            assertEq(engine.positions(BOB, callOptionId).quantity, -1);
+            assertEq(engine.positions(CAROL, callOptionId).quantity, -1);
+            assertEq(engine.totalShortContracts(BOB), 1);
+        }
+
+        function testLiquidationRespectsPenaltyLogic() external {
+            _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
+            riskModule.setEquityBase(BOB, int256(LIQUIDATABLE_EQUITY));
+            oracle.setPrice(address(weth), address(usdc), 1_900 * PRICE_SCALE, block.timestamp, true);
+
+            uint256 bobBefore = vault.balances(BOB, address(usdc));
+            uint256 carolBefore = vault.balances(CAROL, address(usdc));
+
+            uint256[] memory optionIds = new uint256[](1);
+            uint128[] memory quantities = new uint128[](1);
+            optionIds[0] = callOptionId;
+            quantities[0] = 1;
+
+            vm.prank(CAROL);
+            engine.liquidate(BOB, optionIds, quantities);
+
+            uint256 expectedPenalty = (BASE_MM_PER_CONTRACT * 500) / 10_000;
+            assertEq(vault.balances(BOB, address(usdc)), bobBefore - expectedPenalty);
+            assertEq(vault.balances(CAROL, address(usdc)), carolBefore + expectedPenalty);
+        }
+
+        function testAccountWithNoPositionsReturnsEmptySeriesAndZeroExposure() external {
+            uint256[] memory series = engine.getTraderSeries(DAVE);
+            MarginEngineLens.AccountState memory state = lens.getAccountState(address(engine), DAVE);
+
+            assertEq(series.length, 0);
+            assertEq(engine.getTraderSeriesLength(DAVE), 0);
+            assertEq(engine.totalShortContracts(DAVE), 0);
+            assertEq(state.openSeriesCount, 0);
+            assertEq(state.totalShortOpenContracts, 0);
+        }
+
+        function testLensDetailedSettlementPreviewDoesNotMutateProtocolState() external {
+            _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
+
+            vm.warp(block.timestamp + 8 days);
+            vm.prank(OWNER);
+            registry.setSettlementPrice(callOptionId, 2_500 * PRICE_SCALE);
+
+            int128 aliceQtyBefore = engine.positions(ALICE, callOptionId).quantity;
+            bool settledBefore = engine.isAccountSettled(callOptionId, ALICE);
+            uint256 aliceBalanceBefore = vault.balances(ALICE, address(usdc));
+            uint256 seriesPaidBefore = engine.seriesPaid(callOptionId);
+
+            MarginEngineLens.DetailedSettlementPreview memory preview =
+                lens.previewDetailedSettlement(address(engine), callOptionId, ALICE);
+
+            assertEq(preview.payoffPerContract, 500 * BASE_UNIT);
+            assertEq(engine.positions(ALICE, callOptionId).quantity, aliceQtyBefore);
+            assertEq(engine.isAccountSettled(callOptionId, ALICE), settledBefore);
+            assertEq(vault.balances(ALICE, address(usdc)), aliceBalanceBefore);
+            assertEq(engine.seriesPaid(callOptionId), seriesPaidBefore);
+        }
+
+        function _trade(address buyer, address seller, uint256 optionId, uint128 quantity, uint128 premiumPerContract)
+            internal
+        {
+            vm.prank(MATCHING_ENGINE);
+            engine.applyTrade(
+                IMarginEngineTrade.Trade({
+                    buyer: buyer,
+                    seller: seller,
+                    optionId: optionId,
+                    quantity: quantity,
+                    price: premiumPerContract,
+                    buyerIsMaker: true
+                })
+            );
+        }
+
+        function _deposit(address trader, uint256 amount) internal {
+            usdc.mint(trader, amount);
+            vm.startPrank(trader);
+            usdc.approve(address(vault), amount);
+            vault.deposit(address(usdc), amount);
+            vm.stopPrank();
+        }
+
+        function _setHealthyEquity(address trader) internal {
+            riskModule.setEquityBase(trader, int256(HEALTHY_EQUITY));
+        }
     }
-
-    function testLoweredSeriesShortOpenInterestCapStillAllowsReduction() external {
-        _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
-
-        vm.prank(OWNER);
-        engine.setSeriesShortOpenInterestCap(callOptionId, 1);
-
-        _trade(BOB, ALICE, callOptionId, 1, PREMIUM_PER_CONTRACT);
-
-        assertEq(engine.seriesShortOpenInterest(callOptionId), 1);
-        assertEq(engine.totalShortContracts(BOB), 1);
-    }
-
-    function testSeriesEmergencyCloseOnlyBlocksOpeningWithoutGlobalTradingPause() external {
-        _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
-
-        vm.expectEmit(true, false, false, true);
-        emit MarginEngineTypes.SeriesEmergencyCloseOnlySet(callOptionId, false, true);
-        vm.expectEmit(true, true, false, true);
-        emit MarginEngineTypes.SeriesEmergencyCloseOnlyUpdated(OWNER, callOptionId, false, true);
-        vm.prank(OWNER);
-        engine.setSeriesEmergencyCloseOnly(callOptionId, true);
-
-        assertFalse(engine.tradingPaused());
-        assertTrue(engine.seriesEmergencyCloseOnly(callOptionId));
-
-        vm.expectRevert(MarginEngineTypes.SeriesNotActiveCloseOnly.selector);
-        _trade(ALICE, CAROL, callOptionId, 1, PREMIUM_PER_CONTRACT);
-
-        assertEq(engine.positions(ALICE, callOptionId).quantity, 1);
-        assertEq(engine.positions(CAROL, callOptionId).quantity, 0);
-    }
-
-    function testGuardianSeriesEmergencyCloseOnlyStillAllowsTwoSidedClose() external {
-        vm.prank(OWNER);
-        engine.setGuardian(GUARDIAN);
-
-        _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
-
-        vm.prank(GUARDIAN);
-        engine.setSeriesEmergencyCloseOnly(callOptionId, true);
-
-        _trade(BOB, ALICE, callOptionId, 1, PREMIUM_PER_CONTRACT);
-
-        assertEq(engine.positions(ALICE, callOptionId).quantity, 1);
-        assertEq(engine.positions(BOB, callOptionId).quantity, -1);
-        assertEq(engine.seriesShortOpenInterest(callOptionId), 1);
-    }
-
-    function testRestrictedSeriesActivationBlocksOpeningButAllowsReduction() external {
-        _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
-
-        vm.expectEmit(true, false, false, true);
-        emit MarginEngineTypes.SeriesActivationStateSet(callOptionId, 0, 1);
-        vm.prank(OWNER);
-        engine.setSeriesActivationState(callOptionId, 1);
-
-        vm.expectRevert(MarginEngineTypes.SeriesNotActiveCloseOnly.selector);
-        _trade(ALICE, CAROL, callOptionId, 1, PREMIUM_PER_CONTRACT);
-
-        _trade(BOB, ALICE, callOptionId, 1, PREMIUM_PER_CONTRACT);
-
-        assertEq(engine.seriesActivationState(callOptionId), 1);
-        assertEq(engine.positions(ALICE, callOptionId).quantity, 1);
-        assertEq(engine.positions(BOB, callOptionId).quantity, -1);
-        assertEq(engine.positions(CAROL, callOptionId).quantity, 0);
-        assertEq(engine.seriesShortOpenInterest(callOptionId), 1);
-    }
-
-    function testInactiveSeriesActivationAllowsOnlyStrictCloseToZero() external {
-        _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
-
-        vm.expectEmit(true, false, false, true);
-        emit MarginEngineTypes.SeriesActivationStateSet(callOptionId, 0, 2);
-        vm.prank(OWNER);
-        engine.setSeriesActivationState(callOptionId, 2);
-
-        vm.expectRevert(MarginEngineTypes.SeriesNotActiveCloseOnly.selector);
-        _trade(BOB, ALICE, callOptionId, 1, PREMIUM_PER_CONTRACT);
-
-        vm.expectRevert(MarginEngineTypes.SeriesNotActiveCloseOnly.selector);
-        _trade(ALICE, CAROL, callOptionId, 1, PREMIUM_PER_CONTRACT);
-
-        _trade(BOB, ALICE, callOptionId, 2, PREMIUM_PER_CONTRACT);
-
-        assertEq(engine.seriesActivationState(callOptionId), 2);
-        assertEq(engine.positions(ALICE, callOptionId).quantity, 0);
-        assertEq(engine.positions(BOB, callOptionId).quantity, 0);
-        assertEq(engine.positions(CAROL, callOptionId).quantity, 0);
-        assertEq(engine.seriesShortOpenInterest(callOptionId), 0);
-    }
-
-    function testPremiumTransferBetweenBuyerAndSellerIsCorrect() external {
-        uint256 aliceBefore = vault.balances(ALICE, address(usdc));
-        uint256 bobBefore = vault.balances(BOB, address(usdc));
-
-        _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
-
-        assertEq(vault.balances(ALICE, address(usdc)), aliceBefore - (2 * PREMIUM_PER_CONTRACT));
-        assertEq(vault.balances(BOB, address(usdc)), bobBefore + (2 * PREMIUM_PER_CONTRACT));
-    }
-
-    function testSettlementProducesCorrectPayoffAtExpiry() external {
-        _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
-
-        uint256 aliceBefore = vault.balances(ALICE, address(usdc));
-        uint256 bobBefore = vault.balances(BOB, address(usdc));
-
-        vm.warp(block.timestamp + 8 days);
-        vm.prank(OWNER);
-        registry.setSettlementPrice(callOptionId, 2_500 * PRICE_SCALE);
-
-        engine.settleAccount(callOptionId, BOB);
-        engine.settleAccount(callOptionId, ALICE);
-
-        assertEq(vault.balances(ALICE, address(usdc)), aliceBefore + (500 * BASE_UNIT));
-        assertEq(vault.balances(BOB, address(usdc)), bobBefore - (500 * BASE_UNIT));
-        assertEq(engine.positions(ALICE, callOptionId).quantity, 0);
-        assertEq(engine.positions(BOB, callOptionId).quantity, 0);
-    }
-
-    function testExpiredOptionCannotBeExercisedTwice() external {
-        _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
-
-        vm.warp(block.timestamp + 8 days);
-        vm.prank(OWNER);
-        registry.setSettlementPrice(callOptionId, 2_500 * PRICE_SCALE);
-
-        engine.settleAccount(callOptionId, ALICE);
-
-        vm.expectRevert(MarginEngineTypes.SettlementAlreadyProcessed.selector);
-        engine.settleAccount(callOptionId, ALICE);
-    }
-
-    function testWinningLongSettlementEmitsShortfallInsuranceAndBadDebtEvents() external {
-        _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
-
-        vm.prank(OWNER);
-        engine.setInsuranceFund(DAVE);
-
-        vm.prank(address(engine));
-        vault.transferBetweenAccounts(address(usdc), DAVE, CAROL, 9_700 * BASE_UNIT);
-
-        vm.warp(block.timestamp + 8 days);
-        vm.prank(OWNER);
-        registry.setSettlementPrice(callOptionId, 2_500 * PRICE_SCALE);
-
-        vm.expectEmit(true, true, true, true);
-        emit MarginEngineTypes.AccountSettlementResolved(
-            ALICE,
-            callOptionId,
-            address(usdc),
-            1,
-            2_500 * PRICE_SCALE,
-            500 * BASE_UNIT,
-            int256(500 * BASE_UNIT),
-            500 * BASE_UNIT
-        );
-        vm.expectEmit(true, true, false, true);
-        emit MarginEngineTypes.SettlementInsuranceCoverage(ALICE, callOptionId, 500 * BASE_UNIT, 300 * BASE_UNIT);
-        vm.expectEmit(true, true, false, true);
-        emit MarginEngineTypes.SettlementShortfall(ALICE, callOptionId, 500 * BASE_UNIT, 300 * BASE_UNIT, 200 * BASE_UNIT);
-        vm.expectEmit(true, true, false, true);
-        emit MarginEngineTypes.SettlementBadDebtRecorded(ALICE, callOptionId, 200 * BASE_UNIT);
-
-        engine.settleAccount(callOptionId, ALICE);
-    }
-
-    function testShortSettlementEmitsCollectionShortfallAndBadDebtEvents() external {
-        _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
-
-        vm.prank(address(engine));
-        vault.transferBetweenAccounts(address(usdc), BOB, CAROL, 9_800 * BASE_UNIT);
-
-        vm.warp(block.timestamp + 8 days);
-        vm.prank(OWNER);
-        registry.setSettlementPrice(callOptionId, 2_500 * PRICE_SCALE);
-
-        vm.expectEmit(true, true, true, true);
-        emit MarginEngineTypes.AccountSettlementResolved(
-            BOB,
-            callOptionId,
-            address(usdc),
-            -2,
-            2_500 * PRICE_SCALE,
-            500 * BASE_UNIT,
-            -int256(1_000 * BASE_UNIT),
-            1_000 * BASE_UNIT
-        );
-        vm.expectEmit(true, true, false, true);
-        emit MarginEngineTypes.SettlementCollectionShortfall(
-            BOB, callOptionId, 1_000 * BASE_UNIT, 400 * BASE_UNIT, 600 * BASE_UNIT
-        );
-        vm.expectEmit(true, true, false, true);
-        emit MarginEngineTypes.SettlementBadDebtRecorded(BOB, callOptionId, 600 * BASE_UNIT);
-
-        engine.settleAccount(callOptionId, BOB);
-    }
-
-    function testPreviewDetailedSettlementShowsInsuranceCoverageForWinningLong() external {
-        _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
-
-        vm.prank(OWNER);
-        engine.setInsuranceFund(DAVE);
-
-        vm.prank(address(engine));
-        vault.transferBetweenAccounts(address(usdc), DAVE, CAROL, 9_700 * BASE_UNIT);
-
-        vm.warp(block.timestamp + 8 days);
-        vm.prank(OWNER);
-        registry.setSettlementPrice(callOptionId, 2_500 * PRICE_SCALE);
-
-        MarginEngineLens.DetailedSettlementPreview memory preview =
-            lens.previewDetailedSettlement(address(engine), callOptionId, ALICE);
-
-        assertTrue(preview.seriesExpired);
-        assertTrue(preview.settlementPriceSet);
-        assertTrue(preview.settlementReady);
-        assertFalse(preview.accountSettled);
-        assertEq(preview.positionQuantity, 1);
-        assertEq(preview.payoffPerContract, 500 * BASE_UNIT);
-        assertEq(preview.grossSettlementAmount, 500 * BASE_UNIT);
-        assertFalse(preview.isShortLiability);
-        assertEq(preview.shortLiabilityAmount, 0);
-        assertEq(preview.settlementSinkBalance, 300 * BASE_UNIT);
-        assertEq(preview.collateralCoveragePreview, 0);
-        assertEq(preview.insuranceCoveragePreview, 300 * BASE_UNIT);
-        assertEq(preview.residualShortfallPreview, 200 * BASE_UNIT);
-        assertEq(preview.residualBadDebtPreview, 200 * BASE_UNIT);
-        assertTrue(preview.grossSettlementAmountBaseAvailable);
-        assertEq(preview.grossSettlementAmountBase, 500 * BASE_UNIT);
-        assertTrue(preview.accountCashflowDeltaBaseAvailable);
-        assertEq(preview.accountCashflowDeltaBase, int256(300 * BASE_UNIT));
-        assertEq(preview.riskBefore.equityBase, int256(HEALTHY_EQUITY));
-        assertEq(preview.riskBefore.maintenanceMarginBase, 0);
-        assertEq(preview.riskBefore.initialMarginBase, 0);
-        assertEq(preview.riskBefore.marginRatioBps, type(uint256).max);
-        assertTrue(preview.riskAfterAvailable);
-        assertEq(preview.riskAfter.equityBase, int256(HEALTHY_EQUITY + (300 * BASE_UNIT)));
-        assertEq(preview.riskAfter.maintenanceMarginBase, 0);
-        assertEq(preview.riskAfter.initialMarginBase, 0);
-        assertEq(preview.riskAfter.marginRatioBps, type(uint256).max);
-    }
-
-    function testPreviewDetailedSettlementShowsShortLiabilityCoverageAndRiskRelease() external {
-        _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
-
-        vm.prank(address(engine));
-        vault.transferBetweenAccounts(address(usdc), BOB, CAROL, 9_800 * BASE_UNIT);
-
-        vm.warp(block.timestamp + 8 days);
-        vm.prank(OWNER);
-        registry.setSettlementPrice(callOptionId, 2_500 * PRICE_SCALE);
-
-        MarginEngineLens.DetailedSettlementPreview memory preview =
-            lens.previewDetailedSettlement(address(engine), callOptionId, BOB);
-
-        assertTrue(preview.seriesExpired);
-        assertTrue(preview.settlementPriceSet);
-        assertTrue(preview.settlementReady);
-        assertEq(preview.positionQuantity, -2);
-        assertEq(preview.payoffPerContract, 500 * BASE_UNIT);
-        assertEq(preview.pnl, -int256(1_000 * BASE_UNIT));
-        assertEq(preview.grossSettlementAmount, 1_000 * BASE_UNIT);
-        assertTrue(preview.isShortLiability);
-        assertEq(preview.shortLiabilityAmount, 1_000 * BASE_UNIT);
-        assertEq(preview.traderSettlementAssetBalance, 400 * BASE_UNIT);
-        assertEq(preview.collateralCoveragePreview, 400 * BASE_UNIT);
-        assertEq(preview.insuranceCoveragePreview, 0);
-        assertEq(preview.residualShortfallPreview, 600 * BASE_UNIT);
-        assertEq(preview.residualBadDebtPreview, 600 * BASE_UNIT);
-        assertTrue(preview.grossSettlementAmountBaseAvailable);
-        assertEq(preview.grossSettlementAmountBase, 1_000 * BASE_UNIT);
-        assertTrue(preview.accountCashflowDeltaBaseAvailable);
-        assertEq(preview.accountCashflowDeltaBase, -int256(400 * BASE_UNIT));
-        assertEq(preview.riskBefore.equityBase, int256(HEALTHY_EQUITY));
-        assertEq(preview.riskBefore.maintenanceMarginBase, 2 * BASE_MM_PER_CONTRACT);
-        assertEq(preview.riskBefore.initialMarginBase, (2 * BASE_MM_PER_CONTRACT * IM_FACTOR_BPS) / 10_000);
-        assertTrue(preview.riskAfterAvailable);
-        assertEq(preview.riskAfter.equityBase, int256(HEALTHY_EQUITY - (400 * BASE_UNIT)));
-        assertEq(preview.riskAfter.maintenanceMarginBase, 0);
-        assertEq(preview.riskAfter.initialMarginBase, 0);
-        assertEq(preview.riskAfter.marginRatioBps, type(uint256).max);
-    }
-
-    function testLiquidationReducesPositionSizeCorrectly() external {
-        _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
-        riskModule.setEquityBase(BOB, int256(LIQUIDATABLE_EQUITY));
-        oracle.setPrice(address(weth), address(usdc), 1_900 * PRICE_SCALE, block.timestamp, true);
-
-        uint256[] memory optionIds = new uint256[](1);
-        uint128[] memory quantities = new uint128[](1);
-        optionIds[0] = callOptionId;
-        quantities[0] = 1;
-
-        vm.prank(CAROL);
-        engine.liquidate(BOB, optionIds, quantities);
-
-        assertEq(engine.positions(BOB, callOptionId).quantity, -1);
-        assertEq(engine.positions(CAROL, callOptionId).quantity, -1);
-        assertEq(engine.totalShortContracts(BOB), 1);
-    }
-
-    function testPreviewLiquidationBreaksDownRequestedCloseAndCash() external {
-        _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
-        riskModule.setEquityBase(BOB, int256(LIQUIDATABLE_EQUITY));
-        oracle.setPrice(address(weth), address(usdc), 2_500 * PRICE_SCALE, block.timestamp, true);
-
-        uint256[] memory optionIds = new uint256[](1);
-        uint128[] memory quantities = new uint128[](1);
-        optionIds[0] = callOptionId;
-        quantities[0] = 2;
-
-        MarginEngineLens.OptionsLiquidationPreview memory preview =
-            lens.previewLiquidation(address(engine), BOB, optionIds, quantities);
-
-        assertTrue(preview.liquidatable);
-        assertEq(preview.equityBeforeBase, int256(LIQUIDATABLE_EQUITY));
-        assertEq(preview.maintenanceMarginBeforeBase, 2 * BASE_MM_PER_CONTRACT);
-        assertEq(preview.initialMarginBeforeBase, (2 * BASE_MM_PER_CONTRACT * IM_FACTOR_BPS) / 10_000);
-        assertEq(preview.totalShortContracts, 2);
-        assertEq(preview.maxCloseContracts, 2);
-        assertEq(preview.totalContractsPreviewed, 2);
-        assertEq(preview.executedQuantities[0], 2);
-        assertEq(preview.pricePerContract[0], 500 * BASE_UNIT);
-        assertEq(preview.cashAssetCount, 1);
-        assertEq(preview.settlementAssets[0], address(usdc));
-        assertEq(preview.cashRequestedByAsset[0], 1_000 * BASE_UNIT);
-        assertEq(preview.penaltyBase, (2 * BASE_MM_PER_CONTRACT * 500) / 10_000);
-    }
-
-    function testSeriesEmergencyCloseOnlyStillAllowsLiquidation() external {
-        _trade(ALICE, BOB, callOptionId, 2, PREMIUM_PER_CONTRACT);
-        riskModule.setEquityBase(BOB, int256(LIQUIDATABLE_EQUITY));
-        oracle.setPrice(address(weth), address(usdc), 1_900 * PRICE_SCALE, block.timestamp, true);
-
-        vm.prank(OWNER);
-        engine.setSeriesEmergencyCloseOnly(callOptionId, true);
-
-        uint256[] memory optionIds = new uint256[](1);
-        uint128[] memory quantities = new uint128[](1);
-        optionIds[0] = callOptionId;
-        quantities[0] = 1;
-
-        vm.prank(CAROL);
-        engine.liquidate(BOB, optionIds, quantities);
-
-        assertEq(engine.positions(BOB, callOptionId).quantity, -1);
-        assertEq(engine.positions(CAROL, callOptionId).quantity, -1);
-        assertEq(engine.totalShortContracts(BOB), 1);
-    }
-
-    function testLiquidationRespectsPenaltyLogic() external {
-        _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
-        riskModule.setEquityBase(BOB, int256(LIQUIDATABLE_EQUITY));
-        oracle.setPrice(address(weth), address(usdc), 1_900 * PRICE_SCALE, block.timestamp, true);
-
-        uint256 bobBefore = vault.balances(BOB, address(usdc));
-        uint256 carolBefore = vault.balances(CAROL, address(usdc));
-
-        uint256[] memory optionIds = new uint256[](1);
-        uint128[] memory quantities = new uint128[](1);
-        optionIds[0] = callOptionId;
-        quantities[0] = 1;
-
-        vm.prank(CAROL);
-        engine.liquidate(BOB, optionIds, quantities);
-
-        uint256 expectedPenalty = (BASE_MM_PER_CONTRACT * 500) / 10_000;
-        assertEq(vault.balances(BOB, address(usdc)), bobBefore - expectedPenalty);
-        assertEq(vault.balances(CAROL, address(usdc)), carolBefore + expectedPenalty);
-    }
-
-    function testAccountWithNoPositionsReturnsEmptySeriesAndZeroExposure() external {
-        uint256[] memory series = engine.getTraderSeries(DAVE);
-        MarginEngineLens.AccountState memory state = lens.getAccountState(address(engine), DAVE);
-
-        assertEq(series.length, 0);
-        assertEq(engine.getTraderSeriesLength(DAVE), 0);
-        assertEq(engine.totalShortContracts(DAVE), 0);
-        assertEq(state.openSeriesCount, 0);
-        assertEq(state.totalShortOpenContracts, 0);
-    }
-
-    function testLensDetailedSettlementPreviewDoesNotMutateProtocolState() external {
-        _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
-
-        vm.warp(block.timestamp + 8 days);
-        vm.prank(OWNER);
-        registry.setSettlementPrice(callOptionId, 2_500 * PRICE_SCALE);
-
-        int128 aliceQtyBefore = engine.positions(ALICE, callOptionId).quantity;
-        bool settledBefore = engine.isAccountSettled(callOptionId, ALICE);
-        uint256 aliceBalanceBefore = vault.balances(ALICE, address(usdc));
-        uint256 seriesPaidBefore = engine.seriesPaid(callOptionId);
-
-        MarginEngineLens.DetailedSettlementPreview memory preview =
-            lens.previewDetailedSettlement(address(engine), callOptionId, ALICE);
-
-        assertEq(preview.payoffPerContract, 500 * BASE_UNIT);
-        assertEq(engine.positions(ALICE, callOptionId).quantity, aliceQtyBefore);
-        assertEq(engine.isAccountSettled(callOptionId, ALICE), settledBefore);
-        assertEq(vault.balances(ALICE, address(usdc)), aliceBalanceBefore);
-        assertEq(engine.seriesPaid(callOptionId), seriesPaidBefore);
-    }
-
-    function _trade(address buyer, address seller, uint256 optionId, uint128 quantity, uint128 premiumPerContract)
-        internal
-    {
-        vm.prank(MATCHING_ENGINE);
-        engine.applyTrade(
-            IMarginEngineTrade.Trade({
-                buyer: buyer,
-                seller: seller,
-                optionId: optionId,
-                quantity: quantity,
-                price: premiumPerContract,
-                buyerIsMaker: true
-            })
-        );
-    }
-
-    function _deposit(address trader, uint256 amount) internal {
-        usdc.mint(trader, amount);
-        vm.startPrank(trader);
-        usdc.approve(address(vault), amount);
-        vault.deposit(address(usdc), amount);
-        vm.stopPrank();
-    }
-
-    function _setHealthyEquity(address trader) internal {
-        riskModule.setEquityBase(trader, int256(HEALTHY_EQUITY));
-    }
-}

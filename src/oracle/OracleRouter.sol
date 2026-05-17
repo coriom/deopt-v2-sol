@@ -316,13 +316,7 @@ contract OracleRouter is IOracle {
         });
 
         emit FeedConfigured(
-            baseAsset,
-            quoteAsset,
-            address(primarySource),
-            address(secondarySource),
-            maxDelay,
-            maxDeviationBps,
-            isActive
+            baseAsset, quoteAsset, address(primarySource), address(secondarySource), maxDelay, maxDeviationBps, isActive
         );
     }
 

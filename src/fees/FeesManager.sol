@@ -317,9 +317,8 @@ contract FeesManager is IFeesManager {
     ) external onlyOwner whenConfigNotPaused {
         if (trader == address(0)) revert ZeroAddress();
 
-        FeeProfile memory profile = _buildCappedProfile(
-            makerNotionalFeeBps, makerPremiumCapBps, takerNotionalFeeBps, takerPremiumCapBps
-        );
+        FeeProfile memory profile =
+            _buildCappedProfile(makerNotionalFeeBps, makerPremiumCapBps, takerNotionalFeeBps, takerPremiumCapBps);
 
         _overrides[trader] = OverrideFee({profile: profile, expiry: expiry, enabled: enabled});
 
@@ -393,12 +392,7 @@ contract FeesManager is IFeesManager {
     }
 
     /// @inheritdoc IFeesManager
-    function getTierClassProfile(VolumeTierClass tierClass)
-        public
-        view
-        override
-        returns (FeeProfile memory profile)
-    {
+    function getTierClassProfile(VolumeTierClass tierClass) public view override returns (FeeProfile memory profile) {
         if (tierClass == VolumeTierClass.Tier0) {
             // 0 – 5M : maker 0.01% ; taker 0.03%
             profile.maker = FeeParams({notionalFeeBps: _cap(1), premiumCapBps: _cap(1)});
@@ -558,23 +552,16 @@ contract FeesManager is IFeesManager {
         defaultTakerPremiumCapBps = _cap(takerPremiumCapBps);
 
         emit DefaultFeesSet(
-            defaultMakerNotionalFeeBps,
-            defaultMakerPremiumCapBps,
-            defaultTakerNotionalFeeBps,
-            defaultTakerPremiumCapBps
+            defaultMakerNotionalFeeBps, defaultMakerPremiumCapBps, defaultTakerNotionalFeeBps, defaultTakerPremiumCapBps
         );
     }
 
     function _defaultProfile() internal view returns (FeeProfile memory profile) {
-        profile.maker = FeeParams({
-            notionalFeeBps: defaultMakerNotionalFeeBps,
-            premiumCapBps: defaultMakerPremiumCapBps
-        });
+        profile.maker =
+            FeeParams({notionalFeeBps: defaultMakerNotionalFeeBps, premiumCapBps: defaultMakerPremiumCapBps});
 
-        profile.taker = FeeParams({
-            notionalFeeBps: defaultTakerNotionalFeeBps,
-            premiumCapBps: defaultTakerPremiumCapBps
-        });
+        profile.taker =
+            FeeParams({notionalFeeBps: defaultTakerNotionalFeeBps, premiumCapBps: defaultTakerPremiumCapBps});
     }
 
     function _buildCappedProfile(
@@ -588,15 +575,9 @@ contract FeesManager is IFeesManager {
         _validateBps(takerNotionalFeeBps);
         _validateBps(takerPremiumCapBps);
 
-        profile.maker = FeeParams({
-            notionalFeeBps: _cap(makerNotionalFeeBps),
-            premiumCapBps: _cap(makerPremiumCapBps)
-        });
+        profile.maker = FeeParams({notionalFeeBps: _cap(makerNotionalFeeBps), premiumCapBps: _cap(makerPremiumCapBps)});
 
-        profile.taker = FeeParams({
-            notionalFeeBps: _cap(takerNotionalFeeBps),
-            premiumCapBps: _cap(takerPremiumCapBps)
-        });
+        profile.taker = FeeParams({notionalFeeBps: _cap(takerNotionalFeeBps), premiumCapBps: _cap(takerPremiumCapBps)});
     }
 
     function _validateBps(uint16 bps) internal pure {

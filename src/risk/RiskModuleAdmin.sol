@@ -125,11 +125,10 @@ abstract contract RiskModuleAdmin is RiskModuleMargin {
         }
     }
 
-    function setEmergencyModes(
-        bool riskChecksPaused_,
-        bool collateralValuationPaused_,
-        bool withdrawPreviewPaused_
-    ) external onlyGuardianOrOwner {
+    function setEmergencyModes(bool riskChecksPaused_, bool collateralValuationPaused_, bool withdrawPreviewPaused_)
+        external
+        onlyGuardianOrOwner
+    {
         _setEmergencyModes(riskChecksPaused_, collateralValuationPaused_, withdrawPreviewPaused_);
     }
 

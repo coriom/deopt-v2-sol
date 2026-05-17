@@ -278,7 +278,8 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         rate1e18 = _toInt256(_mulDivFloor(diff, uint256(FUNDING_SCALE_1E18), indexPrice1e8));
 
         if (fcfg.oracleClampBps != 0) {
-            int256 deadband1e18 = _toInt256(_mulDivFloor(uint256(fcfg.oracleClampBps), uint256(FUNDING_SCALE_1E18), BPS));
+            int256 deadband1e18 =
+                _toInt256(_mulDivFloor(uint256(fcfg.oracleClampBps), uint256(FUNDING_SCALE_1E18), BPS));
             if (rate1e18 <= deadband1e18) return 0;
             rate1e18 -= deadband1e18;
         }

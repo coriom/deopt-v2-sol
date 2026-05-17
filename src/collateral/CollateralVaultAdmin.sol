@@ -197,9 +197,7 @@ abstract contract CollateralVaultAdmin is CollateralVaultStorage {
         if (isSupported && decimals == 0) revert BadDecimals();
 
         _collateralConfigs[token] = CollateralTokenConfig({
-            isSupported: isSupported,
-            decimals: decimals,
-            collateralFactorBps: collateralFactorBps
+            isSupported: isSupported, decimals: decimals, collateralFactorBps: collateralFactorBps
         });
 
         _listCollateralTokenIfNeeded(token);

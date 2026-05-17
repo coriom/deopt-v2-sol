@@ -66,10 +66,7 @@ contract DeployCore is Script {
         deployments.optionProductRegistry = address(new OptionProductRegistry(initialOwner));
         deployments.marginEngine = address(
             new MarginEngine(
-                initialOwner,
-                deployments.optionProductRegistry,
-                deployments.collateralVault,
-                deployments.oracleRouter
+                initialOwner, deployments.optionProductRegistry, deployments.collateralVault, deployments.oracleRouter
             )
         );
         deployments.riskModule = address(
@@ -85,10 +82,7 @@ contract DeployCore is Script {
         deployments.perpMarketRegistry = address(new PerpMarketRegistry(initialOwner));
         deployments.perpEngine = address(
             new PerpEngine(
-                initialOwner,
-                deployments.perpMarketRegistry,
-                deployments.collateralVault,
-                deployments.oracleRouter
+                initialOwner, deployments.perpMarketRegistry, deployments.collateralVault, deployments.oracleRouter
             )
         );
         deployments.perpRiskModule = address(
@@ -102,10 +96,7 @@ contract DeployCore is Script {
         );
         deployments.collateralSeizer = address(
             new CollateralSeizer(
-                initialOwner,
-                deployments.collateralVault,
-                deployments.oracleRouter,
-                deployments.riskModule
+                initialOwner, deployments.collateralVault, deployments.oracleRouter, deployments.riskModule
             )
         );
 
@@ -124,8 +115,7 @@ contract DeployCore is Script {
         deployments.matchingEngine = address(new MatchingEngine(initialOwner, deployments.marginEngine));
         deployments.perpMatchingEngine = address(new PerpMatchingEngine(initialOwner, deployments.perpEngine));
 
-        deployments.protocolTimelock =
-            address(new ProtocolTimelock(initialOwner, initialGuardian, timelockMinDelay));
+        deployments.protocolTimelock = address(new ProtocolTimelock(initialOwner, initialGuardian, timelockMinDelay));
         deployments.riskGovernor = address(
             new RiskGovernor(
                 initialOwner,

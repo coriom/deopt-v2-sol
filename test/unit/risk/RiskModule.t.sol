@@ -41,11 +41,7 @@ contract MockOracle is IOracle {
     mapping(bytes32 => PriceData) internal prices;
 
     function setPrice(address baseAsset, address quoteAsset, uint256 price, uint256 updatedAt, bool ok) external {
-        prices[keccak256(abi.encode(baseAsset, quoteAsset))] = PriceData({
-            price: price,
-            updatedAt: updatedAt,
-            ok: ok
-        });
+        prices[keccak256(abi.encode(baseAsset, quoteAsset))] = PriceData({price: price, updatedAt: updatedAt, ok: ok});
     }
 
     function getPrice(address baseAsset, address quoteAsset) external view returns (uint256 price, uint256 updatedAt) {
@@ -173,9 +169,7 @@ contract MockUnifiedPerpRiskModule {
         external
     {
         risks[trader] = AccountRisk({
-            equityBase: equityBase,
-            maintenanceMarginBase: maintenanceMarginBase,
-            initialMarginBase: initialMarginBase
+            equityBase: equityBase, maintenanceMarginBase: maintenanceMarginBase, initialMarginBase: initialMarginBase
         });
     }
 
@@ -292,9 +286,7 @@ contract RiskModuleTest is Test {
         registry = new OptionProductRegistry(OWNER);
         marginEngine = new MockMarginEngineState();
         oracle = new MockOracle();
-        riskModule = new RiskModule(
-            OWNER, address(vault), address(registry), address(marginEngine), address(oracle)
-        );
+        riskModule = new RiskModule(OWNER, address(vault), address(registry), address(marginEngine), address(oracle));
 
         usdc = new MockERC20Decimals("Mock USDC", "mUSDC", 6);
         weth = new MockERC20Decimals("Mock WETH", "mWETH", 18);
@@ -337,8 +329,9 @@ contract RiskModuleTest is Test {
         oracle.setPrice(address(wbtc), address(usdc), WBTC_USDC_PRICE, block.timestamp, true);
 
         vm.prank(OWNER);
-        callOptionId =
-            registry.createSeries(address(weth), address(usdc), uint64(block.timestamp + 7 days), uint64(CALL_STRIKE), true, true);
+        callOptionId = registry.createSeries(
+            address(weth), address(usdc), uint64(block.timestamp + 7 days), uint64(CALL_STRIKE), true, true
+        );
 
         _mintAndDeposit(address(usdc), ALICE, 250 * USDC_UNIT);
         _mintAndDeposit(address(usdc), BOB, 200 * USDC_UNIT);
@@ -424,12 +417,9 @@ contract RiskModuleTest is Test {
             adjustedSum += detail.collateralContributions[i].adjustedCollateralValueBase;
         }
 
-        IRiskModule.CollateralContribution memory usdcContribution =
-            _findCollateralContribution(detail, address(usdc));
-        IRiskModule.CollateralContribution memory wethContribution =
-            _findCollateralContribution(detail, address(weth));
-        IRiskModule.CollateralContribution memory wbtcContribution =
-            _findCollateralContribution(detail, address(wbtc));
+        IRiskModule.CollateralContribution memory usdcContribution = _findCollateralContribution(detail, address(usdc));
+        IRiskModule.CollateralContribution memory wethContribution = _findCollateralContribution(detail, address(weth));
+        IRiskModule.CollateralContribution memory wbtcContribution = _findCollateralContribution(detail, address(wbtc));
 
         assertEq(grossSum, state.grossCollateralValueBase);
         assertEq(adjustedSum, state.adjustedCollateralValueBase);
@@ -466,12 +456,9 @@ contract RiskModuleTest is Test {
         assertEq(risk.equityBase, SafeCast.toInt256(100 * USDC_UNIT));
         assertEq(wethWithdrawable, WETH_UNIT);
 
-        IRiskModule.CollateralContribution memory usdcContribution =
-            _findCollateralContribution(detail, address(usdc));
-        IRiskModule.CollateralContribution memory wethContribution =
-            _findCollateralContribution(detail, address(weth));
-        IRiskModule.CollateralContribution memory wbtcContribution =
-            _findCollateralContribution(detail, address(wbtc));
+        IRiskModule.CollateralContribution memory usdcContribution = _findCollateralContribution(detail, address(usdc));
+        IRiskModule.CollateralContribution memory wethContribution = _findCollateralContribution(detail, address(weth));
+        IRiskModule.CollateralContribution memory wbtcContribution = _findCollateralContribution(detail, address(wbtc));
 
         assertEq(usdcContribution.grossCollateralValueBase, 100 * USDC_UNIT);
         assertEq(usdcContribution.adjustedCollateralValueBase, 100 * USDC_UNIT);

@@ -91,12 +91,9 @@ contract CollateralVaultInvariantHandler is Test {
         _totalWithdrawn[token] += amount;
     }
 
-    function internalTransferSupported(
-        uint256 fromSeed,
-        uint256 toSeed,
-        uint256 tokenSeed,
-        uint256 amountSeed
-    ) external {
+    function internalTransferSupported(uint256 fromSeed, uint256 toSeed, uint256 tokenSeed, uint256 amountSeed)
+        external
+    {
         address from = _actor(fromSeed);
         address to = _actor(toSeed);
         if (from == to) return;

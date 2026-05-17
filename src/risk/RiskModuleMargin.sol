@@ -225,8 +225,7 @@ abstract contract RiskModuleMargin is RiskModuleCollateral {
             return _max2(baseFloor, oracleDownFallback);
         }
 
-        (uint256 intrinsicBase, bool okIntrinsic) =
-            _computeCurrentIntrinsicPerContractBase(s, spot1e8, base, baseScale);
+        (uint256 intrinsicBase, bool okIntrinsic) = _computeCurrentIntrinsicPerContractBase(s, spot1e8, base, baseScale);
 
         uint256 stressedAmount1e8 = _computeStressedPerContractAmount1e8(s, spot1e8, cfg);
         (uint256 stressedBase, bool okStress) =

@@ -53,9 +53,7 @@ contract MockPerpRiskModule is IPerpRiskModule {
         external
     {
         risks[trader] = AccountRisk({
-            equityBase: equityBase,
-            maintenanceMarginBase: maintenanceMarginBase,
-            initialMarginBase: initialMarginBase
+            equityBase: equityBase, maintenanceMarginBase: maintenanceMarginBase, initialMarginBase: initialMarginBase
         });
     }
 
@@ -148,10 +146,7 @@ contract PerpEngineFundingTest is Test {
                 reduceOnlyDuringCloseOnly: true
             }),
             PerpMarketRegistry.LiquidationConfig({
-                closeFactorBps: 5_000,
-                priceSpreadBps: 100,
-                minImprovementBps: 50,
-                oracleMaxDelay: 60
+                closeFactorBps: 5_000, priceSpreadBps: 100, minImprovementBps: 50, oracleMaxDelay: 60
             }),
             PerpMarketRegistry.FundingConfig({
                 isEnabled: true,
@@ -191,11 +186,7 @@ contract PerpEngineFundingTest is Test {
         registry.setFundingConfig(
             marketId,
             PerpMarketRegistry.FundingConfig({
-                isEnabled: false,
-                fundingInterval: 0,
-                maxFundingRateBps: 0,
-                maxSkewFundingBps: 0,
-                oracleClampBps: 0
+                isEnabled: false, fundingInterval: 0, maxFundingRateBps: 0, maxSkewFundingBps: 0, oracleClampBps: 0
             })
         );
 
@@ -328,8 +319,7 @@ contract PerpEngineFundingTest is Test {
     }
 
     function _mockSafePrices(uint128 markPrice1e8, uint128 indexPrice1e8) internal {
-        bytes memory callData =
-            abi.encodeWithSignature("getPriceSafe(address,address)", address(weth), address(usdc));
+        bytes memory callData = abi.encodeWithSignature("getPriceSafe(address,address)", address(weth), address(usdc));
 
         bytes[] memory returnData = new bytes[](2);
         returnData[0] = abi.encode(uint256(markPrice1e8), block.timestamp, true);

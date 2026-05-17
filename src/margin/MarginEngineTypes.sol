@@ -185,11 +185,7 @@ abstract contract MarginEngineTypes {
     ///  - `quantity` is the number of option contracts, with fixed contractSize1e8 = 1e8
     ///  - `price` is the token-native premium per contract in settlement-asset native units
     event TradeExecuted(
-        address indexed buyer,
-        address indexed seller,
-        uint256 indexed optionId,
-        uint128 quantity,
-        uint128 price
+        address indexed buyer, address indexed seller, uint256 indexed optionId, uint128 quantity, uint128 price
     );
 
     /// @notice Launch-safety cap for aggregate short contracts on one option series.
@@ -198,10 +194,7 @@ abstract contract MarginEngineTypes {
     event SeriesActivationStateSet(uint256 indexed optionId, uint8 oldState, uint8 newState);
     event SeriesEmergencyCloseOnlySet(uint256 indexed optionId, bool oldCloseOnly, bool newCloseOnly);
     event SeriesEmergencyCloseOnlyUpdated(
-        address indexed caller,
-        uint256 indexed optionId,
-        bool oldCloseOnly,
-        bool newCloseOnly
+        address indexed caller, uint256 indexed optionId, bool oldCloseOnly, bool newCloseOnly
     );
 
     /// @notice Local cached risk parameters synchronized against the RiskModule source of truth.
@@ -224,10 +217,7 @@ abstract contract MarginEngineTypes {
     event CollateralOpsPauseSet(bool paused);
 
     event EmergencyModeUpdated(
-        bool tradingPaused,
-        bool liquidationPaused,
-        bool settlementPaused,
-        bool collateralOpsPaused
+        bool tradingPaused, bool liquidationPaused, bool settlementPaused, bool collateralOpsPaused
     );
 
     event OracleSet(address indexed newOracle);
@@ -276,7 +266,9 @@ abstract contract MarginEngineTypes {
     /// @dev
     ///  - `amount` is in token-native units
     ///  - `marginRatioAfterBps` is the projected post-withdraw risk ratio
-    event CollateralWithdrawn(address indexed trader, address indexed token, uint256 amount, uint256 marginRatioAfterBps);
+    event CollateralWithdrawn(
+        address indexed trader, address indexed token, uint256 amount, uint256 marginRatioAfterBps
+    );
 
     event InsuranceFundSet(address indexed oldFund, address indexed newFund);
 
@@ -331,10 +323,7 @@ abstract contract MarginEngineTypes {
     ///  Unit convention:
     ///   - all three fields are denominated in the series settlement-asset native units
     event SeriesSettlementAccountingUpdated(
-        uint256 indexed optionId,
-        uint256 totalCollected,
-        uint256 totalPaid,
-        uint256 totalBadDebt
+        uint256 indexed optionId, uint256 totalCollected, uint256 totalPaid, uint256 totalBadDebt
     );
 
     /// @notice Options settlement-side shortfall observed for a winning account.
@@ -350,10 +339,7 @@ abstract contract MarginEngineTypes {
     /// @notice Insurance fund contribution to options settlement.
     /// @dev All amounts are denominated in settlement-asset native units.
     event SettlementInsuranceCoverage(
-        address indexed trader,
-        uint256 indexed optionId,
-        uint256 requestedAmount,
-        uint256 paidAmount
+        address indexed trader, uint256 indexed optionId, uint256 requestedAmount, uint256 paidAmount
     );
 
     /// @notice Options settlement collection shortfall observed for a losing short account.

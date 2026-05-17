@@ -146,10 +146,7 @@ interface IFeesManager {
     event FeeBpsCapSet(uint16 oldCap, uint16 newCap);
 
     event DefaultFeesSet(
-        uint16 makerNotionalFeeBps,
-        uint16 makerPremiumCapBps,
-        uint16 takerNotionalFeeBps,
-        uint16 takerPremiumCapBps
+        uint16 makerNotionalFeeBps, uint16 makerPremiumCapBps, uint16 takerNotionalFeeBps, uint16 takerPremiumCapBps
     );
 
     event MerkleRootSet(bytes32 indexed oldRoot, bytes32 indexed newRoot, uint64 indexed newEpoch);

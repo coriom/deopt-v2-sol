@@ -126,9 +126,15 @@ contract TransferOwnerships is Script {
         _requireNonZero("RISK_GOVERNOR_OWNER", roles.riskGovernorOwner);
         _requireNonZero("GOVERNANCE_GUARDIAN", roles.guardian);
 
-        _requireLength("TIMELOCK_PROPOSER_ALLOWED", roles.timelockProposerAllowed.length, roles.timelockProposers.length);
-        _requireLength("TIMELOCK_EXECUTOR_ALLOWED", roles.timelockExecutorAllowed.length, roles.timelockExecutors.length);
-        _requireLength("MATCHING_EXECUTOR_ALLOWED", roles.matchingExecutorAllowed.length, roles.matchingExecutors.length);
+        _requireLength(
+            "TIMELOCK_PROPOSER_ALLOWED", roles.timelockProposerAllowed.length, roles.timelockProposers.length
+        );
+        _requireLength(
+            "TIMELOCK_EXECUTOR_ALLOWED", roles.timelockExecutorAllowed.length, roles.timelockExecutors.length
+        );
+        _requireLength(
+            "MATCHING_EXECUTOR_ALLOWED", roles.matchingExecutorAllowed.length, roles.matchingExecutors.length
+        );
         _requireLength(
             "PERP_MATCHING_EXECUTOR_ALLOWED",
             roles.perpMatchingExecutorAllowed.length,
@@ -140,7 +146,9 @@ contract TransferOwnerships is Script {
         if (!_arrayAllows(roles.timelockProposers, roles.timelockProposerAllowed, addrs.riskGovernor)) {
             revert("RISK_GOVERNOR must be allowed timelock proposer");
         }
-        if (!_hasAllowed(roles.timelockExecutors, roles.timelockExecutorAllowed)) revert("no allowed timelock executor");
+        if (!_hasAllowed(roles.timelockExecutors, roles.timelockExecutorAllowed)) {
+            revert("no allowed timelock executor");
+        }
 
         _requireNoZero("TIMELOCK_PROPOSERS", roles.timelockProposers);
         _requireNoZero("TIMELOCK_EXECUTORS", roles.timelockExecutors);

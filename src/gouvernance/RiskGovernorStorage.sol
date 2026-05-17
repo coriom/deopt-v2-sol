@@ -226,13 +226,8 @@ abstract contract RiskGovernorStorage {
         if (op.state == OperationState.Executed) revert OperationAlreadyExecuted();
         if (op.state == OperationState.Cancelled) revert OperationAlreadyCancelled();
 
-        queuedOperations[txHash] = QueuedOperation({
-            target: target,
-            value: value,
-            eta: eta,
-            data: data,
-            state: OperationState.Queued
-        });
+        queuedOperations[txHash] =
+            QueuedOperation({target: target, value: value, eta: eta, data: data, state: OperationState.Queued});
     }
 
     function _markOperationCancelled(bytes32 txHash) internal {

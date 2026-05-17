@@ -20,10 +20,10 @@ contract FeesManagerTest is Test {
     function setUp() external {
         feesManager = new FeesManager(
             OWNER,
-            2,  // maker notional
-            4,  // maker premium cap
-            5,  // taker notional
-            6,  // taker premium cap
+            2, // maker notional
+            4, // maker premium cap
+            5, // taker notional
+            6, // taker premium cap
             100 // fee cap
         );
     }
@@ -82,7 +82,12 @@ contract FeesManagerTest is Test {
     }
 
     function testOverrideTakesPrecedenceOverTier() external {
-        _claimTier(ALICE, IFeesManager.VolumeTierClass.Tier2, FUTURE_EXPIRY, _singleLeafProof(ALICE, IFeesManager.VolumeTierClass.Tier2, FUTURE_EXPIRY));
+        _claimTier(
+            ALICE,
+            IFeesManager.VolumeTierClass.Tier2,
+            FUTURE_EXPIRY,
+            _singleLeafProof(ALICE, IFeesManager.VolumeTierClass.Tier2, FUTURE_EXPIRY)
+        );
 
         vm.prank(OWNER);
         feesManager.setOverride(ALICE, 9, 8, 7, 6, FUTURE_EXPIRY, true);
@@ -97,7 +102,12 @@ contract FeesManagerTest is Test {
     }
 
     function testExpiredOverrideFallsBackCorrectly() external {
-        _claimTier(ALICE, IFeesManager.VolumeTierClass.Tier1, FUTURE_EXPIRY, _singleLeafProof(ALICE, IFeesManager.VolumeTierClass.Tier1, FUTURE_EXPIRY));
+        _claimTier(
+            ALICE,
+            IFeesManager.VolumeTierClass.Tier1,
+            FUTURE_EXPIRY,
+            _singleLeafProof(ALICE, IFeesManager.VolumeTierClass.Tier1, FUTURE_EXPIRY)
+        );
 
         vm.prank(OWNER);
         feesManager.setOverride(ALICE, 9, 8, 7, 6, uint64(block.timestamp + 1), true);
@@ -150,12 +160,9 @@ contract FeesManagerTest is Test {
         feesManager.claimTier(ALICE, IFeesManager.VolumeTierClass.Tier1, FUTURE_EXPIRY, proof);
     }
 
-    function _claimTier(
-        address trader,
-        IFeesManager.VolumeTierClass tierClass,
-        uint64 expiry,
-        bytes32[] memory proof
-    ) internal {
+    function _claimTier(address trader, IFeesManager.VolumeTierClass tierClass, uint64 expiry, bytes32[] memory proof)
+        internal
+    {
         _setSingleLeafRoot(trader, tierClass, expiry);
 
         vm.prank(trader);

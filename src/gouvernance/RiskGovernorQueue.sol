@@ -19,13 +19,7 @@ abstract contract RiskGovernorQueue is RiskGovernorAdmin {
     function getQueuedOperation(bytes32 txHash)
         external
         view
-        returns (
-            address target,
-            uint256 value,
-            uint256 eta,
-            bytes memory data,
-            OperationState state
-        )
+        returns (address target, uint256 value, uint256 eta, bytes memory data, OperationState state)
     {
         QueuedOperation memory op = _getQueuedOperation(txHash);
         return (op.target, op.value, op.eta, op.data, op.state);
@@ -134,8 +128,7 @@ abstract contract RiskGovernorQueue is RiskGovernorAdmin {
         uint256 eta
     ) external returns (bytes32) {
         bytes memory data = abi.encodeCall(
-            IRiskModuleGov.setEmergencyModes,
-            (riskChecksPaused_, collateralValuationPaused_, withdrawPreviewPaused_)
+            IRiskModuleGov.setEmergencyModes, (riskChecksPaused_, collateralValuationPaused_, withdrawPreviewPaused_)
         );
         return queueOperation(riskModule, 0, data, eta);
     }
@@ -326,12 +319,10 @@ abstract contract RiskGovernorQueue is RiskGovernorAdmin {
         return queueOperation(marginEngine, 0, data, eta);
     }
 
-    function queueMarginSetRiskParams(
-        address baseToken,
-        uint256 baseMMPerContract,
-        uint256 imFactorBps,
-        uint256 eta
-    ) external returns (bytes32) {
+    function queueMarginSetRiskParams(address baseToken, uint256 baseMMPerContract, uint256 imFactorBps, uint256 eta)
+        external
+        returns (bytes32)
+    {
         bytes memory data = abi.encodeCall(IMarginEngineGov.setRiskParams, (baseToken, baseMMPerContract, imFactorBps));
         return queueOperation(marginEngine, 0, data, eta);
     }
@@ -346,8 +337,9 @@ abstract contract RiskGovernorQueue is RiskGovernorAdmin {
         uint256 liquidationPenaltyBps,
         uint256 eta
     ) external returns (bytes32) {
-        bytes memory data =
-            abi.encodeCall(IMarginEngineGov.setLiquidationParams, (liquidationThresholdBps, liquidationPenaltyBps));
+        bytes memory data = abi.encodeCall(
+            IMarginEngineGov.setLiquidationParams, (liquidationThresholdBps, liquidationPenaltyBps)
+        );
         return queueOperation(marginEngine, 0, data, eta);
     }
 
@@ -549,10 +541,7 @@ abstract contract RiskGovernorQueue is RiskGovernorAdmin {
         return queueOperation(feesManager, 0, data, eta);
     }
 
-    function queueFeesSetMerkleRootWithEpoch(bytes32 newRoot, uint64 newEpoch, uint256 eta)
-        external
-        returns (bytes32)
-    {
+    function queueFeesSetMerkleRootWithEpoch(bytes32 newRoot, uint64 newEpoch, uint256 eta) external returns (bytes32) {
         bytes memory data = abi.encodeCall(IFeesManagerGov.setMerkleRootWithEpoch, (newRoot, newEpoch));
         return queueOperation(feesManager, 0, data, eta);
     }
@@ -569,15 +558,7 @@ abstract contract RiskGovernorQueue is RiskGovernorAdmin {
     ) external returns (bytes32) {
         bytes memory data = abi.encodeCall(
             IFeesManagerGov.setOverride,
-            (
-                trader,
-                makerNotionalFeeBps,
-                makerPremiumCapBps,
-                takerNotionalFeeBps,
-                takerPremiumCapBps,
-                expiry,
-                enabled
-            )
+            (trader, makerNotionalFeeBps, makerPremiumCapBps, takerNotionalFeeBps, takerPremiumCapBps, expiry, enabled)
         );
         return queueOperation(feesManager, 0, data, eta);
     }
@@ -676,8 +657,9 @@ abstract contract RiskGovernorQueue is RiskGovernorAdmin {
         uint16 collateralFactorBps,
         uint256 eta
     ) external returns (bytes32) {
-        bytes memory data =
-            abi.encodeCall(ICollateralVaultGov.setCollateralToken, (token, isSupported, decimals, collateralFactorBps));
+        bytes memory data = abi.encodeCall(
+            ICollateralVaultGov.setCollateralToken, (token, isSupported, decimals, collateralFactorBps)
+        );
         return queueOperation(collateralVault, 0, data, eta);
     }
 
@@ -746,8 +728,9 @@ abstract contract RiskGovernorQueue is RiskGovernorAdmin {
         bool yieldOpsPaused_,
         uint256 eta
     ) external returns (bytes32) {
-        bytes memory data =
-            abi.encodeCall(IInsuranceFundGov.setEmergencyModes, (fundingPaused_, withdrawPaused_, yieldOpsPaused_));
+        bytes memory data = abi.encodeCall(
+            IInsuranceFundGov.setEmergencyModes, (fundingPaused_, withdrawPaused_, yieldOpsPaused_)
+        );
         return queueOperation(insuranceFund, 0, data, eta);
     }
 
@@ -819,8 +802,7 @@ abstract contract RiskGovernorQueue is RiskGovernorAdmin {
         external
         returns (bytes32)
     {
-        bytes memory data =
-            abi.encodeCall(IPerpMarketRegistryGov.setEmergencyModes, (creationPaused_, configPaused_));
+        bytes memory data = abi.encodeCall(IPerpMarketRegistryGov.setEmergencyModes, (creationPaused_, configPaused_));
         return queueOperation(perpMarketRegistry, 0, data, eta);
     }
 
@@ -829,10 +811,7 @@ abstract contract RiskGovernorQueue is RiskGovernorAdmin {
         return queueOperation(perpMarketRegistry, 0, data, eta);
     }
 
-    function queuePerpRegistrySetMarketCreator(address account, bool allowed, uint256 eta)
-        external
-        returns (bytes32)
-    {
+    function queuePerpRegistrySetMarketCreator(address account, bool allowed, uint256 eta) external returns (bytes32) {
         bytes memory data = abi.encodeCall(IPerpMarketRegistryGov.setMarketCreator, (account, allowed));
         return queueOperation(perpMarketRegistry, 0, data, eta);
     }
@@ -985,8 +964,7 @@ abstract contract RiskGovernorQueue is RiskGovernorAdmin {
         uint256 eta
     ) external returns (bytes32) {
         bytes memory data = abi.encodeCall(
-            IPerpEngineGov.setEmergencyModes,
-            (tradingPaused_, liquidationPaused_, fundingPaused_, collateralOpsPaused_)
+            IPerpEngineGov.setEmergencyModes, (tradingPaused_, liquidationPaused_, fundingPaused_, collateralOpsPaused_)
         );
         return queueOperation(perpEngine, 0, data, eta);
     }
@@ -1088,18 +1066,12 @@ abstract contract RiskGovernorQueue is RiskGovernorAdmin {
         return queueOperation(perpEngine, 0, data, eta);
     }
 
-    function queuePerpEngineSetLiquidationPenaltyBps(uint256 newPenaltyBps, uint256 eta)
-        external
-        returns (bytes32)
-    {
+    function queuePerpEngineSetLiquidationPenaltyBps(uint256 newPenaltyBps, uint256 eta) external returns (bytes32) {
         bytes memory data = abi.encodeCall(IPerpEngineGov.setLiquidationPenaltyBps, (newPenaltyBps));
         return queueOperation(perpEngine, 0, data, eta);
     }
 
-    function queuePerpEngineSetLiquidationPriceSpreadBps(uint256 newSpreadBps, uint256 eta)
-        external
-        returns (bytes32)
-    {
+    function queuePerpEngineSetLiquidationPriceSpreadBps(uint256 newSpreadBps, uint256 eta) external returns (bytes32) {
         bytes memory data = abi.encodeCall(IPerpEngineGov.setLiquidationPriceSpreadBps, (newSpreadBps));
         return queueOperation(perpEngine, 0, data, eta);
     }

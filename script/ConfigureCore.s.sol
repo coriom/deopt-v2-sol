@@ -99,8 +99,7 @@ contract ConfigureCore is Script {
         params.baseDecimals = _toUint8(vm.envOr("BASE_COLLATERAL_DECIMALS", uint256(6)), "base decimals");
         if (uint256(params.baseDecimals) > MAX_POW10_EXP) revert("base decimals too large");
         params.baseMaintenanceMarginPerContractBase = vm.envOr(
-            "BASE_MAINTENANCE_MARGIN_PER_CONTRACT_BASE",
-            DEFAULT_BASE_MM_UNITS * (10 ** uint256(params.baseDecimals))
+            "BASE_MAINTENANCE_MARGIN_PER_CONTRACT_BASE", DEFAULT_BASE_MM_UNITS * (10 ** uint256(params.baseDecimals))
         );
         params.imFactorBps = vm.envOr("IM_FACTOR_BPS", uint256(12_000));
         params.oracleDownMmMultiplierBps = vm.envOr("ORACLE_DOWN_MM_MULTIPLIER_BPS", uint256(20_000));
@@ -109,10 +108,14 @@ contract ConfigureCore is Script {
         params.collateralRestrictionMode = vm.envOr("COLLATERAL_RESTRICTION_MODE", true);
         params.allowAllCollateralAsSettlementAssets = vm.envOr("ALLOW_COLLATERAL_AS_SETTLEMENT_ASSETS", false);
         params.feeBpsCap = _toUint16(vm.envOr("FEE_BPS_CAP", uint256(100)), "fee cap");
-        params.makerNotionalFeeBps = _toUint16(vm.envOr("DEFAULT_MAKER_NOTIONAL_FEE_BPS", uint256(2)), "maker notional fee");
-        params.makerPremiumCapBps = _toUint16(vm.envOr("DEFAULT_MAKER_PREMIUM_CAP_BPS", uint256(4)), "maker premium cap");
-        params.takerNotionalFeeBps = _toUint16(vm.envOr("DEFAULT_TAKER_NOTIONAL_FEE_BPS", uint256(5)), "taker notional fee");
-        params.takerPremiumCapBps = _toUint16(vm.envOr("DEFAULT_TAKER_PREMIUM_CAP_BPS", uint256(6)), "taker premium cap");
+        params.makerNotionalFeeBps =
+            _toUint16(vm.envOr("DEFAULT_MAKER_NOTIONAL_FEE_BPS", uint256(2)), "maker notional fee");
+        params.makerPremiumCapBps =
+            _toUint16(vm.envOr("DEFAULT_MAKER_PREMIUM_CAP_BPS", uint256(4)), "maker premium cap");
+        params.takerNotionalFeeBps =
+            _toUint16(vm.envOr("DEFAULT_TAKER_NOTIONAL_FEE_BPS", uint256(5)), "taker notional fee");
+        params.takerPremiumCapBps =
+            _toUint16(vm.envOr("DEFAULT_TAKER_PREMIUM_CAP_BPS", uint256(6)), "taker premium cap");
 
         if (params.baseToken == address(0)) revert("base token zero");
         if (params.baseDecimals == 0) revert("base decimals zero");
@@ -134,8 +137,7 @@ contract ConfigureCore is Script {
         uint256 len = collateral.tokens.length;
         collateral.decimals = _readUintArray("COLLATERAL_DECIMALS", len, _baseOnlyArray(len, params.baseDecimals));
         collateral.riskWeightsBps = _readUintArray("COLLATERAL_WEIGHTS_BPS", len, _baseOnlyArray(len, BPS));
-        collateral.vaultFactorsBps =
-            _readUintArray("COLLATERAL_FACTORS_BPS", len, collateral.riskWeightsBps);
+        collateral.vaultFactorsBps = _readUintArray("COLLATERAL_FACTORS_BPS", len, collateral.riskWeightsBps);
         collateral.depositCaps = _readUintArray("COLLATERAL_DEPOSIT_CAPS", len, new uint256[](len));
         collateral.launchActive = _readBoolArray("COLLATERAL_LAUNCH_ACTIVE", len, _baseOnlyBoolArray(len));
         collateral.riskEnabled = _readBoolArray("COLLATERAL_RISK_ENABLED", len, _allTrueBoolArray(len));
@@ -191,9 +193,7 @@ contract ConfigureCore is Script {
         uint256 len = collateral.tokens.length;
         for (uint256 i = 0; i < len; i++) {
             risk.setCollateralConfig(
-                collateral.tokens[i],
-                _toUint64(collateral.riskWeightsBps[i], "risk weight"),
-                collateral.riskEnabled[i]
+                collateral.tokens[i], _toUint64(collateral.riskWeightsBps[i], "risk weight"), collateral.riskEnabled[i]
             );
         }
         risk.syncCollateralTokensFromVault();
@@ -225,21 +225,15 @@ contract ConfigureCore is Script {
     }
 
     function _configureMarginEngine(address marginEngine_, CoreParams memory params) internal {
-        MarginEngine(marginEngine_).setRiskParams(
-            params.baseToken,
-            params.baseMaintenanceMarginPerContractBase,
-            params.imFactorBps
-        );
+        MarginEngine(marginEngine_)
+            .setRiskParams(params.baseToken, params.baseMaintenanceMarginPerContractBase, params.imFactorBps);
     }
 
     function _configureFees(address feesManager_, CoreParams memory params) internal {
         FeesManager fees = FeesManager(feesManager_);
         fees.setFeeBpsCap(params.feeBpsCap);
         fees.setDefaultFees(
-            params.makerNotionalFeeBps,
-            params.makerPremiumCapBps,
-            params.takerNotionalFeeBps,
-            params.takerPremiumCapBps
+            params.makerNotionalFeeBps, params.makerPremiumCapBps, params.takerNotionalFeeBps, params.takerPremiumCapBps
         );
     }
 
@@ -348,11 +342,10 @@ contract ConfigureCore is Script {
         return uint64(value);
     }
 
-    function _logConfiguration(
-        address caller,
-        CoreParams memory params,
-        CollateralParams memory collateral
-    ) internal view {
+    function _logConfiguration(address caller, CoreParams memory params, CollateralParams memory collateral)
+        internal
+        view
+    {
         console2.log("DeOpt v2 core configuration");
         console2.log("chainId", block.chainid);
         console2.log("caller", caller);

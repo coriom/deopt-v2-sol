@@ -525,9 +525,7 @@ contract OptionProductRegistry {
     ) external onlyOwner whenConfigNotPaused {
         if (underlying == address(0)) revert UnderlyingZero();
 
-        if (
-            underlyingCfg.spotShockDownBps > MAX_SPOT_SHOCK_BPS || underlyingCfg.spotShockUpBps > MAX_SPOT_SHOCK_BPS
-        ) {
+        if (underlyingCfg.spotShockDownBps > MAX_SPOT_SHOCK_BPS || underlyingCfg.spotShockUpBps > MAX_SPOT_SHOCK_BPS) {
             revert InvalidUnderlyingConfig();
         }
         if (underlyingCfg.volShockDownBps > MAX_VOL_SHOCK_BPS || underlyingCfg.volShockUpBps > MAX_VOL_SHOCK_BPS) {
@@ -902,11 +900,7 @@ contract OptionProductRegistry {
         cfg = optionRiskConfigs[underlying];
     }
 
-    function getUnderlyingRiskProfile(address underlying)
-        external
-        view
-        returns (UnderlyingRiskProfile memory profile)
-    {
+    function getUnderlyingRiskProfile(address underlying) external view returns (UnderlyingRiskProfile memory profile) {
         profile.underlying = underlying;
         profile.underlyingConfig = underlyingConfigs[underlying];
         profile.optionRiskConfig = optionRiskConfigs[underlying];

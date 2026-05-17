@@ -53,9 +53,8 @@ abstract contract MarginEngineOps is MarginEngineViews {
     function depositCollateral(address token, uint256 amount) external whenCollateralOpsNotPaused nonReentrant {
         if (amount == 0) revert AmountZero();
 
-        (bool ok,) = address(_collateralVault).call(
-            abi.encodeWithSelector(ICollateralVaultMarginOps.depositFor.selector, msg.sender, token, amount)
-        );
+        (bool ok,) = address(_collateralVault)
+            .call(abi.encodeWithSelector(ICollateralVaultMarginOps.depositFor.selector, msg.sender, token, amount));
         if (!ok) revert VaultDepositForNotSupported();
 
         emit CollateralDeposited(msg.sender, token, amount);
@@ -70,9 +69,8 @@ abstract contract MarginEngineOps is MarginEngineViews {
         if (amount > preview.maxWithdrawable) revert WithdrawTooLarge();
         if (preview.marginRatioAfterBps < liquidationThresholdBps) revert WithdrawWouldBreachMargin();
 
-        (bool ok,) = address(_collateralVault).call(
-            abi.encodeWithSelector(ICollateralVaultMarginOps.withdrawFor.selector, msg.sender, token, amount)
-        );
+        (bool ok,) = address(_collateralVault)
+            .call(abi.encodeWithSelector(ICollateralVaultMarginOps.withdrawFor.selector, msg.sender, token, amount));
         if (!ok) revert VaultWithdrawForNotSupported();
 
         emit CollateralWithdrawn(msg.sender, token, amount, preview.marginRatioAfterBps);
@@ -192,10 +190,7 @@ abstract contract MarginEngineOps is MarginEngineViews {
         }
 
         emit SeriesSettlementAccountingUpdated(
-            optionId,
-            seriesCollected[optionId],
-            seriesPaid[optionId],
-            seriesBadDebt[optionId]
+            optionId, seriesCollected[optionId], seriesPaid[optionId], seriesBadDebt[optionId]
         );
     }
 
@@ -301,14 +296,7 @@ abstract contract MarginEngineOps is MarginEngineViews {
         address asset = series.settlementAsset;
 
         emit AccountSettlementResolved(
-            trader,
-            optionId,
-            asset,
-            oldQty,
-            settlementPrice,
-            payoffPerContract,
-            pnl,
-            grossSettlementAmount
+            trader, optionId, asset, oldQty, settlementPrice, payoffPerContract, pnl, grossSettlementAmount
         );
 
         // Close position before transfers so settlement cannot be replayed.
@@ -327,8 +315,7 @@ abstract contract MarginEngineOps is MarginEngineViews {
         }
 
         if (pnl > 0) {
-            (paidToTrader, badDebt) =
-                _resolveLongSettlementPayout(optionId, asset, trader, grossSettlementAmount, sink);
+            (paidToTrader, badDebt) = _resolveLongSettlementPayout(optionId, asset, trader, grossSettlementAmount, sink);
         } else if (pnl < 0) {
             (collectedFromTrader, badDebt) =
                 _resolveShortSettlementCollection(optionId, asset, trader, grossSettlementAmount, sink);
@@ -343,7 +330,11 @@ abstract contract MarginEngineOps is MarginEngineViews {
         _settleAccount(optionId, trader);
     }
 
-    function settleAccounts(uint256 optionId, address[] calldata traders) external whenSettlementNotPaused nonReentrant {
+    function settleAccounts(uint256 optionId, address[] calldata traders)
+        external
+        whenSettlementNotPaused
+        nonReentrant
+    {
         uint256 len = traders.length;
         for (uint256 i = 0; i < len; i++) {
             _settleAccount(optionId, traders[i]);
