@@ -52,6 +52,8 @@ Fill at minimum:
 - collateral token / underlying token addresses, or enable controlled testnet mocks
 - oracle source addresses, or enable controlled testnet mock feeds
 - option expiries, strikes, and caps
+- optional `OPTION_MATCHING_ENGINE_ADDR` and option executor fields if the
+  rehearsal enables `OptionMatchingEngine`
 - perp launch caps and max sizes
 
 ## 2. Deploy Testnet Assets If Needed
@@ -96,10 +98,29 @@ COLLATERAL_SEIZER=<CollateralSeizer>
 FEES_MANAGER=<FeesManager>
 INSURANCE_FUND=<InsuranceFund>
 MATCHING_ENGINE=<MatchingEngine>
+OPTION_MATCHING_ENGINE_ADDR=0x0000000000000000000000000000000000000000
 PERP_MATCHING_ENGINE=<PerpMatchingEngine>
 PROTOCOL_TIMELOCK=<ProtocolTimelock>
 RISK_GOVERNOR=<RiskGovernor>
 ```
+
+Optional option execution ingress:
+
+```bash
+forge script script/DeployOptionMatchingEngine.s.sol --rpc-url $RPC_URL --broadcast
+```
+
+If this optional script is run, copy the printed address into
+`.env.base-sepolia` and the manifest:
+
+```bash
+OPTION_MATCHING_ENGINE_ADDR=<OptionMatchingEngine>
+```
+
+When `OPTION_MATCHING_ENGINE_ADDR` is nonzero before `WireCore`,
+`MarginEngine.matchingEngine` is set to `OptionMatchingEngine`. Because
+`MarginEngine` supports only one authorized matching engine, this replaces the
+legacy `MatchingEngine` as option trade ingress for that deployment.
 
 Also set:
 
@@ -188,7 +209,12 @@ This read-only verifier must pass before ownership handoff.
 
 ## 9. Transfer Ownerships
 
-Reload env and confirm `GOVERNANCE_OWNER`, `TIMELOCK_OWNER`, `RISK_GOVERNOR_OWNER`, `TIMELOCK_PROPOSERS`, `TIMELOCK_EXECUTORS`, matching executors, and optional `PRICE_SOURCES` are final.
+Reload env and confirm `GOVERNANCE_OWNER`, `TIMELOCK_OWNER`, `RISK_GOVERNOR_OWNER`, `TIMELOCK_PROPOSERS`, `TIMELOCK_EXECUTORS`, matching executors, optional option matching executors, and optional `PRICE_SOURCES` are final.
+
+If `OPTION_MATCHING_ENGINE_ADDR` is nonzero, configure option execution
+operators with `OPTION_MATCHING_EXECUTORS` and
+`OPTION_MATCHING_EXECUTOR_ALLOWED`. `OPTION_MATCHING_EXECUTOR` is the optional
+single executor checked by `VerifyDeployment`.
 
 ```bash
 forge script script/TransferOwnerships.s.sol --rpc-url $RPC_URL --broadcast
@@ -230,6 +256,8 @@ Create a copied artifact from `deployments/DEPLOYMENT_MANIFEST.example.json` or 
 - `chainMetadata.chainId`, RPC/explorer reference, deployment start/end blocks, and deployer
 - tx hashes for every broadcast phase
 - core module addresses
+- optional `OptionMatchingEngine` address, selected option ingress, and option
+  matching executor configuration
 - mock/testnet asset addresses and owners
 - oracle source addresses, source type, feed activity, prices, and freshness notes
 - option series IDs, expiries, strikes, activation states, and short OI caps

@@ -42,7 +42,7 @@ Core unit conventions:
 | Oracle | `src/oracle/OracleRouter.sol`, `src/oracle/*PriceSource.sol` |
 | Insurance | `src/core/InsuranceFund.sol` |
 | Fees | `src/fees/FeesManager.sol` |
-| Matching | `src/matching/MatchingEngine.sol`, `src/matching/PerpMatchingEngine.sol` |
+| Matching | `src/matching/MatchingEngine.sol`, `src/matching/OptionMatchingEngine.sol`, `src/matching/PerpMatchingEngine.sol` |
 | Governance | `src/gouvernance/ProtocolTimelock.sol`, `src/gouvernance/RiskGovernor*.sol` |
 
 ### Deployment Scripts
@@ -50,12 +50,13 @@ Core unit conventions:
 Deployment is intentionally staged:
 
 1. `script/DeployCore.s.sol`
-2. `script/WireCore.s.sol`
-3. `script/ConfigureCore.s.sol`
-4. `script/ConfigureMarkets.s.sol`
-5. `script/VerifyDeployment.s.sol`
-6. `script/TransferOwnerships.s.sol`
-7. `script/AcceptOwnerships.s.sol`
+2. Optional `script/DeployOptionMatchingEngine.s.sol`
+3. `script/WireCore.s.sol`
+4. `script/ConfigureCore.s.sol`
+5. `script/ConfigureMarkets.s.sol`
+6. `script/VerifyDeployment.s.sol`
+7. `script/TransferOwnerships.s.sol`
+8. `script/AcceptOwnerships.s.sol`
 
 Deployment environment templates live in:
 
@@ -175,6 +176,7 @@ Dangerous manual broadcast sequence for authorized operators only:
 
 ```bash
 forge script script/DeployCore.s.sol --rpc-url $RPC_URL --broadcast
+forge script script/DeployOptionMatchingEngine.s.sol --rpc-url $RPC_URL --broadcast # optional option intent ingress
 forge script script/WireCore.s.sol --rpc-url $RPC_URL --broadcast
 forge script script/ConfigureCore.s.sol --rpc-url $RPC_URL --broadcast
 forge script script/ConfigureMarkets.s.sol --rpc-url $RPC_URL --broadcast
@@ -187,13 +189,14 @@ forge script script/VerifyDeployment.s.sol --rpc-url $RPC_URL
 High-level sequence:
 
 1. `DeployCore`: deploy the core protocol stack and print addresses.
-2. `WireCore`: wire dependencies across vault, risk, engines, oracle, insurance, fees, seizer, and matching.
-3. `ConfigureCore`: configure collateral, risk, fee, insurance, and base settlement surfaces.
-4. `ConfigureMarkets`: configure oracle feeds, option underlyings/series, perp markets, launch caps, and activation states.
-5. `VerifyDeployment`: read-only verification of bytecode, wiring, config, markets, caps, and sanity checks before ownership handoff.
-6. `TransferOwnerships`: initiate ownership handoff and configure guardians, timelock roles, matching executors, and optional source owners.
-7. `AcceptOwnerships`: finalize ownership handoff and verify final owners/pending owners.
-8. `VerifyDeployment`: rerun read-only verification as the final deployment gate before activation planning.
+2. `DeployOptionMatchingEngine` optional: deploy the dedicated option intent ingress after `DeployCore`; setting `OPTION_MATCHING_ENGINE_ADDR` before `WireCore` makes it the authorized `MarginEngine.applyTrade` caller.
+3. `WireCore`: wire dependencies across vault, risk, engines, oracle, insurance, fees, seizer, and matching.
+4. `ConfigureCore`: configure collateral, risk, fee, insurance, and base settlement surfaces.
+5. `ConfigureMarkets`: configure oracle feeds, option underlyings/series, perp markets, launch caps, and activation states.
+6. `VerifyDeployment`: read-only verification of bytecode, wiring, config, markets, caps, optional option matching ingress, and sanity checks before ownership handoff.
+7. `TransferOwnerships`: initiate ownership handoff and configure guardians, timelock roles, matching executors, option matching executors when enabled, and optional source owners.
+8. `AcceptOwnerships`: finalize ownership handoff and verify final owners/pending owners.
+9. `VerifyDeployment`: rerun read-only verification as the final deployment gate before activation planning.
 
 Activation must happen only after verification, ownership handoff, role checks, monitoring readiness, insurance readiness, staging evidence, audit closure, and final sign-off.
 

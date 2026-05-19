@@ -9,6 +9,7 @@ import {InsuranceFund} from "../src/core/InsuranceFund.sol";
 import {FeesManager} from "../src/fees/FeesManager.sol";
 import {CollateralSeizer} from "../src/liquidation/CollateralSeizer.sol";
 import {MatchingEngine} from "../src/matching/MatchingEngine.sol";
+import {OptionMatchingEngine} from "../src/matching/OptionMatchingEngine.sol";
 import {PerpMatchingEngine} from "../src/matching/PerpMatchingEngine.sol";
 import {OptionProductRegistry} from "../src/OptionProductRegistry.sol";
 import {OracleRouter} from "../src/oracle/OracleRouter.sol";
@@ -37,6 +38,7 @@ contract VerifyDeployment is Script {
         address feesManager;
         address insuranceFund;
         address matchingEngine;
+        address optionMatchingEngine;
         address perpMatchingEngine;
         address protocolTimelock;
         address riskGovernor;
@@ -151,6 +153,7 @@ contract VerifyDeployment is Script {
         console2.log("DeOpt v2 deployment verification OK");
         console2.log("chainId", block.chainid);
         console2.log("collateralVault", addrs.collateralVault);
+        console2.log("optionMatchingEngine", addrs.optionMatchingEngine);
         console2.log("ethOptionSeriesVerified", ethSeries.expiries.length);
         console2.log("btcOptionSeriesVerified", btcSeries.expiries.length);
     }
@@ -168,6 +171,7 @@ contract VerifyDeployment is Script {
         addrs.feesManager = _envAddress("FEES_MANAGER");
         addrs.insuranceFund = _envAddress("INSURANCE_FUND");
         addrs.matchingEngine = _envAddress("MATCHING_ENGINE");
+        addrs.optionMatchingEngine = _envAddressOrZero("OPTION_MATCHING_ENGINE_ADDR");
         addrs.perpMatchingEngine = _envAddress("PERP_MATCHING_ENGINE");
         addrs.protocolTimelock = _envAddress("PROTOCOL_TIMELOCK");
         addrs.riskGovernor = _envAddress("RISK_GOVERNOR");
@@ -342,6 +346,9 @@ contract VerifyDeployment is Script {
         _requireContract("FEES_MANAGER", addrs.feesManager);
         _requireContract("INSURANCE_FUND", addrs.insuranceFund);
         _requireContract("MATCHING_ENGINE", addrs.matchingEngine);
+        if (addrs.optionMatchingEngine != address(0)) {
+            _requireContract("OPTION_MATCHING_ENGINE_ADDR", addrs.optionMatchingEngine);
+        }
         _requireContract("PERP_MATCHING_ENGINE", addrs.perpMatchingEngine);
         _requireContract("PROTOCOL_TIMELOCK", addrs.protocolTimelock);
         _requireContract("RISK_GOVERNOR", addrs.riskGovernor);
@@ -372,7 +379,7 @@ contract VerifyDeployment is Script {
         _assertAddress("margin.collateralVault", margin.collateralVault(), addrs.collateralVault);
         _assertAddress("margin.oracle", margin.oracle(), addrs.oracleRouter);
         _assertAddress("margin.riskModule", margin.riskModule(), addrs.riskModule);
-        _assertAddress("margin.matchingEngine", margin.matchingEngine(), addrs.matchingEngine);
+        _assertAddress("margin.matchingEngine", margin.matchingEngine(), _optionIngress(addrs));
         _assertAddress("margin.insuranceFund", margin.insuranceFund(), addrs.insuranceFund);
         _assertAddress("margin.feesManager", address(margin.feesManager()), addrs.feesManager);
 
@@ -399,11 +406,46 @@ contract VerifyDeployment is Script {
         _assertAddress(
             "matching.marginEngine", address(MatchingEngine(addrs.matchingEngine).marginEngine()), addrs.marginEngine
         );
+        if (addrs.optionMatchingEngine != address(0)) {
+            _verifyOptionMatchingEngine(addrs);
+        }
         _assertAddress(
             "perpMatching.perpEngine",
             address(PerpMatchingEngine(addrs.perpMatchingEngine).perpEngine()),
             addrs.perpEngine
         );
+    }
+
+    function _verifyOptionMatchingEngine(CoreAddresses memory addrs) internal view {
+        OptionMatchingEngine optionMatching = OptionMatchingEngine(addrs.optionMatchingEngine);
+        _assertAddress("optionMatching.marginEngine", address(optionMatching.marginEngine()), addrs.marginEngine);
+        _assertAddress(
+            "optionMatching.optionRegistry", address(optionMatching.optionRegistry()), addrs.optionProductRegistry
+        );
+
+        address expectedOwner = _envAddressOrZero("OPTION_MATCHING_ENGINE_OWNER");
+        if (expectedOwner != address(0)) {
+            _assertAddress("optionMatching.owner", optionMatching.owner(), expectedOwner);
+        }
+
+        address expectedExecutor = _envAddressOrZero("OPTION_MATCHING_EXECUTOR");
+        if (expectedExecutor != address(0)) {
+            _assertBool("optionMatching executor", optionMatching.isExecutor(expectedExecutor), true);
+        }
+
+        if (vm.envExists("OPTION_MATCHING_EXECUTORS")) {
+            address[] memory executors = _envAddressArray("OPTION_MATCHING_EXECUTORS");
+            bool[] memory allowed = _envBoolArray("OPTION_MATCHING_EXECUTOR_ALLOWED");
+            _requireLength("OPTION_MATCHING_EXECUTOR_ALLOWED", allowed.length, executors.length);
+            for (uint256 i = 0; i < executors.length; i++) {
+                _assertBool("optionMatching executor", optionMatching.isExecutor(executors[i]), allowed[i]);
+            }
+        }
+    }
+
+    function _optionIngress(CoreAddresses memory addrs) internal pure returns (address) {
+        if (addrs.optionMatchingEngine != address(0)) return addrs.optionMatchingEngine;
+        return addrs.matchingEngine;
     }
 
     function _verifyCollateral(CoreAddresses memory addrs, CoreParams memory core, CollateralParams memory collateral)
@@ -674,6 +716,11 @@ contract VerifyDeployment is Script {
     function _envAddress(string memory name) internal view returns (address value) {
         _requireEnv(name);
         value = vm.envAddress(name);
+    }
+
+    function _envAddressOrZero(string memory name) internal view returns (address value) {
+        if (!vm.envExists(name)) return address(0);
+        return vm.envAddress(name);
     }
 
     function _envBool(string memory name) internal view returns (bool value) {

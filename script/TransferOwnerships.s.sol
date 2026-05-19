@@ -5,6 +5,7 @@ import {Script, console2} from "forge-std/Script.sol";
 
 import {ProtocolTimelock} from "../src/gouvernance/ProtocolTimelock.sol";
 import {MatchingEngine} from "../src/matching/MatchingEngine.sol";
+import {OptionMatchingEngine} from "../src/matching/OptionMatchingEngine.sol";
 import {PerpMatchingEngine} from "../src/matching/PerpMatchingEngine.sol";
 
 interface ITwoStepOwnable {
@@ -36,6 +37,7 @@ contract TransferOwnerships is Script {
         address feesManager;
         address insuranceFund;
         address matchingEngine;
+        address optionMatchingEngine;
         address perpMatchingEngine;
         address protocolTimelock;
         address riskGovernor;
@@ -52,6 +54,8 @@ contract TransferOwnerships is Script {
         bool[] timelockExecutorAllowed;
         address[] matchingExecutors;
         bool[] matchingExecutorAllowed;
+        address[] optionMatchingExecutors;
+        bool[] optionMatchingExecutorAllowed;
         address[] perpMatchingExecutors;
         bool[] perpMatchingExecutorAllowed;
         address[] priceSources;
@@ -95,6 +99,7 @@ contract TransferOwnerships is Script {
         addrs.feesManager = _envAddress("FEES_MANAGER");
         addrs.insuranceFund = _envAddress("INSURANCE_FUND");
         addrs.matchingEngine = _envAddress("MATCHING_ENGINE");
+        addrs.optionMatchingEngine = _envAddressOrZero("OPTION_MATCHING_ENGINE_ADDR");
         addrs.perpMatchingEngine = _envAddress("PERP_MATCHING_ENGINE");
         addrs.protocolTimelock = _envAddress("PROTOCOL_TIMELOCK");
         addrs.riskGovernor = _envAddress("RISK_GOVERNOR");
@@ -113,6 +118,8 @@ contract TransferOwnerships is Script {
 
         roles.matchingExecutors = _envAddressArrayOr("MATCHING_EXECUTORS");
         roles.matchingExecutorAllowed = _envBoolArrayOr("MATCHING_EXECUTOR_ALLOWED");
+        roles.optionMatchingExecutors = _envAddressArrayOr("OPTION_MATCHING_EXECUTORS");
+        roles.optionMatchingExecutorAllowed = _envBoolArrayOr("OPTION_MATCHING_EXECUTOR_ALLOWED");
         roles.perpMatchingExecutors = _envAddressArrayOr("PERP_MATCHING_EXECUTORS");
         roles.perpMatchingExecutorAllowed = _envBoolArrayOr("PERP_MATCHING_EXECUTOR_ALLOWED");
 
@@ -136,6 +143,11 @@ contract TransferOwnerships is Script {
             "MATCHING_EXECUTOR_ALLOWED", roles.matchingExecutorAllowed.length, roles.matchingExecutors.length
         );
         _requireLength(
+            "OPTION_MATCHING_EXECUTOR_ALLOWED",
+            roles.optionMatchingExecutorAllowed.length,
+            roles.optionMatchingExecutors.length
+        );
+        _requireLength(
             "PERP_MATCHING_EXECUTOR_ALLOWED",
             roles.perpMatchingExecutorAllowed.length,
             roles.perpMatchingExecutors.length
@@ -153,7 +165,11 @@ contract TransferOwnerships is Script {
         _requireNoZero("TIMELOCK_PROPOSERS", roles.timelockProposers);
         _requireNoZero("TIMELOCK_EXECUTORS", roles.timelockExecutors);
         _requireNoZero("MATCHING_EXECUTORS", roles.matchingExecutors);
+        _requireNoZero("OPTION_MATCHING_EXECUTORS", roles.optionMatchingExecutors);
         _requireNoZero("PERP_MATCHING_EXECUTORS", roles.perpMatchingExecutors);
+        if (addrs.optionMatchingEngine == address(0) && roles.optionMatchingExecutors.length != 0) {
+            revert("OPTION_MATCHING_ENGINE_ADDR missing");
+        }
 
         if (roles.priceSources.length != roles.priceSourceOwners.length) {
             revert("PRICE_SOURCE_OWNERS length mismatch");
@@ -175,6 +191,9 @@ contract TransferOwnerships is Script {
         _requireContract("FEES_MANAGER", addrs.feesManager);
         _requireContract("INSURANCE_FUND", addrs.insuranceFund);
         _requireContract("MATCHING_ENGINE", addrs.matchingEngine);
+        if (addrs.optionMatchingEngine != address(0)) {
+            _requireContract("OPTION_MATCHING_ENGINE_ADDR", addrs.optionMatchingEngine);
+        }
         _requireContract("PERP_MATCHING_ENGINE", addrs.perpMatchingEngine);
         _requireContract("PROTOCOL_TIMELOCK", addrs.protocolTimelock);
         _requireContract("RISK_GOVERNOR", addrs.riskGovernor);
@@ -192,6 +211,9 @@ contract TransferOwnerships is Script {
         _setGuardianIfNeeded("FEES_MANAGER", addrs.feesManager, guardian);
         _setGuardianIfNeeded("INSURANCE_FUND", addrs.insuranceFund, guardian);
         _setGuardianIfNeeded("MATCHING_ENGINE", addrs.matchingEngine, guardian);
+        if (addrs.optionMatchingEngine != address(0)) {
+            _setGuardianIfNeeded("OPTION_MATCHING_ENGINE", addrs.optionMatchingEngine, guardian);
+        }
         _setGuardianIfNeeded("PERP_MATCHING_ENGINE", addrs.perpMatchingEngine, guardian);
         _setGuardianIfNeeded("PROTOCOL_TIMELOCK", addrs.protocolTimelock, guardian);
         _setGuardianIfNeeded("RISK_GOVERNOR", addrs.riskGovernor, guardian);
@@ -218,6 +240,13 @@ contract TransferOwnerships is Script {
             MatchingEngine matching = MatchingEngine(addrs.matchingEngine);
             if (matching.isExecutor(roles.matchingExecutors[i]) != roles.matchingExecutorAllowed[i]) {
                 matching.setExecutor(roles.matchingExecutors[i], roles.matchingExecutorAllowed[i]);
+            }
+        }
+
+        for (uint256 i = 0; i < roles.optionMatchingExecutors.length; i++) {
+            OptionMatchingEngine matching = OptionMatchingEngine(addrs.optionMatchingEngine);
+            if (matching.isExecutor(roles.optionMatchingExecutors[i]) != roles.optionMatchingExecutorAllowed[i]) {
+                matching.setExecutor(roles.optionMatchingExecutors[i], roles.optionMatchingExecutorAllowed[i]);
             }
         }
 
@@ -251,6 +280,9 @@ contract TransferOwnerships is Script {
         _beginTwoStepTransfer("FEES_MANAGER", addrs.feesManager, roles.protocolOwner, caller);
         _beginTwoStepTransfer("INSURANCE_FUND", addrs.insuranceFund, roles.protocolOwner, caller);
         _beginTwoStepTransfer("MATCHING_ENGINE", addrs.matchingEngine, roles.protocolOwner, caller);
+        if (addrs.optionMatchingEngine != address(0)) {
+            _beginTwoStepTransfer("OPTION_MATCHING_ENGINE", addrs.optionMatchingEngine, roles.protocolOwner, caller);
+        }
         _beginTwoStepTransfer("PERP_MATCHING_ENGINE", addrs.perpMatchingEngine, roles.protocolOwner, caller);
 
         _beginTwoStepTransfer("PROTOCOL_TIMELOCK", addrs.protocolTimelock, roles.timelockOwner, caller);
@@ -313,6 +345,9 @@ contract TransferOwnerships is Script {
         _verifyPendingOrOwner("FEES_MANAGER", addrs.feesManager, roles.protocolOwner);
         _verifyPendingOrOwner("INSURANCE_FUND", addrs.insuranceFund, roles.protocolOwner);
         _verifyPendingOrOwner("MATCHING_ENGINE", addrs.matchingEngine, roles.protocolOwner);
+        if (addrs.optionMatchingEngine != address(0)) {
+            _verifyPendingOrOwner("OPTION_MATCHING_ENGINE", addrs.optionMatchingEngine, roles.protocolOwner);
+        }
         _verifyPendingOrOwner("PERP_MATCHING_ENGINE", addrs.perpMatchingEngine, roles.protocolOwner);
         _verifyPendingOrOwner("PROTOCOL_TIMELOCK", addrs.protocolTimelock, roles.timelockOwner);
         _verifyPendingOrOwner("RISK_GOVERNOR", addrs.riskGovernor, roles.riskGovernorOwner);
@@ -368,6 +403,11 @@ contract TransferOwnerships is Script {
     function _envAddressArrayOr(string memory name) internal view returns (address[] memory values) {
         if (!vm.envExists(name)) return new address[](0);
         values = vm.envAddress(name, DELIM);
+    }
+
+    function _envAddressOrZero(string memory name) internal view returns (address value) {
+        if (!vm.envExists(name)) return address(0);
+        return vm.envAddress(name);
     }
 
     function _envBoolArrayOr(string memory name) internal view returns (bool[] memory values) {
@@ -430,6 +470,7 @@ contract TransferOwnerships is Script {
         console2.log("timelockProposers", roles.timelockProposers.length);
         console2.log("timelockExecutors", roles.timelockExecutors.length);
         console2.log("matchingExecutors", roles.matchingExecutors.length);
+        console2.log("optionMatchingExecutors", roles.optionMatchingExecutors.length);
         console2.log("perpMatchingExecutors", roles.perpMatchingExecutors.length);
         console2.log("priceSourcesTransferred", roles.priceSources.length);
 
@@ -445,6 +486,9 @@ contract TransferOwnerships is Script {
         _logOwnerState("FeesManager", addrs.feesManager);
         _logOwnerState("InsuranceFund", addrs.insuranceFund);
         _logOwnerState("MatchingEngine", addrs.matchingEngine);
+        if (addrs.optionMatchingEngine != address(0)) {
+            _logOwnerState("OptionMatchingEngine", addrs.optionMatchingEngine);
+        }
         _logOwnerState("PerpMatchingEngine", addrs.perpMatchingEngine);
         _logOwnerState("ProtocolTimelock", addrs.protocolTimelock);
         _logOwnerState("RiskGovernor", addrs.riskGovernor);

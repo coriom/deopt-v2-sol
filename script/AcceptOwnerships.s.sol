@@ -29,6 +29,7 @@ contract AcceptOwnerships is Script {
         address feesManager;
         address insuranceFund;
         address matchingEngine;
+        address optionMatchingEngine;
         address perpMatchingEngine;
         address protocolTimelock;
         address riskGovernor;
@@ -85,6 +86,7 @@ contract AcceptOwnerships is Script {
         addrs.feesManager = _envAddress("FEES_MANAGER");
         addrs.insuranceFund = _envAddress("INSURANCE_FUND");
         addrs.matchingEngine = _envAddress("MATCHING_ENGINE");
+        addrs.optionMatchingEngine = _envAddressOrZero("OPTION_MATCHING_ENGINE_ADDR");
         addrs.perpMatchingEngine = _envAddress("PERP_MATCHING_ENGINE");
         addrs.protocolTimelock = _envAddress("PROTOCOL_TIMELOCK");
         addrs.riskGovernor = _envAddress("RISK_GOVERNOR");
@@ -144,6 +146,9 @@ contract AcceptOwnerships is Script {
         _requireContract("FEES_MANAGER", addrs.feesManager);
         _requireContract("INSURANCE_FUND", addrs.insuranceFund);
         _requireContract("MATCHING_ENGINE", addrs.matchingEngine);
+        if (addrs.optionMatchingEngine != address(0)) {
+            _requireContract("OPTION_MATCHING_ENGINE_ADDR", addrs.optionMatchingEngine);
+        }
         _requireContract("PERP_MATCHING_ENGINE", addrs.perpMatchingEngine);
         _requireContract("PROTOCOL_TIMELOCK", addrs.protocolTimelock);
         _requireContract("RISK_GOVERNOR", addrs.riskGovernor);
@@ -164,6 +169,9 @@ contract AcceptOwnerships is Script {
         _acceptTwoStep("FEES_MANAGER", addrs.feesManager, owners.protocolOwner, owners, ctx);
         _acceptTwoStep("INSURANCE_FUND", addrs.insuranceFund, owners.protocolOwner, owners, ctx);
         _acceptTwoStep("MATCHING_ENGINE", addrs.matchingEngine, owners.protocolOwner, owners, ctx);
+        if (addrs.optionMatchingEngine != address(0)) {
+            _acceptTwoStep("OPTION_MATCHING_ENGINE", addrs.optionMatchingEngine, owners.protocolOwner, owners, ctx);
+        }
         _acceptTwoStep("PERP_MATCHING_ENGINE", addrs.perpMatchingEngine, owners.protocolOwner, owners, ctx);
     }
 
@@ -262,6 +270,11 @@ contract AcceptOwnerships is Script {
         _verifyTwoStepOwner("FEES_MANAGER", addrs.feesManager, owners.protocolOwner, owners.deployer);
         _verifyTwoStepOwner("INSURANCE_FUND", addrs.insuranceFund, owners.protocolOwner, owners.deployer);
         _verifyTwoStepOwner("MATCHING_ENGINE", addrs.matchingEngine, owners.protocolOwner, owners.deployer);
+        if (addrs.optionMatchingEngine != address(0)) {
+            _verifyTwoStepOwner(
+                "OPTION_MATCHING_ENGINE", addrs.optionMatchingEngine, owners.protocolOwner, owners.deployer
+            );
+        }
         _verifyTwoStepOwner("PERP_MATCHING_ENGINE", addrs.perpMatchingEngine, owners.protocolOwner, owners.deployer);
     }
 
@@ -356,6 +369,11 @@ contract AcceptOwnerships is Script {
         if (value == address(0)) revert(string.concat(name, " zero"));
     }
 
+    function _envAddressOrZero(string memory name) internal view returns (address value) {
+        if (!vm.envExists(name)) return address(0);
+        return vm.envAddress(name);
+    }
+
     function _envAddressArrayOr(string memory name) internal view returns (address[] memory values) {
         if (!vm.envExists(name)) return new address[](0);
         values = vm.envAddress(name, DELIM);
@@ -392,6 +410,9 @@ contract AcceptOwnerships is Script {
         _logTwoStepOwner("FeesManager", addrs.feesManager);
         _logTwoStepOwner("InsuranceFund", addrs.insuranceFund);
         _logTwoStepOwner("MatchingEngine", addrs.matchingEngine);
+        if (addrs.optionMatchingEngine != address(0)) {
+            _logTwoStepOwner("OptionMatchingEngine", addrs.optionMatchingEngine);
+        }
         _logTwoStepOwner("PerpMatchingEngine", addrs.perpMatchingEngine);
         _logTwoStepOwner("ProtocolTimelock", addrs.protocolTimelock);
         _logTwoStepOwner("RiskGovernor", addrs.riskGovernor);

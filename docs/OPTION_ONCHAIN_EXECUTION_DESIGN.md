@@ -1,10 +1,11 @@
-# Option On-chain Execution Design V1A/V1B
+# Option On-chain Execution Design V1A/V1B/V1C
 
 ## Scope
 
 This document defines the first production-oriented design for mapping DeOpt backend
 option orderbook and RFQ fills into on-chain option positions. It also records the
-V1B Solidity execution ingress added after the V1A design pass.
+V1B Solidity execution ingress and V1C deployment wiring added after the V1A
+design pass.
 
 Primary goal: make option fills deterministic, auditable, and reconcilable on
 chain while preserving the existing option state machine in `MarginEngine`,
@@ -27,8 +28,11 @@ V1B Solidity status:
   unchanged.
 - V1B validates dual EIP-712 signatures, sequential per-address nonces, executor
   allowlisting, and signed option-series metadata before forwarding.
+- V1C deployment wiring makes `OptionMatchingEngine` deployable through
+  `script/DeployOptionMatchingEngine.s.sol`, optionally selectable by
+  `WireCore.s.sol`, and verifiable through `VerifyDeployment.s.sol`.
 - Backend option execution intents, calldata construction, broadcast, indexing,
-  reconciliation, and confirmation are deferred to V1C.
+  reconciliation, and confirmation are deferred to the V1D/backend phase.
 
 ## Current Solidity Option State
 
@@ -126,9 +130,32 @@ Observed behavior:
 - It emits `OptionTradeExecuted` with `intentId` for backend/indexer
   reconciliation.
 
-Backend integration remains deferred to V1C. Until then, Solidity support exists
-but production orderflow still needs backend option execution intents, calldata
-building, broadcast, indexing, reconciliation, and confirmation.
+Backend integration remains deferred to V1D. Until then, Solidity support exists
+and deployment wiring exists, but production orderflow still needs backend
+option execution intents, calldata building, broadcast, indexing,
+reconciliation, and confirmation.
+
+V1C deployment wiring status:
+
+- `OptionMatchingEngine` is deployed by the isolated
+  `DeployOptionMatchingEngine.s.sol` script after `DeployCore`.
+- `DeployCore` remains unchanged to preserve the existing core deployment shape
+  and avoid silently changing option ingress.
+- Setting `OPTION_MATCHING_ENGINE_ADDR` before `WireCore` makes
+  `MarginEngine.matchingEngine` point to `OptionMatchingEngine`.
+- Leaving `OPTION_MATCHING_ENGINE_ADDR` zero or unset keeps legacy
+  `MatchingEngine` as the authorized option ingress.
+- `TransferOwnerships` can configure `OPTION_MATCHING_EXECUTORS` /
+  `OPTION_MATCHING_EXECUTOR_ALLOWED` and includes optional ownership handoff.
+- `VerifyDeployment` checks `OptionMatchingEngine` bytecode, owner when
+  `OPTION_MATCHING_ENGINE_OWNER` is set, margin engine pointer, registry
+  pointer, configured executor allowlist, and `MarginEngine` authorization
+  alignment.
+
+Production implication: `MarginEngine` has a single `matchingEngine` slot. If
+`OptionMatchingEngine` is enabled as production option ingress, the legacy
+`MatchingEngine` may remain deployed but cannot call `MarginEngine.applyTrade`
+unless governance later switches the slot back.
 
 ### MarginEngine
 
@@ -1072,7 +1099,22 @@ Tests:
 - event emission with `intentId`
 - `MarginEngine` forwarding and revert rollback
 
-### V1C: Backend Option Execution Intents
+### V1C: Deployment Wiring
+
+Scope:
+
+- Add isolated `OptionMatchingEngine` deployment support.
+- Wire `WireCore` to select `OptionMatchingEngine` as option ingress only when
+  `OPTION_MATCHING_ENGINE_ADDR` is configured.
+- Extend ownership handoff and executor configuration for optional option
+  matching.
+- Extend deployment verification for optional option matching.
+- Update env templates, manifest, runbooks, and rehearsal docs.
+- Do not change `MarginEngine.applyTrade`, storage layout, or protocol
+  economics.
+- Do not add backend execution, calldata, broadcast, indexing, or confirmation.
+
+### V1D: Backend Option Execution Intents
 
 Scope:
 
@@ -1084,7 +1126,7 @@ Scope:
 - Require final buyer/seller signatures for production execution.
 - Keep RFQ quote signatures as quote authenticity checks.
 
-### V1D: Simulation, Broadcast, Indexing, Reconciliation
+### V1E: Simulation, Broadcast, Indexing, Reconciliation
 
 Scope:
 
@@ -1096,7 +1138,7 @@ Scope:
 - Confirm only after receipt success, indexed event, and reconciliation match.
 - Keep real broadcast disabled by default until testnet rehearsal passes.
 
-### V1E: Settlement and Exercise Operations
+### V1F: Settlement and Exercise Operations
 
 Scope:
 

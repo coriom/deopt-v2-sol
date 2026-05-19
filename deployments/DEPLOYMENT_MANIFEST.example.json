@@ -20,6 +20,7 @@
     "deployment_order": [
       "DeployTestnetAssets.s.sol (optional testnet mocks only)",
       "DeployCore.s.sol",
+      "DeployOptionMatchingEngine.s.sol (optional option intent ingress)",
       "WireCore.s.sol",
       "ConfigureCore.s.sol",
       "DeployTestnetMockFeeds.s.sol (optional testnet mocks only)",
@@ -38,6 +39,7 @@
     "dangerous_manual_broadcast_commands": [
       "forge script script/DeployTestnetAssets.s.sol --rpc-url $RPC_URL --broadcast",
       "forge script script/DeployCore.s.sol --rpc-url $RPC_URL --broadcast",
+      "forge script script/DeployOptionMatchingEngine.s.sol --rpc-url $RPC_URL --broadcast",
       "forge script script/WireCore.s.sol --rpc-url $RPC_URL --broadcast",
       "forge script script/ConfigureCore.s.sol --rpc-url $RPC_URL --broadcast",
       "forge script script/DeployTestnetMockFeeds.s.sol --rpc-url $RPC_URL --broadcast",
@@ -62,6 +64,11 @@
     },
     "deploy_core": {
       "required": true,
+      "tx_hashes": [],
+      "block_numbers": []
+    },
+    "deploy_option_matching_engine": {
+      "required": false,
       "tx_hashes": [],
       "block_numbers": []
     },
@@ -114,6 +121,7 @@
     "FeesManager": "0x0000000000000000000000000000000000000000",
     "InsuranceFund": "0x0000000000000000000000000000000000000000",
     "MatchingEngine": "0x0000000000000000000000000000000000000000",
+    "OptionMatchingEngine": "0x0000000000000000000000000000000000000000",
     "PerpMatchingEngine": "0x0000000000000000000000000000000000000000",
     "ProtocolTimelock": "0x0000000000000000000000000000000000000000",
     "RiskGovernor": "0x0000000000000000000000000000000000000000"
@@ -241,6 +249,26 @@
     "default_taker_notional_fee_bps": "REPLACE_WITH_BPS",
     "default_taker_premium_cap_bps": "REPLACE_WITH_BPS"
   },
+  "option_matching": {
+    "enabled": false,
+    "address": "0x0000000000000000000000000000000000000000",
+    "margin_engine_authorized_matching_engine": "0x0000000000000000000000000000000000000000",
+    "legacy_matching_engine_address": "0x0000000000000000000000000000000000000000",
+    "executor": "0x0000000000000000000000000000000000000000",
+    "executors": [
+      {
+        "address": "0x0000000000000000000000000000000000000000",
+        "allowed": false
+      }
+    ],
+    "env": {
+      "OPTION_MATCHING_ENGINE_ADDR": "0x0000000000000000000000000000000000000000",
+      "OPTION_MATCHING_EXECUTOR": "0x0000000000000000000000000000000000000000",
+      "OPTION_MATCHING_EXECUTORS": [],
+      "OPTION_MATCHING_EXECUTOR_ALLOWED": []
+    },
+    "backend_integration_status": "deferred"
+  },
   "insurance": {
     "fund": "0x0000000000000000000000000000000000000000",
     "allowed_tokens": [
@@ -268,6 +296,9 @@
       "0x0000000000000000000000000000000000000000"
     ],
     "matching_executors": [
+      "0x0000000000000000000000000000000000000000"
+    ],
+    "option_matching_executors": [
       "0x0000000000000000000000000000000000000000"
     ],
     "perp_matching_executors": [
@@ -298,6 +329,7 @@
       "Mainnet deployment",
       "Explorer verification automation",
       "Deployment CI",
+      "Backend option execution intents and calldata builder",
       "Multisig/timelock real transaction batching"
     ]
   }

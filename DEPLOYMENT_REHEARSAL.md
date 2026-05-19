@@ -41,6 +41,7 @@ Do not replace this default validation with a live network script run.
 | --- | --- | --- | --- | --- |
 | `DeployTestnetAssets.s.sol` | Optional testnet mock ERC20 deployment | Yes | Yes | Mock USDC, WETH, WBTC addresses |
 | `DeployCore.s.sol` | Core protocol deployment | Yes | Yes | Core contract addresses |
+| `DeployOptionMatchingEngine.s.sol` | Optional dedicated option execution ingress deployment | Yes | Yes | `OptionMatchingEngine` address |
 | `DeployPerpMatchingEngine.s.sol` | Optional replacement deploy for `PerpMatchingEngine` only | Yes | Yes | New `PerpMatchingEngine` address |
 | `WireCore.s.sol` | Dependency wiring across deployed core modules | Yes | Yes | Wired dependency graph |
 | `ConfigureCore.s.sol` | Collateral, risk, fees, insurance setup | Yes | Yes | Core config state |
@@ -57,6 +58,12 @@ Do not replace this default validation with a live network script run.
 sequence. Use it only for a controlled replacement of the perp matching engine
 when the core stack is already deployed and preserved.
 
+`DeployOptionMatchingEngine.s.sol` is the V1C option execution ingress path. It
+is intentionally isolated from `DeployCore.s.sol` because `MarginEngine`
+authorizes only one option matching caller. Deploy it only when the environment
+intends `OptionMatchingEngine` to replace the legacy `MatchingEngine` as the
+production option ingress.
+
 ## Exact Deployment Order
 
 ### Local Anvil Rehearsal
@@ -69,17 +76,20 @@ order is:
 3. Deploy core with `DeployCore.s.sol`.
 4. Copy core addresses into `.env.local`, including `ETH_PERP_ORACLE`,
    `BTC_PERP_ORACLE`, and `TIMELOCK_PROPOSERS` derived from `DeployCore` output.
-5. Run `WireCore.s.sol`.
-6. Run `ConfigureCore.s.sol`.
-7. Deploy local mock feeds with `DeployLocalMockFeeds.s.sol`.
-8. Copy local mock feed addresses into `.env.local`.
-9. Run `ConfigureMarkets.s.sol`.
-10. Refresh local mock feeds with `RefreshLocalMockFeeds.s.sol` if feed
+5. Optional: run `DeployOptionMatchingEngine.s.sol`, copy
+   `OPTION_MATCHING_ENGINE_ADDR`, and decide that option orderflow will enter
+   through `OptionMatchingEngine` instead of legacy `MatchingEngine`.
+6. Run `WireCore.s.sol`.
+7. Run `ConfigureCore.s.sol`.
+8. Deploy local mock feeds with `DeployLocalMockFeeds.s.sol`.
+9. Copy local mock feed addresses into `.env.local`.
+10. Run `ConfigureMarkets.s.sol`.
+11. Refresh local mock feeds with `RefreshLocalMockFeeds.s.sol` if feed
     `maxDelay` is tight.
-11. Run `VerifyDeployment.s.sol` read-only. This must pass before handoff.
-12. Run `TransferOwnerships.s.sol`.
-13. Run `AcceptOwnerships.s.sol`.
-14. Run `VerifyDeployment.s.sol` again read-only against the final manifest.
+12. Run `VerifyDeployment.s.sol` read-only. This must pass before handoff.
+13. Run `TransferOwnerships.s.sol`.
+14. Run `AcceptOwnerships.s.sol`.
+15. Run `VerifyDeployment.s.sol` again read-only against the final manifest.
     This is the final deployment gate before activation planning.
 
 ### Base Sepolia Rehearsal
@@ -95,23 +105,27 @@ deterministic order is:
 5. Run `DeployCore.s.sol`.
 6. Copy core addresses into `.env.base-sepolia` and the manifest, including
    `ETH_PERP_ORACLE`, `BTC_PERP_ORACLE`, and `TIMELOCK_PROPOSERS`.
-7. Run `WireCore.s.sol`.
-8. Run `ConfigureCore.s.sol`.
-9. Optional: run `DeployTestnetMockFeeds.s.sol` if controlled mock oracle
+7. Optional: run `DeployOptionMatchingEngine.s.sol`, copy
+   `OPTION_MATCHING_ENGINE_ADDR` into env and manifest, and confirm this
+   deployment should replace legacy `MatchingEngine` as `MarginEngine` option
+   ingress.
+8. Run `WireCore.s.sol`.
+9. Run `ConfigureCore.s.sol`.
+10. Optional: run `DeployTestnetMockFeeds.s.sol` if controlled mock oracle
    sources are used.
-10. Copy oracle source addresses into `.env.base-sepolia` and the manifest.
-11. Run `ConfigureMarkets.s.sol`.
-12. Optional: run `RefreshTestnetMockFeeds.s.sol` immediately before
+11. Copy oracle source addresses into `.env.base-sepolia` and the manifest.
+12. Run `ConfigureMarkets.s.sol`.
+13. Optional: run `RefreshTestnetMockFeeds.s.sol` immediately before
     verification when mock feed timestamps can become stale.
-13. Run `VerifyDeployment.s.sol` read-only. This must pass before ownership
+14. Run `VerifyDeployment.s.sol` read-only. This must pass before ownership
     handoff.
-14. Run `TransferOwnerships.s.sol`.
-15. Run `AcceptOwnerships.s.sol`, either from expected EOA owners or through the
+15. Run `TransferOwnerships.s.sol`.
+16. Run `AcceptOwnerships.s.sol`, either from expected EOA owners or through the
     documented timelock execution path.
-16. Run `VerifyDeployment.s.sol` again read-only using the same manifest-backed
+17. Run `VerifyDeployment.s.sol` again read-only using the same manifest-backed
     env to confirm deployment config still matches. This is the final deployment
     gate before activation, staging evidence, or launch signoff.
-17. Record explorer verification status as an artifact. Explorer verification is
+18. Record explorer verification status as an artifact. Explorer verification is
     not a substitute for `VerifyDeployment.s.sol`.
 
 ## Required Env Vars By Phase
@@ -141,10 +155,21 @@ are comma-delimited.
   `MATCHING_ENGINE`, `PERP_MATCHING_ENGINE`, `PROTOCOL_TIMELOCK`,
   `RISK_GOVERNOR`.
 
+### DeployOptionMatchingEngine
+
+- Required: `DEPLOYER_PRIVATE_KEY`, `MARGIN_ENGINE`,
+  `OPTION_PRODUCT_REGISTRY`.
+- Optional/defaulted: `INITIAL_OWNER`.
+- Produces: `OPTION_MATCHING_ENGINE_ADDR`.
+- Production implication: if `OPTION_MATCHING_ENGINE_ADDR` is nonzero when
+  `WireCore.s.sol` runs, `MarginEngine.matchingEngine` is set to
+  `OptionMatchingEngine`. The legacy `MATCHING_ENGINE` remains deployed and
+  configurable, but it is no longer authorized to call `MarginEngine.applyTrade`.
+
 ### WireCore
 
 - Required: `DEPLOYER_PRIVATE_KEY`, all `DeployCore` output addresses.
-- Optional/defaulted: `INITIAL_GUARDIAN`.
+- Optional/defaulted: `INITIAL_GUARDIAN`, `OPTION_MATCHING_ENGINE_ADDR`.
 
 ### ConfigureCore
 
@@ -199,6 +224,11 @@ are comma-delimited.
   funding config.
 - `VerifyDeployment.s.sol` also requires the core config and collateral arrays
   so it can compare actual state against the manifest-backed env exactly.
+- Optional option execution vars: `OPTION_MATCHING_ENGINE_ADDR`,
+  `OPTION_MATCHING_ENGINE_OWNER`, `OPTION_MATCHING_EXECUTOR`,
+  `OPTION_MATCHING_EXECUTORS`, `OPTION_MATCHING_EXECUTOR_ALLOWED`. When
+  `OPTION_MATCHING_ENGINE_ADDR` is zero or unset, option matching verification is
+  skipped and legacy `MATCHING_ENGINE` remains the expected option ingress.
 
 ### Ownership Handoff
 
@@ -209,13 +239,14 @@ are comma-delimited.
   `TIMELOCK_EXECUTOR_ALLOWED`.
 - Optional executor arrays: `MATCHING_EXECUTORS`,
   `MATCHING_EXECUTOR_ALLOWED`, `PERP_MATCHING_EXECUTORS`,
-  `PERP_MATCHING_EXECUTOR_ALLOWED`.
+  `PERP_MATCHING_EXECUTOR_ALLOWED`, `OPTION_MATCHING_EXECUTORS`,
+  `OPTION_MATCHING_EXECUTOR_ALLOWED`.
 - Optional price source ownership arrays: `PRICE_SOURCES`,
   `PRICE_SOURCE_OWNERS`.
 - `AcceptOwnerships.s.sol` requires all core addresses plus
   `GOVERNANCE_OWNER`, `FINAL_GOVERNANCE_OWNER`, `DEPLOYER_ADDRESS`, and
   optional `TIMELOCK_OWNER`, `RISK_GOVERNOR_OWNER`,
-  `PRICE_SOURCES`, `PRICE_SOURCE_OWNERS`.
+  `OPTION_MATCHING_ENGINE_ADDR`, `PRICE_SOURCES`, `PRICE_SOURCE_OWNERS`.
 - EOA acceptance requires the relevant owner private key env var. Timelock
   acceptance requires `TIMELOCK_EXECUTOR_PRIVATE_KEY` and
   `TIMELOCK_ACCEPT_ETA` after accept calls are queued.
@@ -230,6 +261,7 @@ key env vars because the scripts derive sender addresses and use
 
 ```bash
 forge script script/DeployCore.s.sol
+forge script script/DeployOptionMatchingEngine.s.sol
 forge script script/WireCore.s.sol
 forge script script/ConfigureCore.s.sol
 forge script script/ConfigureMarkets.s.sol
@@ -249,6 +281,7 @@ from validation and must never be run by default:
 ```bash
 forge script script/DeployTestnetAssets.s.sol --rpc-url $RPC_URL --broadcast
 forge script script/DeployCore.s.sol --rpc-url $RPC_URL --broadcast
+forge script script/DeployOptionMatchingEngine.s.sol --rpc-url $RPC_URL --broadcast
 forge script script/WireCore.s.sol --rpc-url $RPC_URL --broadcast
 forge script script/ConfigureCore.s.sol --rpc-url $RPC_URL --broadcast
 forge script script/DeployTestnetMockFeeds.s.sol --rpc-url $RPC_URL --broadcast
@@ -270,6 +303,8 @@ outside committed secrets. The manifest must capture:
 - exact git commit, Foundry version, and validation command results
 - every script phase, transaction hash, block number, and operator signer
 - all deployed core contract addresses
+- optional `OptionMatchingEngine` address, selected option ingress, and executor
+  allowlist when option on-chain execution is enabled
 - collateral tokens, decimals, caps, launch-active flags, and risk weights
 - oracle source addresses, max delay, deviation limits, activity, and price scale
 - option series ids, expiries, strikes, activation states, and short OI caps
@@ -305,6 +340,9 @@ freshness, unit scale, owner, guardian, executor, collateral cap, launch cap, or
   `.env.base-sepolia.example`, and the manifest.
 - `no code`: the address was not deployed on the selected chain, the wrong chain
   is selected, or the manifest is stale.
+- `optionMatching.marginEngine` or `margin.matchingEngine` mismatch: confirm
+  whether `OPTION_MATCHING_ENGINE_ADDR` was intentionally set before `WireCore`.
+  `MarginEngine` authorizes only one option matching engine at a time.
 - `CHAIN_ID mismatch`: the loaded env file is for a different chain.
 - Oracle price unavailable: refresh controlled mock feeds or verify the external
   source adapter, max delay, active flag, and scale.

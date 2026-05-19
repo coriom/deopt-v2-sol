@@ -8,6 +8,7 @@ import {InsuranceFund} from "../src/core/InsuranceFund.sol";
 import {FeesManager} from "../src/fees/FeesManager.sol";
 import {CollateralSeizer} from "../src/liquidation/CollateralSeizer.sol";
 import {MatchingEngine} from "../src/matching/MatchingEngine.sol";
+import {OptionMatchingEngine} from "../src/matching/OptionMatchingEngine.sol";
 import {PerpMatchingEngine} from "../src/matching/PerpMatchingEngine.sol";
 import {OracleRouter} from "../src/oracle/OracleRouter.sol";
 import {MarginEngine} from "../src/margin/MarginEngine.sol";
@@ -29,7 +30,9 @@ contract WireCore is Script {
         address feesManager;
         address insuranceFund;
         address matchingEngine;
+        address optionMatchingEngine;
         address perpMatchingEngine;
+        address optionProductRegistry;
     }
 
     function run() external {
@@ -69,7 +72,9 @@ contract WireCore is Script {
         addrs.feesManager = vm.envAddress("FEES_MANAGER");
         addrs.insuranceFund = vm.envAddress("INSURANCE_FUND");
         addrs.matchingEngine = vm.envAddress("MATCHING_ENGINE");
+        addrs.optionMatchingEngine = _envAddressOrZero("OPTION_MATCHING_ENGINE_ADDR");
         addrs.perpMatchingEngine = vm.envAddress("PERP_MATCHING_ENGINE");
+        addrs.optionProductRegistry = vm.envAddress("OPTION_PRODUCT_REGISTRY");
     }
 
     function _requireDeployed(CoreAddresses memory addrs) internal view {
@@ -83,12 +88,21 @@ contract WireCore is Script {
         _requireContract("FEES_MANAGER", addrs.feesManager);
         _requireContract("INSURANCE_FUND", addrs.insuranceFund);
         _requireContract("MATCHING_ENGINE", addrs.matchingEngine);
+        if (addrs.optionMatchingEngine != address(0)) {
+            _requireContract("OPTION_MATCHING_ENGINE_ADDR", addrs.optionMatchingEngine);
+        }
         _requireContract("PERP_MATCHING_ENGINE", addrs.perpMatchingEngine);
+        _requireContract("OPTION_PRODUCT_REGISTRY", addrs.optionProductRegistry);
     }
 
     function _requireContract(string memory name, address target) internal view {
         if (target == address(0)) revert(string.concat(name, " zero"));
         if (target.code.length == 0) revert(string.concat(name, " no code"));
+    }
+
+    function _envAddressOrZero(string memory name) internal view returns (address value) {
+        if (!vm.envExists(name)) return address(0);
+        return vm.envAddress(name);
     }
 
     function _wireVault(CoreAddresses memory addrs) internal {
@@ -113,7 +127,7 @@ contract WireCore is Script {
     function _wireEngines(CoreAddresses memory addrs, address guardian) internal {
         MarginEngine margin = MarginEngine(addrs.marginEngine);
         margin.setGuardian(guardian);
-        margin.setMatchingEngine(addrs.matchingEngine);
+        margin.setMatchingEngine(_optionIngress(addrs));
         margin.setOracle(addrs.oracleRouter);
         margin.setRiskModule(addrs.riskModule);
         margin.setInsuranceFund(addrs.insuranceFund);
@@ -160,9 +174,21 @@ contract WireCore is Script {
         matching.setGuardian(guardian);
         matching.setMarginEngine(addrs.marginEngine);
 
+        if (addrs.optionMatchingEngine != address(0)) {
+            OptionMatchingEngine optionMatching = OptionMatchingEngine(addrs.optionMatchingEngine);
+            optionMatching.setGuardian(guardian);
+            optionMatching.setEngine(addrs.marginEngine);
+            optionMatching.setRegistry(addrs.optionProductRegistry);
+        }
+
         PerpMatchingEngine perpMatching = PerpMatchingEngine(addrs.perpMatchingEngine);
         perpMatching.setGuardian(guardian);
         perpMatching.setEngine(addrs.perpEngine);
+    }
+
+    function _optionIngress(CoreAddresses memory addrs) internal pure returns (address) {
+        if (addrs.optionMatchingEngine != address(0)) return addrs.optionMatchingEngine;
+        return addrs.matchingEngine;
     }
 
     function _wireOperationalGuardians(CoreAddresses memory addrs, address guardian) internal {
@@ -189,6 +215,8 @@ contract WireCore is Script {
         console2.log("FeesManager", addrs.feesManager);
         console2.log("InsuranceFund", addrs.insuranceFund);
         console2.log("MatchingEngine", addrs.matchingEngine);
+        console2.log("OptionMatchingEngine", addrs.optionMatchingEngine);
+        console2.log("MarginEngineOptionIngress", _optionIngress(addrs));
         console2.log("PerpMatchingEngine", addrs.perpMatchingEngine);
     }
 }

@@ -65,10 +65,28 @@ COLLATERAL_SEIZER=<CollateralSeizer>
 FEES_MANAGER=<FeesManager>
 INSURANCE_FUND=<InsuranceFund>
 MATCHING_ENGINE=<MatchingEngine>
+OPTION_MATCHING_ENGINE_ADDR=0x0000000000000000000000000000000000000000
 PERP_MATCHING_ENGINE=<PerpMatchingEngine>
 PROTOCOL_TIMELOCK=<ProtocolTimelock>
 RISK_GOVERNOR=<RiskGovernor>
 ```
+
+Optional option execution ingress:
+
+```bash
+forge script script/DeployOptionMatchingEngine.s.sol --rpc-url http://127.0.0.1:8545 --broadcast
+```
+
+If this optional script is run, set:
+
+```bash
+OPTION_MATCHING_ENGINE_ADDR=<OptionMatchingEngine>
+```
+
+With `OPTION_MATCHING_ENGINE_ADDR` set, the following `WireCore` phase makes
+`OptionMatchingEngine` the authorized caller for `MarginEngine.applyTrade`.
+Leave it as the zero address to keep legacy `MatchingEngine` as the option
+ingress.
 
 Also set:
 
@@ -144,6 +162,10 @@ Run ownership handoff:
 forge script script/TransferOwnerships.s.sol --rpc-url http://127.0.0.1:8545 --broadcast
 forge script script/AcceptOwnerships.s.sol --rpc-url http://127.0.0.1:8545 --broadcast
 ```
+
+If `OPTION_MATCHING_ENGINE_ADDR` is nonzero, set
+`OPTION_MATCHING_EXECUTORS` and `OPTION_MATCHING_EXECUTOR_ALLOWED` before
+`TransferOwnerships` when a local option executor should be authorized.
 
 Rerun the read-only verifier after ownership acceptance to confirm deployment configuration still matches the env and manifest. This is the final deployment gate before any activation planning:
 

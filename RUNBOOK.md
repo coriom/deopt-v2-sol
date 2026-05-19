@@ -31,6 +31,7 @@ Complete before any production transaction:
 - Confirm `forge build` passes on the exact commit to deploy.
 - Confirm scripts are reviewed and the expected sequence is unchanged:
   - `script/DeployCore.s.sol`
+  - `script/DeployOptionMatchingEngine.s.sol` when option intent execution is enabled
   - `script/WireCore.s.sol`
   - `script/ConfigureCore.s.sol`
   - `script/ConfigureMarkets.s.sol`
@@ -40,7 +41,7 @@ Complete before any production transaction:
 - Confirm all env vars are prepared from the manifest and independently reviewed.
 - Confirm oracle feeds return nonzero fresh prices normalized to `1e8`.
 - Confirm initial products are inactive/restricted and perp markets are close-only or inactive as intended.
-- Confirm launch caps, collateral caps, fee recipient, insurance funding plan, guardians, matching executors, and settlement operators.
+- Confirm launch caps, collateral caps, fee recipient, insurance funding plan, guardians, matching executors, option matching executors when enabled, and settlement operators.
 - Confirm monitoring is live for oracle, roles, ownership, pauses, caps, insurance, bad debt, settlement, liquidation, and verification checks.
 - Confirm emergency responder, guardian Safe, governance/multisig, oracle/feed admin, insurance operator, and matching operator are reachable.
 - Confirm no deployer EOA is expected to retain production ownership after handoff.
@@ -51,17 +52,23 @@ Execute in this order only:
 
 1. Run `DeployCore.s.sol`.
 2. Record all emitted or printed contract addresses into the active deployment manifest.
-3. Confirm bytecode exists at every core address.
-4. Run `WireCore.s.sol`.
-5. Verify dependency pointers for vault, risk modules, engines, oracle router, collateral seizer, insurance fund, fees manager, and matching engines.
-6. Run `ConfigureCore.s.sol`.
-7. Verify collateral config, base collateral, risk parameters, fee defaults, insurance allowlists, and base settlement asset allowlists.
-8. Configure oracle price sources for the target environment.
-9. Run `ConfigureMarkets.s.sol`.
-10. Verify option underlyings, option series, perp markets, launch caps, activation states, close-only states, funding config, risk config, and liquidation config.
-11. Run `VerifyDeployment.s.sol` read-only.
-12. Treat `VerifyDeployment.s.sol` as the final deployment gate before ownership handoff or activation planning.
-13. Update manifest verification placeholders only after the corresponding checks pass.
+3. If option intent execution is enabled, run `DeployOptionMatchingEngine.s.sol`
+   and record `OPTION_MATCHING_ENGINE_ADDR`.
+4. Confirm bytecode exists at every core address and at
+   `OPTION_MATCHING_ENGINE_ADDR` when configured.
+5. Run `WireCore.s.sol`.
+6. Verify dependency pointers for vault, risk modules, engines, oracle router, collateral seizer, insurance fund, fees manager, and matching engines.
+7. If `OPTION_MATCHING_ENGINE_ADDR` is configured, verify
+   `MarginEngine.matchingEngine` equals `OptionMatchingEngine`; otherwise verify
+   it equals legacy `MatchingEngine`.
+8. Run `ConfigureCore.s.sol`.
+9. Verify collateral config, base collateral, risk parameters, fee defaults, insurance allowlists, and base settlement asset allowlists.
+10. Configure oracle price sources for the target environment.
+11. Run `ConfigureMarkets.s.sol`.
+12. Verify option underlyings, option series, perp markets, launch caps, activation states, close-only states, funding config, risk config, and liquidation config.
+13. Run `VerifyDeployment.s.sol` read-only.
+14. Treat `VerifyDeployment.s.sol` as the final deployment gate before ownership handoff or activation planning.
+15. Update manifest verification placeholders only after the corresponding checks pass.
 
 ### 3. Ownership Handoff
 
@@ -69,7 +76,7 @@ Execute only after `VerifyDeployment.s.sol` passes:
 
 1. Run `TransferOwnerships.s.sol`.
 2. Confirm ownership transfer started for every expected core module.
-3. Confirm guardians, timelock proposers/executors, matching executors, insurance operators, backstop callers, settlement operators, and price-source owner transfers match the manifest.
+3. Confirm guardians, timelock proposers/executors, matching executors, option matching executors when enabled, insurance operators, backstop callers, settlement operators, and price-source owner transfers match the manifest.
 4. Run `AcceptOwnerships.s.sol` from the expected final owner or approved timelock context.
 5. Confirm every owner and pending owner matches `ROLE_MATRIX.md` and the active manifest.
 6. Confirm deployer no longer owns production modules.
@@ -84,14 +91,17 @@ Activation is the final phase. Do not combine it with deployment or handoff.
 2. Confirm oracle sanity, vault sanity, risk sanity, engine sanity, insurance sanity, governance sanity, and monitoring sanity.
 3. Confirm insurance fund is funded to the launch threshold.
 4. Confirm matching executors are authorized and no unknown executor is authorized.
-5. Activate only the approved initial collateral tokens; keep collateral restriction mode enabled.
-6. Activate only approved option underlyings and series with configured short-OI caps.
-7. Activate only approved perp markets with launch OI caps and close-only/restricted controls as required.
-8. Enable matching/trading incrementally:
+5. If `OptionMatchingEngine` is enabled, confirm it is the only
+   `MarginEngine.applyTrade` ingress and its executor allowlist matches the
+   manifest.
+6. Activate only the approved initial collateral tokens; keep collateral restriction mode enabled.
+7. Activate only approved option underlyings and series with configured short-OI caps.
+8. Activate only approved perp markets with launch OI caps and close-only/restricted controls as required.
+9. Enable matching/trading incrementally:
    - first internal smoke transactions where allowed,
    - then restricted size,
    - then production limits only after monitoring confirms expected state.
-9. Keep a launch watch active until the first deposit, withdrawal, trade, funding update, fee charge, oracle poll, and role poll are decoded correctly.
+10. Keep a launch watch active until the first deposit, withdrawal, trade, funding update, fee charge, oracle poll, and role poll are decoded correctly.
 
 ### 5. Abort Criteria
 
@@ -100,6 +110,9 @@ Abort launch and do not activate markets if any condition is true:
 - Wrong chain id, wrong RPC, wrong deployer, or manifest mismatch.
 - Any required core address has no bytecode.
 - Any dependency pointer differs from the manifest.
+- `OPTION_MATCHING_ENGINE_ADDR` is configured but `MarginEngine.matchingEngine`
+  does not point to it, or it is unset when the manifest requires option intent
+  execution.
 - Any active oracle feed is stale, zero, unavailable, future-dated, incorrectly scaled, or points to an unexpected source.
 - Any owner, pending owner, guardian, proposer, executor, matching executor, settlement operator, insurance operator, backstop caller, oracle/feed admin, or fee recipient mismatches the role matrix or manifest.
 - Insurance fund is below the launch minimum.
@@ -185,7 +198,7 @@ Abort launch and do not activate markets if any condition is true:
 | Detection source | Matching executor drift alert, `ExecutorSet`, unexpected executor submissions, nonce cancellation spike, trade volume anomaly |
 | Severity | `P1`; escalate to `P0` if unauthorized trades or private key compromise is confirmed |
 | Immediate action | Pause affected matching engine. Revoke compromised executor and authorize replacement through owner/timelock path. Rotate offchain service keys. |
-| Contracts/modules involved | `MatchingEngine`, `PerpMatchingEngine`, `MarginEngine`, `PerpEngine`, `ProtocolTimelock` |
+| Contracts/modules involved | `MatchingEngine`, `OptionMatchingEngine`, `PerpMatchingEngine`, `MarginEngine`, `PerpEngine`, `ProtocolTimelock` |
 | Role responsible | Matching operator, guardian/emergency responder, multisig/timelock |
 | Verification step | Confirm old executor is disallowed, new executor is allowed, matching engine points to canonical engine, and no unknown executor remains. |
 | Recovery / unpause criteria | New executor infrastructure is live, backlog is reconciled, no invalid nonce/order behavior remains, and monitoring confirms only expected executor submissions. |
