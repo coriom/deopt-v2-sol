@@ -1,11 +1,10 @@
-# Option On-chain Execution Design V1A
+# Option On-chain Execution Design V1A/V1B
 
 ## Scope
 
 This document defines the first production-oriented design for mapping DeOpt backend
-option orderbook and RFQ fills into on-chain option positions. It is a design
-artifact only. It does not implement contracts, backend code, deployment scripts,
-or broadcast flows.
+option orderbook and RFQ fills into on-chain option positions. It also records the
+V1B Solidity execution ingress added after the V1A design pass.
 
 Primary goal: make option fills deterministic, auditable, and reconcilable on
 chain while preserving the existing option state machine in `MarginEngine`,
@@ -19,6 +18,17 @@ Non-goals for V1A:
   explicitly supports it
 - no generalized multi-product execution router
 - no economic changes to option margin, settlement, liquidation, or fee math
+
+V1B Solidity status:
+
+- `src/matching/OptionMatchingEngine.sol` adds a dedicated option execution
+  ingress.
+- `MarginEngine.applyTrade` remains the canonical accounting entrypoint and is
+  unchanged.
+- V1B validates dual EIP-712 signatures, sequential per-address nonces, executor
+  allowlisting, and signed option-series metadata before forwarding.
+- Backend option execution intents, calldata construction, broadcast, indexing,
+  reconciliation, and confirmation are deferred to V1C.
 
 ## Current Solidity Option State
 
@@ -53,7 +63,7 @@ There is no separate deployed option product id. On-chain execution uses
 
 ### MatchingEngine
 
-`MatchingEngine` is the current option-side on-chain ingress contract.
+`MatchingEngine` is the legacy option-side on-chain ingress contract.
 
 Observed behavior:
 
@@ -91,6 +101,34 @@ Important limits:
   `MarginEngine.applyTrade` from a mocked matching engine address. There is no
   dedicated option `MatchingEngine.executeTrade` unit suite comparable to the
   perp matching engine suite.
+
+### OptionMatchingEngine
+
+`OptionMatchingEngine` is the V1B dedicated option execution ingress.
+
+Observed behavior:
+
+- It verifies EIP-712 `OptionTrade` signatures from both buyer and seller.
+- It includes `intentId` in the signed payload and execution event.
+- It has an executor allowlist controlled by the owner.
+- It uses sequential per-trader nonces and trader-driven nonce cancellation.
+- It validates signed option metadata against `OptionProductRegistry`:
+  - `underlying`
+  - `settlementAsset`
+  - `expiry`
+  - `strike1e8`
+  - `isCall`
+  - `contractSize1e8`
+- It rejects unknown and inactive series before forwarding.
+- It forwards `buyer`, `seller`, `optionId`, raw whole-contract `quantity`,
+  settlement-native `premiumPerContract`, and `buyerIsMaker` to
+  `MarginEngine.applyTrade`.
+- It emits `OptionTradeExecuted` with `intentId` for backend/indexer
+  reconciliation.
+
+Backend integration remains deferred to V1C. Until then, Solidity support exists
+but production orderflow still needs backend option execution intents, calldata
+building, broadcast, indexing, reconciliation, and confirmation.
 
 ### MarginEngine
 
@@ -248,7 +286,7 @@ Missing backend pieces for on-chain option execution:
 - no option execution intent table
 - no option calldata builder
 - no option on-chain signature bundle model
-- no option nonce sync against `MatchingEngine.nonces`
+- no option nonce sync against `OptionMatchingEngine.nonces`
 - no option dry-run/simulation target
 - no option broadcast target
 - no option event decoder/indexer/reconciliation path
@@ -379,9 +417,9 @@ Defer unless the launch intentionally excludes orderbook option execution.
 
 ## Recommendation
 
-Use Approach B for V1B: add a minimal `OptionMatchingEngine` or
-`MatchingEngineV2` dedicated to option execution intents, while continuing to
-call the existing `MarginEngine.applyTrade` unchanged.
+Use Approach B for V1B: add a minimal `OptionMatchingEngine` dedicated to option
+execution intents, while continuing to call the existing
+`MarginEngine.applyTrade` unchanged.
 
 Rationale:
 
@@ -1014,13 +1052,15 @@ Unit mismatch:
 
 Scope:
 
-- Add `OptionMatchingEngine` or `MatchingEngineV2`.
+- Add `OptionMatchingEngine`.
 - Keep `MarginEngine.applyTrade` unchanged.
 - Add `intentId` to signed payload and event.
 - Validate signed series metadata against `OptionProductRegistry`.
 - Reuse sequential nonces, executor allowlist, cancellation, pause, and ECDSA
   recovery patterns.
 - Forward only `IMarginEngineTrade.Trade` to `MarginEngine`.
+- Do not add backend execution, deployment, broadcast, indexing, or confirmation
+  changes in V1B.
 
 Tests:
 
