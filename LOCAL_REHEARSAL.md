@@ -4,11 +4,25 @@
 
 This is the local-only Anvil rehearsal flow for DeOpt v2. It uses placeholder local token addresses, local `MockPriceSource` feeds, Anvil private keys, and inactive/close-only markets. Do not reuse this procedure as production deployment guidance.
 
+For the deterministic V1A overview, env inventory, manifest requirements, and safe no-RPC validation commands, use `DEPLOYMENT_REHEARSAL.md`.
+
 ## Known Local Warning
 
 Two contracts exceed the EIP-170 24,576-byte contract size limit. Local Anvil rehearsal works only because Anvil is started with `--code-size-limit 50000`. This must be fixed before real testnet or mainnet deployment.
 
-## Full Flow
+## Safe Validation
+
+This validation does not deploy, broadcast, require RPC, or require private keys:
+
+```bash
+forge fmt --check
+forge build
+forge test
+```
+
+## Dangerous Manual Local Broadcast Flow
+
+The commands below mutate a local Anvil chain. They are acceptable only for a throwaway local rehearsal and must not be used as production deployment guidance.
 
 Start Anvil:
 
@@ -122,11 +136,19 @@ Verify deployment:
 forge script script/VerifyDeployment.s.sol --rpc-url http://127.0.0.1:8545
 ```
 
+This read-only verification must pass before ownership handoff.
+
 Run ownership handoff:
 
 ```bash
 forge script script/TransferOwnerships.s.sol --rpc-url http://127.0.0.1:8545 --broadcast
 forge script script/AcceptOwnerships.s.sol --rpc-url http://127.0.0.1:8545 --broadcast
+```
+
+Rerun the read-only verifier after ownership acceptance to confirm deployment configuration still matches the env and manifest. This is the final deployment gate before any activation planning:
+
+```bash
+forge script script/VerifyDeployment.s.sol --rpc-url http://127.0.0.1:8545
 ```
 
 ## Expected Result

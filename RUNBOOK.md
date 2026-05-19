@@ -11,6 +11,7 @@ This document is an operator procedure. It does not change protocol logic, deplo
 ## Operating Principles
 
 - The active deployment manifest is the environment source of truth for addresses, chain id, launch caps, roles, guardians, oracle feeds, collateral config, and verification state.
+- `DEPLOYMENT_REHEARSAL.md` is the deterministic deployment rehearsal procedure. Filled manifests should start from `deployments/DEPLOYMENT_MANIFEST.example.json`.
 - `ROLE_MATRIX.md` is the authority model for expected role holders.
 - `MONITORING_SPEC.md` is the monitoring and alerting model for detection, escalation, and dashboards.
 - Mainnet launch must fail closed: if a required check is inconclusive, do not activate markets.
@@ -25,6 +26,7 @@ This document is an operator procedure. It does not change protocol logic, deplo
 Complete before any production transaction:
 
 - Confirm the correct environment manifest is selected and contains no unresolved mainnet placeholders.
+- Confirm the manifest was derived from `deployments/DEPLOYMENT_MANIFEST.example.json` or an approved environment template and contains no secrets.
 - Confirm chain id, RPC URL, explorer URL, deployment block policy, deployer, base collateral token, and token decimals.
 - Confirm `forge build` passes on the exact commit to deploy.
 - Confirm scripts are reviewed and the expected sequence is unchanged:
@@ -58,7 +60,8 @@ Execute in this order only:
 9. Run `ConfigureMarkets.s.sol`.
 10. Verify option underlyings, option series, perp markets, launch caps, activation states, close-only states, funding config, risk config, and liquidation config.
 11. Run `VerifyDeployment.s.sol` read-only.
-12. Update manifest verification placeholders only after the corresponding checks pass.
+12. Treat `VerifyDeployment.s.sol` as the final deployment gate before ownership handoff or activation planning.
+13. Update manifest verification placeholders only after the corresponding checks pass.
 
 ### 3. Ownership Handoff
 
@@ -70,7 +73,8 @@ Execute only after `VerifyDeployment.s.sol` passes:
 4. Run `AcceptOwnerships.s.sol` from the expected final owner or approved timelock context.
 5. Confirm every owner and pending owner matches `ROLE_MATRIX.md` and the active manifest.
 6. Confirm deployer no longer owns production modules.
-7. Confirm monitoring has observed and classified the handoff events.
+7. Rerun `VerifyDeployment.s.sol` read-only as the final deployment gate before activation planning.
+8. Confirm monitoring has observed and classified the handoff events.
 
 ### 4. Activation Sequence
 
@@ -384,10 +388,10 @@ Use this path when all launch products are live:
 Every launch or incident operation must produce:
 
 - Active manifest hash or commit reference.
+- Filled deployment manifest matching `deployments/DEPLOYMENT_MANIFEST.example.json` or an approved environment template.
 - Environment, chain id, block range, and finality policy.
 - Transaction list with purpose and result.
 - Expected vs actual role state where roles are involved.
 - Expected vs actual parameter state where parameters are involved.
 - Monitoring alert ids and dashboard snapshots.
 - Recovery decision and unpause approval where applicable.
-

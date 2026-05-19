@@ -1,0 +1,304 @@
+{
+  "schemaVersion": 1,
+  "manifestType": "deployment-rehearsal",
+  "network": "base-sepolia",
+  "chain_id": 84532,
+  "environment": "testnet-rehearsal",
+  "git": {
+    "commit": "REPLACE_WITH_GIT_COMMIT",
+    "foundry_profile": "default",
+    "foundry_version": "REPLACE_WITH_FOUNDRY_VERSION"
+  },
+  "deployer": "0x0000000000000000000000000000000000000000",
+  "timestamp": "YYYY-MM-DDTHH:MM:SSZ",
+  "block_range": {
+    "start_block": null,
+    "end_block": null,
+    "finality_policy": "REPLACE_WITH_FINALITY_POLICY"
+  },
+  "scripts": {
+    "deployment_order": [
+      "DeployTestnetAssets.s.sol (optional testnet mocks only)",
+      "DeployCore.s.sol",
+      "WireCore.s.sol",
+      "ConfigureCore.s.sol",
+      "DeployTestnetMockFeeds.s.sol (optional testnet mocks only)",
+      "ConfigureMarkets.s.sol",
+      "RefreshTestnetMockFeeds.s.sol (optional, immediately before verification)",
+      "VerifyDeployment.s.sol (pre-handoff gate)",
+      "TransferOwnerships.s.sol",
+      "AcceptOwnerships.s.sol",
+      "VerifyDeployment.s.sol (post-handoff final deployment gate)"
+    ],
+    "no_rpc_validation": [
+      "forge fmt --check",
+      "forge build",
+      "forge test"
+    ],
+    "dangerous_manual_broadcast_commands": [
+      "forge script script/DeployTestnetAssets.s.sol --rpc-url $RPC_URL --broadcast",
+      "forge script script/DeployCore.s.sol --rpc-url $RPC_URL --broadcast",
+      "forge script script/WireCore.s.sol --rpc-url $RPC_URL --broadcast",
+      "forge script script/ConfigureCore.s.sol --rpc-url $RPC_URL --broadcast",
+      "forge script script/DeployTestnetMockFeeds.s.sol --rpc-url $RPC_URL --broadcast",
+      "forge script script/ConfigureMarkets.s.sol --rpc-url $RPC_URL --broadcast",
+      "forge script script/RefreshTestnetMockFeeds.s.sol --rpc-url $RPC_URL --broadcast",
+      "forge script script/TransferOwnerships.s.sol --rpc-url $RPC_URL --broadcast",
+      "forge script script/AcceptOwnerships.s.sol --rpc-url $RPC_URL --broadcast"
+    ]
+  },
+  "artifacts": {
+    "env_file_source": ".env.base-sepolia.example",
+    "broadcast_artifacts_path": "broadcast/",
+    "validation_log_path": "REPLACE_WITH_VALIDATION_LOG_PATH",
+    "explorer_url": "https://sepolia.basescan.org",
+    "rpc_reference": "REPLACE_WITH_RPC_PROVIDER_NAME_ONLY_NO_SECRET_URL"
+  },
+  "transactions": {
+    "deploy_testnet_assets": {
+      "required": false,
+      "tx_hashes": [],
+      "block_numbers": []
+    },
+    "deploy_core": {
+      "required": true,
+      "tx_hashes": [],
+      "block_numbers": []
+    },
+    "wire_core": {
+      "required": true,
+      "tx_hashes": [],
+      "block_numbers": []
+    },
+    "configure_core": {
+      "required": true,
+      "tx_hashes": [],
+      "block_numbers": []
+    },
+    "deploy_testnet_mock_feeds": {
+      "required": false,
+      "tx_hashes": [],
+      "block_numbers": []
+    },
+    "configure_markets": {
+      "required": true,
+      "tx_hashes": [],
+      "block_numbers": []
+    },
+    "refresh_testnet_mock_feeds": {
+      "required": false,
+      "tx_hashes": [],
+      "block_numbers": []
+    },
+    "transfer_ownerships": {
+      "required": true,
+      "tx_hashes": [],
+      "block_numbers": []
+    },
+    "accept_ownerships": {
+      "required": true,
+      "tx_hashes": [],
+      "block_numbers": []
+    }
+  },
+  "contracts": {
+    "CollateralVault": "0x0000000000000000000000000000000000000000",
+    "OracleRouter": "0x0000000000000000000000000000000000000000",
+    "OptionProductRegistry": "0x0000000000000000000000000000000000000000",
+    "MarginEngine": "0x0000000000000000000000000000000000000000",
+    "RiskModule": "0x0000000000000000000000000000000000000000",
+    "PerpMarketRegistry": "0x0000000000000000000000000000000000000000",
+    "PerpEngine": "0x0000000000000000000000000000000000000000",
+    "PerpRiskModule": "0x0000000000000000000000000000000000000000",
+    "CollateralSeizer": "0x0000000000000000000000000000000000000000",
+    "FeesManager": "0x0000000000000000000000000000000000000000",
+    "InsuranceFund": "0x0000000000000000000000000000000000000000",
+    "MatchingEngine": "0x0000000000000000000000000000000000000000",
+    "PerpMatchingEngine": "0x0000000000000000000000000000000000000000",
+    "ProtocolTimelock": "0x0000000000000000000000000000000000000000",
+    "RiskGovernor": "0x0000000000000000000000000000000000000000"
+  },
+  "tokens": {
+    "base_asset": {
+      "symbol": "USDC",
+      "address": "0x0000000000000000000000000000000000000000",
+      "decimals": 6,
+      "native_units": "base-collateral units"
+    },
+    "underlyings": [
+      {
+        "symbol": "ETH",
+        "address": "0x0000000000000000000000000000000000000000",
+        "decimals": 18
+      },
+      {
+        "symbol": "BTC",
+        "address": "0x0000000000000000000000000000000000000000",
+        "decimals": 8
+      }
+    ],
+    "testnet_mocks": {
+      "enabled": false,
+      "mock_usdc": "0x0000000000000000000000000000000000000000",
+      "mock_eth": "0x0000000000000000000000000000000000000000",
+      "mock_btc": "0x0000000000000000000000000000000000000000"
+    }
+  },
+  "configuration": {
+    "base_asset": "USDC",
+    "price_scale": "1e8",
+    "bps_scale": 10000,
+    "oracle_router_max_delay": "REPLACE_WITH_SECONDS",
+    "risk_max_oracle_delay": "REPLACE_WITH_SECONDS",
+    "perp_risk_max_oracle_delay": "REPLACE_WITH_SECONDS",
+    "base_maintenance_margin_per_contract_base": "REPLACE_WITH_NATIVE_BASE_UNITS",
+    "im_factor_bps": "REPLACE_WITH_BPS",
+    "oracle_down_mm_multiplier_bps": "REPLACE_WITH_BPS",
+    "collateral_restriction_mode": true,
+    "allow_collateral_as_settlement_assets": false,
+    "markets_configured": [
+      {
+        "type": "option",
+        "symbol": "ETH",
+        "series_ids": [],
+        "registry_active": false,
+        "activation_states": [],
+        "short_open_interest_caps_1e8": []
+      },
+      {
+        "type": "option",
+        "symbol": "BTC",
+        "series_ids": [],
+        "registry_active": false,
+        "activation_states": [],
+        "short_open_interest_caps_1e8": []
+      },
+      {
+        "type": "perp",
+        "symbol": "ETH-PERP",
+        "market_id": null,
+        "registry_active": false,
+        "close_only": true,
+        "engine_activation_state": 0,
+        "launch_open_interest_cap_1e8": "REPLACE_WITH_CAP"
+      },
+      {
+        "type": "perp",
+        "symbol": "BTC-PERP",
+        "market_id": null,
+        "registry_active": false,
+        "close_only": true,
+        "engine_activation_state": 0,
+        "launch_open_interest_cap_1e8": "REPLACE_WITH_CAP"
+      }
+    ]
+  },
+  "collateral": {
+    "tokens": [
+      {
+        "symbol": "USDC",
+        "address": "0x0000000000000000000000000000000000000000",
+        "decimals": 6,
+        "vault_factor_bps": 10000,
+        "risk_weight_bps": 10000,
+        "deposit_cap_base": "REPLACE_WITH_NATIVE_CAP",
+        "launch_active": true,
+        "risk_enabled": true,
+        "insurance_allowed": true
+      }
+    ]
+  },
+  "oracles": {
+    "feeds": [
+      {
+        "pair": "ETH/USDC",
+        "primary_source": "0x0000000000000000000000000000000000000000",
+        "secondary_source": "0x0000000000000000000000000000000000000000",
+        "source_type": "chainlink_or_pyth_or_mock",
+        "max_delay_seconds": "REPLACE_WITH_SECONDS",
+        "max_deviation_bps": "REPLACE_WITH_BPS",
+        "active": true,
+        "expected_scale": "1e8",
+        "last_checked_block": null
+      },
+      {
+        "pair": "BTC/USDC",
+        "primary_source": "0x0000000000000000000000000000000000000000",
+        "secondary_source": "0x0000000000000000000000000000000000000000",
+        "source_type": "chainlink_or_pyth_or_mock",
+        "max_delay_seconds": "REPLACE_WITH_SECONDS",
+        "max_deviation_bps": "REPLACE_WITH_BPS",
+        "active": true,
+        "expected_scale": "1e8",
+        "last_checked_block": null
+      }
+    ]
+  },
+  "fees": {
+    "fee_bps_cap": "REPLACE_WITH_BPS",
+    "default_maker_notional_fee_bps": "REPLACE_WITH_BPS",
+    "default_maker_premium_cap_bps": "REPLACE_WITH_BPS",
+    "default_taker_notional_fee_bps": "REPLACE_WITH_BPS",
+    "default_taker_premium_cap_bps": "REPLACE_WITH_BPS"
+  },
+  "insurance": {
+    "fund": "0x0000000000000000000000000000000000000000",
+    "allowed_tokens": [
+      "0x0000000000000000000000000000000000000000"
+    ],
+    "operators": [
+      "0x0000000000000000000000000000000000000000"
+    ],
+    "backstop_callers": [
+      "0x0000000000000000000000000000000000000000"
+    ]
+  },
+  "ownership": {
+    "owner": "0x0000000000000000000000000000000000000000",
+    "timelock": "0x0000000000000000000000000000000000000000",
+    "guardian": "0x0000000000000000000000000000000000000000",
+    "governance_owner": "0x0000000000000000000000000000000000000000",
+    "final_governance_owner": "0x0000000000000000000000000000000000000000",
+    "timelock_owner": "0x0000000000000000000000000000000000000000",
+    "risk_governor_owner": "0x0000000000000000000000000000000000000000",
+    "timelock_proposers": [
+      "0x0000000000000000000000000000000000000000"
+    ],
+    "timelock_executors": [
+      "0x0000000000000000000000000000000000000000"
+    ],
+    "matching_executors": [
+      "0x0000000000000000000000000000000000000000"
+    ],
+    "perp_matching_executors": [
+      "0x0000000000000000000000000000000000000000"
+    ],
+    "pending_owners_cleared": false
+  },
+  "verification": {
+    "verify_deployment": {
+      "required_final_gate": true,
+      "command": "forge script script/VerifyDeployment.s.sol --rpc-url $RPC_URL",
+      "status": "not_run",
+      "block_number": null,
+      "timestamp": null,
+      "reviewer": "REPLACE_WITH_REVIEWER"
+    },
+    "explorer_verification": {
+      "status": "not_started",
+      "contracts_verified": []
+    }
+  },
+  "signoff": {
+    "prepared_by": "REPLACE_WITH_NAME_OR_HANDLE",
+    "reviewed_by": "REPLACE_WITH_NAME_OR_HANDLE",
+    "approved_for_activation": false,
+    "deferred_items": [
+      "Actual Base Sepolia broadcast",
+      "Mainnet deployment",
+      "Explorer verification automation",
+      "Deployment CI",
+      "Multisig/timelock real transaction batching"
+    ]
+  }
+}

@@ -33,6 +33,7 @@ note_for_later.txt
 docs/
 !docs/
 docs/*
+!docs/OPTION_ONCHAIN_EXECUTION_DESIGN.md
 !docs/architecture/
 docs/architecture/*
 !docs/architecture/CONTRACT_SIZE_REDUCTION_PLAN.md

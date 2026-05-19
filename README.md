@@ -59,6 +59,7 @@ Deployment is intentionally staged:
 
 Deployment environment templates live in:
 
+- `deployments/DEPLOYMENT_MANIFEST.example.json`
 - `deployments/local.template.json`
 - `deployments/testnet.template.json`
 - `deployments/mainnet.template.json`
@@ -73,6 +74,7 @@ Deployment environment templates live in:
 | `PARAMETERS.md` | Human-readable target parameter baseline |
 | `TEST_MATRIX.md` | Required unit, scenario, invariant, fuzz, and launch test scope |
 | `DEPLOYMENT_PLAN.md` | Canonical deployment order and post-deploy checks |
+| `DEPLOYMENT_REHEARSAL.md` | Deterministic V1A deployment rehearsal order, env inventory, dry-run validation, manifest requirements |
 | `LOCAL_REHEARSAL.md` | Exact local Anvil rehearsal flow and helper scripts |
 | `BASE_SEPOLIA_REHEARSAL.md` | Base Sepolia deployment rehearsal sequence, env template, mock testnet helpers, artifacts |
 | `ROLE_MATRIX.md` | Production role model, permissions, rotation, monitoring |
@@ -156,8 +158,20 @@ forge test --match-path test/fuzz/perp/PerpEngineFuzz.t.sol
 
 ## Deployment Flow
 
-Use a filled manifest derived from `deployments/` and follow the exact staged sequence. Do not activate markets during deploy, wire, or handoff.
-For local Anvil rehearsal, use `LOCAL_REHEARSAL.md`. For Base Sepolia deployment rehearsal preparation, use `BASE_SEPOLIA_REHEARSAL.md` and `.env.base-sepolia.example`.
+Use a filled manifest derived from `deployments/DEPLOYMENT_MANIFEST.example.json` and follow the exact staged sequence. Do not activate markets during deploy, wire, configure, verify, or handoff.
+For deterministic rehearsal, use `DEPLOYMENT_REHEARSAL.md`. For local Anvil rehearsal, use `LOCAL_REHEARSAL.md`. For Base Sepolia deployment rehearsal preparation, use `BASE_SEPOLIA_REHEARSAL.md` and `.env.base-sepolia.example`.
+
+Safe default validation does not deploy, broadcast, require RPC, or require private keys:
+
+```bash
+forge fmt --check
+forge build
+forge test
+```
+
+`script/VerifyDeployment.s.sol` must pass after market configuration before ownership handoff, then be rerun after ownership acceptance as the final read-only deployment gate before activation planning.
+
+Dangerous manual broadcast sequence for authorized operators only:
 
 ```bash
 forge script script/DeployCore.s.sol --rpc-url $RPC_URL --broadcast
@@ -167,6 +181,7 @@ forge script script/ConfigureMarkets.s.sol --rpc-url $RPC_URL --broadcast
 forge script script/VerifyDeployment.s.sol --rpc-url $RPC_URL
 forge script script/TransferOwnerships.s.sol --rpc-url $RPC_URL --broadcast
 forge script script/AcceptOwnerships.s.sol --rpc-url $RPC_URL --broadcast
+forge script script/VerifyDeployment.s.sol --rpc-url $RPC_URL
 ```
 
 High-level sequence:
@@ -175,9 +190,10 @@ High-level sequence:
 2. `WireCore`: wire dependencies across vault, risk, engines, oracle, insurance, fees, seizer, and matching.
 3. `ConfigureCore`: configure collateral, risk, fee, insurance, and base settlement surfaces.
 4. `ConfigureMarkets`: configure oracle feeds, option underlyings/series, perp markets, launch caps, and activation states.
-5. `VerifyDeployment`: read-only verification of bytecode, wiring, config, roles, markets, caps, and sanity checks.
+5. `VerifyDeployment`: read-only verification of bytecode, wiring, config, markets, caps, and sanity checks before ownership handoff.
 6. `TransferOwnerships`: initiate ownership handoff and configure guardians, timelock roles, matching executors, and optional source owners.
 7. `AcceptOwnerships`: finalize ownership handoff and verify final owners/pending owners.
+8. `VerifyDeployment`: rerun read-only verification as the final deployment gate before activation planning.
 
 Activation must happen only after verification, ownership handoff, role checks, monitoring readiness, insurance readiness, staging evidence, audit closure, and final sign-off.
 

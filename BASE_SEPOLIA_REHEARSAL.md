@@ -6,11 +6,26 @@ This is the Base Sepolia deployment rehearsal workflow for DeOpt v2. It prepares
 
 Mock assets and mock oracle feeds are allowed only for controlled testnet rehearsal. They are not production guidance.
 
+For the deterministic V1A overview, env inventory, manifest requirements, and safe no-RPC validation commands, use `DEPLOYMENT_REHEARSAL.md`.
+
+## Safe Validation
+
+This validation does not deploy, broadcast, require RPC, or require private keys:
+
+```bash
+forge fmt --check
+forge build
+forge test
+```
+
+All Base Sepolia `forge script ... --broadcast` commands below are dangerous manual operator commands. Do not run them as default validation.
+
 ## Preconditions
 
 - `forge build` and `forge build --sizes` pass on the exact commit.
 - The deployer address has Base Sepolia ETH for every broadcast phase.
 - `.env.base-sepolia` is created from `.env.base-sepolia.example`.
+- A filled manifest is created from `deployments/DEPLOYMENT_MANIFEST.example.json` and contains no secrets.
 - Every `REQUIRED_*` and relevant `FILL_*` value is replaced before the script that consumes it.
 - Markets and option series remain inactive / close-only during this rehearsal.
 
@@ -169,6 +184,8 @@ Expected output:
 DeOpt v2 deployment verification OK
 ```
 
+This read-only verifier must pass before ownership handoff.
+
 ## 9. Transfer Ownerships
 
 Reload env and confirm `GOVERNANCE_OWNER`, `TIMELOCK_OWNER`, `RISK_GOVERNOR_OWNER`, `TIMELOCK_PROPOSERS`, `TIMELOCK_EXECUTORS`, matching executors, and optional `PRICE_SOURCES` are final.
@@ -183,6 +200,12 @@ If owners are EOAs, load the corresponding owner private keys locally. If owners
 
 ```bash
 forge script script/AcceptOwnerships.s.sol --rpc-url $RPC_URL --broadcast
+```
+
+Rerun the read-only verifier after ownership acceptance to confirm deployment configuration still matches the manifest. This is the final deployment gate before activation planning, staging signoff, or launch signoff:
+
+```bash
+forge script script/VerifyDeployment.s.sol --rpc-url $RPC_URL
 ```
 
 ## 11. Explorer Verification
@@ -202,7 +225,7 @@ For constructor-argument contracts, include `--constructor-args` or `--construct
 
 ## Expected Artifacts
 
-Create a copied artifact from `deployments/testnet.template.json` and fill:
+Create a copied artifact from `deployments/DEPLOYMENT_MANIFEST.example.json` or `deployments/testnet.template.json` and fill:
 
 - `chainMetadata.chainId`, RPC/explorer reference, deployment start/end blocks, and deployer
 - tx hashes for every broadcast phase
