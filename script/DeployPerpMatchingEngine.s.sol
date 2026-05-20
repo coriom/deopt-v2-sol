@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: BSL-1.1
 pragma solidity ^0.8.20;
 
 import {Script, console2} from "forge-std/Script.sol";

@@ -234,3 +234,12 @@ This repository should not be treated as production-deployed or mainnet-ready un
 An external audit is required before mainnet deployment or activation. Any deployment using unresolved placeholders, unverified oracle feeds, incomplete ownership handoff, missing monitoring alerts, unfunded insurance, unresolved Critical/High audit findings, or untested emergency controls is a no-go for production activation.
 
 Report security issues privately to the repository maintainers or the designated security contact once published.
+
+
+
+## ⚖️ License
+
+This repository is part of the **deopt** ecosystem and is licensed under the **Business Source License 1.1** (BSL 1.1).
+
+* **Non-Production & Educational use** is fully authorized.
+* **Commercial & Production use** is strictly prohibited until **May 20, 2030**, after which the code will automatically transition to the **GNU General Public License v3.0 (GPL-3.0)**.
