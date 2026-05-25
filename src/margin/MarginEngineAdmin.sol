@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import {IRiskModule} from "../risk/IRiskModule.sol";
 import {IOracle} from "../oracle/IOracle.sol";
 import {IFeesManager} from "../fees/IFeesManager.sol";
+import {IFeesManagerV2} from "../fees/IFeesManagerV2.sol";
 
 import {MarginEngineStorage} from "./MarginEngineStorage.sol";
 
@@ -271,6 +272,22 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
     function clearFeesManager() external onlyOwner {
         feesManager = IFeesManager(address(0));
         emit FeesManagerSet(address(0));
+    }
+
+    /// @notice Set optional signed-ppm options fee manager.
+    /// @dev V1 remains active until `setUseFeesManagerV2(true)` is called.
+    function setFeesManagerV2(address feesManagerV2_) external onlyOwner {
+        if (feesManagerV2_ == address(0)) revert ZeroAddress();
+        feesManagerV2 = IFeesManagerV2(feesManagerV2_);
+        emit FeesManagerV2Set(feesManagerV2_);
+    }
+
+    /// @notice Selects whether option execution uses V1 or V2 fees.
+    /// @dev Enabling V2 with no configured V2 manager is forbidden.
+    function setUseFeesManagerV2(bool enabled) external onlyOwner {
+        if (enabled && address(feesManagerV2) == address(0)) revert ZeroAddress();
+        useFeesManagerV2 = enabled;
+        emit FeesManagerV2EnabledSet(enabled);
     }
 
     /// @notice Explicit fee recipient.

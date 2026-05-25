@@ -5,6 +5,7 @@ import {OptionProductRegistry} from "../OptionProductRegistry.sol";
 import {IMarginEngineState} from "../risk/IMarginEngineState.sol";
 import {IMarginEngineTrade} from "../matching/IMarginEngineTrade.sol";
 import {IFeesManager} from "../fees/IFeesManager.sol";
+import {IFeesManagerV2} from "../fees/IFeesManagerV2.sol";
 
 import {MarginEngineAdmin} from "./MarginEngineAdmin.sol";
 
@@ -69,6 +70,59 @@ abstract contract MarginEngineTrading is MarginEngineAdmin {
             q.premiumCapFee,
             q.appliedFee,
             q.cappedByPremium
+        );
+    }
+
+    function _chargeTradingFeeV2(
+        address trader,
+        address counterparty,
+        bool isMaker,
+        address settlementAsset,
+        uint256 optionId,
+        uint256 premium
+    ) internal {
+        IFeesManagerV2 fm = feesManagerV2;
+        if (address(fm) == address(0)) revert ZeroAddress();
+
+        IFeesManagerV2.FeeQuote memory q = fm.consumeFees(
+            trader,
+            IFeesManagerV2.ProductKind.OPTION,
+            IFeesManagerV2.FlowKind.ORDERBOOK,
+            isMaker,
+            settlementAsset,
+            premium
+        );
+
+        if (
+            q.product != IFeesManagerV2.ProductKind.OPTION || q.flow != IFeesManagerV2.FlowKind.ORDERBOOK
+                || q.feeBasis != IFeesManagerV2.FeeBasis.PREMIUM || q.isMaker != isMaker
+                || q.settlementAsset != settlementAsset || q.basisAmount != premium
+        ) {
+            revert FeesManagerV2QuoteInvalid();
+        }
+
+        uint256 feeAmount = q.feeAmount;
+        if (feeAmount == 0) return;
+
+        if (q.isRebate) {
+            if (q.recipient != trader) revert FeesManagerV2QuoteInvalid();
+
+            address fundingAccount = fm.rebateFundingAccount();
+            if (fundingAccount == address(0)) revert FeesManagerV2RebateFundingNotSet();
+
+            _collateralVault.transferBetweenAccounts(settlementAsset, fundingAccount, trader, feeAmount);
+            return;
+        }
+
+        address recipient = q.recipient;
+        if (recipient == address(0)) revert FeesRecipientNotSet();
+        if (recipient == trader) revert FeesRecipientEqualsTrader();
+        if (recipient == counterparty) revert FeesRecipientEqualsCounterparty();
+
+        _collateralVault.transferBetweenAccounts(settlementAsset, trader, recipient, feeAmount);
+
+        emit TradingFeeCharged(
+            trader, recipient, settlementAsset, optionId, isMaker, premium, 0, feeAmount, feeAmount, feeAmount, false
         );
     }
 
@@ -151,16 +205,19 @@ abstract contract MarginEngineTrading is MarginEngineAdmin {
         uint256 premium = _mulChecked(uint256(t.quantity), uint256(t.price));
         _collateralVault.transferBetweenAccounts(series.settlementAsset, t.buyer, t.seller, premium);
 
-        // Hybrid fees
-        if (address(feesManager) != address(0)) {
+        bool buyerIsMaker = t.buyerIsMaker;
+        bool sellerIsMaker = !buyerIsMaker;
+
+        // Option fees
+        if (useFeesManagerV2) {
+            _chargeTradingFeeV2(t.buyer, t.seller, buyerIsMaker, series.settlementAsset, t.optionId, premium);
+            _chargeTradingFeeV2(t.seller, t.buyer, sellerIsMaker, series.settlementAsset, t.optionId, premium);
+        } else if (address(feesManager) != address(0)) {
             address recipient = _resolvedFeeRecipient();
             if (recipient == address(0)) revert FeesRecipientNotSet();
             if (recipient == t.buyer || recipient == t.seller) revert FeesRecipientEqualsCounterparty();
 
             uint256 notionalImplicit = _computeStrikeNotionalImplicit(series, uint256(t.quantity));
-
-            bool buyerIsMaker = t.buyerIsMaker;
-            bool sellerIsMaker = !buyerIsMaker;
 
             _chargeTradingFee(
                 t.buyer, buyerIsMaker, series.settlementAsset, t.optionId, premium, notionalImplicit, recipient

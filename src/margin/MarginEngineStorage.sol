@@ -11,6 +11,7 @@ import {IRiskModule} from "../risk/IRiskModule.sol";
 import {IMarginEngineState} from "../risk/IMarginEngineState.sol";
 import {IMarginEngineTrade} from "../matching/IMarginEngineTrade.sol";
 import {IFeesManager} from "../fees/IFeesManager.sol";
+import {IFeesManagerV2} from "../fees/IFeesManagerV2.sol";
 
 import {MarginEngineTypes} from "./MarginEngineTypes.sol";
 
@@ -132,6 +133,12 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     mapping(uint256 => uint256) public seriesCollected;
     mapping(uint256 => uint256) public seriesPaid;
     mapping(uint256 => uint256) public seriesBadDebt;
+
+    /// @notice Optional signed-ppm fee engine for options V2. Disabled by default.
+    IFeesManagerV2 public feesManagerV2;
+
+    /// @notice If true, option execution uses FeesManagerV2 instead of V1.
+    bool public useFeesManagerV2;
 
     /*//////////////////////////////////////////////////////////////
                                 MODIFIERS

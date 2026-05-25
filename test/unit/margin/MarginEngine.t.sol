@@ -2,9 +2,12 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
+import {Vm} from "forge-std/Vm.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import {CollateralVault} from "../../../src/collateral/CollateralVault.sol";
+import {FeesManager} from "../../../src/fees/FeesManager.sol";
+import {FeesManagerV2} from "../../../src/fees/FeesManagerV2.sol";
 import {OptionProductRegistry} from "../../../src/OptionProductRegistry.sol";
 import {IOracle} from "../../../src/oracle/IOracle.sol";
 import {IRiskModule} from "../../../src/risk/IRiskModule.sol";
@@ -164,6 +167,9 @@ contract MockMarginRiskModule is IRiskModule {
         address internal constant CAROL = address(0xC3);
         address internal constant DAVE = address(0xD4);
         address internal constant GUARDIAN = address(0x1234);
+        uint256 internal constant V2_VOLUME_28D = 25_000_000 * BASE_UNIT;
+        uint32 internal constant V2_VOLUME_SHARE_PPM = 50_000;
+        uint256 internal constant V2_STAKED_DEOPT = 250_000e8;
 
         CollateralVault internal vault;
         OptionProductRegistry internal registry;
@@ -171,6 +177,8 @@ contract MockMarginRiskModule is IRiskModule {
         MarginEngineLens internal lens;
         MockOracle internal oracle;
         MockMarginRiskModule internal riskModule;
+        FeesManager internal feesManagerV1;
+        FeesManagerV2 internal feesManagerV2;
 
         MockERC20Decimals internal usdc;
         MockERC20Decimals internal weth;
@@ -402,6 +410,119 @@ contract MockMarginRiskModule is IRiskModule {
 
             assertEq(vault.balances(ALICE, address(usdc)), aliceBefore - (2 * PREMIUM_PER_CONTRACT));
             assertEq(vault.balances(BOB, address(usdc)), bobBefore + (2 * PREMIUM_PER_CONTRACT));
+        }
+
+        function testFeesManagerV1BehaviorUnchangedWhenV2Disabled() external {
+            _configureV1Fees();
+            _configureV2Fees(false);
+
+            assertFalse(engine.useFeesManagerV2());
+
+            uint256 aliceBefore = vault.balances(ALICE, address(usdc));
+            uint256 bobBefore = vault.balances(BOB, address(usdc));
+            uint256 recipientBefore = vault.balances(DAVE, address(usdc));
+
+            _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
+
+            uint256 makerFeeV1 = 40_000;
+            uint256 takerFeeV1 = 60_000;
+
+            assertEq(vault.balances(ALICE, address(usdc)), aliceBefore - PREMIUM_PER_CONTRACT - makerFeeV1);
+            assertEq(vault.balances(BOB, address(usdc)), bobBefore + PREMIUM_PER_CONTRACT - takerFeeV1);
+            assertEq(vault.balances(DAVE, address(usdc)), recipientBefore + makerFeeV1 + takerFeeV1);
+        }
+
+        function testFeesManagerV2AdminControls() external {
+            feesManagerV2 = new FeesManagerV2(OWNER, DAVE);
+
+            vm.prank(OWNER);
+            vm.expectRevert(MarginEngineTypes.ZeroAddress.selector);
+            engine.setUseFeesManagerV2(true);
+
+            vm.prank(OWNER);
+            engine.setFeesManagerV2(address(feesManagerV2));
+
+            assertEq(address(engine.feesManagerV2()), address(feesManagerV2));
+            assertFalse(engine.useFeesManagerV2());
+
+            vm.prank(OWNER);
+            engine.setUseFeesManagerV2(true);
+
+            assertTrue(engine.useFeesManagerV2());
+        }
+
+        function testFeesManagerV2PositiveOptionFeesTransferAndPositionsUpdate() external {
+            _configureV2Fees(true);
+
+            uint256 aliceBefore = vault.balances(ALICE, address(usdc));
+            uint256 bobBefore = vault.balances(BOB, address(usdc));
+            uint256 recipientBefore = vault.balances(DAVE, address(usdc));
+
+            vm.recordLogs();
+            _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
+            Vm.Log[] memory logs = vm.getRecordedLogs();
+
+            uint256 makerFeeV2 = 5_000;
+            uint256 takerFeeV2 = 25_000;
+
+            assertEq(vault.balances(ALICE, address(usdc)), aliceBefore - PREMIUM_PER_CONTRACT - makerFeeV2);
+            assertEq(vault.balances(BOB, address(usdc)), bobBefore + PREMIUM_PER_CONTRACT - takerFeeV2);
+            assertEq(vault.balances(DAVE, address(usdc)), recipientBefore + makerFeeV2 + takerFeeV2);
+            assertEq(engine.positions(ALICE, callOptionId).quantity, 1);
+            assertEq(engine.positions(BOB, callOptionId).quantity, -1);
+            assertEq(_countLogs(logs, address(feesManagerV2), _feeChargedV2Topic()), 2);
+        }
+
+        function testFeesManagerV2MakerRebateTransfersFromFundingAccount() external {
+            _configureV2Fees(true);
+            _claimV2Tier(ALICE, 4);
+
+            vm.prank(OWNER);
+            feesManagerV2.fundRebateBudget(address(usdc), 10_000);
+
+            uint256 aliceBefore = vault.balances(ALICE, address(usdc));
+            uint256 bobBefore = vault.balances(BOB, address(usdc));
+            uint256 carolBefore = vault.balances(CAROL, address(usdc));
+            uint256 recipientBefore = vault.balances(DAVE, address(usdc));
+
+            vm.recordLogs();
+            _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
+            Vm.Log[] memory logs = vm.getRecordedLogs();
+
+            uint256 makerRebate = 5_000;
+            uint256 takerFeeV2 = 25_000;
+
+            assertEq(vault.balances(ALICE, address(usdc)), aliceBefore - PREMIUM_PER_CONTRACT + makerRebate);
+            assertEq(vault.balances(BOB, address(usdc)), bobBefore + PREMIUM_PER_CONTRACT - takerFeeV2);
+            assertEq(vault.balances(CAROL, address(usdc)), carolBefore - makerRebate);
+            assertEq(vault.balances(DAVE, address(usdc)), recipientBefore + takerFeeV2);
+            assertEq(feesManagerV2.rebateBudget(address(usdc)), 5_000);
+            assertEq(_countLogs(logs, address(feesManagerV2), _feeRebatedV2Topic()), 1);
+            assertEq(_countLogs(logs, address(feesManagerV2), _feeChargedV2Topic()), 1);
+        }
+
+        function testFeesManagerV2InsufficientRebateBudgetRevertsTrade() external {
+            _configureV2Fees(true);
+            _claimV2Tier(ALICE, 4);
+
+            vm.prank(OWNER);
+            feesManagerV2.fundRebateBudget(address(usdc), 4_999);
+
+            uint256 aliceBefore = vault.balances(ALICE, address(usdc));
+            uint256 bobBefore = vault.balances(BOB, address(usdc));
+            uint256 carolBefore = vault.balances(CAROL, address(usdc));
+
+            vm.expectRevert(
+                abi.encodeWithSelector(FeesManagerV2.InsufficientRebateBudget.selector, address(usdc), 4_999, 5_000)
+            );
+            _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
+
+            assertEq(vault.balances(ALICE, address(usdc)), aliceBefore);
+            assertEq(vault.balances(BOB, address(usdc)), bobBefore);
+            assertEq(vault.balances(CAROL, address(usdc)), carolBefore);
+            assertEq(engine.positions(ALICE, callOptionId).quantity, 0);
+            assertEq(engine.positions(BOB, callOptionId).quantity, 0);
+            assertEq(feesManagerV2.rebateBudget(address(usdc)), 4_999);
         }
 
         function testSettlementProducesCorrectPayoffAtExpiry() external {
@@ -724,6 +845,78 @@ contract MockMarginRiskModule is IRiskModule {
                     buyerIsMaker: true
                 })
             );
+        }
+
+        function _configureV1Fees() internal {
+            feesManagerV1 = new FeesManager(
+                OWNER,
+                2, // maker notional
+                4, // maker premium cap
+                5, // taker notional
+                6, // taker premium cap
+                100 // fee cap
+            );
+
+            vm.startPrank(OWNER);
+            engine.setFeesManager(address(feesManagerV1));
+            engine.setFeeRecipient(DAVE);
+            vm.stopPrank();
+        }
+
+        function _configureV2Fees(bool enable) internal {
+            feesManagerV2 = new FeesManagerV2(OWNER, DAVE);
+
+            vm.startPrank(OWNER);
+            feesManagerV2.setFeeConsumer(address(engine), true);
+            feesManagerV2.setRebateFundingAccount(CAROL);
+            engine.setFeesManagerV2(address(feesManagerV2));
+            if (enable) {
+                engine.setUseFeesManagerV2(true);
+            }
+            vm.stopPrank();
+        }
+
+        function _claimV2Tier(address account, uint8 tier) internal {
+            uint64 validFrom = uint64(block.timestamp);
+            uint64 validUntil = uint64(block.timestamp + 1 days);
+            bytes32 root = feesManagerV2.hashTierLeaf(
+                account, tier, V2_VOLUME_28D, V2_VOLUME_SHARE_PPM, V2_STAKED_DEOPT, validFrom, validUntil
+            );
+
+            vm.prank(OWNER);
+            feesManagerV2.setMerkleRoot(root, validFrom, validUntil);
+
+            vm.prank(account);
+            feesManagerV2.claimTier(
+                account,
+                tier,
+                V2_VOLUME_28D,
+                V2_VOLUME_SHARE_PPM,
+                V2_STAKED_DEOPT,
+                validFrom,
+                validUntil,
+                new bytes32[](0)
+            );
+        }
+
+        function _countLogs(Vm.Log[] memory logs, address emitter, bytes32 topic0)
+            internal
+            pure
+            returns (uint256 count)
+        {
+            for (uint256 i; i < logs.length; ++i) {
+                if (logs[i].emitter == emitter && logs[i].topics.length != 0 && logs[i].topics[0] == topic0) {
+                    ++count;
+                }
+            }
+        }
+
+        function _feeChargedV2Topic() internal pure returns (bytes32) {
+            return keccak256("FeeChargedV2(address,address,address,address,uint8,uint8,bool,int32,uint256,uint256)");
+        }
+
+        function _feeRebatedV2Topic() internal pure returns (bytes32) {
+            return keccak256("FeeRebatedV2(address,address,address,address,uint8,uint8,int32,uint256,uint256)");
         }
 
         function _deposit(address trader, uint256 amount) internal {

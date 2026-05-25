@@ -170,6 +170,8 @@ abstract contract MarginEngineTypes {
     error FeesRecipientNotSet();
     error FeesRecipientEqualsTrader();
     error FeesRecipientEqualsCounterparty();
+    error FeesManagerV2QuoteInvalid();
+    error FeesManagerV2RebateFundingNotSet();
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
@@ -370,6 +372,8 @@ abstract contract MarginEngineTypes {
 
     // Fees admin / config
     event FeesManagerSet(address indexed newFeesManager);
+    event FeesManagerV2Set(address indexed newFeesManagerV2);
+    event FeesManagerV2EnabledSet(bool enabled);
     event FeeRecipientSet(address indexed oldRecipient, address indexed newRecipient);
 
     /// @notice Trading fee charged during options execution.
