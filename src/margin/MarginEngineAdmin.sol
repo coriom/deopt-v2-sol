@@ -111,71 +111,39 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
 
     /// @notice Emergency freeze of trading only.
     function pauseTrading() external onlyGuardianOrOwner {
-        if (!tradingPaused) {
-            tradingPaused = true;
-            emit TradingPauseSet(true);
-            emit EmergencyModeUpdated(tradingPaused, liquidationPaused, settlementPaused, collateralOpsPaused);
-        }
+        _setSinglePause(0, true);
     }
 
     function unpauseTrading() external onlyOwner {
-        if (tradingPaused) {
-            tradingPaused = false;
-            emit TradingPauseSet(false);
-            emit EmergencyModeUpdated(tradingPaused, liquidationPaused, settlementPaused, collateralOpsPaused);
-        }
+        _setSinglePause(0, false);
     }
 
     /// @notice Emergency freeze of liquidation only.
     function pauseLiquidation() external onlyGuardianOrOwner {
-        if (!liquidationPaused) {
-            liquidationPaused = true;
-            emit LiquidationPauseSet(true);
-            emit EmergencyModeUpdated(tradingPaused, liquidationPaused, settlementPaused, collateralOpsPaused);
-        }
+        _setSinglePause(1, true);
     }
 
     function unpauseLiquidation() external onlyOwner {
-        if (liquidationPaused) {
-            liquidationPaused = false;
-            emit LiquidationPauseSet(false);
-            emit EmergencyModeUpdated(tradingPaused, liquidationPaused, settlementPaused, collateralOpsPaused);
-        }
+        _setSinglePause(1, false);
     }
 
     /// @notice Emergency freeze of settlement only.
     function pauseSettlement() external onlyGuardianOrOwner {
-        if (!settlementPaused) {
-            settlementPaused = true;
-            emit SettlementPauseSet(true);
-            emit EmergencyModeUpdated(tradingPaused, liquidationPaused, settlementPaused, collateralOpsPaused);
-        }
+        _setSinglePause(2, true);
     }
 
     function unpauseSettlement() external onlyOwner {
-        if (settlementPaused) {
-            settlementPaused = false;
-            emit SettlementPauseSet(false);
-            emit EmergencyModeUpdated(tradingPaused, liquidationPaused, settlementPaused, collateralOpsPaused);
-        }
+        _setSinglePause(2, false);
     }
 
     /// @notice Emergency freeze of collateral ops only.
     /// @dev Blocks deposit/withdraw wrappers but preserves the possibility of selectively keeping other protocol flows alive.
     function pauseCollateralOps() external onlyGuardianOrOwner {
-        if (!collateralOpsPaused) {
-            collateralOpsPaused = true;
-            emit CollateralOpsPauseSet(true);
-            emit EmergencyModeUpdated(tradingPaused, liquidationPaused, settlementPaused, collateralOpsPaused);
-        }
+        _setSinglePause(3, true);
     }
 
     function unpauseCollateralOps() external onlyOwner {
-        if (collateralOpsPaused) {
-            collateralOpsPaused = false;
-            emit CollateralOpsPauseSet(false);
-            emit EmergencyModeUpdated(tradingPaused, liquidationPaused, settlementPaused, collateralOpsPaused);
-        }
+        _setSinglePause(3, false);
     }
 
     /// @notice Sets all granular emergency flags at once.

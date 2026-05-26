@@ -38,8 +38,6 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
                                 LOCAL CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    uint256 internal constant _ME_PRICE_1E8 = 1e8;
-    uint256 internal constant _ME_MAX_POW10_EXP = 77;
     uint8 internal constant SERIES_ACTIVATION_ACTIVE = 0;
     uint8 internal constant SERIES_ACTIVATION_RESTRICTED = 1;
     uint8 internal constant SERIES_ACTIVATION_INACTIVE = 2;
@@ -239,16 +237,6 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
                           INTERNAL PURE HELPERS
     //////////////////////////////////////////////////////////////*/
 
-    function _meEnsureQtyAllowed(int128 q) internal pure {
-        if (q == type(int128).min) revert QuantityMinNotAllowed();
-    }
-
-    function _meMulChecked(uint256 a, uint256 b) internal pure returns (uint256 c) {
-        if (a == 0 || b == 0) return 0;
-        c = a * b;
-        if (c / a != b) revert MathOverflow();
-    }
-
     function _meTryMul(uint256 a, uint256 b) internal pure returns (uint256 c, bool ok) {
         if (a == 0 || b == 0) return (0, true);
         unchecked {
@@ -256,16 +244,6 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         }
         if (c / a != b) return (0, false);
         return (c, true);
-    }
-
-    function _mePow10(uint256 exp) internal pure returns (uint256) {
-        if (exp > _ME_MAX_POW10_EXP) revert MathOverflow();
-        return 10 ** exp;
-    }
-
-    function _meAddChecked(uint256 a, uint256 b) internal pure returns (uint256 c) {
-        c = a + b;
-        if (c < a) revert MathOverflow();
     }
 
     function _meSubChecked(uint256 a, uint256 b) internal pure returns (uint256 c) {
@@ -301,27 +279,39 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         bool settlementPaused_,
         bool collateralOpsPaused_
     ) internal {
-        if (tradingPaused != tradingPaused_) {
-            tradingPaused = tradingPaused_;
-            emit TradingPauseSet(tradingPaused_);
-        }
-
-        if (liquidationPaused != liquidationPaused_) {
-            liquidationPaused = liquidationPaused_;
-            emit LiquidationPauseSet(liquidationPaused_);
-        }
-
-        if (settlementPaused != settlementPaused_) {
-            settlementPaused = settlementPaused_;
-            emit SettlementPauseSet(settlementPaused_);
-        }
-
-        if (collateralOpsPaused != collateralOpsPaused_) {
-            collateralOpsPaused = collateralOpsPaused_;
-            emit CollateralOpsPauseSet(collateralOpsPaused_);
-        }
-
+        _setSinglePauseNoAggregate(0, tradingPaused_);
+        _setSinglePauseNoAggregate(1, liquidationPaused_);
+        _setSinglePauseNoAggregate(2, settlementPaused_);
+        _setSinglePauseNoAggregate(3, collateralOpsPaused_);
         emit EmergencyModeUpdated(tradingPaused, liquidationPaused, settlementPaused, collateralOpsPaused);
+    }
+
+    /// @dev Branch-table helper used by every pause/unpause entrypoint. Kinds:
+    ///   0 = trading, 1 = liquidation, 2 = settlement, 3 = collateral ops.
+    /// Writes the flag, emits the per-kind event, then emits the aggregate event.
+    function _setSinglePause(uint8 kind, bool to) internal {
+        _setSinglePauseNoAggregate(kind, to);
+        emit EmergencyModeUpdated(tradingPaused, liquidationPaused, settlementPaused, collateralOpsPaused);
+    }
+
+    function _setSinglePauseNoAggregate(uint8 kind, bool to) private {
+        if (kind == 0) {
+            if (tradingPaused == to) return;
+            tradingPaused = to;
+            emit TradingPauseSet(to);
+        } else if (kind == 1) {
+            if (liquidationPaused == to) return;
+            liquidationPaused = to;
+            emit LiquidationPauseSet(to);
+        } else if (kind == 2) {
+            if (settlementPaused == to) return;
+            settlementPaused = to;
+            emit SettlementPauseSet(to);
+        } else {
+            if (collateralOpsPaused == to) return;
+            collateralOpsPaused = to;
+            emit CollateralOpsPauseSet(to);
+        }
     }
 
     function _setGuardian(address guardian_) internal {
@@ -364,8 +354,8 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     }
 
     function _updateOpenSeriesOnChange(address trader, uint256 optionId, int128 oldQty, int128 newQty) internal {
-        _meEnsureQtyAllowed(oldQty);
-        _meEnsureQtyAllowed(newQty);
+        _ensureQtyAllowed(oldQty);
+        _ensureQtyAllowed(newQty);
 
         if (oldQty == 0 && newQty != 0) {
             _addOpenSeries(trader, optionId);
@@ -375,8 +365,8 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     }
 
     function _updateTotalShortContracts(address trader, int128 oldQty, int128 newQty) internal {
-        _meEnsureQtyAllowed(oldQty);
-        _meEnsureQtyAllowed(newQty);
+        _ensureQtyAllowed(oldQty);
+        _ensureQtyAllowed(newQty);
 
         uint256 oldShort = oldQty < 0 ? _absInt128(oldQty) : 0;
         uint256 newShort = newQty < 0 ? _absInt128(newQty) : 0;
@@ -384,15 +374,15 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         uint256 cur = totalShortContracts[trader];
 
         if (newShort >= oldShort) {
-            totalShortContracts[trader] = _meAddChecked(cur, newShort - oldShort);
+            totalShortContracts[trader] = _addChecked(cur, newShort - oldShort);
         } else {
             totalShortContracts[trader] = _meSubChecked(cur, oldShort - newShort);
         }
     }
 
     function _updateSeriesShortOpenInterest(uint256 optionId, int128 oldQty, int128 newQty) internal {
-        _meEnsureQtyAllowed(oldQty);
-        _meEnsureQtyAllowed(newQty);
+        _ensureQtyAllowed(oldQty);
+        _ensureQtyAllowed(newQty);
 
         uint256 oldShort = oldQty < 0 ? _absInt128(oldQty) : 0;
         uint256 newShort = newQty < 0 ? _absInt128(newQty) : 0;
@@ -400,7 +390,7 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         uint256 cur = seriesShortOpenInterest[optionId];
 
         if (newShort >= oldShort) {
-            seriesShortOpenInterest[optionId] = _meAddChecked(cur, newShort - oldShort);
+            seriesShortOpenInterest[optionId] = _addChecked(cur, newShort - oldShort);
         } else {
             seriesShortOpenInterest[optionId] = _meSubChecked(cur, oldShort - newShort);
         }
@@ -428,7 +418,7 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     function _requireSettlementAssetConfigured(address settlementAsset) internal view {
         CollateralVault.CollateralTokenConfig memory cfg = _vaultCfg(settlementAsset);
         if (!cfg.isSupported || cfg.decimals == 0) revert SettlementAssetNotConfigured();
-        if (uint256(cfg.decimals) > _ME_MAX_POW10_EXP) revert DecimalsOverflow(settlementAsset);
+        if (uint256(cfg.decimals) > MAX_POW10_EXP) revert DecimalsOverflow(settlementAsset);
     }
 
     function _price1e8ToSettlementUnits(address settlementAsset, uint256 value1e8)
@@ -438,10 +428,10 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
     {
         CollateralVault.CollateralTokenConfig memory cfg = _vaultCfg(settlementAsset);
         if (!cfg.isSupported || cfg.decimals == 0) revert SettlementAssetNotConfigured();
-        if (uint256(cfg.decimals) > _ME_MAX_POW10_EXP) revert DecimalsOverflow(settlementAsset);
+        if (uint256(cfg.decimals) > MAX_POW10_EXP) revert DecimalsOverflow(settlementAsset);
 
-        uint256 scale = _mePow10(uint256(cfg.decimals));
-        valueNative = Math.mulDiv(value1e8, scale, _ME_PRICE_1E8, Math.Rounding.Floor);
+        uint256 scale = _pow10(uint256(cfg.decimals));
+        valueNative = Math.mulDiv(value1e8, scale, PRICE_1E8, Math.Rounding.Floor);
     }
 
     function _requireBaseConfigured() internal view {
@@ -500,7 +490,7 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         if (quantity == 0) return 0;
 
         uint256 strikePerContractNative = _price1e8ToSettlementUnits(s.settlementAsset, uint256(s.strike));
-        notionalImplicit = _meMulChecked(quantity, strikePerContractNative);
+        notionalImplicit = _mulChecked(quantity, strikePerContractNative);
     }
 
     function _quoteHybridFee(address trader, bool isMaker, uint256 premium, uint256 notionalImplicit)
@@ -515,101 +505,9 @@ abstract contract MarginEngineStorage is MarginEngineTypes, ReentrancyGuard, IMa
         return fm.quoteFee(trader, isMaker, premium, notionalImplicit);
     }
 
-    /// @dev Converts a value in base token native units into `token` native units, rounding up conservatively.
-    ///      Best-effort helper intended for liquidation paths. Returns (0,false) on unavailable price path.
-    function _baseValueToTokenAmountUp(address token, uint256 baseValue)
-        internal
-        view
-        returns (uint256 amtToken, bool ok)
-    {
-        if (baseValue == 0) return (0, true);
-        if (token == address(0)) return (0, false);
-
-        if (token == baseCollateralToken) {
-            return (baseValue, true);
-        }
-
-        CollateralVault.CollateralTokenConfig memory baseCfg = _vaultCfg(baseCollateralToken);
-        CollateralVault.CollateralTokenConfig memory tokCfg = _vaultCfg(token);
-
-        if (!baseCfg.isSupported || baseCfg.decimals == 0) return (0, false);
-        if (!tokCfg.isSupported || tokCfg.decimals == 0) return (0, false);
-        if (uint256(baseCfg.decimals) > _ME_MAX_POW10_EXP) revert DecimalsOverflow(baseCollateralToken);
-        if (uint256(tokCfg.decimals) > _ME_MAX_POW10_EXP) revert DecimalsOverflow(token);
-
-        uint256 px;
-        uint256 updatedAt;
-        try _oracle.getPrice(token, baseCollateralToken) returns (uint256 _p, uint256 _u) {
-            px = _p;
-            updatedAt = _u;
-        } catch {
-            return (0, false);
-        }
-        if (px == 0) return (0, false);
-
-        uint32 maxDelay = liquidationOracleMaxDelay;
-        if (maxDelay > 0) {
-            if (updatedAt == 0) return (0, false);
-            if (updatedAt > block.timestamp) return (0, false);
-            if (block.timestamp - updatedAt > maxDelay) return (0, false);
-        }
-
-        uint8 baseDec = baseCfg.decimals;
-        uint8 tokDec = tokCfg.decimals;
-
-        uint256 sameDec = Math.mulDiv(baseValue, _ME_PRICE_1E8, px, Math.Rounding.Ceil);
-
-        if (tokDec == baseDec) {
-            return (sameDec, true);
-        }
-
-        if (tokDec > baseDec) {
-            uint256 factor = _mePow10(uint256(tokDec - baseDec));
-            (uint256 mul, bool okMul) = _meTryMul(sameDec, factor);
-            if (!okMul) return (0, false);
-            return (mul, true);
-        }
-
-        uint256 factor2 = _mePow10(uint256(baseDec - tokDec));
-        amtToken = (sameDec + (factor2 - 1)) / factor2;
-        return (amtToken, true);
-    }
-
-    /// @dev Approximate conservative DOWN conversion of `tokenAmount` into base token native units.
-    function _tokenAmountToBaseValueDown(address token, uint256 tokenAmount, uint256 pxTokBase)
-        internal
-        view
-        returns (uint256 baseValue)
-    {
-        if (tokenAmount == 0) return 0;
-        if (token == baseCollateralToken) return tokenAmount;
-
-        CollateralVault.CollateralTokenConfig memory baseCfg = _vaultCfg(baseCollateralToken);
-        CollateralVault.CollateralTokenConfig memory tokCfg = _vaultCfg(token);
-
-        if (!baseCfg.isSupported || baseCfg.decimals == 0) return 0;
-        if (!tokCfg.isSupported || tokCfg.decimals == 0) return 0;
-
-        if (uint256(baseCfg.decimals) > _ME_MAX_POW10_EXP) revert DecimalsOverflow(baseCollateralToken);
-        if (uint256(tokCfg.decimals) > _ME_MAX_POW10_EXP) revert DecimalsOverflow(token);
-
-        uint8 baseDec = baseCfg.decimals;
-        uint8 tokDec = tokCfg.decimals;
-
-        uint256 num = Math.mulDiv(tokenAmount, pxTokBase, _ME_PRICE_1E8, Math.Rounding.Floor);
-
-        if (tokDec == baseDec) return num;
-
-        if (baseDec > tokDec) {
-            uint256 factor = _mePow10(uint256(baseDec - tokDec));
-            (uint256 mul, bool okMul) = _meTryMul(num, factor);
-            if (!okMul) return 0;
-            return mul;
-        }
-
-        uint256 factor2 = _mePow10(uint256(tokDec - baseDec));
-        return num / factor2;
-    }
+    // Heavy decimal/oracle conversion helpers used by the liquidation seizure loop have been
+    // extracted into `MarginEngineSeizureLib` so the engine bytecode stays under the EIP-170 limit.
+    // Callers in `MarginEngineOps.liquidate` invoke the library directly.
 
     /*//////////////////////////////////////////////////////////////
                         INTERNAL READ HELPERS FOR VIEWS

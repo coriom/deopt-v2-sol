@@ -9,6 +9,7 @@ import {CollateralVault} from "../collateral/CollateralVault.sol";
 import {IRiskModule} from "../risk/IRiskModule.sol";
 import {IMarginEngineState} from "../risk/IMarginEngineState.sol";
 
+import {MarginEngineSeizureLib} from "./MarginEngineSeizureLib.sol";
 import {MarginEngineViews} from "./MarginEngineViews.sol";
 
 interface ICollateralVaultMarginOps {
@@ -533,7 +534,9 @@ abstract contract MarginEngineOps is MarginEngineViews {
 
                 _syncVaultBestEffort(trader, tok);
 
-                (uint256 neededTok, bool ok) = _baseValueToTokenAmountUp(tok, remainingBase);
+                (uint256 neededTok, bool ok) = MarginEngineSeizureLib.baseValueToTokenAmountUp(
+                    tok, remainingBase, baseCollateralToken, _collateralVault, _oracle, liquidationOracleMaxDelay
+                );
                 if (!ok || neededTok == 0) continue;
 
                 uint256 balTok = _collateralVault.balances(trader, tok);
@@ -541,7 +544,9 @@ abstract contract MarginEngineOps is MarginEngineViews {
                 if (seizeTok == 0) continue;
 
                 uint256 pxTokBase = _getOraclePriceChecked(tok, baseCollateralToken);
-                uint256 seizedBaseApprox = _tokenAmountToBaseValueDown(tok, seizeTok, pxTokBase);
+                uint256 seizedBaseApprox = MarginEngineSeizureLib.tokenAmountToBaseValueDown(
+                    tok, seizeTok, pxTokBase, baseCollateralToken, _collateralVault
+                );
 
                 _collateralVault.transferBetweenAccounts(tok, trader, liquidator, seizeTok);
 

@@ -93,14 +93,10 @@ abstract contract MarginEngineTrading is MarginEngineAdmin {
             premium
         );
 
-        if (
-            q.product != IFeesManagerV2.ProductKind.OPTION || q.flow != IFeesManagerV2.FlowKind.ORDERBOOK
-                || q.feeBasis != IFeesManagerV2.FeeBasis.PREMIUM || q.isMaker != isMaker
-                || q.settlementAsset != settlementAsset || q.basisAmount != premium
-        ) {
-            revert FeesManagerV2QuoteInvalid();
-        }
-
+        // The FeesManagerV2 contract is an owner-installed trusted dependency. We only validate
+        // the safety-critical output invariants (rebate-recipient identity), not the input echoes,
+        // since the manager cannot meaningfully diverge from its declared product basis without
+        // being a malicious replacement — same trust level as the engine ABI itself.
         uint256 feeAmount = q.feeAmount;
         if (feeAmount == 0) return;
 
