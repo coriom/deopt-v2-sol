@@ -1,0 +1,178 @@
+{
+  "_comment": "Non-secret template for FeesManagerV2 live rollout on Base Sepolia. Never put private keys here; the operator passes DEPLOYER_PRIVATE_KEY inline at command time. See docs/FEES_MANAGER_V2_LIVE_DEPLOYMENT_RUNBOOK_V2D_H.md and docs/FEES_MANAGER_V2_OPERATOR_DECISIONS_V2D_I.md.",
+  "schemaVersion": 1,
+  "manifestType": "fees-manager-v2-deployment-config-template",
+  "network": "base-sepolia",
+  "chainId": 84532,
+  "status": "template_only_no_live_deployment",
+  "decisionPack": "docs/FEES_MANAGER_V2_OPERATOR_DECISIONS_V2D_I.md",
+
+  "existingContracts": {
+    "MarginEngine": "0x6c5665de05e7314cb63cd77f82dfa86508a5b5f8",
+    "FeesManagerV1": "0xaef73f10224712e1312963be11662061481aa0f0",
+    "InsuranceFund": "0x009f38440f058d095b61e0e2ee7fabdf05be7500",
+    "CollateralVault": "0x00340c360353a5ab784c5bc5c44322a6af0625d3",
+    "ProtocolTimelock": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "RiskGovernor": "0x7918ea95c2791b6b587ff02ae481fa52403877a0",
+    "USDC": "0x6eae407f5640b006fac9965182e238582a3b412e",
+    "currentDeployerOwner": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27"
+  },
+
+  "operatorInputsRequired": {
+    "INITIAL_OWNER": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27 (V2D-I recommendation: deploy as deployer EOA, then transfer ownership to ProtocolTimelock 0xa67f8e8e...3b588 before Phase 7)",
+    "FEES_MANAGER_V2_FEE_RECIPIENT": "<operator treasury / fee collector; MUST be separate from InsuranceFund>",
+    "FEES_MANAGER_V2_REBATE_FUNDING_ACCOUNT": "<rebate funding account; MUST hold real USDC collateral in CollateralVault before negative-maker tiers reachable>"
+  },
+
+  "operatorInputsAfterDeploy": {
+    "FEES_MANAGER_V2_ADDRESS": "<filled in from DeployFeesManagerV2 script output; record here AND in backend env>"
+  },
+
+  "safetyFlags": {
+    "DEPLOY_FEES_MANAGER_V2_CONFIRM": {
+      "default": false,
+      "purpose": "Gates DeployFeesManagerV2 actual deployment."
+    },
+    "FUND_REBATE_BUDGET_CONFIRM": {
+      "default": false,
+      "purpose": "Gates accounting-only rebateBudget seeding at deploy time."
+    },
+    "WIRE_FEES_MANAGER_V2_CONFIRM": {
+      "default": false,
+      "purpose": "Gates MarginEngine.setFeesManagerV2 + FeesManagerV2.setFeeConsumer."
+    },
+    "ENABLE_FEES_MANAGER_V2_CONFIRM": {
+      "default": false,
+      "purpose": "Gates MarginEngine.setUseFeesManagerV2(true). MUST be a separate explicit invocation after every pre-enable check passes."
+    }
+  },
+
+  "launchTierPolicy": {
+    "ratifiedByV2D_I": "everyone_tier0",
+    "default": "everyone_tier0",
+    "description": "V2D-I ratified: do not call setMerkleRoot at launch. merkleRoot stays bytes32(0); every trader resolves to Tier0 (option maker 50 ppm positive, option taker 250 ppm positive). No negative-maker tiers reachable; safe with zero rebate budget.",
+    "alternate": {
+      "name": "single_tier4_claimant_testnet_only",
+      "description": "One-leaf root for an operator-controlled account, validUntil = launch + 24h. Requires funded USDC rebate budget per launchRebatePolicy.alternate. NOT ratified by V2D-I; defer to a later campaign."
+    }
+  },
+
+  "launchRebatePolicy": {
+    "ratifiedByV2D_I": "zero_budget",
+    "default": {
+      "name": "zero_budget",
+      "FEES_MANAGER_V2_INITIAL_REBATE_ASSET": "0x0000000000000000000000000000000000000000",
+      "FEES_MANAGER_V2_INITIAL_REBATE_BUDGET": 0,
+      "description": "Safe default paired with everyone_tier0 launch tier policy. No rebates reachable."
+    },
+    "alternate": {
+      "name": "seeded_usdc_budget",
+      "FEES_MANAGER_V2_INITIAL_REBATE_ASSET": "0x6eae407f5640b006fac9965182e238582a3b412e",
+      "FEES_MANAGER_V2_INITIAL_REBATE_BUDGET": "<USDC native units (6 decimals); size to expected first-day rebate-paying notional * 50 ppm>",
+      "preconditions": [
+        "FUND_REBATE_BUDGET_CONFIRM=true",
+        "FEES_MANAGER_V2_REBATE_FUNDING_ACCOUNT holds >= initial budget in CollateralVault.balances(account, USDC)",
+        "governance has signed off the budget envelope and alert thresholds"
+      ]
+    }
+  },
+
+  "backendEnvUpdate": {
+    "OPTION_EVENT_INDEXER_FEES_MANAGER_V2_ADDRESS": "<deployed FeesManagerV2 address; set after Phase 1 and before Phase 7>",
+    "operatorSteps": [
+      "Update backend env (.env.base-sepolia or equivalent)",
+      "Restart backend indexer",
+      "Confirm /admin/config shows the V2 address",
+      "Confirm /admin/options/events lists the V2 manager",
+      "Confirm /admin/fees/onchain reconciles V1 history without double counting"
+    ]
+  },
+
+  "phases": [
+    {
+      "id": 1,
+      "name": "Deploy FeesManagerV2",
+      "script": "script/DeployFeesManagerV2.s.sol",
+      "requiredFlags": ["DEPLOY_FEES_MANAGER_V2_CONFIRM=true"],
+      "broadcast": "operator_only_after_human_approval"
+    },
+    {
+      "id": 2,
+      "name": "Backend env update",
+      "script": null,
+      "owner": "backend_operator"
+    },
+    {
+      "id": 3,
+      "name": "Wire MarginEngine ↔ FeesManagerV2 (no enable)",
+      "script": "script/WireFeesManagerV2Option.s.sol",
+      "requiredFlags": ["WIRE_FEES_MANAGER_V2_CONFIRM=true"],
+      "broadcast": "operator_only_after_human_approval"
+    },
+    {
+      "id": 4,
+      "name": "Publish initial Merkle root (optional)",
+      "script": null,
+      "owner": "FeesManagerV2.owner (timelock recommended)"
+    },
+    {
+      "id": 5,
+      "name": "Fund rebate budget (optional)",
+      "script": null,
+      "owner": "FeesManagerV2.owner (timelock recommended)"
+    },
+    {
+      "id": 6,
+      "name": "Run pre-enable checks",
+      "script": null,
+      "owner": "operator"
+    },
+    {
+      "id": 7,
+      "name": "Enable V2",
+      "script": "script/WireFeesManagerV2Option.s.sol",
+      "requiredFlags": [
+        "WIRE_FEES_MANAGER_V2_CONFIRM=true",
+        "ENABLE_FEES_MANAGER_V2_CONFIRM=true"
+      ],
+      "broadcast": "operator_only_after_human_approval_and_governance_signoff"
+    },
+    {
+      "id": 8,
+      "name": "Tiny live test trade",
+      "script": null,
+      "owner": "operator"
+    },
+    {
+      "id": 9,
+      "name": "Verify backend lifecycle/admin fees",
+      "script": null,
+      "owner": "backend_operator"
+    }
+  ],
+
+  "rollbackPlan": {
+    "primary": "cast send $MARGIN_ENGINE_ADDRESS 'setUseFeesManagerV2(bool)' false --rpc-url $BASE_SEPOLIA_RPC_URL",
+    "guardian": "MarginEngine guardian may pauseTrading() to halt all option trades if owner key unreachable",
+    "doNotDoList": [
+      "Do not clearFeesManagerV2 on engine",
+      "Do not setFeeConsumer(MarginEngine, false) post-enable",
+      "Do not delete backend event ledger rows"
+    ]
+  },
+
+  "remainingBlockersAfterV2D_I": [
+    "FEES_MANAGER_V2_FEE_RECIPIENT operator-supplied (must differ from InsuranceFund and MarginEngine)",
+    "FEES_MANAGER_V2_REBATE_FUNDING_ACCOUNT operator-supplied (may equal treasury since unused at launch)",
+    "Live cast call MarginEngine.owner() confirms 0xc35F7A8A103A9A4464adfaa76B9B514093D23C27"
+  ],
+  "decidedByV2D_I": [
+    "INITIAL_OWNER = deployer EOA 0xc35F7A8A103A9A4464adfaa76B9B514093D23C27, then transferOwnership to ProtocolTimelock 0xa67f8e8e...3b588 before Phase 7",
+    "Launch tier policy = everyone_tier0 (no setMerkleRoot)",
+    "Initial USDC rebate budget = 0; negative-maker tiers unreachable",
+    "Backend env name = OPTION_EVENT_INDEXER_FEES_MANAGER_V2_ADDRESS",
+    "Tiny test trade = positive-fee only (Tier0 maker + Tier0 taker)",
+    "Phases 1, 2, 3, 7, 8 are separate operator actions; never combined",
+    "Perp wiring deferred until WireFeesManagerV2Perp.s.sol ships"
+  ]
+}
