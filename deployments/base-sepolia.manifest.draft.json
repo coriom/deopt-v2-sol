@@ -266,5 +266,35 @@
     "forge_build": "PASS",
     "forge_test": "PASS",
     "json_tool": "PASS"
+  },
+  "marginEngineV2Phase1": {
+    "marginEngineOld": "0x6C5665De05e7314cB63cD77F82DFa86508A5b5F8",
+    "marginEngineV2": "0x287Cef479be5889eEfCa847F9e73C860898f48Cc",
+    "marginEngineSeizureLib": "0xEb7530Cf6f51930681545f90A18817Cf8fF55b2C",
+    "marginEngineV2DeployBlock": 42072418,
+    "marginEngineV2Status": "deployed_not_rewired",
+    "deployer": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+    "phase1ResultDoc": "docs/MARGIN_ENGINE_V2_PHASE1_HUMAN_BROADCAST_RESULT_V2D_P.md",
+    "marginEngineV2Phase1TxHashes": [
+      "0x4258e088147812fc516e34abc8864ef77ecdc622a6e34ae8b56d17c811bfd8ae",
+      "0x3bf4fd1398b5053142db8a5169d99c098011a1e9da4863feb6f89fd3137aa6e0",
+      "0x76b783da9feea10b77139222aa9b38130b470823afca6fe4574e7b909bb1d8e9",
+      "0x213c1ab5b6f27f86e1dcdfc8777da446ae3d35c692d92b23c18252f3e122d591",
+      "0x607619e2e84164db8695ad1261945f8e2c0a54308bf12dca1b2d048a96d2a77f",
+      "0x47de12d1b18fc6a767ab2755c27756b1b7b40091814ad5f99bada1d39ad0f211",
+      "0x45dc4e22300399143598c14a68724e28dfd3e12e8aaba09a6d4687219df08885",
+      "0xa3423ab1687285f5ba9bdf558a42fbe71c3aa28519fe926bb3a4f8fa79de801e",
+      "0xc04cecbd72f88bd922eaf7f43faf0ca3658e05046b199d86391244ecabf8bd81",
+      "0x7999b0bce1247e45037ebe510b269c84b0fe1f07fb9562989059097234b5b31d",
+      "0x33351d9e93e37e8b667208190a9fe63b697a08d7b18f2955529c5879c133087c",
+      "0x316aea394e1b0ff5f8bfa53ce57c40db9f351ab5d7ae1497bd8bd119b792127c"
+    ],
+    "marginEngineV2Phase1GasUsed": 6542520,
+    "phase2Pending": {
+      "name": "rewire",
+      "approvalDoc": "docs/MARGIN_ENGINE_V2_REWIRE_READINESS_V2D_Q.md",
+      "rewireScript": "script/RewireMarginEngineV2.s.sol:RewireMarginEngineV2",
+      "blockedOnHumanApproval": true
+    }
   }
 }
