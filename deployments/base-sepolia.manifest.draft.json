@@ -272,7 +272,7 @@
     "marginEngineV2": "0x287Cef479be5889eEfCa847F9e73C860898f48Cc",
     "marginEngineSeizureLib": "0xEb7530Cf6f51930681545f90A18817Cf8fF55b2C",
     "marginEngineV2DeployBlock": 42072418,
-    "marginEngineV2Status": "deployed_not_rewired",
+    "marginEngineV2Status": "rewired_v2_disabled",
     "deployer": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
     "phase1ResultDoc": "docs/MARGIN_ENGINE_V2_PHASE1_HUMAN_BROADCAST_RESULT_V2D_P.md",
     "marginEngineV2Phase1TxHashes": [
@@ -289,11 +289,48 @@
       "0x33351d9e93e37e8b667208190a9fe63b697a08d7b18f2955529c5879c133087c",
       "0x316aea394e1b0ff5f8bfa53ce57c40db9f351ab5d7ae1497bd8bd119b792127c"
     ],
-    "marginEngineV2Phase1GasUsed": 6542520,
-    "phase2Pending": {
-      "name": "rewire",
-      "approvalDoc": "docs/MARGIN_ENGINE_V2_REWIRE_READINESS_V2D_Q.md",
-      "rewireScript": "script/RewireMarginEngineV2.s.sol:RewireMarginEngineV2",
+    "marginEngineV2Phase1GasUsed": 6542520
+  },
+  "marginEngineV2Phase2Rewire": {
+    "status": "rewired_v2_disabled",
+    "marginEngineCutoverBlock": 42073772,
+    "cutoverBlockRange": [42073764, 42073772],
+    "rewireResultDoc": "docs/MARGIN_ENGINE_V2_REWIRE_BROADCAST_RESULT_V2D_R.md",
+    "rewireScript": "script/RewireMarginEngineV2.s.sol:RewireMarginEngineV2",
+    "rewireBroadcastedBy": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+    "rewireTxHashes": [
+      "0x1db0e3684c77fdc25fcdc8064934a62e1fbe58383eecd6176fb1f311bb24366f",
+      "0x5762c3f10ab926649bda8eba2b18783bc3ff6923d39aa88f5f104a0042a78e13",
+      "0x804ccecbbb0356a814efa261ca55744da7683dd196a50e33e2e85df201b1e2c5",
+      "0x6caf5a02a4d8b9eadc64bf5fabc6df1c40223db13c92b26568770e16ee04e902",
+      "0x964b9ce4734ea14c90c0924c7bb29a7aef9477df9f237ce289a931485d220fee",
+      "0x07555782bab15286fa7567909ba26eb374d776bc82a185f799d29b6235dc74ed",
+      "0x9611810f8c1f94883eeaa5ad852cfad19fe1c8dc86eca028c4a844539e997d68",
+      "0xd929c8ad6bf6d756ba16e8bed10ea91f6197627b65cd81df72b1b75efc6ec577",
+      "0xc67ac50390438f93e8417d600da3aec1b9f2c5244d6e1854caf78e5f99e1dbf3"
+    ],
+    "postRewireReads": {
+      "CollateralVault.marginEngine": "0x287Cef479be5889eEfCa847F9e73C860898f48Cc",
+      "CollateralVault.isAuthorizedEngine_OLD": false,
+      "CollateralVault.isAuthorizedEngine_NEW": true,
+      "RiskModule.marginEngine": "0x287Cef479be5889eEfCa847F9e73C860898f48Cc",
+      "MatchingEngine.marginEngine": "0x287Cef479be5889eEfCa847F9e73C860898f48Cc",
+      "OptionMatchingEngine.marginEngine": "0x287Cef479be5889eEfCa847F9e73C860898f48Cc",
+      "InsuranceFund.isBackstopCaller_OLD": false,
+      "InsuranceFund.isBackstopCaller_NEW": true,
+      "RiskGovernor.marginEngine": "0x287Cef479be5889eEfCa847F9e73C860898f48Cc",
+      "NEW.useFeesManagerV2": false,
+      "NEW.feesManagerV2": "0x0000000000000000000000000000000000000000",
+      "NEW.feesManager_V1": "0xaef73F10224712E1312963BE11662061481aA0F0"
+    },
+    "phase3Pending": {
+      "name": "backend_cutover",
+      "approvalDoc": "docs/MARGIN_ENGINE_V2_REWIRE_BROADCAST_RESULT_V2D_R.md",
+      "ownedBy": "deopt-v2-backend operator",
+      "envUpdate": {
+        "MARGIN_ENGINE": "0x287Cef479be5889eEfCa847F9e73C860898f48Cc",
+        "OPTION_EVENT_INDEXER_MARGIN_ENGINE_ADDRESS": "0x287Cef479be5889eEfCa847F9e73C860898f48Cc"
+      },
       "blockedOnHumanApproval": true
     }
   }
