@@ -30,6 +30,10 @@
     "ProtocolTimelock": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
     "RiskGovernor": "0x7918ea95c2791b6b587ff02ae481fa52403877a0"
   },
+  "feesManagerV2": "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f",
+  "feesManagerV2Status": "deployed_not_wired",
+  "feesManagerV2FeeRecipient": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+  "feesManagerV2RebateFundingAccount": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
   "option_matching_engine": {
     "deployment_status": "not_found_in_local_base_sepolia_broadcast_artifacts",
     "intended_constructor_margin_engine": "0x6c5665de05e7314cb63cd77f82dfa86508a5b5f8",
