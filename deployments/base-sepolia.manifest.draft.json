@@ -31,10 +31,30 @@
     "RiskGovernor": "0x7918ea95c2791b6b587ff02ae481fa52403877a0"
   },
   "feesManagerV2": "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f",
-  "feesManagerV2Status": "wired_disabled",
+  "feesManagerV2Status": "enabled",
   "feesManagerV2WiredToMarginEngine": "0x287Cef479be5889eEfCa847F9e73C860898f48Cc",
+  "feesManagerV2EnabledOnMarginEngine": "0x287Cef479be5889eEfCa847F9e73C860898f48Cc",
+  "feesManagerV2EnableTxHash": "0x10c1acff8c496ee5b056b4cddb890bfdaef195569d7f16d04e12b6b6761a142d",
+  "feesManagerV2EnableBlock": 42118523,
+  "feesManagerV2EnableGasUsed": 30718,
+  "feesManagerV2EnableResultDoc": "docs/FEES_MANAGER_V2_ENABLE_BROADCAST_RESULT_V2E_E.md",
   "feesManagerV2FeeRecipient": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
   "feesManagerV2RebateFundingAccount": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+  "feesManagerV2PostEnableReads": {
+    "NEW.feesManagerV2": "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f",
+    "NEW.useFeesManagerV2": true,
+    "FeesManagerV2.isFeeConsumer_NEW": true,
+    "FeesManagerV2.merkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "FeesManagerV2.rebateBudget_baseCollateral": "0"
+  },
+  "feesManagerV2EnableOnlyProof": {
+    "transactionCount": 1,
+    "target": "0x287Cef479be5889eEfCa847F9e73C860898f48Cc",
+    "function": "setUseFeesManagerV2(bool)",
+    "calldata": "0x74304b2a0000000000000000000000000000000000000000000000000000000000000001",
+    "noSetFeesManagerV2": true,
+    "noSetFeeConsumer": true
+  },
   "option_matching_engine": {
     "deployment_status": "not_found_in_local_base_sepolia_broadcast_artifacts",
     "intended_constructor_margin_engine": "0x6c5665de05e7314cb63cd77f82dfa86508a5b5f8",
