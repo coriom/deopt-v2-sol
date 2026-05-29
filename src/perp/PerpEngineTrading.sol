@@ -7,6 +7,7 @@ import {IOracle} from "../oracle/IOracle.sol";
 import "../matching/IPerpEngineTrade.sol";
 import "../liquidation/ICollateralSeizer.sol";
 import "./PerpEngineViews.sol";
+import {PerpEngineSeizureLib} from "./PerpEngineSeizureLib.sol";
 
 interface IInsuranceFundPerpBackstop {
     function coverVaultShortfall(address token, address toAccount, uint256 requestedAmount)
@@ -47,58 +48,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         internal
         returns (uint256 paidBase)
     {
-        if (targetBase == 0) return 0;
-
-        (ICollateralSeizer seizer, bool hasSeizer) = _tryResolveCollateralSeizer();
-        if (!hasSeizer) return 0;
-
-        address[] memory tokens;
-        uint256[] memory amounts;
-        uint256 plannedCoveredBase;
-
-        try seizer.computeSeizurePlan(trader, targetBase) returns (
-            address[] memory tokensOut, uint256[] memory amountsOut, uint256 baseCovered
-        ) {
-            if (tokensOut.length != amountsOut.length) return 0;
-            if (tokensOut.length == 0 || baseCovered == 0) return 0;
-
-            tokens = tokensOut;
-            amounts = amountsOut;
-            plannedCoveredBase = baseCovered;
-        } catch {
-            return 0;
-        }
-
-        uint256 len = tokens.length;
-        for (uint256 i = 0; i < len; i++) {
-            address token = tokens[i];
-            uint256 plannedAmount = amounts[i];
-
-            if (token == address(0) || plannedAmount == 0) continue;
-
-            _syncVaultBestEffort(trader, token);
-
-            uint256 bal = _collateralVault.balances(trader, token);
-            uint256 transferAmt = plannedAmount <= bal ? plannedAmount : bal;
-            if (transferAmt == 0) continue;
-
-            _collateralVault.transferBetweenAccounts(token, trader, liquidator, transferAmt);
-
-            try seizer.previewEffectiveBaseValue(token, transferAmt) returns (
-                uint256, uint256 effectiveBaseFloor, bool okPreview
-            ) {
-                if (okPreview && effectiveBaseFloor != 0) {
-                    paidBase += effectiveBaseFloor;
-                }
-            } catch {}
-        }
-
-        if (paidBase > plannedCoveredBase) {
-            paidBase = plannedCoveredBase;
-        }
-        if (paidBase > targetBase) {
-            paidBase = targetBase;
-        }
+        return PerpEngineSeizureLib.trySeizeViaPlan(_collateralSeizer, _collateralVault, trader, liquidator, targetBase);
     }
 
     function _seizePenaltyToLiquidator(address trader, address liquidator, address settlementAsset, uint256 penaltyBase)
@@ -198,51 +148,11 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         uint256 incomingNative
     ) internal {
         if (incomingNative == 0) return;
-        if (!_hasResidualBadDebt(receiver) || payer == receiver) {
-            _collateralVault.transferBetweenAccounts(settlementAsset, payer, receiver, incomingNative);
-            return;
-        }
 
-        address recipient = _resolvedBadDebtRepaymentRecipient();
-        uint256 outstandingBase = _residualBadDebtOf(receiver);
-        if (outstandingBase == 0 || recipient == address(0) || recipient == receiver) {
-            _collateralVault.transferBetweenAccounts(settlementAsset, payer, receiver, incomingNative);
-            return;
-        }
-
-        uint256 incomingBase = _settlementNativeToBase(settlementAsset, incomingNative);
-        if (incomingBase == 0) {
-            _collateralVault.transferBetweenAccounts(settlementAsset, payer, receiver, incomingNative);
-            return;
-        }
-
-        uint256 requestedRepayBase = outstandingBase < incomingBase ? outstandingBase : incomingBase;
-        if (requestedRepayBase == 0) {
-            _collateralVault.transferBetweenAccounts(settlementAsset, payer, receiver, incomingNative);
-            return;
-        }
-
-        uint256 repayNative;
-        if (settlementAsset == _baseToken()) {
-            repayNative = requestedRepayBase <= incomingNative ? requestedRepayBase : incomingNative;
-        } else {
-            repayNative = _penaltySettlementNative(settlementAsset, requestedRepayBase);
-            if (repayNative > incomingNative) {
-                repayNative = incomingNative;
-            }
-        }
+        (uint256 repayNative, uint256 actualRepaidBase, uint256 requestedRepayBase, address recipient) =
+            _computeBadDebtIntercept(settlementAsset, payer, receiver, incomingNative);
 
         if (repayNative == 0) {
-            _collateralVault.transferBetweenAccounts(settlementAsset, payer, receiver, incomingNative);
-            return;
-        }
-
-        uint256 actualRepaidBase = _settlementNativeToBase(settlementAsset, repayNative);
-        if (actualRepaidBase > outstandingBase) {
-            actualRepaidBase = outstandingBase;
-        }
-
-        if (actualRepaidBase == 0) {
             _collateralVault.transferBetweenAccounts(settlementAsset, payer, receiver, incomingNative);
             return;
         }
@@ -258,6 +168,38 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         emit ResidualBadDebtRepaid(
             payer, receiver, recipient, requestedRepayBase, actualRepaidBase, _residualBadDebtOf(receiver)
         );
+    }
+
+    function _computeBadDebtIntercept(address settlementAsset, address payer, address receiver, uint256 incomingNative)
+        internal
+        view
+        returns (uint256 repayNative, uint256 actualRepaidBase, uint256 requestedRepayBase, address recipient)
+    {
+        if (!_hasResidualBadDebt(receiver) || payer == receiver) return (0, 0, 0, address(0));
+
+        recipient = _resolvedBadDebtRepaymentRecipient();
+        uint256 outstandingBase = _residualBadDebtOf(receiver);
+        if (outstandingBase == 0 || recipient == address(0) || recipient == receiver) {
+            return (0, 0, 0, address(0));
+        }
+
+        uint256 incomingBase = _settlementNativeToBase(settlementAsset, incomingNative);
+        if (incomingBase == 0) return (0, 0, 0, address(0));
+
+        requestedRepayBase = outstandingBase < incomingBase ? outstandingBase : incomingBase;
+        if (requestedRepayBase == 0) return (0, 0, 0, address(0));
+
+        if (settlementAsset == _baseToken()) {
+            repayNative = requestedRepayBase <= incomingNative ? requestedRepayBase : incomingNative;
+        } else {
+            repayNative = _penaltySettlementNative(settlementAsset, requestedRepayBase);
+            if (repayNative > incomingNative) repayNative = incomingNative;
+        }
+        if (repayNative == 0) return (0, 0, 0, address(0));
+
+        actualRepaidBase = _settlementNativeToBase(settlementAsset, repayNative);
+        if (actualRepaidBase > outstandingBase) actualRepaidBase = outstandingBase;
+        if (actualRepaidBase == 0) return (0, 0, 0, address(0));
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -554,29 +496,24 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         _updateMarketOpenInterest(t.marketId, oldSeller.size1e8, newSeller.size1e8);
         _enforceLaunchOpenInterestCapIfIncreasing(t.marketId, previousOpenInterest1e8);
 
-        {
-            MarketState memory s = _marketStates[t.marketId];
-            uint256 oi = s.longOpenInterest1e8 > s.shortOpenInterest1e8 ? s.longOpenInterest1e8 : s.shortOpenInterest1e8;
-            if (oi > uint256(rcfg.maxOpenInterest1e8)) revert SizeTooLarge();
-        }
+        _enforceMaxOpenInterest(t.marketId, uint256(rcfg.maxOpenInterest1e8));
 
-        if (useFeesManagerV2) {
-            uint256 notional1e8 = _mulDivFloor(uint256(t.sizeDelta1e8), uint256(t.executionPrice1e8), PRICE_1E8);
-            uint256 notionalNative = _value1e8ToSettlementNative(m.settlementAsset, notional1e8);
+        if (useFeesManagerV2 || address(feesManager) != address(0)) {
+            uint256 notionalNative = _value1e8ToSettlementNative(
+                m.settlementAsset, _mulDivFloor(uint256(t.sizeDelta1e8), uint256(t.executionPrice1e8), PRICE_1E8)
+            );
 
-            _chargeTradingFeeV2(t.buyer, t.seller, t.buyerIsMaker, m.settlementAsset, notionalNative);
-            _chargeTradingFeeV2(t.seller, t.buyer, !t.buyerIsMaker, m.settlementAsset, notionalNative);
-        } else if (address(feesManager) != address(0)) {
-            address recipient = _resolvedFeeRecipient();
-            if (recipient == address(0)) revert FeesManagerNotSet();
-            if (recipient == t.buyer || recipient == t.seller) revert InvalidTrade();
+            if (useFeesManagerV2) {
+                _chargeTradingFeeV2(t.buyer, t.seller, t.buyerIsMaker, m.settlementAsset, notionalNative);
+                _chargeTradingFeeV2(t.seller, t.buyer, !t.buyerIsMaker, m.settlementAsset, notionalNative);
+            } else {
+                address recipient = _resolvedFeeRecipient();
+                if (recipient == address(0)) revert FeesManagerNotSet();
+                if (recipient == t.buyer || recipient == t.seller) revert InvalidTrade();
 
-            uint256 notional1e8 = _mulDivFloor(uint256(t.sizeDelta1e8), uint256(t.executionPrice1e8), PRICE_1E8);
-
-            uint256 notionalNative = _value1e8ToSettlementNative(m.settlementAsset, notional1e8);
-
-            _chargeTradingFee(t.buyer, t.buyerIsMaker, m.settlementAsset, t.marketId, notionalNative, recipient);
-            _chargeTradingFee(t.seller, !t.buyerIsMaker, m.settlementAsset, t.marketId, notionalNative, recipient);
+                _chargeTradingFee(t.buyer, t.buyerIsMaker, m.settlementAsset, t.marketId, notionalNative, recipient);
+                _chargeTradingFee(t.seller, !t.buyerIsMaker, m.settlementAsset, t.marketId, notionalNative, recipient);
+            }
         }
 
         emit TradeExecuted(t.buyer, t.seller, t.marketId, t.sizeDelta1e8, t.executionPrice1e8, t.buyerIsMaker);
@@ -625,41 +562,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         Position memory oldTraderPos = _positions[trader][marketId];
         if (oldTraderPos.size1e8 == 0) revert LiquidationNothingToDo();
 
-        uint256 markPrice1e8;
-        {
-            PerpMarketRegistry.Market memory mm = _requireMarketExists(marketId);
-            IOracle o = _marketOracle(mm);
-
-            {
-                (bool success, bytes memory data) = address(o)
-                    .staticcall(
-                        abi.encodeWithSignature("getPriceSafe(address,address)", mm.underlying, mm.settlementAsset)
-                    );
-
-                if (success && data.length >= 96) {
-                    (uint256 px, uint256 updatedAt, bool safeOk) = abi.decode(data, (uint256, uint256, bool));
-                    if (safeOk && px != 0) {
-                        if (oracleMaxDelay != 0) {
-                            if (updatedAt == 0) revert OraclePriceStale();
-                            if (updatedAt > block.timestamp) revert OraclePriceStale();
-                            if (block.timestamp - updatedAt > uint256(oracleMaxDelay)) revert OraclePriceStale();
-                        }
-                        markPrice1e8 = px;
-                    }
-                }
-            }
-
-            if (markPrice1e8 == 0) {
-                (uint256 px, uint256 updatedAt) = o.getPrice(mm.underlying, mm.settlementAsset);
-                if (px == 0) revert OraclePriceUnavailable();
-                if (oracleMaxDelay != 0) {
-                    if (updatedAt == 0) revert OraclePriceStale();
-                    if (updatedAt > block.timestamp) revert OraclePriceStale();
-                    if (block.timestamp - updatedAt > uint256(oracleMaxDelay)) revert OraclePriceStale();
-                }
-                markPrice1e8 = px;
-            }
-        }
+        uint256 markPrice1e8 = _liquidationMarkPrice1e8(marketId, oracleMaxDelay);
 
         uint256 liqPrice1e8 = _liquidationPrice1e8FromMark(oldTraderPos.size1e8, markPrice1e8, priceSpreadBps);
 
@@ -696,11 +599,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         _updateMarketOpenInterest(marketId, oldTraderPos.size1e8, newTraderPos.size1e8);
         _updateMarketOpenInterest(marketId, oldLiqPos.size1e8, newLiqPos.size1e8);
 
-        {
-            MarketState memory s = _marketStates[marketId];
-            uint256 oi = s.longOpenInterest1e8 > s.shortOpenInterest1e8 ? s.longOpenInterest1e8 : s.shortOpenInterest1e8;
-            if (oi > uint256(rcfg.maxOpenInterest1e8)) revert SizeTooLarge();
-        }
+        _enforceMaxOpenInterest(marketId, uint256(rcfg.maxOpenInterest1e8));
 
         uint256 closedNotional1e8 = _mulDivFloor(uint256(sizeClosed1e8), liqPrice1e8, PRICE_1E8);
 

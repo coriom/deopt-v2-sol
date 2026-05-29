@@ -9,6 +9,7 @@ import {ICollateralSeizer} from "../liquidation/ICollateralSeizer.sol";
 
 import {PerpMarketRegistry} from "./PerpMarketRegistry.sol";
 import {PerpEngineTypes} from "./PerpEngineTypes.sol";
+import {PerpEngineSeizureLib} from "./PerpEngineSeizureLib.sol";
 
 /// @notice Minimal risk-module surface expected by PerpEngine.
 /// @dev
@@ -561,26 +562,7 @@ abstract contract PerpEngineStorage is PerpEngineTypes {
         view
         returns (uint256 tokenAmount)
     {
-        CollateralVault.CollateralTokenConfig memory baseCfg = _collateralVault.getCollateralConfig(_baseToken());
-        CollateralVault.CollateralTokenConfig memory tokCfg = _collateralVault.getCollateralConfig(token);
-
-        if (!baseCfg.isSupported || baseCfg.decimals == 0) revert InvalidMarket();
-        if (!tokCfg.isSupported || tokCfg.decimals == 0) revert InvalidMarket();
-
-        uint8 baseDec = baseCfg.decimals;
-        uint8 tokenDec = tokCfg.decimals;
-
-        uint256 tmp = _mulDivFloor(baseValue, PRICE_1E8, price1e8);
-
-        if (baseDec == tokenDec) return tmp;
-
-        if (tokenDec > baseDec) {
-            uint256 factor = _pow10(uint256(tokenDec - baseDec));
-            return _mulChecked(tmp, factor);
-        }
-
-        uint256 factor2 = _pow10(uint256(baseDec - tokenDec));
-        return tmp / factor2;
+        return PerpEngineSeizureLib.baseValueToTokenAmount(_collateralVault, _baseToken(), token, baseValue, price1e8);
     }
 
     function _settlementNativeToBase(address settlementAsset, uint256 settlementAmountNative)
@@ -588,34 +570,9 @@ abstract contract PerpEngineStorage is PerpEngineTypes {
         view
         returns (uint256 baseValue)
     {
-        if (settlementAmountNative == 0) return 0;
-
-        address baseToken = _baseToken();
-
-        CollateralVault.CollateralTokenConfig memory baseCfg = _collateralVault.getCollateralConfig(baseToken);
-        CollateralVault.CollateralTokenConfig memory setCfg = _collateralVault.getCollateralConfig(settlementAsset);
-
-        if (!baseCfg.isSupported || baseCfg.decimals == 0) revert InvalidMarket();
-        if (!setCfg.isSupported || setCfg.decimals == 0) revert InvalidMarket();
-
-        if (settlementAsset == baseToken) {
-            return settlementAmountNative;
-        }
-
-        (uint256 px, bool ok) = _tryGetMarkPrice1e8FromPair(settlementAsset, baseToken);
-        if (!ok || px == 0) revert OraclePriceUnavailable();
-
-        uint256 tmp = _mulDivFloor(settlementAmountNative, px, PRICE_1E8);
-
-        if (baseCfg.decimals == setCfg.decimals) return tmp;
-
-        if (baseCfg.decimals > setCfg.decimals) {
-            uint256 factor = _pow10(uint256(baseCfg.decimals - setCfg.decimals));
-            return _mulChecked(tmp, factor);
-        }
-
-        uint256 factor2 = _pow10(uint256(setCfg.decimals - baseCfg.decimals));
-        return tmp / factor2;
+        return PerpEngineSeizureLib.settlementNativeToBase(
+            _collateralVault, _oracle, _baseToken(), settlementAsset, settlementAmountNative
+        );
     }
 
     function _settlementAmount1e8ToBase(address settlementAsset, uint256 amount1e8)
@@ -634,16 +591,14 @@ abstract contract PerpEngineStorage is PerpEngineTypes {
         view
         returns (uint256 penaltyNative)
     {
-        address baseToken = _baseToken();
         if (penaltyBase == 0) return 0;
+        address baseToken = _baseToken();
+        if (settlementAsset == baseToken) return penaltyBase;
 
-        if (settlementAsset == baseToken) {
-            return penaltyBase;
-        }
-
-        (uint256 px, bool ok) = _tryGetMarkPrice1e8FromPair(settlementAsset, baseToken);
+        (uint256 px, bool ok) = PerpEngineSeizureLib.tryGetMarkPrice1e8FromPair(_oracle, settlementAsset, baseToken);
         if (!ok || px == 0) revert OraclePriceUnavailable();
-        penaltyNative = _baseValueToTokenAmount(settlementAsset, penaltyBase, px);
+        penaltyNative =
+            PerpEngineSeizureLib.baseValueToTokenAmount(_collateralVault, baseToken, settlementAsset, penaltyBase, px);
     }
 
     function _tryGetMarkPrice1e8FromPair(address base, address quote)
@@ -651,22 +606,7 @@ abstract contract PerpEngineStorage is PerpEngineTypes {
         view
         returns (uint256 price1e8, bool ok)
     {
-        {
-            (bool success, bytes memory data) =
-                address(_oracle).staticcall(abi.encodeWithSignature("getPriceSafe(address,address)", base, quote));
-
-            if (success && data.length >= 96) {
-                (uint256 px,, bool safeOk) = abi.decode(data, (uint256, uint256, bool));
-                if (safeOk && px != 0) return (px, true);
-            }
-        }
-
-        try _oracle.getPrice(base, quote) returns (uint256 px, uint256) {
-            if (px == 0) return (0, false);
-            return (px, true);
-        } catch {
-            return (0, false);
-        }
+        return PerpEngineSeizureLib.tryGetMarkPrice1e8FromPair(_oracle, base, quote);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -873,6 +813,10 @@ abstract contract PerpEngineStorage is PerpEngineTypes {
         return s.longOpenInterest1e8 > s.shortOpenInterest1e8 ? s.longOpenInterest1e8 : s.shortOpenInterest1e8;
     }
 
+    function _enforceMaxOpenInterest(uint256 marketId, uint256 maxOpenInterest1e8) internal view {
+        if (_effectiveMarketOpenInterest1e8(marketId) > maxOpenInterest1e8) revert SizeTooLarge();
+    }
+
     function _enforceLaunchOpenInterestCapIfIncreasing(uint256 marketId, uint256 previousOpenInterest1e8)
         internal
         view
@@ -1012,6 +956,20 @@ abstract contract PerpEngineStorage is PerpEngineTypes {
         } catch {
             return (0, false);
         }
+    }
+
+    /// @notice Mark price for the liquidation path with optional freshness enforcement.
+    /// @dev Reverts if no usable price is available. Reverts on stale price when `oracleMaxDelay != 0`.
+    function _liquidationMarkPrice1e8(uint256 marketId, uint32 oracleMaxDelay)
+        internal
+        view
+        returns (uint256 markPrice1e8)
+    {
+        PerpMarketRegistry.Market memory m = _requireMarketExists(marketId);
+        return
+            PerpEngineSeizureLib.liquidationMarkPrice1e8(
+                _marketOracle(m), m.underlying, m.settlementAsset, oracleMaxDelay
+            );
     }
 
     /*//////////////////////////////////////////////////////////////
