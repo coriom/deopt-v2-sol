@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {IFeesManager} from "../fees/IFeesManager.sol";
+import {IFeesManagerV2} from "../fees/IFeesManagerV2.sol";
 import {IOracle} from "../oracle/IOracle.sol";
 import "../matching/IPerpEngineTrade.sol";
 import "../liquidation/ICollateralSeizer.sol";
@@ -361,6 +362,47 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         marketId;
     }
 
+    function _chargeTradingFeeV2(
+        address trader,
+        address counterparty,
+        bool isMaker,
+        address settlementAsset,
+        uint256 notionalNative
+    ) internal {
+        IFeesManagerV2 fm = feesManagerV2;
+        if (address(fm) == address(0)) revert ZeroAddress();
+
+        IFeesManagerV2.FeeQuote memory q = fm.consumeFees(
+            trader,
+            IFeesManagerV2.ProductKind.PERP,
+            IFeesManagerV2.FlowKind.ORDERBOOK,
+            isMaker,
+            settlementAsset,
+            notionalNative
+        );
+
+        uint256 feeAmount = q.feeAmount;
+        if (feeAmount == 0) return;
+
+        if (q.isRebate) {
+            if (q.recipient != trader) revert FeesManagerV2QuoteInvalid();
+
+            address fundingAccount = fm.rebateFundingAccount();
+            if (fundingAccount == address(0)) revert FeesManagerV2RebateFundingNotSet();
+
+            _collateralVault.transferBetweenAccounts(settlementAsset, fundingAccount, trader, feeAmount);
+            return;
+        }
+
+        address recipient = q.recipient;
+        if (recipient == address(0)) revert FeesManagerNotSet();
+        if (recipient == trader || recipient == counterparty) revert InvalidTrade();
+
+        _collateralVault.transferBetweenAccounts(settlementAsset, trader, recipient, feeAmount);
+
+        emit CollateralWithdrawn(trader, settlementAsset, feeAmount, 0);
+    }
+
     function _enforcePostTradeRisk(address trader) internal view {
         if (address(_riskModule) == address(0)) return;
 
@@ -518,7 +560,13 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
             if (oi > uint256(rcfg.maxOpenInterest1e8)) revert SizeTooLarge();
         }
 
-        if (address(feesManager) != address(0)) {
+        if (useFeesManagerV2) {
+            uint256 notional1e8 = _mulDivFloor(uint256(t.sizeDelta1e8), uint256(t.executionPrice1e8), PRICE_1E8);
+            uint256 notionalNative = _value1e8ToSettlementNative(m.settlementAsset, notional1e8);
+
+            _chargeTradingFeeV2(t.buyer, t.seller, t.buyerIsMaker, m.settlementAsset, notionalNative);
+            _chargeTradingFeeV2(t.seller, t.buyer, !t.buyerIsMaker, m.settlementAsset, notionalNative);
+        } else if (address(feesManager) != address(0)) {
             address recipient = _resolvedFeeRecipient();
             if (recipient == address(0)) revert FeesManagerNotSet();
             if (recipient == t.buyer || recipient == t.seller) revert InvalidTrade();

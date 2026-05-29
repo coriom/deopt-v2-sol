@@ -261,6 +261,8 @@ abstract contract PerpEngineTypes {
     error CollateralVaultNotSet();
     error InsuranceFundNotSet();
     error FeesManagerNotSet();
+    error FeesManagerV2QuoteInvalid();
+    error FeesManagerV2RebateFundingNotSet();
     error CollateralSeizerNotSet();
     error ReentrancyGuardReentrantCall();
 
@@ -287,6 +289,8 @@ abstract contract PerpEngineTypes {
     event CollateralSeizerSet(address indexed oldSeizer, address indexed newSeizer);
     event InsuranceFundSet(address indexed oldFund, address indexed newFund);
     event FeesManagerSet(address indexed newFeesManager);
+    event FeesManagerV2Set(address indexed newFeesManagerV2);
+    event FeesManagerV2EnabledSet(bool enabled);
     event FeeRecipientSet(address indexed oldRecipient, address indexed newRecipient);
     event LaunchOpenInterestCapSet(uint256 indexed marketId, uint256 oldCap1e8, uint256 newCap1e8);
     event MarketActivationStateSet(uint256 indexed marketId, uint8 oldState, uint8 newState);

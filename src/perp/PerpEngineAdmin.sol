@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import {CollateralVault} from "../collateral/CollateralVault.sol";
 import {IOracle} from "../oracle/IOracle.sol";
 import {IFeesManager} from "../fees/IFeesManager.sol";
+import {IFeesManagerV2} from "../fees/IFeesManagerV2.sol";
 import {ICollateralSeizer} from "../liquidation/ICollateralSeizer.sol";
 
 import "./PerpEngineStorage.sol";
@@ -200,6 +201,22 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
         if (feesManager_ == address(0)) revert ZeroAddress();
         feesManager = IFeesManager(feesManager_);
         emit FeesManagerSet(feesManager_);
+    }
+
+    /// @notice Set optional signed-ppm perp fee manager.
+    /// @dev V1 remains active until `setUseFeesManagerV2(true)` is called.
+    function setFeesManagerV2(address feesManagerV2_) external onlyOwner {
+        if (feesManagerV2_ == address(0)) revert ZeroAddress();
+        feesManagerV2 = IFeesManagerV2(feesManagerV2_);
+        emit FeesManagerV2Set(feesManagerV2_);
+    }
+
+    /// @notice Selects whether perp execution uses V1 or V2 fees.
+    /// @dev Enabling V2 with no configured V2 manager is forbidden.
+    function setUseFeesManagerV2(bool enabled) external onlyOwner {
+        if (enabled && address(feesManagerV2) == address(0)) revert ZeroAddress();
+        useFeesManagerV2 = enabled;
+        emit FeesManagerV2EnabledSet(enabled);
     }
 
     /// @notice Sets an optional engine-level launch cap for effective market open interest.

@@ -2,9 +2,13 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
+import {Vm} from "forge-std/Vm.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import {CollateralVault} from "../../../src/collateral/CollateralVault.sol";
+import {FeesManager} from "../../../src/fees/FeesManager.sol";
+import {FeesManagerV2} from "../../../src/fees/FeesManagerV2.sol";
+import {IFeesManagerV2} from "../../../src/fees/IFeesManagerV2.sol";
 import {IOracle} from "../../../src/oracle/IOracle.sol";
 import {PerpEngine} from "../../../src/perp/PerpEngine.sol";
 import {PerpEngineTypes} from "../../../src/perp/PerpEngineTypes.sol";
@@ -109,17 +113,23 @@ contract PerpEngineTest is Test {
     address internal constant ALICE = address(0xA1);
     address internal constant BOB = address(0xB2);
     address internal constant CAROL = address(0xC3);
+    address internal constant DAVE = address(0xD4);
     address internal constant GUARDIAN = address(0x1234);
 
     uint256 internal constant ENTRY_PRICE_1 = 2_000 * PRICE_SCALE;
     uint256 internal constant ENTRY_PRICE_2 = 2_500 * PRICE_SCALE;
     uint256 internal constant BAD_DEBT_BASE = 50 * BASE_UNIT;
+    uint256 internal constant V2_VOLUME_28D = 25_000_000 * BASE_UNIT;
+    uint32 internal constant V2_VOLUME_SHARE_PPM = 50_000;
+    uint256 internal constant V2_STAKED_DEOPT = 250_000e8;
 
     CollateralVault internal vault;
     PerpMarketRegistry internal registry;
     PerpEngine internal engine;
     MockOracle internal oracle;
     MockPerpRiskModule internal riskModule;
+    FeesManager internal feesManagerV1;
+    FeesManagerV2 internal feesManagerV2;
 
     MockERC20Decimals internal usdc;
     MockERC20Decimals internal weth;
@@ -273,6 +283,163 @@ contract PerpEngineTest is Test {
 
         assertEq(vault.balances(ALICE, address(usdc)), aliceBalanceBefore + (500 * BASE_UNIT));
         assertEq(vault.balances(CAROL, address(usdc)), carolBalanceBefore - (500 * BASE_UNIT));
+    }
+
+    function testFeesManagerV1BehaviorUnchangedWhenV2Disabled() external {
+        _configureV1Fees();
+        _configureV2Fees(false);
+
+        assertFalse(engine.useFeesManagerV2());
+
+        uint256 aliceBefore = vault.balances(ALICE, address(usdc));
+        uint256 bobBefore = vault.balances(BOB, address(usdc));
+        uint256 recipientBefore = vault.balances(DAVE, address(usdc));
+
+        _trade(ALICE, BOB, ONE, ENTRY_PRICE_1);
+
+        uint256 takerFeeV1 = 1_000_000;
+        uint256 makerFeeV1 = 400_000;
+
+        assertEq(vault.balances(ALICE, address(usdc)), aliceBefore - takerFeeV1);
+        assertEq(vault.balances(BOB, address(usdc)), bobBefore - makerFeeV1);
+        assertEq(vault.balances(DAVE, address(usdc)), recipientBefore + takerFeeV1 + makerFeeV1);
+    }
+
+    function testFeesManagerV2AdminControls() external {
+        feesManagerV2 = new FeesManagerV2(OWNER, DAVE);
+
+        vm.prank(OWNER);
+        vm.expectRevert(PerpEngineTypes.ZeroAddress.selector);
+        engine.setUseFeesManagerV2(true);
+
+        vm.prank(OWNER);
+        vm.expectEmit(true, false, false, true, address(engine));
+        emit PerpEngineTypes.FeesManagerV2Set(address(feesManagerV2));
+        engine.setFeesManagerV2(address(feesManagerV2));
+
+        assertEq(address(engine.feesManagerV2()), address(feesManagerV2));
+        assertFalse(engine.useFeesManagerV2());
+
+        vm.prank(OWNER);
+        vm.expectEmit(false, false, false, true, address(engine));
+        emit PerpEngineTypes.FeesManagerV2EnabledSet(true);
+        engine.setUseFeesManagerV2(true);
+
+        assertTrue(engine.useFeesManagerV2());
+    }
+
+    function testFeesManagerV2Tier0PositivePerpFeesUseNotionalWithoutRebate() external {
+        _configureV2Fees(true);
+
+        uint256 aliceBefore = vault.balances(ALICE, address(usdc));
+        uint256 bobBefore = vault.balances(BOB, address(usdc));
+        uint256 carolBefore = vault.balances(CAROL, address(usdc));
+        uint256 recipientBefore = vault.balances(DAVE, address(usdc));
+
+        vm.recordLogs();
+        _tradeWithMakerFlag(ALICE, BOB, ONE, ENTRY_PRICE_1, true);
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+
+        uint256 notionalNative = 2_000 * BASE_UNIT;
+        uint256 makerFeeV2 = 100_000;
+        uint256 takerFeeV2 = 600_000;
+
+        assertEq(vault.balances(ALICE, address(usdc)), aliceBefore - makerFeeV2);
+        assertEq(vault.balances(BOB, address(usdc)), bobBefore - takerFeeV2);
+        assertEq(vault.balances(CAROL, address(usdc)), carolBefore);
+        assertEq(vault.balances(DAVE, address(usdc)), recipientBefore + makerFeeV2 + takerFeeV2);
+        assertEq(feesManagerV2.rebateBudget(address(usdc)), 0);
+        assertEq(_countLogs(logs, address(feesManagerV2), _feeChargedV2Topic()), 2);
+        assertEq(_countLogs(logs, address(feesManagerV2), _feeRebatedV2Topic()), 0);
+        assertTrue(_hasFeeChargedV2Log(logs, ALICE, true, 50, notionalNative, makerFeeV2));
+        assertTrue(_hasFeeChargedV2Log(logs, BOB, false, 300, notionalNative, takerFeeV2));
+    }
+
+    function testFeesManagerV2UnauthorizedConsumerRevertsTrade() external {
+        feesManagerV2 = new FeesManagerV2(OWNER, DAVE);
+
+        vm.startPrank(OWNER);
+        engine.setFeesManagerV2(address(feesManagerV2));
+        engine.setUseFeesManagerV2(true);
+        vm.stopPrank();
+
+        vm.expectRevert(abi.encodeWithSelector(FeesManagerV2.NotFeeConsumer.selector, address(engine)));
+        _tradeWithMakerFlag(ALICE, BOB, ONE, ENTRY_PRICE_1, true);
+    }
+
+    function testFeesManagerV2FutureMakerRebateTransfersFromFundingAccount() external {
+        _configureV2Fees(true);
+        _claimV2Tier(ALICE, 4);
+
+        vm.prank(OWNER);
+        feesManagerV2.fundRebateBudget(address(usdc), 200_000);
+
+        uint256 aliceBefore = vault.balances(ALICE, address(usdc));
+        uint256 bobBefore = vault.balances(BOB, address(usdc));
+        uint256 carolBefore = vault.balances(CAROL, address(usdc));
+        uint256 recipientBefore = vault.balances(DAVE, address(usdc));
+
+        vm.recordLogs();
+        _tradeWithMakerFlag(ALICE, BOB, ONE, ENTRY_PRICE_1, true);
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+
+        uint256 notionalNative = 2_000 * BASE_UNIT;
+        uint256 makerRebateV2 = 200_000;
+        uint256 takerFeeV2 = 600_000;
+
+        assertEq(vault.balances(ALICE, address(usdc)), aliceBefore + makerRebateV2);
+        assertEq(vault.balances(BOB, address(usdc)), bobBefore - takerFeeV2);
+        assertEq(vault.balances(CAROL, address(usdc)), carolBefore - makerRebateV2);
+        assertEq(vault.balances(DAVE, address(usdc)), recipientBefore + takerFeeV2);
+        assertEq(feesManagerV2.rebateBudget(address(usdc)), 0);
+        assertEq(_countLogs(logs, address(feesManagerV2), _feeRebatedV2Topic()), 1);
+        assertEq(_countLogs(logs, address(feesManagerV2), _feeChargedV2Topic()), 1);
+        assertTrue(_hasFeeRebatedV2Log(logs, ALICE, -100, notionalNative, makerRebateV2));
+        assertTrue(_hasFeeChargedV2Log(logs, BOB, false, 300, notionalNative, takerFeeV2));
+    }
+
+    function testFeesManagerV2InsufficientRebateBudgetRevertsTrade() external {
+        _configureV2Fees(true);
+        _claimV2Tier(ALICE, 4);
+
+        vm.prank(OWNER);
+        feesManagerV2.fundRebateBudget(address(usdc), 199_999);
+
+        uint256 aliceBefore = vault.balances(ALICE, address(usdc));
+        uint256 bobBefore = vault.balances(BOB, address(usdc));
+        uint256 carolBefore = vault.balances(CAROL, address(usdc));
+
+        vm.expectRevert(
+            abi.encodeWithSelector(FeesManagerV2.InsufficientRebateBudget.selector, address(usdc), 199_999, 200_000)
+        );
+        _tradeWithMakerFlag(ALICE, BOB, ONE, ENTRY_PRICE_1, true);
+
+        assertEq(vault.balances(ALICE, address(usdc)), aliceBefore);
+        assertEq(vault.balances(BOB, address(usdc)), bobBefore);
+        assertEq(vault.balances(CAROL, address(usdc)), carolBefore);
+        assertEq(engine.positions(ALICE, marketId).size1e8, 0);
+        assertEq(engine.positions(BOB, marketId).size1e8, 0);
+        assertEq(feesManagerV2.rebateBudget(address(usdc)), 199_999);
+    }
+
+    function testFeesManagerV2TargetPerpPpmTableCompatibility() external {
+        feesManagerV2 = new FeesManagerV2(OWNER, DAVE);
+
+        int32[5] memory maker = [int32(50), int32(0), int32(-50), int32(-75), int32(-100)];
+        int32[5] memory taker = [int32(300), int32(250), int32(200), int32(175), int32(150)];
+
+        assertEq(
+            uint256(feesManagerV2.productFeeBasis(IFeesManagerV2.ProductKind.PERP)),
+            uint256(IFeesManagerV2.FeeBasis.NOTIONAL)
+        );
+
+        for (uint8 tier; tier < feesManagerV2.TIER_COUNT(); ++tier) {
+            IFeesManagerV2.ProductFeeProfilePpm memory profile =
+                feesManagerV2.getFeeProfile(tier, IFeesManagerV2.ProductKind.PERP);
+
+            assertEq(profile.makerPpm, maker[tier]);
+            assertEq(profile.takerPpm, taker[tier]);
+        }
     }
 
     function testFullyClosingPositionResetsSizeAndOpenNotionalToZero() external {
@@ -449,6 +616,16 @@ contract PerpEngineTest is Test {
     }
 
     function _trade(address buyer, address seller, uint128 sizeDelta1e8, uint256 executionPrice1e8) internal {
+        _tradeWithMakerFlag(buyer, seller, sizeDelta1e8, executionPrice1e8, false);
+    }
+
+    function _tradeWithMakerFlag(
+        address buyer,
+        address seller,
+        uint128 sizeDelta1e8,
+        uint256 executionPrice1e8,
+        bool buyerIsMaker
+    ) internal {
         vm.prank(MATCHING_ENGINE);
         engine.applyTrade(
             IPerpEngineTrade.Trade({
@@ -457,9 +634,146 @@ contract PerpEngineTest is Test {
                 marketId: marketId,
                 sizeDelta1e8: sizeDelta1e8,
                 executionPrice1e8: uint128(executionPrice1e8),
-                buyerIsMaker: false
+                buyerIsMaker: buyerIsMaker
             })
         );
+    }
+
+    function _configureV1Fees() internal {
+        feesManagerV1 = new FeesManager(
+            OWNER,
+            2, // maker notional
+            4, // maker premium cap
+            5, // taker notional
+            6, // taker premium cap
+            100 // fee cap
+        );
+
+        vm.startPrank(OWNER);
+        engine.setFeesManager(address(feesManagerV1));
+        engine.setInsuranceFund(DAVE);
+        vm.stopPrank();
+    }
+
+    function _configureV2Fees(bool enable) internal {
+        feesManagerV2 = new FeesManagerV2(OWNER, DAVE);
+
+        vm.startPrank(OWNER);
+        feesManagerV2.setFeeConsumer(address(engine), true);
+        feesManagerV2.setRebateFundingAccount(CAROL);
+        engine.setFeesManagerV2(address(feesManagerV2));
+        if (enable) {
+            engine.setUseFeesManagerV2(true);
+        }
+        vm.stopPrank();
+    }
+
+    function _claimV2Tier(address account, uint8 tier) internal {
+        uint64 validFrom = uint64(block.timestamp);
+        uint64 validUntil = uint64(block.timestamp + 1 days);
+        bytes32 root = feesManagerV2.hashTierLeaf(
+            account, tier, V2_VOLUME_28D, V2_VOLUME_SHARE_PPM, V2_STAKED_DEOPT, validFrom, validUntil
+        );
+
+        vm.prank(OWNER);
+        feesManagerV2.setMerkleRoot(root, validFrom, validUntil);
+
+        vm.prank(account);
+        feesManagerV2.claimTier(
+            account, tier, V2_VOLUME_28D, V2_VOLUME_SHARE_PPM, V2_STAKED_DEOPT, validFrom, validUntil, new bytes32[](0)
+        );
+    }
+
+    function _countLogs(Vm.Log[] memory logs, address emitter, bytes32 topic0) internal pure returns (uint256 count) {
+        for (uint256 i; i < logs.length; ++i) {
+            if (logs[i].emitter == emitter && logs[i].topics.length != 0 && logs[i].topics[0] == topic0) {
+                ++count;
+            }
+        }
+    }
+
+    function _hasFeeChargedV2Log(
+        Vm.Log[] memory logs,
+        address trader,
+        bool isMaker,
+        int32 feePpm,
+        uint256 basisAmount,
+        uint256 feeAmount
+    ) internal view returns (bool) {
+        for (uint256 i; i < logs.length; ++i) {
+            if (logs[i].emitter != address(feesManagerV2) || logs[i].topics.length != 4) continue;
+            if (logs[i].topics[0] != _feeChargedV2Topic()) continue;
+            if (_topicAddress(logs[i].topics[1]) != address(engine)) continue;
+            if (_topicAddress(logs[i].topics[2]) != trader) continue;
+            if (_topicAddress(logs[i].topics[3]) != DAVE) continue;
+
+            (
+                address settlementAsset,
+                uint8 productKind,
+                uint8 flowKind,
+                bool logIsMaker,
+                int32 logFeePpm,
+                uint256 logBasisAmount,
+                uint256 logFeeAmount
+            ) = abi.decode(logs[i].data, (address, uint8, uint8, bool, int32, uint256, uint256));
+
+            if (
+                settlementAsset == address(usdc) && productKind == uint8(IFeesManagerV2.ProductKind.PERP)
+                    && flowKind == uint8(IFeesManagerV2.FlowKind.ORDERBOOK) && logIsMaker == isMaker
+                    && logFeePpm == feePpm && logBasisAmount == basisAmount && logFeeAmount == feeAmount
+            ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    function _hasFeeRebatedV2Log(
+        Vm.Log[] memory logs,
+        address trader,
+        int32 rebatePpm,
+        uint256 basisAmount,
+        uint256 rebateAmount
+    ) internal view returns (bool) {
+        for (uint256 i; i < logs.length; ++i) {
+            if (logs[i].emitter != address(feesManagerV2) || logs[i].topics.length != 4) continue;
+            if (logs[i].topics[0] != _feeRebatedV2Topic()) continue;
+            if (_topicAddress(logs[i].topics[1]) != address(engine)) continue;
+            if (_topicAddress(logs[i].topics[2]) != trader) continue;
+            if (_topicAddress(logs[i].topics[3]) != trader) continue;
+
+            (
+                address settlementAsset,
+                uint8 productKind,
+                uint8 flowKind,
+                int32 logRebatePpm,
+                uint256 logBasisAmount,
+                uint256 logRebateAmount
+            ) = abi.decode(logs[i].data, (address, uint8, uint8, int32, uint256, uint256));
+
+            if (
+                settlementAsset == address(usdc) && productKind == uint8(IFeesManagerV2.ProductKind.PERP)
+                    && flowKind == uint8(IFeesManagerV2.FlowKind.ORDERBOOK) && logRebatePpm == rebatePpm
+                    && logBasisAmount == basisAmount && logRebateAmount == rebateAmount
+            ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    function _topicAddress(bytes32 topic) internal pure returns (address) {
+        return address(uint160(uint256(topic)));
+    }
+
+    function _feeChargedV2Topic() internal pure returns (bytes32) {
+        return keccak256("FeeChargedV2(address,address,address,address,uint8,uint8,bool,int32,uint256,uint256)");
+    }
+
+    function _feeRebatedV2Topic() internal pure returns (bytes32) {
+        return keccak256("FeeRebatedV2(address,address,address,address,uint8,uint8,int32,uint256,uint256)");
     }
 
     function _deposit(address user, uint256 amount) internal {

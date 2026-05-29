@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import {CollateralVault} from "../collateral/CollateralVault.sol";
 import {IOracle} from "../oracle/IOracle.sol";
 import {IFeesManager} from "../fees/IFeesManager.sol";
+import {IFeesManagerV2} from "../fees/IFeesManagerV2.sol";
 import {ICollateralSeizer} from "../liquidation/ICollateralSeizer.sol";
 
 import {PerpMarketRegistry} from "./PerpMarketRegistry.sol";
@@ -78,6 +79,10 @@ abstract contract PerpEngineStorage is PerpEngineTypes {
     IPerpRiskModule internal _riskModule;
     ICollateralSeizer internal _collateralSeizer;
     IFeesManager public feesManager;
+    IFeesManagerV2 public feesManagerV2;
+
+    /// @notice If true, perp execution uses FeesManagerV2 instead of V1.
+    bool public useFeesManagerV2;
 
     /// @notice Insurance fund / backstop.
     address public insuranceFund;
