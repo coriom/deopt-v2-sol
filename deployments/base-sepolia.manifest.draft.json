@@ -316,6 +316,153 @@
     ],
     "marginEngineV2Phase1GasUsed": 6542520
   },
+  "perpEngineV2Phase1A3": {
+    "approvalPhrase": "I approve Base Sepolia A3 testnet stranding fallback: market 1 on OLD_PERP_ENGINE remains legacy with nonzero OI, and PerpEngineV2 may be deployed/rewired for future testing with nonzero-state override. This is not a mainnet migration pattern.",
+    "oldPerpEngine": "0xB36395b67D0798ADA981731c9Fa5239F4362b53B",
+    "perpEngineV2": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+    "perpEngineSeizureLib": "0x5D72a4e10207Da027eDF202B4EB40e3F92458a95",
+    "perpEngineV2Status": "rewired_a3_testnet_stranded_v2_disabled",
+    "a3Fallback": true,
+    "deployer": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+    "deployResultDoc": "docs/PERP_ENGINE_V2_A3_DEPLOY_REWIRE_RESULT_V2F_H.md",
+    "deployBlockRange": [42182809, 42182816],
+    "deployTxHashes": [
+      "0x247839433bce2d88ad3db1f276417504e41439cf13513a7f29d28dc6b0e7e7c9",
+      "0x2a3de8c3d03c3b1cff1bcbd26dda325c5f00926368dc34cd38a7b47e4dbfc8a4",
+      "0x8c2f0bc84ac7554366d460acf4975090038c236df4ab92367d05596e623c24a3",
+      "0x8e9e1249330550d6abbedeadcca98c5ad3ea09702aae1a23ed2756f2c74d59a4",
+      "0x3a43a446ccb46958cee475da940d5532eb9e3bbf68b7dc51a1a8c270d88119ed",
+      "0xea860c8f32591e3af10d6ec61a7c3a22485fb466884902e64cf19d7381e84fe2",
+      "0xb9b3436e509eaf9aa68e90e50005027719675ecded89da24a26fde5729ce35a3",
+      "0x68fe80053c3e4807898d8497777541c4cca7e3cdd7ef4d681fdf8a17594d45f6"
+    ],
+    "deployGasUsed": 6574373,
+    "perpEngineV2BytecodeSize": 23794,
+    "perpEngineSeizureLibBytecodeSize": 3628,
+    "v2FeesDisabledPostDeploy": {
+      "NEW.feesManagerV2": "0x0000000000000000000000000000000000000000",
+      "NEW.useFeesManagerV2": false,
+      "NEW.feesManager_V1": "0xaef73F10224712E1312963BE11662061481aA0F0"
+    }
+  },
+  "perpEngineV2Phase2Rewire": {
+    "status": "rewired_a3_v2_disabled",
+    "rewireBlockRange": [42182919, 42182924],
+    "rewireResultDoc": "docs/PERP_ENGINE_V2_A3_DEPLOY_REWIRE_RESULT_V2F_H.md",
+    "rewireScript": "script/RewirePerpEngineV2.s.sol:RewirePerpEngineV2",
+    "rewireBroadcastedBy": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+    "rewireOverrideUsed": "REWIRE_PERP_ENGINE_V2_ALLOW_NONZERO_STATE=true",
+    "rewireTxHashes": [
+      "0xb6b23aaae907c1fec5293266ca2fe8d5a8a97478a4ae249271622281fac58528",
+      "0x324683751f9af61763b1247154aef3d8902b8edd2b718512b5212684457c0641",
+      "0x044011e5c15ff859c5549d26703a1176fe4fb889b7d037c68226e50fa202e2f2",
+      "0x199d596753950f393433177878d59e9a45b77f1a3260824871a459bee0969ae3",
+      "0xadd3062e93dce8921ee5c5ad61533c267d80c1a54cf2cb25b8fba59be2dd33ab",
+      "0xed57daf338f4ae9c517c2d721019955f7e0b578d4c709661dc99fe7fcb72da8f"
+    ],
+    "rewireGasUsed": 258925,
+    "postRewireReads": {
+      "PerpMatchingEngine.perpEngine": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "PerpRiskModule.perpEngine": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "CollateralVault.isEngineAuthorized_OLD": false,
+      "CollateralVault.isEngineAuthorized_NEW": true,
+      "InsuranceFund.isBackstopCaller_OLD": false,
+      "InsuranceFund.isBackstopCaller_NEW": true,
+      "NEW.feesManagerV2": "0x0000000000000000000000000000000000000000",
+      "NEW.useFeesManagerV2": false,
+      "NEW.feesManager_V1": "0xaef73F10224712E1312963BE11662061481aA0F0",
+      "PerpMatchingEngine.paused": true
+    },
+    "oldStrandedState": {
+      "OLD.marketState_1": {
+        "longOpenInterest1e8": "100000000",
+        "shortOpenInterest1e8": "100000000",
+        "cumulativeFundingRate1e18": "0",
+        "lastFundingTimestamp": 1778008020
+      },
+      "OLD.marketEmergencyCloseOnly_1": true,
+      "OLD.totalResidualBadDebtBase": "0",
+      "OLD.getPositionSize_long_0xc0a76c2a_1": "100000000",
+      "OLD.getPositionSize_short_0xbaf0976a_1": "-100000000",
+      "note": "Orphan long/short remain in OLD storage but OLD is no longer authorized in Vault/InsuranceFund and is no longer the matching/risk pointer. A3 testnet only; not a mainnet migration pattern."
+    },
+    "perpV2FeesEnabled": false,
+    "perpV2FeesEnableTask": "V2F-I + V2F-J (separate sessions, not performed in V2F-H)"
+  },
+  "perpEngineV2Phase3Recovery": {
+    "status": "dry_run_only_human_unpause_pending",
+    "script": "script/SetPerpMatchingEnginePaused.s.sol:SetPerpMatchingEnginePaused",
+    "preflightResultDoc": "docs/PERP_ENGINE_V2_POST_REWIRE_RECOVERY_AND_FEES_PREFLIGHT_V2F_I.md",
+    "matchingEngine": "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+    "currentPauseState": true,
+    "desiredPauseState": false,
+    "unpauseDryRunGasEstimate": 36344,
+    "unpauseDryRunTxPlan": [
+      {
+        "target": "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+        "function": "unpause()"
+      }
+    ],
+    "humanBroadcasted": false,
+    "humanBroadcastEnv": {
+      "PERP_MATCHING_ENGINE": "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+      "PERP_MATCHING_ENGINE_PAUSED": "false",
+      "SET_PERP_MATCHING_ENGINE_PAUSED_CONFIRM": "true"
+    },
+    "postRewireAdminMapObservation": {
+      "NEW.marketActivationState_1": 0,
+      "NEW.marketActivationState_2": 0,
+      "NEW.tradingPaused": false,
+      "NEW.paused": false,
+      "NEW.marketState_1": "(0, 0, 0, 0)",
+      "NEW.marketState_2": "(0, 0, 0, 0)",
+      "NEW.totalResidualBadDebtBase": "0",
+      "note": "NEW engine has empty per-market admin maps because storage was freshly initialized. OLD's marketEmergencyCloseOnly(1)=true and marketActivationState(2)=1 do not carry across the rewire."
+    }
+  },
+  "perpEngineV2Phase4FeesV2Wire": {
+    "status": "dry_run_only_human_wire_pending",
+    "script": "script/WireFeesManagerV2Perp.s.sol:WireFeesManagerV2Perp",
+    "preflightResultDoc": "docs/PERP_ENGINE_V2_POST_REWIRE_RECOVERY_AND_FEES_PREFLIGHT_V2F_I.md",
+    "feesManagerV2": "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f",
+    "newPerpEngine": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+    "wireDryRunGasEstimate": 132414,
+    "wireDryRunTxPlan": [
+      {
+        "target": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+        "function": "setFeesManagerV2(address)"
+      },
+      {
+        "target": "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f",
+        "function": "setFeeConsumer(address,bool)"
+      }
+    ],
+    "enableOnlyDryRunResult": "EnableRequiresWire (expected refusal before wire lands)",
+    "wireAndEnableCombinedGasEstimate": 174591,
+    "feesManagerV2Snapshot": {
+      "owner": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+      "feeRecipient": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "rebateFundingAccount": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "isFeeConsumer_NEW_preWire": false,
+      "isFeeConsumer_NEW_postWireDryRun": true
+    },
+    "perpFeesManagerV2WireBroadcasted": false,
+    "perpFeesManagerV2EnableBroadcasted": false,
+    "v1FeesManagerStillActive": "0xaef73F10224712E1312963BE11662061481aA0F0",
+    "v1SmokePolicy": "Run V2F-J V1 smoke before broadcasting wire; run V2F-K (wire) before broadcasting V2F-L (enable). Each step is its own operator session.",
+    "humanBroadcastEnvWire": {
+      "FEES_MANAGER_V2_ADDRESS": "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f",
+      "PERP_ENGINE_ADDRESS": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "WIRE_FEES_MANAGER_V2_PERP_CONFIRM": "true",
+      "ENABLE_FEES_MANAGER_V2_PERP_CONFIRM": "false"
+    },
+    "humanBroadcastEnvEnable": {
+      "FEES_MANAGER_V2_ADDRESS": "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f",
+      "PERP_ENGINE_ADDRESS": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "WIRE_FEES_MANAGER_V2_PERP_CONFIRM": "false",
+      "ENABLE_FEES_MANAGER_V2_PERP_CONFIRM": "true"
+    }
+  },
   "marginEngineV2Phase2Rewire": {
     "status": "rewired_v2_disabled",
     "marginEngineCutoverBlock": 42073772,
