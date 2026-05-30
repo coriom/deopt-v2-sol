@@ -420,6 +420,274 @@
       "note": "NEW engine has empty per-market admin maps because storage was freshly initialized. OLD's marketEmergencyCloseOnly(1)=true and marketActivationState(2)=1 do not carry across the rewire."
     }
   },
+  "perpEngineV2Phase3bSmoke": {
+    "status": "dry_run_only_human_smoke_pending",
+    "script": "script/SmokeV1PerpOnNew.s.sol:SmokeV1PerpOnNew",
+    "preflightResultDoc": "docs/PERP_ENGINE_V2_DEFAULT_V1_SMOKE_PREFLIGHT_V2F_J.md",
+    "perpEngine": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+    "oldPerpEngine": "0xB36395b67D0798ADA981731c9Fa5239F4362b53B",
+    "perpMatchingEngine": "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+    "marketId": 1,
+    "smokeSize1e8": 1,
+    "smokePrice1e8": "300000000000",
+    "tradePathSummary": "executor -> PerpMatchingEngine.executeTrade(PerpTrade, buyerSig, sellerSig) -> PerpEngine.applyTrade(Trade)",
+    "blockers": [
+      "PerpMatchingEngine.paused() = true — operator must broadcast V2F-I §7a unpause first.",
+      "buyer != seller required by _isStructurallyValid — operator must supply PERP_SMOKE_BUYER_PRIVATE_KEY and PERP_SMOKE_SELLER_PRIVATE_KEY for two distinct funded EOAs at broadcast time.",
+      "Both buyer and seller EOAs must hold enough mUSDC in CollateralVault to cover the V1 trading fee on the smoke notional."
+    ],
+    "preconditionsObserved": {
+      "NEW.marketActivationState_1": 0,
+      "NEW.marketState_1": "(0, 0, 0, 0)",
+      "NEW.launchOpenInterestCap1e8_1": "0 (disabled — setLaunchOpenInterestCap not required)",
+      "NEW.marketEmergencyCloseOnly_1": false,
+      "NEW.feesManagerV2": "0x0000000000000000000000000000000000000000",
+      "NEW.useFeesManagerV2": false,
+      "PerpMatchingEngine.paused": true,
+      "PerpMatchingEngine.isExecutor_deployer": true
+    },
+    "dryRunResults": {
+      "default": "preflight only, no tx sent, V2 invariants asserted",
+      "smokeWhilePaused": "reverts MatchingPausedRunGate7aFirst() (intended)",
+      "refreshFeedsOnly": {
+        "outcome": "SIMULATION COMPLETE",
+        "gas": 93976,
+        "txCount": 2,
+        "targets": [
+          "0x3eb9cdd2C2115c3f0DF5E30da53D7245F9a5f6Cc",
+          "0x2103a84C0CAB9cf7680d602C8931FaDeD7064517"
+        ],
+        "function": "MockPriceSource.setPrice(uint256)"
+      },
+      "setLaunchCapOnly": {
+        "outcome": "SIMULATION COMPLETE",
+        "gas": 97580,
+        "txCount": 1,
+        "target": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+        "function": "setLaunchOpenInterestCap(uint256,uint256)"
+      },
+      "tradeLegDryRun": "Cannot be exercised against live paused state; documented as precondition, not a script bug."
+    },
+    "v2FeesProof": {
+      "scriptImports": "PerpEngine, PerpMatchingEngine, MockPriceSource, PerpEngineTypes, PerpMarketRegistry",
+      "scriptOmits": "FeesManagerV2, setFeesManagerV2, setUseFeesManagerV2, setFeeConsumer, setFeeRecipient, setRebateFundingAccount, fundRebateBudget, WireFeesManagerV2Perp",
+      "runtimeAssertion": "_assertV2Invariants reverts V2FeesUnexpectedlyChanged on any V2 drift",
+      "FeesManagerV2.isFeeConsumer_NEW": false
+    },
+    "humanBroadcastEnvSmoke": {
+      "PERP_ENGINE": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "OLD_PERP_ENGINE": "0xB36395b67D0798ADA981731c9Fa5239F4362b53B",
+      "PERP_MATCHING_ENGINE": "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+      "PERP_MARKET_ID": "1",
+      "PERP_SMOKE_SIZE_1E8": "1",
+      "PERP_SMOKE_PRICE_1E8": "300000000000",
+      "PERP_SMOKE_BUYER_IS_MAKER": "false",
+      "PERP_SMOKE_DEADLINE_SECONDS": "600",
+      "REFRESH_MOCK_FEEDS_CONFIRM": "true",
+      "SET_LAUNCH_OI_CAP_CONFIRM": "false",
+      "SMOKE_V1_PERP_ON_NEW_CONFIRM": "true",
+      "PERP_SMOKE_BUYER_PRIVATE_KEY": "<operator supplies — not committed>",
+      "PERP_SMOKE_SELLER_PRIVATE_KEY": "<operator supplies — not committed>"
+    },
+    "humanBroadcasted": false
+  },
+  "perpEngineV2DefaultSmokeStatus": "passed",
+  "perpFeesManagerV2Status": "enabled_smoke_passed",
+  "perpFeesManagerV2EnabledOn": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+  "perpFeesManagerV2EnableBroadcast": {
+    "status": "enabled",
+    "resultDoc": "docs/PERP_FEES_MANAGER_V2_ENABLE_AND_SMOKE_RESULT_V2F_LM.md",
+    "script": "script/WireFeesManagerV2Perp.s.sol:WireFeesManagerV2Perp",
+    "txHash": "0xa45175ca0acec1e26a81400f4e90283a57717d01ad8ef6fe9dcc9fe6cabf79bc",
+    "block": 42188461,
+    "gasUsed": 30536,
+    "function": "setUseFeesManagerV2(true)",
+    "target": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c"
+  },
+  "perpEngineV2Phase5V2SmokeBroadcast": {
+    "status": "v2_smoke_passed",
+    "script": "script/SmokeV2PerpFeesOnNew.s.sol:SmokeV2PerpFeesOnNew",
+    "resultDoc": "docs/PERP_FEES_MANAGER_V2_ENABLE_AND_SMOKE_RESULT_V2F_LM.md",
+    "marketId": 1,
+    "size1e8": 1,
+    "price1e8": "300000000000",
+    "buyerIsMaker": false,
+    "buyer": "0x8B94A83D1AD3bD2337b1886E7962CA8E0bba9A34",
+    "seller": "0x475Fe397FA56884952D350aa9EE1c3946964BC0C",
+    "blockRange": [42188597, 42188599],
+    "gasUsed": 633692,
+    "txHashes": {
+      "ethPrimarySetPrice": "0xc995991e01dcf22c5804ec3dac67226af99d713b07b0dff1ab1e2f3804c8fe99",
+      "ethSecondarySetPrice": "0x9aad3348f4affb35f1ae40b269ec62ad777ad6de4c164c43f02dca971c0a5049",
+      "executeTrade": "0x400acedf36381034ae37c983cc50e80d11a81587ca8065fbaef40293ff63a79a"
+    },
+    "feeChargedV2Events": {
+      "count": 2,
+      "buyerLeg": {
+        "consumer": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+        "trader": "0x8B94A83D1AD3bD2337b1886E7962CA8E0bba9A34",
+        "recipient": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+        "settlementAsset": "0x6eAe407f5640B006faC9965182e238582A3B412E",
+        "productKind": 1,
+        "productKindName": "PERP",
+        "flowKind": 0,
+        "flowKindName": "ORDERBOOK",
+        "isMaker": false,
+        "feePpm": 300,
+        "feePpmRole": "Tier0 PERP takerPpm",
+        "basisAmount": 30,
+        "feeAmount": 1
+      },
+      "sellerLeg": {
+        "consumer": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+        "trader": "0x475Fe397FA56884952D350aa9EE1c3946964BC0C",
+        "recipient": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+        "settlementAsset": "0x6eAe407f5640B006faC9965182e238582A3B412E",
+        "productKind": 1,
+        "productKindName": "PERP",
+        "flowKind": 0,
+        "flowKindName": "ORDERBOOK",
+        "isMaker": true,
+        "feePpm": 50,
+        "feePpmRole": "Tier0 PERP makerPpm",
+        "basisAmount": 30,
+        "feeAmount": 1
+      }
+    },
+    "feeRebatedV2EventCount": 0,
+    "postReads": {
+      "NEW.useFeesManagerV2": true,
+      "NEW.feesManagerV2": "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f",
+      "NEW.marketState_1": "(2, 2, 0, 1780145486)",
+      "OLD.marketState_1": "(100000000, 100000000, 0, 1778008020)",
+      "NEW.getPositionSize_buyer_1": "2",
+      "NEW.getPositionSize_seller_1": "-2",
+      "PerpMatchingEngine.nonces_buyer": 2,
+      "PerpMatchingEngine.nonces_seller": 2,
+      "Vault.balances_buyer_mUSDC": "999999",
+      "Vault.balances_seller_mUSDC": "999999",
+      "Vault.balances_feeRecipient_mUSDC_post": "18",
+      "Vault.balances_feeRecipient_mUSDC_pre": "16",
+      "Vault.balances_feeRecipient_mUSDC_delta": 2,
+      "FeesManagerV2.merkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "FeesManagerV2.rebateBudget_mUSDC": "0",
+      "FeesManagerV2.isFeeConsumer_NEW": true
+    },
+    "rebateBudgetFunded": false,
+    "merkleRootSet": false,
+    "feeRecipientChanged": false,
+    "v1FallbackTaken": false
+  },
+  "perpFeesManagerV2Status_legacy_wired_disabled": "wired_disabled",
+  "perpFeesManagerV2": "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f",
+  "perpFeesManagerV2WiredTo": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+  "perpEngineV2Phase4FeesV2WireBroadcast": {
+    "status": "wired_disabled",
+    "resultDoc": "docs/PERP_FEES_MANAGER_V2_WIRE_PREFLIGHT_AND_RESULT_V2F_K.md",
+    "script": "script/WireFeesManagerV2Perp.s.sol:WireFeesManagerV2Perp",
+    "blockRange": [42187653, 42187654],
+    "gasUsed": 95866,
+    "txHashes": {
+      "setFeesManagerV2_on_NEW": "0x566400c3285a2f3f419c86c1720de81d99310ba082a75d9daeab6c3f2168fdf7",
+      "setFeeConsumer_NEW_true_on_FMv2": "0x2a6e38e5a1361ed22070a600ae50dd3e4900c487a8b04b8bd5bacdc2aabcbf86"
+    },
+    "postWireReads": {
+      "NEW.feesManagerV2": "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f",
+      "NEW.useFeesManagerV2": false,
+      "NEW.feesManager_V1": "0xaef73F10224712E1312963BE11662061481aA0F0",
+      "FeesManagerV2.isFeeConsumer_NEW": true,
+      "FeesManagerV2.merkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "FeesManagerV2.rebateBudget_mUSDC": "0",
+      "NEW.marketState_1": "(1, 1, 0, 1780142654)",
+      "OLD.marketState_1": "(100000000, 100000000, 0, 1778008020)",
+      "PerpMatchingEngine.perpEngine": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "PerpMatchingEngine.paused": false
+    },
+    "enableOnlyDryRunPlan": {
+      "outcome": "SIMULATION COMPLETE",
+      "gas": 42177,
+      "txCount": 1,
+      "target": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "setUseFeesManagerV2(bool)",
+      "broadcasted": false,
+      "reservedFor": "V2F-L (separate operator session)"
+    },
+    "perpFeesManagerV2EnableBroadcasted": false,
+    "rebateBudgetFunded": false,
+    "merkleRootSet": false
+  },
+  "perpEngineV2Phase3aUnpause": {
+    "status": "broadcasted",
+    "resultDoc": "docs/PERP_ENGINE_V2_DEFAULT_V1_SMOKE_BROADCAST_RESULT_V2F_J2.md",
+    "script": "script/SetPerpMatchingEnginePaused.s.sol:SetPerpMatchingEnginePaused",
+    "txHash": "0x845483a8f6e928eba8da79f99f916dfc26f1082d97882a1fdb7b9d189c10840f",
+    "block": 42186368,
+    "gasUsed": 24851,
+    "postReads": {
+      "PerpMatchingEngine.paused": false,
+      "PerpMatchingEngine.perpEngine": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c"
+    }
+  },
+  "perpEngineV2Phase3cFunding": {
+    "status": "broadcasted",
+    "script": "script/PrepareSmokeV1Accounts.s.sol:PrepareSmokeV1Accounts",
+    "resultDoc": "docs/PERP_ENGINE_V2_DEFAULT_V1_SMOKE_BROADCAST_RESULT_V2F_J2.md",
+    "buyerEoa": "0x8B94A83D1AD3bD2337b1886E7962CA8E0bba9A34",
+    "sellerEoa": "0x475Fe397FA56884952D350aa9EE1c3946964BC0C",
+    "fundUsdcAmountNative": 1000000,
+    "fundEthWeiPerEoa": "300000000000000",
+    "blockRange": [42186991, 42186998],
+    "gasUsed": 457004,
+    "txHashes": [
+      "0x50a69624fde869024db170e319c90fc0ff86814250b525c4756991646e4b5c41",
+      "0x6397c9a816dfd8f01c9fff0a2e5dd0bf0b5119eacc562c8f6afbd6d674e26062",
+      "0x7a0a4144317f625eb0d4a4064c82949cc103e66eac51d8bf5ddb90c08c1e743d",
+      "0x8b34fc504c4803b5d6b3e36ea0a1c09254c24822c596975ccfe795fa3eacf8e5",
+      "0x0acca2da360aa63db8bb1644072afea3243c896c4040b660c438d3cfcd318d73",
+      "0x4492217d3748e6d1492a2e7aa9ab343287b4f87a6855d14a97546c5633563b6a",
+      "0x56610e95ccd58ef8462915d2dff2304c232d34f78f156d43066e3262a5889bda",
+      "0xfa5d058f3ef70b8f53c027512e040ef053aceb0496535b39d6bc583520153794"
+    ],
+    "postReads": {
+      "Vault.balances_buyer_mUSDC": "1000000",
+      "Vault.balances_seller_mUSDC": "1000000",
+      "buyer_ETH_wei": "298761836695992",
+      "seller_ETH_wei": "298761836695992"
+    },
+    "keyHandling": "operator-supplied via PERP_SMOKE_BUYER_PRIVATE_KEY / PERP_SMOKE_SELLER_PRIVATE_KEY; never echoed; never committed"
+  },
+  "perpEngineV2Phase3dSmoke": {
+    "status": "default_v1_smoke_passed",
+    "script": "script/SmokeV1PerpOnNew.s.sol:SmokeV1PerpOnNew",
+    "resultDoc": "docs/PERP_ENGINE_V2_DEFAULT_V1_SMOKE_BROADCAST_RESULT_V2F_J2.md",
+    "marketId": 1,
+    "size1e8": 1,
+    "price1e8": "300000000000",
+    "buyerIsMaker": false,
+    "blockRange": [42187181, 42187183],
+    "gasUsed": 866140,
+    "txHashes": {
+      "ethPrimarySetPrice": "0x0ba07d22b1eea4b03b58cf8a47f9f65d8ad67ee6503156fe9ddbef4fe9d86b59",
+      "ethSecondarySetPrice": "0xb9ea729cc123df8e6f1ae2bfabbb34c2292c000816c9d3ac61e1ec3bbf0b9540",
+      "executeTrade": "0x0bcb28f8f208c7b753787df21882842eac061eb4dd6754446073c74afdf0012e"
+    },
+    "postReads": {
+      "NEW.marketState_1": "(1, 1, 0, 1780142654)",
+      "OLD.marketState_1": "(100000000, 100000000, 0, 1778008020)",
+      "NEW.getPositionSize_buyer_1": "1",
+      "NEW.getPositionSize_seller_1": "-1",
+      "PerpMatchingEngine.nonces_buyer": 1,
+      "PerpMatchingEngine.nonces_seller": 1,
+      "NEW.feesManagerV2": "0x0000000000000000000000000000000000000000",
+      "NEW.useFeesManagerV2": false,
+      "NEW.feesManager_V1": "0xaef73F10224712E1312963BE11662061481aA0F0",
+      "FeesManagerV2.isFeeConsumer_NEW": false,
+      "Vault.balances_buyer_mUSDC_post": "1000000",
+      "Vault.balances_seller_mUSDC_post": "1000000",
+      "Vault.balances_V1FeesManager_mUSDC_post": "0"
+    },
+    "feeSizingNote": "V1 fee on size1e8=1 at price=3e11 (= ~$3e-8 notional) rounds to 0 in 6-decimal mUSDC. Structural test (V1 path taken, V2 path untouched) is the V2F-J2 deliverable; absolute fee economics belongs to a future task."
+  },
   "perpEngineV2Phase4FeesV2Wire": {
     "status": "dry_run_only_human_wire_pending",
     "script": "script/WireFeesManagerV2Perp.s.sol:WireFeesManagerV2Perp",
