@@ -33,9 +33,8 @@ contract V2GALeafCrossVector is Test {
         bytes32 onchain = feesManager.hashTierLeaf(
             ACCOUNT, TIER, VOLUME_28D, VOLUME_SHARE_PPM, STAKED_DEOPT, VALID_FROM, VALID_UNTIL
         );
-        bytes32 expected = keccak256(
-            abi.encode(ACCOUNT, TIER, VOLUME_28D, VOLUME_SHARE_PPM, STAKED_DEOPT, VALID_FROM, VALID_UNTIL)
-        );
+        bytes32 expected =
+            keccak256(abi.encode(ACCOUNT, TIER, VOLUME_28D, VOLUME_SHARE_PPM, STAKED_DEOPT, VALID_FROM, VALID_UNTIL));
         assertEq(onchain, expected, "hashTierLeaf must equal keccak(abi.encode(...))");
 
         // The encoded buffer is exactly 7 ABI words (224 bytes).
