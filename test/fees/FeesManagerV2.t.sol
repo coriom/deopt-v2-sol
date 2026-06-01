@@ -392,4 +392,255 @@ contract FeesManagerV2Test is Test {
         vm.prank(OWNER);
         feesManager.setMerkleRoot(root, validFrom, validUntil);
     }
+
+    /*//////////////////////////////////////////////////////////////
+                V2G-N — exhaustive RFQ fee discount coverage
+    //////////////////////////////////////////////////////////////*/
+
+    // Canonical OPTION RFQ effective taker ppm per tier, basis = 1_000_000.
+    // Derivation: ceil(takerPpm * (1 - takerDiscountPpm / 1_000_000)).
+    //   Tier 0: 250  * (1 - 0    )       = 250
+    //   Tier 1: 150  * (1 - 0.10 ) = 135.00 -> 135
+    //   Tier 2: 125  * (1 - 0.25 ) = 93.75  -> 94 (ceil)
+    //   Tier 3: 100  * (1 - 0.50 ) = 50.00  -> 50
+    //   Tier 4: 75   * (1 - 0.75 ) = 18.75  -> 19 (ceil)
+    function testV2GN_OptionRfqTakerTableWalk() external {
+        int32[5] memory expectedOrderbookTaker = [int32(250), int32(150), int32(125), int32(100), int32(75)];
+        int32[5] memory expectedRfqTaker = [int32(250), int32(135), int32(94), int32(50), int32(19)];
+
+        for (uint8 tier; tier < feesManager.TIER_COUNT(); ++tier) {
+            address trader = address(uint160(0xD000 + uint160(tier)));
+            // Tier 0 is the default — no claim needed; other tiers need a tier proof.
+            if (tier != 0) {
+                _claimTier(trader, tier, VALID_FROM, VALID_UNTIL);
+            }
+
+            IFeesManagerV2.FeeQuote memory orderbook = feesManager.quoteFees(
+                trader,
+                IFeesManagerV2.ProductKind.OPTION,
+                IFeesManagerV2.FlowKind.ORDERBOOK,
+                false,
+                SETTLEMENT_ASSET,
+                1_000_000
+            );
+            assertEq(orderbook.appliedPpm, expectedOrderbookTaker[tier], "orderbook taker ppm");
+            assertFalse(orderbook.isRebate, "orderbook taker is fee");
+
+            IFeesManagerV2.FeeQuote memory rfq = feesManager.quoteFees(
+                trader,
+                IFeesManagerV2.ProductKind.OPTION,
+                IFeesManagerV2.FlowKind.RFQ,
+                false,
+                SETTLEMENT_ASSET,
+                1_000_000
+            );
+            assertEq(rfq.appliedPpm, expectedRfqTaker[tier], "rfq taker ppm");
+            assertFalse(rfq.isRebate, "rfq taker is fee");
+        }
+    }
+
+    // Canonical OPTION RFQ effective maker ppm per tier. The Design-Option-A
+    // semantics: discount only applies when `ratePpm > 0`. Negative maker
+    // rebates pass through unchanged regardless of discount.
+    //   Tier 0: +50  * (1 - 0   )         = 50
+    //   Tier 1:   0  (no rebate, no fee — discount touches nothing)
+    //   Tier 2: -10  (negative, RFQ discount NOT applied, preserved)
+    //   Tier 3: -25  (negative, preserved)
+    //   Tier 4: -50  (negative, preserved — even at 100 % discount)
+    function testV2GN_OptionRfqMakerPreservesNegativeRebatesEvenAtHundredPercentDiscount() external {
+        int32[5] memory expectedOrderbookMaker = [int32(50), int32(0), int32(-10), int32(-25), int32(-50)];
+        int32[5] memory expectedRfqMaker = [int32(50), int32(0), int32(-10), int32(-25), int32(-50)];
+        bool[5] memory expectedIsRebate = [false, false, true, true, true];
+
+        for (uint8 tier; tier < feesManager.TIER_COUNT(); ++tier) {
+            address trader = address(uint160(0xE000 + uint160(tier)));
+            if (tier != 0) {
+                _claimTier(trader, tier, VALID_FROM, VALID_UNTIL);
+            }
+
+            IFeesManagerV2.FeeQuote memory orderbook = feesManager.quoteFees(
+                trader,
+                IFeesManagerV2.ProductKind.OPTION,
+                IFeesManagerV2.FlowKind.ORDERBOOK,
+                true,
+                SETTLEMENT_ASSET,
+                1_000_000
+            );
+            assertEq(orderbook.appliedPpm, expectedOrderbookMaker[tier], "orderbook maker ppm");
+            assertEq(orderbook.isRebate, expectedIsRebate[tier], "orderbook maker rebate flag");
+
+            IFeesManagerV2.FeeQuote memory rfq = feesManager.quoteFees(
+                trader,
+                IFeesManagerV2.ProductKind.OPTION,
+                IFeesManagerV2.FlowKind.RFQ,
+                true,
+                SETTLEMENT_ASSET,
+                1_000_000
+            );
+            assertEq(rfq.appliedPpm, expectedRfqMaker[tier], "rfq maker ppm");
+            assertEq(rfq.isRebate, expectedIsRebate[tier], "rfq maker rebate flag");
+        }
+    }
+
+    // Tier 4 — the most aggressive — under the CANONICAL launch schedule.
+    // RFQ maker discount is 100 % but maker ppm is -50 (rebate). Design
+    // Option A says: 100 % discount must not amplify the rebate, must not
+    // flip the rebate to a fee, and must not silently zero it. The maker
+    // rebate stays at -50 ppm. Tier 4 RFQ taker discount is 75 %, so
+    // taker = 75 ppm * 0.25 = 18.75 → ceil to 19 ppm.
+    function testV2GN_OptionRfqTier4HundredPercentMakerDiscountKeepsRebateUnchanged() external {
+        _claimTier(ALICE, 4, VALID_FROM, VALID_UNTIL);
+
+        IFeesManagerV2.FeeQuote memory maker = feesManager.quoteFees(
+            ALICE, IFeesManagerV2.ProductKind.OPTION, IFeesManagerV2.FlowKind.RFQ, true, SETTLEMENT_ASSET, 1_000_000
+        );
+        // Design-Option-A: negative ppm is the rebate side; discount untouched.
+        assertEq(maker.appliedPpm, -50, "tier 4 RFQ maker stays at canonical rebate ppm");
+        assertTrue(maker.isRebate, "tier 4 RFQ maker is rebate");
+        // floor(1_000_000 * 50 / 1_000_000) = 50 native units.
+        assertEq(maker.feeAmount, 50, "tier 4 RFQ maker rebate amount unchanged");
+
+        IFeesManagerV2.FeeQuote memory taker = feesManager.quoteFees(
+            ALICE, IFeesManagerV2.ProductKind.OPTION, IFeesManagerV2.FlowKind.RFQ, false, SETTLEMENT_ASSET, 1_000_000
+        );
+        assertEq(taker.appliedPpm, 19, "tier 4 RFQ taker = ceil(75 * 25%)");
+        assertFalse(taker.isRebate, "tier 4 RFQ taker is fee");
+        // ceil(1_000_000 * 19 / 1_000_000) = 19.
+        assertEq(taker.feeAmount, 19, "tier 4 RFQ taker fee amount");
+    }
+
+    // Tier 0 — the base tier — has 0 % RFQ discount on both legs by design.
+    // RFQ ppm must equal ORDERBOOK ppm for both maker and taker. This is
+    // the "RFQ at base tier is identical to ORDERBOOK" invariant.
+    function testV2GN_OptionRfqTier0EqualsOrderbookForBothLegs() external view {
+        IFeesManagerV2.FeeQuote memory orderbookTaker = feesManager.quoteFees(
+            ALICE, IFeesManagerV2.ProductKind.OPTION, IFeesManagerV2.FlowKind.ORDERBOOK, false, SETTLEMENT_ASSET, 12_345
+        );
+        IFeesManagerV2.FeeQuote memory rfqTaker = feesManager.quoteFees(
+            ALICE, IFeesManagerV2.ProductKind.OPTION, IFeesManagerV2.FlowKind.RFQ, false, SETTLEMENT_ASSET, 12_345
+        );
+        assertEq(rfqTaker.appliedPpm, orderbookTaker.appliedPpm, "tier 0 taker rfq == orderbook ppm");
+        assertEq(rfqTaker.feeAmount, orderbookTaker.feeAmount, "tier 0 taker rfq == orderbook amount");
+
+        IFeesManagerV2.FeeQuote memory orderbookMaker = feesManager.quoteFees(
+            ALICE, IFeesManagerV2.ProductKind.OPTION, IFeesManagerV2.FlowKind.ORDERBOOK, true, SETTLEMENT_ASSET, 12_345
+        );
+        IFeesManagerV2.FeeQuote memory rfqMaker = feesManager.quoteFees(
+            ALICE, IFeesManagerV2.ProductKind.OPTION, IFeesManagerV2.FlowKind.RFQ, true, SETTLEMENT_ASSET, 12_345
+        );
+        assertEq(rfqMaker.appliedPpm, orderbookMaker.appliedPpm, "tier 0 maker rfq == orderbook ppm");
+        assertEq(rfqMaker.feeAmount, orderbookMaker.feeAmount, "tier 0 maker rfq == orderbook amount");
+    }
+
+    // PERP RFQ discounts default to 0 % across every tier. The RFQ flow
+    // must therefore return the same ppm as ORDERBOOK for both legs and
+    // every tier — i.e. RFQ for PERP is supported on the interface but
+    // has no fee impact today. This pins the V2G-N invariant.
+    function testV2GN_PerpRfqUnaffectedAtEveryTierForBothLegs() external {
+        for (uint8 tier; tier < feesManager.TIER_COUNT(); ++tier) {
+            address trader = address(uint160(0xF000 + uint160(tier)));
+            if (tier != 0) {
+                _claimTier(trader, tier, VALID_FROM, VALID_UNTIL);
+            }
+
+            // Maker leg.
+            IFeesManagerV2.FeeQuote memory ob = feesManager.quoteFees(
+                trader,
+                IFeesManagerV2.ProductKind.PERP,
+                IFeesManagerV2.FlowKind.ORDERBOOK,
+                true,
+                SETTLEMENT_ASSET,
+                1_000_000
+            );
+            IFeesManagerV2.FeeQuote memory rfq = feesManager.quoteFees(
+                trader, IFeesManagerV2.ProductKind.PERP, IFeesManagerV2.FlowKind.RFQ, true, SETTLEMENT_ASSET, 1_000_000
+            );
+            assertEq(rfq.appliedPpm, ob.appliedPpm, "perp maker rfq ppm == orderbook");
+
+            // Taker leg.
+            ob = feesManager.quoteFees(
+                trader,
+                IFeesManagerV2.ProductKind.PERP,
+                IFeesManagerV2.FlowKind.ORDERBOOK,
+                false,
+                SETTLEMENT_ASSET,
+                1_000_000
+            );
+            rfq = feesManager.quoteFees(
+                trader, IFeesManagerV2.ProductKind.PERP, IFeesManagerV2.FlowKind.RFQ, false, SETTLEMENT_ASSET, 1_000_000
+            );
+            assertEq(rfq.appliedPpm, ob.appliedPpm, "perp taker rfq ppm == orderbook");
+        }
+    }
+
+    // OPTION ORDERBOOK ppm must remain unchanged across every tier for
+    // both legs even after V2G-N (the RFQ work is strictly additive on
+    // the discount layer; the underlying profile lookup is untouched).
+    function testV2GN_OptionOrderbookUnchangedForEveryTier() external {
+        int32[5] memory expectedMaker = [int32(50), int32(0), int32(-10), int32(-25), int32(-50)];
+        int32[5] memory expectedTaker = [int32(250), int32(150), int32(125), int32(100), int32(75)];
+
+        for (uint8 tier; tier < feesManager.TIER_COUNT(); ++tier) {
+            address trader = address(uint160(0xC000 + uint160(tier)));
+            if (tier != 0) {
+                _claimTier(trader, tier, VALID_FROM, VALID_UNTIL);
+            }
+            IFeesManagerV2.FeeQuote memory maker = feesManager.quoteFees(
+                trader,
+                IFeesManagerV2.ProductKind.OPTION,
+                IFeesManagerV2.FlowKind.ORDERBOOK,
+                true,
+                SETTLEMENT_ASSET,
+                1_000_000
+            );
+            IFeesManagerV2.FeeQuote memory taker = feesManager.quoteFees(
+                trader,
+                IFeesManagerV2.ProductKind.OPTION,
+                IFeesManagerV2.FlowKind.ORDERBOOK,
+                false,
+                SETTLEMENT_ASSET,
+                1_000_000
+            );
+            assertEq(maker.appliedPpm, expectedMaker[tier], "option orderbook maker ppm");
+            assertEq(taker.appliedPpm, expectedTaker[tier], "option orderbook taker ppm");
+        }
+    }
+
+    // Invariant pin: for any ratePpm <= 0 (rebate or zero), the RFQ flow
+    // MUST return the same ppm as ORDERBOOK regardless of which OPTION
+    // discount profile is installed. The contract refuses to discount
+    // negative ppm — this is the Design-Option-A safety net.
+    function testV2GN_RfqDiscountIgnoresNegativeOrZeroPpm() external {
+        // Install an aggressive maker discount on Tier 0 (the trader's
+        // default tier). Without the contract's "ratePpm <= 0" early
+        // return, this would amplify rebates.
+        vm.prank(OWNER);
+        feesManager.setRfqDiscountProfile(0, IFeesManagerV2.ProductKind.OPTION, 1_000_000, 0);
+
+        // Force the maker profile to negative so the discount path
+        // sees a negative ratePpm.
+        vm.prank(OWNER);
+        feesManager.setFeeProfile(0, IFeesManagerV2.ProductKind.OPTION, -25, 250);
+
+        IFeesManagerV2.FeeQuote memory maker = feesManager.quoteFees(
+            ALICE, IFeesManagerV2.ProductKind.OPTION, IFeesManagerV2.FlowKind.RFQ, true, SETTLEMENT_ASSET, 1_000_000
+        );
+        // Maker rebate stays at -25 ppm despite the 100% maker discount
+        // — Design-Option-A safety net.
+        assertEq(maker.appliedPpm, -25, "negative maker ppm not affected by RFQ discount");
+        assertTrue(maker.isRebate);
+    }
+
+    // Sanity: setting both discount legs to PPM_DENOMINATOR + 1 reverts
+    // with InvalidDiscount. The contract refuses to install an
+    // overflow-shaped discount.
+    function testV2GN_RfqDiscountSetterRejectsOverflow() external {
+        vm.prank(OWNER);
+        vm.expectRevert(FeesManagerV2.InvalidDiscount.selector);
+        feesManager.setRfqDiscountProfile(0, IFeesManagerV2.ProductKind.OPTION, 1_000_001, 0);
+
+        vm.prank(OWNER);
+        vm.expectRevert(FeesManagerV2.InvalidDiscount.selector);
+        feesManager.setRfqDiscountProfile(0, IFeesManagerV2.ProductKind.OPTION, 0, 1_000_001);
+    }
 }
