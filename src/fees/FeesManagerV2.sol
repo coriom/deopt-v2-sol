@@ -5,6 +5,7 @@ import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProo
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 import {IFeesManagerV2} from "./IFeesManagerV2.sol";
+import {IProtocolFeeVault} from "./IProtocolFeeVault.sol";
 
 /// @title FeesManagerV2
 /// @notice Standalone signed-ppm fee manager for the V2 launch fee model.
@@ -46,6 +47,11 @@ contract FeesManagerV2 is IFeesManagerV2 {
     address public override owner;
     address public override feeRecipient;
     address public override rebateFundingAccount;
+
+    /// V2G-RX — see {IFeesManagerV2.protocolFeeVault}. Defaults
+    /// to {address(0)} ⇒ no hooks called ⇒ V2G-W2/V2G-M2 deployment
+    /// posture preserved bit-for-bit.
+    address public override protocolFeeVault;
 
     bytes32 public override merkleRoot;
     uint64 public override rootValidFrom;
@@ -117,6 +123,19 @@ contract FeesManagerV2 is IFeesManagerV2 {
         rebateFundingAccount = newAccount;
 
         emit RebateFundingAccountSet(oldAccount, newAccount);
+    }
+
+    /// @notice V2G-RX — sets the optional ProtocolFeeVault address.
+    /// @dev When non-zero, {consumeFees} fires the matching hook on
+    ///      every fee event whose active recipient equals this
+    ///      address. Setting back to {address(0)} disables the hook
+    ///      calls without otherwise affecting fee math. Allowed to be
+    ///      zero (e.g. cutover rollback to the V2G-W2 posture).
+    function setProtocolFeeVault(address newVault) external onlyOwner {
+        address oldVault = protocolFeeVault;
+        protocolFeeVault = newVault;
+
+        emit ProtocolFeeVaultSet(oldVault, newVault);
     }
 
     function setFeeConsumer(address consumer, bool allowed) external onlyOwner {
@@ -279,6 +298,11 @@ contract FeesManagerV2 is IFeesManagerV2 {
     ) external override onlyFeeConsumer returns (FeeQuote memory quote) {
         quote = _quoteFees(trader, product, flow, isMaker, settlementAsset, basisAmount);
 
+        // V2G-RX — snapshot the configured vault address once per call
+        // so the hook decision is consistent across the rebate + charge
+        // branches.
+        address vault = protocolFeeVault;
+
         if (quote.isRebate) {
             if (quote.feeAmount == 0) {
                 return quote;
@@ -306,6 +330,15 @@ contract FeesManagerV2 is IFeesManagerV2 {
                 basisAmount,
                 quote.feeAmount
             );
+
+            // V2G-RX — vault hook: only fires when the configured
+            // ProtocolFeeVault IS the rebate funding source. Defensive
+            // check prevents accidental hook calls to an EOA recipient.
+            // Hook failure reverts the whole consumeFees — accounting
+            // drift is worse than trade failure (per V2G-RX design).
+            if (vault != address(0) && rebateFundingAccount == vault) {
+                IProtocolFeeVault(vault).onRebatePaid(settlementAsset, quote.feeAmount);
+            }
             return quote;
         }
 
@@ -322,6 +355,12 @@ contract FeesManagerV2 is IFeesManagerV2 {
                 basisAmount,
                 quote.feeAmount
             );
+
+            // V2G-RX — vault hook: only fires when the configured
+            // ProtocolFeeVault IS the fee recipient for this charge.
+            if (vault != address(0) && quote.recipient == vault) {
+                IProtocolFeeVault(vault).onFeeCharged(settlementAsset, quote.feeAmount);
+            }
         }
     }
 

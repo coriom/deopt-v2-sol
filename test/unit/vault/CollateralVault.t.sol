@@ -226,4 +226,120 @@ contract CollateralVaultTest is Test {
         vault.deposit(address(usdc), amount);
         vm.stopPrank();
     }
+
+    /*//////////////////////////////////////////////////////////////
+        V2G-RX — transferFromInternalAccount extension tests
+    //////////////////////////////////////////////////////////////*/
+
+    function testV2GRX_TransferFromInternalAccountDebitsCallerAndCreditsExternalRecipient() external {
+        _deposit(ALICE, DEPOSIT_AMOUNT);
+
+        uint256 externalBefore = usdc.balanceOf(BOB);
+        uint256 totalBefore = vault.totalDepositedByToken(address(usdc));
+
+        vm.prank(ALICE);
+        vault.transferFromInternalAccount(address(usdc), BOB, TRANSFER_AMOUNT);
+
+        // ALICE's internal balance debited by TRANSFER_AMOUNT.
+        assertEq(vault.balances(ALICE, address(usdc)), DEPOSIT_AMOUNT - TRANSFER_AMOUNT);
+        assertEq(vault.idleBalances(ALICE, address(usdc)), DEPOSIT_AMOUNT - TRANSFER_AMOUNT);
+
+        // External wallet BOB credited by TRANSFER_AMOUNT.
+        assertEq(usdc.balanceOf(BOB), externalBefore + TRANSFER_AMOUNT);
+
+        // CV's totalDeposited bookkeeping decreases — funds left the vault.
+        assertEq(vault.totalDepositedByToken(address(usdc)), totalBefore - TRANSFER_AMOUNT);
+        assertEq(usdc.balanceOf(address(vault)), totalBefore - TRANSFER_AMOUNT);
+    }
+
+    function testV2GRX_TransferFromInternalAccountRejectsZeroTo() external {
+        _deposit(ALICE, DEPOSIT_AMOUNT);
+        vm.prank(ALICE);
+        vm.expectRevert(CollateralVaultStorage.ZeroAddress.selector);
+        vault.transferFromInternalAccount(address(usdc), address(0), TRANSFER_AMOUNT);
+    }
+
+    function testV2GRX_TransferFromInternalAccountRejectsZeroAmount() external {
+        _deposit(ALICE, DEPOSIT_AMOUNT);
+        vm.prank(ALICE);
+        vm.expectRevert(CollateralVaultStorage.AmountZero.selector);
+        vault.transferFromInternalAccount(address(usdc), BOB, 0);
+    }
+
+    function testV2GRX_TransferFromInternalAccountRejectsUnsupportedToken() external {
+        // No deposit; use a fresh ERC20 not registered as supported.
+        // `unsupported` is already created in setUp() as a non-whitelisted token.
+        vm.prank(ALICE);
+        vm.expectRevert(CollateralVaultStorage.TokenNotSupported.selector);
+        vault.transferFromInternalAccount(address(unsupported), BOB, 1);
+    }
+
+    function testV2GRX_TransferFromInternalAccountRejectsInsufficientBalance() external {
+        _deposit(ALICE, DEPOSIT_AMOUNT);
+        vm.prank(ALICE);
+        vm.expectRevert(CollateralVaultStorage.InsufficientBalance.selector);
+        vault.transferFromInternalAccount(address(usdc), BOB, DEPOSIT_AMOUNT + 1);
+    }
+
+    function testV2GRX_TransferFromInternalAccountOnlyMovesCallersBalance() external {
+        // ALICE and BOB both deposit; BOB attempts to withdraw against ALICE's balance
+        // via msg.sender semantics → BOB only sees their own balance.
+        _deposit(ALICE, DEPOSIT_AMOUNT);
+        _deposit(BOB, DEPOSIT_AMOUNT / 2);
+
+        // BOB tries to withdraw MORE than BOB's balance — the function debits
+        // msg.sender (BOB)'s balance, not ALICE's. So BOB cannot drain ALICE.
+        vm.prank(BOB);
+        vm.expectRevert(CollateralVaultStorage.InsufficientBalance.selector);
+        vault.transferFromInternalAccount(address(usdc), address(0xFEED), DEPOSIT_AMOUNT);
+
+        // ALICE's balance untouched.
+        assertEq(vault.balances(ALICE, address(usdc)), DEPOSIT_AMOUNT);
+    }
+
+    function testV2GRX_TransferFromInternalAccountRespectsWithdrawalsPause() external {
+        _deposit(ALICE, DEPOSIT_AMOUNT);
+        vm.prank(OWNER);
+        vault.pauseWithdrawals();
+
+        vm.prank(ALICE);
+        vm.expectRevert(CollateralVaultStorage.WithdrawalsPaused.selector);
+        vault.transferFromInternalAccount(address(usdc), BOB, TRANSFER_AMOUNT);
+    }
+
+    function testV2GRX_TransferFromInternalAccountRespectsInternalTransfersPause() external {
+        _deposit(ALICE, DEPOSIT_AMOUNT);
+        vm.prank(OWNER);
+        vault.pauseInternalTransfers();
+
+        vm.prank(ALICE);
+        vm.expectRevert(CollateralVaultStorage.InternalTransfersPaused.selector);
+        vault.transferFromInternalAccount(address(usdc), BOB, TRANSFER_AMOUNT);
+    }
+
+    function testV2GRX_TransferFromInternalAccountAfterInternalTransferIsSelfConsistent() external {
+        // Models the V2G-R5 flow: a user pays fees → vault account credited via
+        // transferBetweenAccounts → vault later moves those funds out via
+        // transferFromInternalAccount.
+        _deposit(ALICE, DEPOSIT_AMOUNT);
+
+        // Pretend ALICE is the trader and FAKE_VAULT is the vault address.
+        address FAKE_VAULT = address(0xFA17);
+        vm.prank(ENGINE);
+        vault.transferBetweenAccounts(address(usdc), ALICE, FAKE_VAULT, TRANSFER_AMOUNT);
+
+        assertEq(vault.balances(FAKE_VAULT, address(usdc)), TRANSFER_AMOUNT);
+        assertEq(vault.idleBalances(FAKE_VAULT, address(usdc)), TRANSFER_AMOUNT);
+
+        // Vault withdraws to its revenueReceiver.
+        address REVENUE = address(0xBEA1);
+        uint256 revenueBefore = usdc.balanceOf(REVENUE);
+
+        vm.prank(FAKE_VAULT);
+        vault.transferFromInternalAccount(address(usdc), REVENUE, TRANSFER_AMOUNT);
+
+        assertEq(usdc.balanceOf(REVENUE), revenueBefore + TRANSFER_AMOUNT);
+        assertEq(vault.balances(FAKE_VAULT, address(usdc)), 0);
+        assertEq(vault.idleBalances(FAKE_VAULT, address(usdc)), 0);
+    }
 }

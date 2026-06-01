@@ -151,6 +151,32 @@ abstract contract CollateralVaultActions is CollateralVaultViews {
                         AUTHORIZED ENGINE HOOKS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice V2G-RX — internal-account holder withdraws its own
+    ///         balance to an external recipient.
+    /// @dev    `msg.sender` is the source internal account. The caller
+    ///         can ONLY move its own balance, never another account's.
+    ///         Gated by both `whenWithdrawalsNotPaused` (external
+    ///         transfer happening) AND `whenInternalTransfersNotPaused`
+    ///         (internal-account debit happening) so either ops pause
+    ///         flag can stop the vault from draining funds.
+    ///
+    ///         Reuses `_withdrawInternal` so the existing risk-limits
+    ///         best-effort check + idle/strategy fallback + totals
+    ///         accounting all apply consistently. For the
+    ///         {ProtocolFeeVault} use case the vault never opts into a
+    ///         strategy adapter and the risk module has no binding for
+    ///         the vault address, so the risk check is skipped and the
+    ///         withdraw resolves entirely from `idleBalances`.
+    function transferFromInternalAccount(address asset, address to, uint256 amount)
+        external
+        whenWithdrawalsNotPaused
+        whenInternalTransfersNotPaused
+        nonReentrant
+    {
+        if (to == address(0)) revert ZeroAddress();
+        _withdrawInternal(msg.sender, to, asset, amount);
+    }
+
     function transferBetweenAccounts(address token, address from, address to, uint256 amount)
         external
         onlyMarginEngine

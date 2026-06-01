@@ -5,6 +5,7 @@ import {Test} from "forge-std/Test.sol";
 
 import {FeesManagerV2} from "../../src/fees/FeesManagerV2.sol";
 import {IFeesManagerV2} from "../../src/fees/IFeesManagerV2.sol";
+import {IProtocolFeeVault} from "../../src/fees/IProtocolFeeVault.sol";
 
 contract FeesManagerV2Test is Test {
     address internal constant OWNER = address(0xA11CE);
@@ -1353,5 +1354,368 @@ contract FeesManagerV2Test is Test {
             uint256(feesManager.productFeeBasis(IFeesManagerV2.ProductKind.PERP)),
             uint256(IFeesManagerV2.FeeBasis.NOTIONAL)
         );
+    }
+
+    /*//////////////////////////////////////////////////////////////
+        V2G-RX — ProtocolFeeVault hook integration
+    //////////////////////////////////////////////////////////////*/
+
+    event ProtocolFeeVaultSet(address indexed oldVault, address indexed newVault);
+
+    function testV2GRX_DefaultProtocolFeeVaultIsZero() external view {
+        assertEq(feesManager.protocolFeeVault(), address(0));
+    }
+
+    function testV2GRX_SetProtocolFeeVaultEmitsAndPersists() external {
+        address vault = address(0xCAFEFEED);
+        vm.expectEmit(true, true, false, false, address(feesManager));
+        emit ProtocolFeeVaultSet(address(0), vault);
+        vm.prank(OWNER);
+        feesManager.setProtocolFeeVault(vault);
+        assertEq(feesManager.protocolFeeVault(), vault);
+    }
+
+    function testV2GRX_SetProtocolFeeVaultAllowsZeroForRollback() external {
+        vm.prank(OWNER);
+        feesManager.setProtocolFeeVault(address(0xCAFEFEED));
+        vm.prank(OWNER);
+        feesManager.setProtocolFeeVault(address(0));
+        assertEq(feesManager.protocolFeeVault(), address(0));
+    }
+
+    function testV2GRX_SetProtocolFeeVaultRejectsNonOwner() external {
+        vm.prank(ALICE);
+        vm.expectRevert(FeesManagerV2.NotOwner.selector);
+        feesManager.setProtocolFeeVault(address(0xCAFEFEED));
+    }
+
+    function testV2GRX_ChargeFiresFeeChargedHookWhenRecipientIsVault() external {
+        MockProtocolFeeVault vault = new MockProtocolFeeVault();
+        _authorizeConsumer();
+        vm.prank(OWNER);
+        feesManager.setFeeRecipient(address(vault));
+        vm.prank(OWNER);
+        feesManager.setProtocolFeeVault(address(vault));
+
+        vm.prank(CONSUMER);
+        feesManager.consumeFees(
+            ALICE,
+            IFeesManagerV2.ProductKind.OPTION,
+            IFeesManagerV2.FlowKind.ORDERBOOK,
+            false,
+            SETTLEMENT_ASSET,
+            1_000_000
+        );
+
+        assertEq(vault.lastChargedAsset(), SETTLEMENT_ASSET);
+        assertEq(vault.lastChargedAmount(), 250);
+        assertEq(vault.chargedCallCount(), 1);
+        assertEq(vault.rebatedCallCount(), 0);
+    }
+
+    function testV2GRX_RebateFiresRebateHookWhenFundingIsVault() external {
+        MockProtocolFeeVault vault = new MockProtocolFeeVault();
+        _authorizeConsumer();
+        vm.prank(OWNER);
+        feesManager.setRebateFundingAccount(address(vault));
+        vm.prank(OWNER);
+        feesManager.setProtocolFeeVault(address(vault));
+        _fundBudget(1_000);
+        _claimTier(ALICE, 4, VALID_FROM, VALID_UNTIL);
+
+        vm.prank(CONSUMER);
+        feesManager.consumeFees(
+            ALICE,
+            IFeesManagerV2.ProductKind.OPTION,
+            IFeesManagerV2.FlowKind.ORDERBOOK,
+            true,
+            SETTLEMENT_ASSET,
+            1_000_000
+        );
+
+        assertEq(vault.lastRebatedAsset(), SETTLEMENT_ASSET);
+        assertEq(vault.lastRebatedAmount(), 50);
+        assertEq(vault.rebatedCallCount(), 1);
+        assertEq(vault.chargedCallCount(), 0);
+    }
+
+    function testV2GRX_HookSkippedWhenRecipientIsNotVault() external {
+        MockProtocolFeeVault vault = new MockProtocolFeeVault();
+        _authorizeConsumer();
+        // Vault wired as protocolFeeVault but feeRecipient kept as the EOA-style FEE_RECIPIENT.
+        vm.prank(OWNER);
+        feesManager.setProtocolFeeVault(address(vault));
+
+        vm.prank(CONSUMER);
+        feesManager.consumeFees(
+            ALICE,
+            IFeesManagerV2.ProductKind.OPTION,
+            IFeesManagerV2.FlowKind.ORDERBOOK,
+            false,
+            SETTLEMENT_ASSET,
+            1_000_000
+        );
+
+        assertEq(vault.chargedCallCount(), 0, "hook must not fire when recipient is not the vault");
+    }
+
+    function testV2GRX_HookSkippedWhenRebateFundingIsNotVault() external {
+        MockProtocolFeeVault vault = new MockProtocolFeeVault();
+        _authorizeConsumer();
+        vm.prank(OWNER);
+        feesManager.setProtocolFeeVault(address(vault));
+        _setRebateFundingAccount();
+        _fundBudget(1_000);
+        _claimTier(ALICE, 4, VALID_FROM, VALID_UNTIL);
+
+        vm.prank(CONSUMER);
+        feesManager.consumeFees(
+            ALICE,
+            IFeesManagerV2.ProductKind.OPTION,
+            IFeesManagerV2.FlowKind.ORDERBOOK,
+            true,
+            SETTLEMENT_ASSET,
+            1_000_000
+        );
+
+        assertEq(vault.rebatedCallCount(), 0);
+    }
+
+    function testV2GRX_HookNotCalledWhenProtocolFeeVaultZero() external {
+        MockProtocolFeeVault vault = new MockProtocolFeeVault();
+        _authorizeConsumer();
+        // Wire vault as feeRecipient but do NOT set protocolFeeVault — V2G-W2 posture.
+        vm.prank(OWNER);
+        feesManager.setFeeRecipient(address(vault));
+
+        vm.prank(CONSUMER);
+        feesManager.consumeFees(
+            ALICE,
+            IFeesManagerV2.ProductKind.OPTION,
+            IFeesManagerV2.FlowKind.ORDERBOOK,
+            false,
+            SETTLEMENT_ASSET,
+            1_000_000
+        );
+
+        assertEq(vault.chargedCallCount(), 0, "hook must not fire when protocolFeeVault is zero");
+    }
+
+    function testV2GRX_HookRevertRevertsConsumeFees() external {
+        RevertingFeeVault vault = new RevertingFeeVault();
+        _authorizeConsumer();
+        vm.prank(OWNER);
+        feesManager.setFeeRecipient(address(vault));
+        vm.prank(OWNER);
+        feesManager.setProtocolFeeVault(address(vault));
+
+        vm.prank(CONSUMER);
+        vm.expectRevert(RevertingFeeVault.IntentionalRevert.selector);
+        feesManager.consumeFees(
+            ALICE,
+            IFeesManagerV2.ProductKind.OPTION,
+            IFeesManagerV2.FlowKind.ORDERBOOK,
+            false,
+            SETTLEMENT_ASSET,
+            1_000_000
+        );
+    }
+
+    function testV2GRX_ChargeAndRebateBothFireHookWhenBothLegsWiredToVault() external {
+        MockProtocolFeeVault vault = new MockProtocolFeeVault();
+        _authorizeConsumer();
+        vm.prank(OWNER);
+        feesManager.setFeeRecipient(address(vault));
+        vm.prank(OWNER);
+        feesManager.setRebateFundingAccount(address(vault));
+        vm.prank(OWNER);
+        feesManager.setProtocolFeeVault(address(vault));
+        _fundBudget(1_000);
+        _claimTier(ALICE, 4, VALID_FROM, VALID_UNTIL);
+
+        vm.prank(CONSUMER);
+        feesManager.consumeFees(
+            ALICE,
+            IFeesManagerV2.ProductKind.OPTION,
+            IFeesManagerV2.FlowKind.ORDERBOOK,
+            false,
+            SETTLEMENT_ASSET,
+            1_000_000
+        );
+        assertEq(vault.chargedCallCount(), 1);
+        assertEq(vault.lastChargedAmount(), 75);
+
+        vm.prank(CONSUMER);
+        feesManager.consumeFees(
+            ALICE,
+            IFeesManagerV2.ProductKind.OPTION,
+            IFeesManagerV2.FlowKind.ORDERBOOK,
+            true,
+            SETTLEMENT_ASSET,
+            1_000_000
+        );
+        assertEq(vault.rebatedCallCount(), 1);
+        assertEq(vault.lastRebatedAmount(), 50);
+    }
+
+    function testV2GRX_ZeroAmountChargeDoesNotFireHook() external {
+        MockProtocolFeeVault vault = new MockProtocolFeeVault();
+        _authorizeConsumer();
+        vm.prank(OWNER);
+        feesManager.setFeeRecipient(address(vault));
+        vm.prank(OWNER);
+        feesManager.setProtocolFeeVault(address(vault));
+        _claimTier(ALICE, 1, VALID_FROM, VALID_UNTIL);
+
+        // Tier 1 OPTION makerPpm = 0 → feeAmount = 0 → no event, no hook.
+        vm.prank(CONSUMER);
+        feesManager.consumeFees(
+            ALICE,
+            IFeesManagerV2.ProductKind.OPTION,
+            IFeesManagerV2.FlowKind.ORDERBOOK,
+            true,
+            SETTLEMENT_ASSET,
+            1_000_000
+        );
+        assertEq(vault.chargedCallCount(), 0);
+    }
+
+    function testV2GRX_HookFlowKindThreadsThroughRfqUnchanged() external {
+        MockProtocolFeeVault vault = new MockProtocolFeeVault();
+        _authorizeConsumer();
+        vm.prank(OWNER);
+        feesManager.setFeeRecipient(address(vault));
+        vm.prank(OWNER);
+        feesManager.setProtocolFeeVault(address(vault));
+        _claimTier(ALICE, 2, VALID_FROM, VALID_UNTIL);
+
+        // Tier 2 OPTION RFQ taker = 94 ppm on basis 1e6 → 94 native.
+        vm.prank(CONSUMER);
+        feesManager.consumeFees(
+            ALICE, IFeesManagerV2.ProductKind.OPTION, IFeesManagerV2.FlowKind.RFQ, false, SETTLEMENT_ASSET, 1_000_000
+        );
+        assertEq(vault.lastChargedAmount(), 94);
+        assertEq(vault.chargedCallCount(), 1);
+    }
+}
+
+/*//////////////////////////////////////////////////////////////
+    V2G-RX — Test fixtures
+//////////////////////////////////////////////////////////////*/
+
+contract MockProtocolFeeVault is IProtocolFeeVault {
+    error NotImplemented();
+
+    address public lastChargedAsset;
+    uint256 public lastChargedAmount;
+    uint256 public chargedCallCount;
+
+    address public lastRebatedAsset;
+    uint256 public lastRebatedAmount;
+    uint256 public rebatedCallCount;
+
+    function onFeeCharged(address asset, uint256 amount) external override {
+        lastChargedAsset = asset;
+        lastChargedAmount = amount;
+        chargedCallCount += 1;
+    }
+
+    function onRebatePaid(address asset, uint256 amount) external override {
+        lastRebatedAsset = asset;
+        lastRebatedAmount = amount;
+        rebatedCallCount += 1;
+    }
+
+    function feeBalance(address) external pure override returns (uint256) {
+        revert NotImplemented();
+    }
+
+    function rebateReserve(address) external pure override returns (uint256) {
+        revert NotImplemented();
+    }
+
+    function grossFeesCollected(address) external pure override returns (uint256) {
+        revert NotImplemented();
+    }
+
+    function rebatesPaid(address) external pure override returns (uint256) {
+        revert NotImplemented();
+    }
+
+    function netRevenue(address) external pure override returns (uint256) {
+        revert NotImplemented();
+    }
+
+    function bootstrapped(address) external pure override returns (bool) {
+        revert NotImplemented();
+    }
+
+    function rebatesPaused() external pure override returns (bool) {
+        revert NotImplemented();
+    }
+
+    function revenueReceiver() external pure override returns (address) {
+        revert NotImplemented();
+    }
+
+    function collateralVault() external pure override returns (address) {
+        revert NotImplemented();
+    }
+
+    function feesManagerV2() external pure override returns (address) {
+        revert NotImplemented();
+    }
+}
+
+contract RevertingFeeVault is IProtocolFeeVault {
+    error IntentionalRevert();
+    error NotImplemented();
+
+    function onFeeCharged(address, uint256) external pure override {
+        revert IntentionalRevert();
+    }
+
+    function onRebatePaid(address, uint256) external pure override {
+        revert IntentionalRevert();
+    }
+
+    function feeBalance(address) external pure override returns (uint256) {
+        revert NotImplemented();
+    }
+
+    function rebateReserve(address) external pure override returns (uint256) {
+        revert NotImplemented();
+    }
+
+    function grossFeesCollected(address) external pure override returns (uint256) {
+        revert NotImplemented();
+    }
+
+    function rebatesPaid(address) external pure override returns (uint256) {
+        revert NotImplemented();
+    }
+
+    function netRevenue(address) external pure override returns (uint256) {
+        revert NotImplemented();
+    }
+
+    function bootstrapped(address) external pure override returns (bool) {
+        revert NotImplemented();
+    }
+
+    function rebatesPaused() external pure override returns (bool) {
+        revert NotImplemented();
+    }
+
+    function revenueReceiver() external pure override returns (address) {
+        revert NotImplemented();
+    }
+
+    function collateralVault() external pure override returns (address) {
+        revert NotImplemented();
+    }
+
+    function feesManagerV2() external pure override returns (address) {
+        revert NotImplemented();
     }
 }

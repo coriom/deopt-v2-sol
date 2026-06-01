@@ -64,6 +64,14 @@ interface IFeesManagerV2 {
 
     function rebateFundingAccount() external view returns (address);
 
+    /// V2G-RX — optional address of the deployed {ProtocolFeeVault}.
+    /// When non-zero, {consumeFees} fires the matching vault hook
+    /// ({onFeeCharged} / {onRebatePaid}) on every fee event whose
+    /// active recipient (feeRecipient / rebateFundingAccount) equals
+    /// this address. Defaults to {address(0)} — fully backwards
+    /// compatible with the V2G-W2 / V2G-M2 deployment posture.
+    function protocolFeeVault() external view returns (address);
+
     function merkleRoot() external view returns (bytes32);
 
     function rootValidFrom() external view returns (uint64);
@@ -136,6 +144,9 @@ interface IFeesManagerV2 {
     event FeeRecipientSet(address indexed oldRecipient, address indexed newRecipient);
 
     event RebateFundingAccountSet(address indexed oldAccount, address indexed newAccount);
+
+    /// V2G-RX — emitted when {protocolFeeVault} changes.
+    event ProtocolFeeVaultSet(address indexed oldVault, address indexed newVault);
 
     event FeeConsumerSet(address indexed consumer, bool allowed);
 
