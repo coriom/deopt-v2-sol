@@ -7,6 +7,7 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 import {OptionProductRegistry} from "../OptionProductRegistry.sol";
 import {IMarginEngineTrade} from "./IMarginEngineTrade.sol";
+import {IMarginEngineRfqTrade} from "./IMarginEngineRfqTrade.sol";
 
 /// @title OptionMatchingEngine
 /// @notice Dedicated option execution ingress for signed on-chain option intents.
@@ -33,6 +34,23 @@ contract OptionMatchingEngine is ReentrancyGuard, EIP712 {
     event Unpaused(address indexed account);
 
     event OptionTradeExecuted(
+        bytes32 indexed intentId,
+        address indexed buyer,
+        address indexed seller,
+        uint256 optionId,
+        uint128 quantity,
+        uint128 premiumPerContract,
+        bool buyerIsMaker,
+        uint256 buyerNonce,
+        uint256 sellerNonce
+    );
+
+    /// @notice V2G-O — emitted when an RFQ-flow option trade is executed.
+    ///         Carries the same per-trade fields as {OptionTradeExecuted}
+    ///         plus an explicit `isRfq=true` marker so off-chain consumers
+    ///         can route the trade to the RFQ analytics surface even before
+    ///         the {FeeChargedV2}.flowKind topic arrives in the indexer.
+    event OptionRfqTradeExecuted(
         bytes32 indexed intentId,
         address indexed buyer,
         address indexed seller,
@@ -83,7 +101,40 @@ contract OptionMatchingEngine is ReentrancyGuard, EIP712 {
         "OptionTrade(bytes32 intentId,address buyer,address seller,uint256 optionId,address underlying,address settlementAsset,uint64 expiry,uint64 strike1e8,bool isCall,uint128 contractSize1e8,uint128 quantity,uint128 premiumPerContract,bool buyerIsMaker,uint256 buyerNonce,uint256 sellerNonce,uint256 deadline)"
     );
 
+    /// @notice V2G-O — RFQ-flow EIP-712 typehash. Identical fields to
+    ///         {TRADE_TYPEHASH} but a different type name so the
+    ///         resulting digest is distinct: maker/taker explicitly
+    ///         consent to the RFQ fee schedule by signing this typehash
+    ///         (signatures over {TRADE_TYPEHASH} can NOT be replayed
+    ///         here, and vice versa).
+    bytes32 public constant RFQ_TRADE_TYPEHASH = keccak256(
+        "OptionRfqTrade(bytes32 intentId,address buyer,address seller,uint256 optionId,address underlying,address settlementAsset,uint64 expiry,uint64 strike1e8,bool isCall,uint128 contractSize1e8,uint128 quantity,uint128 premiumPerContract,bool buyerIsMaker,uint256 buyerNonce,uint256 sellerNonce,uint256 deadline)"
+    );
+
     struct OptionTrade {
+        bytes32 intentId;
+        address buyer;
+        address seller;
+        uint256 optionId;
+        address underlying;
+        address settlementAsset;
+        uint64 expiry;
+        uint64 strike1e8;
+        bool isCall;
+        uint128 contractSize1e8;
+        uint128 quantity;
+        uint128 premiumPerContract;
+        bool buyerIsMaker;
+        uint256 buyerNonce;
+        uint256 sellerNonce;
+        uint256 deadline;
+    }
+
+    /// @notice V2G-O — RFQ-flow trade payload. Same fields as
+    ///         {OptionTrade}; the dedicated struct enforces the
+    ///         maker/taker EIP-712 consent semantics for the RFQ fee
+    ///         schedule.
+    struct OptionRfqTrade {
         bytes32 intentId;
         address buyer;
         address seller;
@@ -296,6 +347,43 @@ contract OptionMatchingEngine is ReentrancyGuard, EIP712 {
         return hashTrade(t);
     }
 
+    /// @notice V2G-O — EIP-712 digest of an {OptionRfqTrade}. Uses the
+    ///         dedicated {RFQ_TRADE_TYPEHASH} so the resulting digest
+    ///         differs from an {OptionTrade} carrying identical fields.
+    function hashRfqTrade(OptionRfqTrade calldata t) public view returns (bytes32) {
+        return _hashTypedDataV4(_rfqStructHash(t));
+    }
+
+    /// @dev V2G-O — inner struct-hash for the RFQ digest. Chunked into
+    ///      two `abi.encode` halves + `bytes.concat` to keep via-IR's
+    ///      stack scheduler from running out (the legacy {hashTrade}
+    ///      already uses 17 fields; adding a second 17-field encode in
+    ///      the same contract pushed solc over by one slot). The byte
+    ///      stream is identical to the canonical single-encode form so
+    ///      the EIP-712 digest matches a maker/taker who hashed the
+    ///      struct in the canonical way off-chain.
+    function _rfqStructHash(OptionRfqTrade calldata t) internal pure returns (bytes32) {
+        bytes memory head = abi.encode(
+            RFQ_TRADE_TYPEHASH, t.intentId, t.buyer, t.seller, t.optionId, t.underlying, t.settlementAsset, t.expiry
+        );
+        bytes memory tail = abi.encode(
+            t.strike1e8,
+            t.isCall,
+            t.contractSize1e8,
+            t.quantity,
+            t.premiumPerContract,
+            t.buyerIsMaker,
+            t.buyerNonce,
+            t.sellerNonce,
+            t.deadline
+        );
+        return keccak256(bytes.concat(head, tail));
+    }
+
+    function previewRfqTradeDigest(OptionRfqTrade calldata t) external view returns (bytes32) {
+        return hashRfqTrade(t);
+    }
+
     function previewTradeValidity(OptionTrade calldata t)
         external
         view
@@ -393,6 +481,77 @@ contract OptionMatchingEngine is ReentrancyGuard, EIP712 {
         });
     }
 
+    /// @dev V2G-O — RFQ-flavoured trade flattening. Same MarginEngine
+    ///      Trade payload as {_toMarginTrade}; the flow distinction is
+    ///      enforced by the {applyRfqTrade} selector at the MarginEngine,
+    ///      not by the per-trade payload.
+    function _toMarginTradeFromRfq(OptionRfqTrade calldata t)
+        internal
+        pure
+        returns (IMarginEngineTrade.Trade memory mt)
+    {
+        mt = IMarginEngineTrade.Trade({
+            buyer: t.buyer,
+            seller: t.seller,
+            optionId: t.optionId,
+            quantity: t.quantity,
+            price: t.premiumPerContract,
+            buyerIsMaker: t.buyerIsMaker
+        });
+    }
+
+    /// @dev V2G-O — structural validation for {OptionRfqTrade}. Mirrors
+    ///      {_isStructurallyValid} bit-for-bit since the fields are
+    ///      identical; defined separately so the OptionTrade validation
+    ///      surface stays untouched.
+    function _isStructurallyValidRfq(OptionRfqTrade calldata t) internal pure returns (bool) {
+        if (t.intentId == bytes32(0)) return false;
+        if (t.buyer == address(0) || t.seller == address(0)) return false;
+        if (t.buyer == t.seller) return false;
+        if (t.underlying == address(0) || t.settlementAsset == address(0)) return false;
+        if (t.expiry == 0 || t.strike1e8 == 0 || t.contractSize1e8 == 0) return false;
+        if (t.quantity == 0 || t.premiumPerContract == 0) return false;
+        return true;
+    }
+
+    function _isDeadlineValidRfq(OptionRfqTrade calldata t) internal view returns (bool) {
+        if (t.deadline == 0) return true;
+        return block.timestamp <= t.deadline;
+    }
+
+    function _validateRfq(OptionRfqTrade calldata t) internal view {
+        if (!_isStructurallyValidRfq(t)) revert InvalidTrade();
+        if (!_isDeadlineValidRfq(t)) revert DeadlineExpired();
+        _validateSeriesMetadataRfq(t);
+    }
+
+    function _validateSeriesMetadataRfq(OptionRfqTrade calldata t) internal view {
+        OptionProductRegistry registry = optionRegistry;
+        if (address(registry) == address(0)) revert RegistryNotSet();
+
+        (OptionProductRegistry.OptionSeries memory series, bool exists) = registry.getSeriesIfExists(t.optionId);
+        if (!exists) revert UnknownOptionId();
+        if (!series.isActive) revert SeriesInactive();
+
+        if (
+            series.underlying != t.underlying || series.settlementAsset != t.settlementAsset
+                || series.expiry != t.expiry || series.strike != t.strike1e8 || series.isCall != t.isCall
+                || series.contractSize1e8 != t.contractSize1e8
+        ) {
+            revert SeriesMetadataMismatch();
+        }
+    }
+
+    function _consumeNoncesRfq(OptionRfqTrade calldata t) internal {
+        if (nonces[t.buyer] != t.buyerNonce) revert BadNonce();
+        if (nonces[t.seller] != t.sellerNonce) revert BadNonce();
+
+        unchecked {
+            nonces[t.buyer] = t.buyerNonce + 1;
+            nonces[t.seller] = t.sellerNonce + 1;
+        }
+    }
+
     function _requireEngineSet() internal view {
         if (address(marginEngine) == address(0)) revert EngineNotSet();
     }
@@ -420,6 +579,53 @@ contract OptionMatchingEngine is ReentrancyGuard, EIP712 {
         marginEngine.applyTrade(_toMarginTrade(t));
 
         emit OptionTradeExecuted(
+            t.intentId,
+            t.buyer,
+            t.seller,
+            t.optionId,
+            t.quantity,
+            t.premiumPerContract,
+            t.buyerIsMaker,
+            t.buyerNonce,
+            t.sellerNonce
+        );
+    }
+
+    /// @notice V2G-O — RFQ-flow execution entry point. Verifies maker
+    ///         and taker EIP-712 signatures over the {RFQ_TRADE_TYPEHASH}
+    ///         digest and dispatches the trade through the MarginEngine's
+    ///         {IMarginEngineRfqTrade.applyRfqTrade} selector so the V2
+    ///         fee charge surfaces with {IFeesManagerV2.FlowKind.RFQ}.
+    ///
+    ///         The dedicated typehash prevents replay: a signature
+    ///         issued over {TRADE_TYPEHASH} (ORDERBOOK consent) is NOT
+    ///         accepted here, and vice versa. This is the V2G-N
+    ///         design-decision requirement that the maker explicitly
+    ///         consent to the RFQ schedule.
+    function executeRfqTrade(OptionRfqTrade calldata t, bytes calldata buyerSig, bytes calldata sellerSig)
+        external
+        onlyExecutor
+        whenNotPaused
+        nonReentrant
+    {
+        _requireEngineSet();
+        _validateRfq(t);
+
+        bytes32 digest = hashRfqTrade(t);
+
+        if (!_verify(t.buyer, digest, buyerSig)) revert InvalidSignature();
+        if (!_verify(t.seller, digest, sellerSig)) revert InvalidSignature();
+
+        _consumeNoncesRfq(t);
+
+        // Cast to the V2G-O sibling interface to reach the RFQ-flow
+        // entry point on the deployed MarginEngine. The address being
+        // cast is the same `marginEngine` slot — the slot type is
+        // {IMarginEngineTrade} for ABI back-compat, and the deployed
+        // contract implements BOTH interfaces after the V2G-O redeploy.
+        IMarginEngineRfqTrade(address(marginEngine)).applyRfqTrade(_toMarginTradeFromRfq(t));
+
+        emit OptionRfqTradeExecuted(
             t.intentId,
             t.buyer,
             t.seller,

@@ -8,6 +8,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {CollateralVault} from "../../../src/collateral/CollateralVault.sol";
 import {FeesManager} from "../../../src/fees/FeesManager.sol";
 import {FeesManagerV2} from "../../../src/fees/FeesManagerV2.sol";
+import {IFeesManagerV2} from "../../../src/fees/IFeesManagerV2.sol";
 import {OptionProductRegistry} from "../../../src/OptionProductRegistry.sol";
 import {IOracle} from "../../../src/oracle/IOracle.sol";
 import {IRiskModule} from "../../../src/risk/IRiskModule.sol";
@@ -929,5 +930,197 @@ contract MockMarginRiskModule is IRiskModule {
 
         function _setHealthyEquity(address trader) internal {
             riskModule.setEquityBase(trader, int256(HEALTHY_EQUITY));
+        }
+
+        /*//////////////////////////////////////////////////////////////
+                       V2G-O — RFQ flow wiring coverage
+        //////////////////////////////////////////////////////////////*/
+
+        /// @dev V2G-O helper mirror of {_trade} for the RFQ-flow entry
+        ///      point. Same authorisation flow (matching-engine prank)
+        ///      so the call passes the `onlyMatchingEngine` modifier.
+        function _tradeRfq(
+            address buyer,
+            address seller,
+            uint256 optionId,
+            uint128 quantity,
+            uint128 premiumPerContract,
+            bool buyerIsMaker
+        ) internal {
+            vm.prank(MATCHING_ENGINE);
+            engine.applyRfqTrade(
+                IMarginEngineTrade.Trade({
+                    buyer: buyer,
+                    seller: seller,
+                    optionId: optionId,
+                    quantity: quantity,
+                    price: premiumPerContract,
+                    buyerIsMaker: buyerIsMaker
+                })
+            );
+        }
+
+        /// V2G-O: ORDERBOOK trade through {applyTrade} is bytecode-
+        /// equivalent to the pre-V2G-O behaviour. The V2G-O refactor
+        /// extracted the body into `_applyTradeWithFlow` parameterised
+        /// on flow; ORDERBOOK callers must observe identical token
+        /// movements + identical FeeChargedV2 emission count.
+        function testV2GO_OrderbookApplyTradeBehavesIdenticallyToPreRefactor() external {
+            _configureV2Fees(true);
+
+            uint256 aliceBefore = vault.balances(ALICE, address(usdc));
+            uint256 bobBefore = vault.balances(BOB, address(usdc));
+            uint256 recipientBefore = vault.balances(DAVE, address(usdc));
+
+            vm.recordLogs();
+            _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
+            Vm.Log[] memory logs = vm.getRecordedLogs();
+
+            // Same maker/taker amounts as the pre-V2G-O Tier-0 reference
+            // (`testFeesManagerV2PositiveOptionFeesTransferAndPositionsUpdate`).
+            uint256 makerFeeV2 = 5_000;
+            uint256 takerFeeV2 = 25_000;
+
+            assertEq(vault.balances(ALICE, address(usdc)), aliceBefore - PREMIUM_PER_CONTRACT - makerFeeV2);
+            assertEq(vault.balances(BOB, address(usdc)), bobBefore + PREMIUM_PER_CONTRACT - takerFeeV2);
+            assertEq(vault.balances(DAVE, address(usdc)), recipientBefore + makerFeeV2 + takerFeeV2);
+            assertEq(_countLogs(logs, address(feesManagerV2), _feeChargedV2Topic()), 2);
+        }
+
+        /// V2G-O: RFQ trade at Tier 0 must equal ORDERBOOK because the
+        /// Tier 0 RFQ discount profile is 0% on both legs (V2G-N).
+        function testV2GO_RfqTier0EqualsOrderbookFromMarginEnginePerspective() external {
+            _configureV2Fees(true);
+
+            uint256 aliceBefore = vault.balances(ALICE, address(usdc));
+            uint256 bobBefore = vault.balances(BOB, address(usdc));
+            uint256 recipientBefore = vault.balances(DAVE, address(usdc));
+
+            vm.recordLogs();
+            _tradeRfq(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT, true);
+            Vm.Log[] memory logs = vm.getRecordedLogs();
+
+            uint256 makerFeeV2 = 5_000;
+            uint256 takerFeeV2 = 25_000;
+
+            assertEq(vault.balances(ALICE, address(usdc)), aliceBefore - PREMIUM_PER_CONTRACT - makerFeeV2);
+            assertEq(vault.balances(BOB, address(usdc)), bobBefore + PREMIUM_PER_CONTRACT - takerFeeV2);
+            assertEq(vault.balances(DAVE, address(usdc)), recipientBefore + makerFeeV2 + takerFeeV2);
+            assertEq(_countLogs(logs, address(feesManagerV2), _feeChargedV2Topic()), 2);
+        }
+
+        /// V2G-O: the FeeChargedV2 events emitted by an RFQ trade carry
+        /// the RFQ flowKind in their data payload. Pins the
+        /// `flowKind=1` invariant that the V2G-N backend decoder reads.
+        function testV2GO_RfqTradeEmitsFeeChargedV2WithFlowKindOne() external {
+            _configureV2Fees(true);
+
+            vm.recordLogs();
+            _tradeRfq(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT, true);
+            Vm.Log[] memory logs = vm.getRecordedLogs();
+
+            bytes32 chargedTopic = _feeChargedV2Topic();
+            uint256 rfqLegs;
+            for (uint256 i; i < logs.length; ++i) {
+                if (logs[i].emitter != address(feesManagerV2) || logs[i].topics.length == 0) continue;
+                if (logs[i].topics[0] != chargedTopic) continue;
+                // FeeChargedV2 data layout (non-indexed):
+                // (address settlementAsset, uint8 productKind, uint8 flowKind, bool isMaker,
+                //  int32 feePpm, uint256 basisAmount, uint256 feeAmount).
+                (, uint8 productKindRaw, uint8 flowKindRaw,,,,) =
+                    abi.decode(logs[i].data, (address, uint8, uint8, bool, int32, uint256, uint256));
+                assertEq(productKindRaw, uint8(IFeesManagerV2.ProductKind.OPTION), "productKind=OPTION");
+                assertEq(flowKindRaw, uint8(IFeesManagerV2.FlowKind.RFQ), "flowKind=RFQ");
+                ++rfqLegs;
+            }
+            assertEq(rfqLegs, 2, "both legs emit FeeChargedV2 with flowKind=RFQ");
+        }
+
+        /// V2G-O: Tier 4 RFQ maker rebate stays at the canonical -50 ppm
+        /// (rebateAmount = floor(premium * 50 / 1e6)) — the V2G-N
+        /// Design-Option-A negative-ppm preservation invariant carried
+        /// through the new applyRfqTrade entry.
+        function testV2GO_RfqTier4MakerRebatePreservedThroughMarginEngine() external {
+            _configureV2Fees(true);
+            _claimV2Tier(ALICE, 4);
+
+            vm.prank(OWNER);
+            feesManagerV2.fundRebateBudget(address(usdc), 10_000);
+
+            uint256 aliceBefore = vault.balances(ALICE, address(usdc));
+            uint256 bobBefore = vault.balances(BOB, address(usdc));
+            uint256 carolBefore = vault.balances(CAROL, address(usdc));
+            uint256 recipientBefore = vault.balances(DAVE, address(usdc));
+
+            vm.recordLogs();
+            _tradeRfq(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT, true);
+            Vm.Log[] memory logs = vm.getRecordedLogs();
+
+            // Maker rebate (Tier 4 maker): -50 ppm, floor(premium * 50 / 1e6) =
+            // floor(100_000_000 * 50 / 1e6) = 5_000. Unchanged from ORDERBOOK.
+            uint256 makerRebate = 5_000;
+            // Taker (Tier 0 default) RFQ has 0% discount → 250 ppm:
+            // ceil(100_000_000 * 250 / 1e6) = 25_000. Unchanged from ORDERBOOK
+            // since Tier 0 has zero RFQ taker discount.
+            uint256 takerFeeV2 = 25_000;
+
+            assertEq(vault.balances(ALICE, address(usdc)), aliceBefore - PREMIUM_PER_CONTRACT + makerRebate);
+            assertEq(vault.balances(BOB, address(usdc)), bobBefore + PREMIUM_PER_CONTRACT - takerFeeV2);
+            assertEq(vault.balances(CAROL, address(usdc)), carolBefore - makerRebate);
+            assertEq(vault.balances(DAVE, address(usdc)), recipientBefore + takerFeeV2);
+            assertEq(feesManagerV2.rebateBudget(address(usdc)), 10_000 - makerRebate);
+            assertEq(_countLogs(logs, address(feesManagerV2), _feeRebatedV2Topic()), 1);
+            assertEq(_countLogs(logs, address(feesManagerV2), _feeChargedV2Topic()), 1);
+        }
+
+        /// V2G-O: a Tier 2 RFQ taker (both maker + taker on Tier 2) bills
+        /// the V2G-N canonical 94 ppm taker fee (25% RFQ discount on
+        /// 125 ppm) instead of the ORDERBOOK 125 ppm. Exercises a
+        /// non-zero RFQ discount on the taker leg.
+        function testV2GO_RfqTier2TakerLegPicksUpDiscountedFee() external {
+            _configureV2Fees(true);
+            _claimV2Tier(ALICE, 2);
+            _claimV2Tier(BOB, 2);
+
+            uint256 aliceBefore = vault.balances(ALICE, address(usdc));
+            uint256 bobBefore = vault.balances(BOB, address(usdc));
+            uint256 recipientBefore = vault.balances(DAVE, address(usdc));
+
+            // Tier 2 maker rebate is -10 ppm. Fund enough to cover it.
+            vm.prank(OWNER);
+            feesManagerV2.fundRebateBudget(address(usdc), 10_000);
+            uint256 carolBefore = vault.balances(CAROL, address(usdc));
+
+            // RFQ trade — ALICE = buyer = maker (rebate leg). BOB =
+            // seller = taker (Tier 2 RFQ discount 25% applied to 125
+            // ppm => 94 ppm).
+            _tradeRfq(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT, true);
+
+            uint256 makerRebate = 1_000; // floor(100_000_000 * 10 / 1e6)
+            uint256 takerFeeV2Discounted = 9_400; // ceil(100_000_000 * 94 / 1e6)
+
+            assertEq(vault.balances(ALICE, address(usdc)), aliceBefore - PREMIUM_PER_CONTRACT + makerRebate);
+            assertEq(vault.balances(BOB, address(usdc)), bobBefore + PREMIUM_PER_CONTRACT - takerFeeV2Discounted);
+            assertEq(vault.balances(CAROL, address(usdc)), carolBefore - makerRebate);
+            assertEq(vault.balances(DAVE, address(usdc)), recipientBefore + takerFeeV2Discounted);
+        }
+
+        /// V2G-O: the RFQ entry point is gated by the same
+        /// `onlyMatchingEngine` modifier as the ORDERBOOK path.
+        function testV2GO_RfqApplyTradeRequiresAuthorizedMatchingEngine() external {
+            _configureV2Fees(true);
+
+            vm.expectRevert(MarginEngineTypes.NotAuthorized.selector);
+            // Not pranked as MATCHING_ENGINE.
+            engine.applyRfqTrade(
+                IMarginEngineTrade.Trade({
+                    buyer: ALICE,
+                    seller: BOB,
+                    optionId: callOptionId,
+                    quantity: 1,
+                    price: PREMIUM_PER_CONTRACT,
+                    buyerIsMaker: true
+                })
+            );
         }
     }

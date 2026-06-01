@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import {OptionProductRegistry} from "../OptionProductRegistry.sol";
 import {IMarginEngineState} from "../risk/IMarginEngineState.sol";
 import {IMarginEngineTrade} from "../matching/IMarginEngineTrade.sol";
+import {IMarginEngineRfqTrade} from "../matching/IMarginEngineRfqTrade.sol";
 import {IFeesManager} from "../fees/IFeesManager.sol";
 import {IFeesManagerV2} from "../fees/IFeesManagerV2.sol";
 
@@ -32,7 +33,7 @@ import {MarginEngineAdmin} from "./MarginEngineAdmin.sol";
 ///  Maker/taker convention:
 ///   - t.buyerIsMaker == true  => buyer = maker, seller = taker
 ///   - t.buyerIsMaker == false => buyer = taker, seller = maker
-abstract contract MarginEngineTrading is MarginEngineAdmin {
+abstract contract MarginEngineTrading is MarginEngineAdmin, IMarginEngineRfqTrade {
     /*//////////////////////////////////////////////////////////////
                             INTERNAL HELPERS
     //////////////////////////////////////////////////////////////*/
@@ -79,19 +80,14 @@ abstract contract MarginEngineTrading is MarginEngineAdmin {
         bool isMaker,
         address settlementAsset,
         uint256 optionId,
-        uint256 premium
+        uint256 premium,
+        IFeesManagerV2.FlowKind flow
     ) internal {
         IFeesManagerV2 fm = feesManagerV2;
         if (address(fm) == address(0)) revert ZeroAddress();
 
-        IFeesManagerV2.FeeQuote memory q = fm.consumeFees(
-            trader,
-            IFeesManagerV2.ProductKind.OPTION,
-            IFeesManagerV2.FlowKind.ORDERBOOK,
-            isMaker,
-            settlementAsset,
-            premium
-        );
+        IFeesManagerV2.FeeQuote memory q =
+            fm.consumeFees(trader, IFeesManagerV2.ProductKind.OPTION, flow, isMaker, settlementAsset, premium);
 
         // The FeesManagerV2 contract is an owner-installed trusted dependency. We only validate
         // the safety-critical output invariants (rebate-recipient identity), not the input echoes,
@@ -134,6 +130,36 @@ abstract contract MarginEngineTrading is MarginEngineAdmin {
         whenTradingNotPaused
         nonReentrant
     {
+        _applyTradeWithFlow(t, IFeesManagerV2.FlowKind.ORDERBOOK);
+    }
+
+    /// @inheritdoc IMarginEngineRfqTrade
+    ///
+    /// @dev V2G-O: dedicated RFQ-flow entry point that runs through the
+    ///      same internal helper as {applyTrade} but flips the
+    ///      {IFeesManagerV2.FlowKind} the fee charge passes to
+    ///      {FeesManagerV2.consumeFees}. Maker / taker explicitly opted
+    ///      in to the RFQ schedule by signing the
+    ///      {OptionMatchingEngine.OptionRfqTrade} EIP-712 typehash.
+    ///
+    ///      Same modifiers as {applyTrade} so the matching-engine gate +
+    ///      pause + reentrancy guard apply uniformly.
+    function applyRfqTrade(IMarginEngineTrade.Trade calldata t)
+        external
+        override
+        onlyMatchingEngine
+        whenTradingNotPaused
+        nonReentrant
+    {
+        _applyTradeWithFlow(t, IFeesManagerV2.FlowKind.RFQ);
+    }
+
+    /// @dev V2G-O: shared trade application body parameterised on
+    ///      {IFeesManagerV2.FlowKind}. ORDERBOOK behaviour is
+    ///      bit-equivalent to the pre-V2G-O `applyTrade` body (the
+    ///      single-call site that hardcoded `FlowKind.ORDERBOOK` is now
+    ///      reached by `applyTrade -> _applyTradeWithFlow(t, ORDERBOOK)`).
+    function _applyTradeWithFlow(IMarginEngineTrade.Trade calldata t, IFeesManagerV2.FlowKind flow) internal {
         // Basic validation
         if (t.buyer == address(0) || t.seller == address(0) || t.buyer == t.seller || t.quantity == 0 || t.price == 0) {
             revert InvalidTrade();
@@ -206,8 +232,8 @@ abstract contract MarginEngineTrading is MarginEngineAdmin {
 
         // Option fees
         if (useFeesManagerV2) {
-            _chargeTradingFeeV2(t.buyer, t.seller, buyerIsMaker, series.settlementAsset, t.optionId, premium);
-            _chargeTradingFeeV2(t.seller, t.buyer, sellerIsMaker, series.settlementAsset, t.optionId, premium);
+            _chargeTradingFeeV2(t.buyer, t.seller, buyerIsMaker, series.settlementAsset, t.optionId, premium, flow);
+            _chargeTradingFeeV2(t.seller, t.buyer, sellerIsMaker, series.settlementAsset, t.optionId, premium, flow);
         } else if (address(feesManager) != address(0)) {
             address recipient = _resolvedFeeRecipient();
             if (recipient == address(0)) revert FeesRecipientNotSet();
