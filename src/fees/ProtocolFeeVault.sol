@@ -43,6 +43,10 @@ contract ProtocolFeeVault is IProtocolFeeVault, ReentrancyGuard {
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event RevenueReceiverUpdated(address indexed previous, address indexed next);
+    /// @notice V2G-RX.1 — emitted when the fast-pause guardian
+    ///         address changes. `newGuardian == address(0)` means the
+    ///         guardian fast-pause posture is disabled (owner-only).
+    event GuardianUpdated(address indexed oldGuardian, address indexed newGuardian);
 
     event FeeRecorded(address indexed asset, uint256 amount);
     event RebateRecorded(address indexed asset, uint256 amount);
@@ -70,6 +74,11 @@ contract ProtocolFeeVault is IProtocolFeeVault, ReentrancyGuard {
     error AlreadyBootstrapped();
     error InvalidBootstrapValues();
     error NotRebatePausedAware();
+    /// @notice V2G-RX.1 — raised when a caller that is neither
+    ///         {owner} nor {guardian} tries to invoke a
+    ///         guardian-or-owner action (currently only
+    ///         {pauseRebates}).
+    error NotGuardianOrOwner();
 
     /*//////////////////////////////////////////////////////////////
                                 IMMUTABLES
@@ -85,6 +94,10 @@ contract ProtocolFeeVault is IProtocolFeeVault, ReentrancyGuard {
     address public owner;
     address public override revenueReceiver;
     bool public override rebatesPaused;
+    /// @notice V2G-RX.1 — fast-pause guardian. `address(0)` means
+    ///         no guardian is configured and only the owner can
+    ///         pause rebates (slow-pause posture).
+    address public override guardian;
 
     mapping(address => uint256) public override feeBalance;
     mapping(address => uint256) public override rebateReserve;
@@ -104,6 +117,17 @@ contract ProtocolFeeVault is IProtocolFeeVault, ReentrancyGuard {
 
     modifier onlyFeesManagerV2() {
         if (msg.sender != feesManagerV2) revert NotFeesManagerV2();
+        _;
+    }
+
+    /// @notice V2G-RX.1 — gate used by {pauseRebates}. Owner is
+    ///         always allowed; guardian is allowed only when it is
+    ///         non-zero. This keeps the slow-pause posture intact for
+    ///         deployments that intentionally leave guardian unset.
+    modifier onlyGuardianOrOwner() {
+        if (msg.sender != owner && (guardian == address(0) || msg.sender != guardian)) {
+            revert NotGuardianOrOwner();
+        }
         _;
     }
 
@@ -141,11 +165,27 @@ contract ProtocolFeeVault is IProtocolFeeVault, ReentrancyGuard {
         emit RevenueReceiverUpdated(previous, newReceiver);
     }
 
+    /// @notice V2G-RX.1 — set or clear the fast-pause guardian.
+    ///         Owner-only. Passing `address(0)` explicitly disables
+    ///         the fast-pause posture and reverts the vault to
+    ///         owner-only pause. Operators should document any
+    ///         deployment that ships with `guardian == address(0)`.
+    function setGuardian(address newGuardian) external onlyOwner {
+        address oldGuardian = guardian;
+        guardian = newGuardian;
+        emit GuardianUpdated(oldGuardian, newGuardian);
+    }
+
     /*//////////////////////////////////////////////////////////////
                                   PAUSE
     //////////////////////////////////////////////////////////////*/
 
-    function pauseRebates() external onlyOwner {
+    /// @notice V2G-RX.1 — fast-pause entry. Callable by {owner} or
+    ///         {guardian} (when guardian is non-zero). The reverse,
+    ///         {unpauseRebates}, remains owner-only so the fast-pause
+    ///         posture cannot also fast-unpause: an emergency pause
+    ///         lasts until the owner/timelock reviews and clears it.
+    function pauseRebates() external onlyGuardianOrOwner {
         rebatesPaused = true;
         emit RebatesPaused(msg.sender);
     }

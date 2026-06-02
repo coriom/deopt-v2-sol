@@ -1665,6 +1665,10 @@ contract MockProtocolFeeVault is IProtocolFeeVault {
     function feesManagerV2() external pure override returns (address) {
         revert NotImplemented();
     }
+
+    function guardian() external pure override returns (address) {
+        revert NotImplemented();
+    }
 }
 
 contract RevertingFeeVault is IProtocolFeeVault {
@@ -1716,6 +1720,10 @@ contract RevertingFeeVault is IProtocolFeeVault {
     }
 
     function feesManagerV2() external pure override returns (address) {
+        revert NotImplemented();
+    }
+
+    function guardian() external pure override returns (address) {
         revert NotImplemented();
     }
 }

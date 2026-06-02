@@ -18,6 +18,9 @@ import {IProtocolFeeVault} from "../src/fees/IProtocolFeeVault.sol";
 ///          - vault has no per-asset bootstrap state for the
 ///            configured assets (so bootstrap is still safe to run)
 ///          - rebate budget non-zero for each configured asset
+///          - V2G-RX.1 — guardian is set (or operator explicitly
+///            confirmed the disabled posture via
+///            `ALLOW_ZERO_GUARDIAN_CONFIRM=true`)
 ///
 /// @dev    Required env:
 ///           - FEES_MANAGER_V2
@@ -25,6 +28,11 @@ import {IProtocolFeeVault} from "../src/fees/IProtocolFeeVault.sol";
 ///           - COLLATERAL_VAULT
 ///           - BOOTSTRAP_ASSETS (comma-separated list of asset
 ///             addresses to inspect — typically just `mUSDC`)
+///         V2G-RX.1 optional:
+///           - PROTOCOL_FEE_VAULT_GUARDIAN (expected on-chain value;
+///             when set, the preflight asserts equality)
+///           - ALLOW_ZERO_GUARDIAN_CONFIRM=true (only required when
+///             the live `guardian()` is `address(0)`)
 ///
 ///         Pure `view` — no broadcast path.
 contract PreflightProtocolFeeVaultCutover is Script {
@@ -37,6 +45,13 @@ contract PreflightProtocolFeeVaultCutover is Script {
     error RebateFundingAccountAlreadyVault(address account);
     error ProtocolFeeVaultAlreadyConfigured(address vault);
     error BootstrapAlreadyDone(address asset);
+    /// @notice V2G-RX.1 — on-chain `guardian()` does not match the
+    ///         expected `PROTOCOL_FEE_VAULT_GUARDIAN` env value.
+    error GuardianMismatch(address got, address expected);
+    /// @notice V2G-RX.1 — on-chain `guardian()` is `address(0)`
+    ///         and the operator has not set
+    ///         `ALLOW_ZERO_GUARDIAN_CONFIRM=true`.
+    error GuardianUnsetWithoutConfirm();
 
     function run() external view {
         address fmv2 = vm.envAddress("FEES_MANAGER_V2");
@@ -68,6 +83,23 @@ contract PreflightProtocolFeeVaultCutover is Script {
         console2.log("FM-V2.feeRecipient (current)    ", feeRecipient);
         console2.log("FM-V2.rebateFundingAccount      ", fundingAccount);
         console2.log("FM-V2.protocolFeeVault          ", pfv);
+
+        // V2G-RX.1 — guardian posture check.
+        address onchainGuardian = IProtocolFeeVault(vault).guardian();
+        address expectedGuardian =
+            vm.envExists("PROTOCOL_FEE_VAULT_GUARDIAN") ? vm.envAddress("PROTOCOL_FEE_VAULT_GUARDIAN") : address(0);
+        bool allowZeroGuardian = vm.envOr("ALLOW_ZERO_GUARDIAN_CONFIRM", false);
+
+        console2.log("vault.guardian() (on-chain)     ", onchainGuardian);
+        console2.log("PROTOCOL_FEE_VAULT_GUARDIAN (env)", expectedGuardian);
+        console2.log("ALLOW_ZERO_GUARDIAN_CONFIRM     ", allowZeroGuardian);
+
+        if (expectedGuardian != address(0) && onchainGuardian != expectedGuardian) {
+            revert GuardianMismatch(onchainGuardian, expectedGuardian);
+        }
+        if (onchainGuardian == address(0) && !allowZeroGuardian) {
+            revert GuardianUnsetWithoutConfirm();
+        }
 
         // Confirm no per-asset bootstrap already done for the assets
         // the operator plans to bootstrap.

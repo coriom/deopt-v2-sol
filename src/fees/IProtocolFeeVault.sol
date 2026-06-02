@@ -61,6 +61,14 @@ interface IProtocolFeeVault {
     ///         {onRebatePaid} reverts.
     function rebatesPaused() external view returns (bool);
 
+    /// @notice V2G-RX.1 — fast-pause guardian. May call
+    ///         {pauseRebates} immediately; cannot unpause, withdraw,
+    ///         allocate, bootstrap, or change any other state. Can be
+    ///         {address(0)}, in which case only the owner can pause —
+    ///         deployments that leave guardian unset should document
+    ///         that the fast-pause posture is intentionally disabled.
+    function guardian() external view returns (address);
+
     /// @notice Operator metadata: the canonical destination for
     ///         {withdrawRevenue}. Not enforced as the only allowed
     ///         `to` value — the owner can withdraw to any non-zero

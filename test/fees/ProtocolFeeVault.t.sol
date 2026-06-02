@@ -34,6 +34,7 @@ contract ProtocolFeeVaultTest is Test {
     event RebatesPaused(address indexed by);
     event RebatesUnpaused(address indexed by);
     event RevenueReceiverUpdated(address indexed previous, address indexed next);
+    event GuardianUpdated(address indexed oldGuardian, address indexed newGuardian);
     event BootstrapCompleted(
         address indexed asset, uint256 grossFees, uint256 rebates, uint256 feeBalance, uint256 rebateReserve
     );
@@ -291,8 +292,12 @@ contract ProtocolFeeVaultTest is Test {
     }
 
     function test_pauseRejectsNonOwner() public {
+        // V2G-RX.1 — pauseRebates is now gated by
+        // {onlyGuardianOrOwner}, so a non-owner caller while
+        // guardian is unset reverts with NotGuardianOrOwner. The
+        // V2G-RX.1 suite below covers the guardian-set case.
         vm.prank(BOB);
-        vm.expectRevert(ProtocolFeeVault.NotOwner.selector);
+        vm.expectRevert(ProtocolFeeVault.NotGuardianOrOwner.selector);
         vault.pauseRebates();
     }
 
@@ -302,6 +307,197 @@ contract ProtocolFeeVaultTest is Test {
         vm.prank(BOB);
         vm.expectRevert(ProtocolFeeVault.NotOwner.selector);
         vault.unpauseRebates();
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                          V2G-RX.1 GUARDIAN
+    //////////////////////////////////////////////////////////////*/
+
+    address internal constant GUARDIAN = address(0x6A4D);
+
+    function test_initialGuardianIsZeroByDefault() public view {
+        // V2G-RX.1 — guardian defaults to address(0) so the
+        // existing slow-pause posture remains the on-deploy state
+        // until the owner explicitly enables fast-pause.
+        assertEq(vault.guardian(), address(0));
+    }
+
+    function test_ownerCanSetGuardianAndEmitsEvent() public {
+        vm.expectEmit(true, true, false, false, address(vault));
+        emit GuardianUpdated(address(0), GUARDIAN);
+
+        vm.prank(OWNER);
+        vault.setGuardian(GUARDIAN);
+
+        assertEq(vault.guardian(), GUARDIAN);
+    }
+
+    function test_setGuardianRejectsNonOwner() public {
+        vm.prank(BOB);
+        vm.expectRevert(ProtocolFeeVault.NotOwner.selector);
+        vault.setGuardian(GUARDIAN);
+    }
+
+    function test_setGuardianAcceptsZeroToDisable() public {
+        vm.prank(OWNER);
+        vault.setGuardian(GUARDIAN);
+        assertEq(vault.guardian(), GUARDIAN);
+
+        vm.expectEmit(true, true, false, false, address(vault));
+        emit GuardianUpdated(GUARDIAN, address(0));
+
+        vm.prank(OWNER);
+        vault.setGuardian(address(0));
+        assertEq(vault.guardian(), address(0));
+    }
+
+    function test_guardianCanPauseRebates() public {
+        vm.prank(OWNER);
+        vault.setGuardian(GUARDIAN);
+
+        vm.expectEmit(true, false, false, false, address(vault));
+        emit RebatesPaused(GUARDIAN);
+
+        vm.prank(GUARDIAN);
+        vault.pauseRebates();
+
+        assertTrue(vault.rebatesPaused());
+    }
+
+    function test_ownerCanStillPauseRebatesWhenGuardianSet() public {
+        vm.prank(OWNER);
+        vault.setGuardian(GUARDIAN);
+
+        vm.expectEmit(true, false, false, false, address(vault));
+        emit RebatesPaused(OWNER);
+
+        vm.prank(OWNER);
+        vault.pauseRebates();
+
+        assertTrue(vault.rebatesPaused());
+    }
+
+    function test_randomAddressCannotPauseRebatesEvenWhenGuardianSet() public {
+        vm.prank(OWNER);
+        vault.setGuardian(GUARDIAN);
+
+        vm.prank(BOB);
+        vm.expectRevert(ProtocolFeeVault.NotGuardianOrOwner.selector);
+        vault.pauseRebates();
+    }
+
+    function test_zeroGuardianBlocksFastPauseAttempt() public {
+        // V2G-RX.1 — when guardian == address(0), only the owner can
+        // pause. A would-be guardian attempting to pause is rejected
+        // with the same NotGuardianOrOwner error as any other
+        // unauthorized caller.
+        assertEq(vault.guardian(), address(0));
+
+        vm.prank(GUARDIAN);
+        vm.expectRevert(ProtocolFeeVault.NotGuardianOrOwner.selector);
+        vault.pauseRebates();
+
+        // Owner still works.
+        vm.prank(OWNER);
+        vault.pauseRebates();
+        assertTrue(vault.rebatesPaused());
+    }
+
+    function test_guardianCannotUnpauseRebates() public {
+        vm.prank(OWNER);
+        vault.setGuardian(GUARDIAN);
+
+        vm.prank(GUARDIAN);
+        vault.pauseRebates();
+        assertTrue(vault.rebatesPaused());
+
+        // Guardian cannot lift the pause — owner/timelock must
+        // review and clear it.
+        vm.prank(GUARDIAN);
+        vm.expectRevert(ProtocolFeeVault.NotOwner.selector);
+        vault.unpauseRebates();
+
+        assertTrue(vault.rebatesPaused());
+    }
+
+    function test_ownerUnpausesAfterGuardianPause() public {
+        vm.prank(OWNER);
+        vault.setGuardian(GUARDIAN);
+
+        vm.prank(GUARDIAN);
+        vault.pauseRebates();
+        assertTrue(vault.rebatesPaused());
+
+        vm.expectEmit(true, false, false, false, address(vault));
+        emit RebatesUnpaused(OWNER);
+
+        vm.prank(OWNER);
+        vault.unpauseRebates();
+        assertFalse(vault.rebatesPaused());
+    }
+
+    function test_guardianCannotWithdrawRevenue() public {
+        _credit(ASSET, 1_000);
+        vm.prank(OWNER);
+        vault.setGuardian(GUARDIAN);
+
+        vm.prank(GUARDIAN);
+        vm.expectRevert(ProtocolFeeVault.NotOwner.selector);
+        vault.withdrawRevenue(ASSET, REVENUE_RECEIVER, 100);
+    }
+
+    function test_guardianCannotAllocateToRebateReserve() public {
+        _credit(ASSET, 1_000);
+        vm.prank(OWNER);
+        vault.setGuardian(GUARDIAN);
+
+        vm.prank(GUARDIAN);
+        vm.expectRevert(ProtocolFeeVault.NotOwner.selector);
+        vault.allocateToRebateReserve(ASSET, 100);
+    }
+
+    function test_guardianCannotBootstrap() public {
+        vm.prank(OWNER);
+        vault.setGuardian(GUARDIAN);
+
+        vm.prank(GUARDIAN);
+        vm.expectRevert(ProtocolFeeVault.NotOwner.selector);
+        vault.bootstrap(ASSET, 1_000, 0, 1_000, 0);
+    }
+
+    function test_guardianCannotSetGuardianOrReceiver() public {
+        vm.prank(OWNER);
+        vault.setGuardian(GUARDIAN);
+
+        vm.prank(GUARDIAN);
+        vm.expectRevert(ProtocolFeeVault.NotOwner.selector);
+        vault.setGuardian(BOB);
+
+        vm.prank(GUARDIAN);
+        vm.expectRevert(ProtocolFeeVault.NotOwner.selector);
+        vault.setRevenueReceiver(BOB);
+    }
+
+    function test_rotatingGuardianRevokesOldOne() public {
+        vm.prank(OWNER);
+        vault.setGuardian(GUARDIAN);
+
+        address newGuardian = address(0xD1FF);
+
+        vm.expectEmit(true, true, false, false, address(vault));
+        emit GuardianUpdated(GUARDIAN, newGuardian);
+        vm.prank(OWNER);
+        vault.setGuardian(newGuardian);
+
+        // Old guardian no longer authorized.
+        vm.prank(GUARDIAN);
+        vm.expectRevert(ProtocolFeeVault.NotGuardianOrOwner.selector);
+        vault.pauseRebates();
+
+        // New guardian works.
+        vm.prank(newGuardian);
+        vault.pauseRebates();
+        assertTrue(vault.rebatesPaused());
     }
 
     /*//////////////////////////////////////////////////////////////
