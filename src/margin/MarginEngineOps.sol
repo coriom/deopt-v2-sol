@@ -9,6 +9,7 @@ import {CollateralVault} from "../collateral/CollateralVault.sol";
 import {IRiskModule} from "../risk/IRiskModule.sol";
 import {IMarginEngineState} from "../risk/IMarginEngineState.sol";
 
+import {MarginEngineLiquidationLib} from "./MarginEngineLiquidationLib.sol";
 import {MarginEngineSeizureLib} from "./MarginEngineSeizureLib.sol";
 import {MarginEngineViews} from "./MarginEngineViews.sol";
 
@@ -484,79 +485,24 @@ abstract contract MarginEngineOps is MarginEngineViews {
 
         if (totalContractsClosed == 0) revert LiquidationNothingToDo();
 
-        for (uint256 i = 0; i < assetsCount; i++) {
-            address asset = cashAssets[i];
-            uint256 req = cashRequested[i];
-            if (req == 0) continue;
-
-            _syncVaultBestEffort(trader, asset);
-
-            uint256 traderBal = _collateralVault.balances(trader, asset);
-            uint256 paid = req <= traderBal ? req : traderBal;
-
-            if (paid > 0) {
-                _collateralVault.transferBetweenAccounts(asset, trader, liquidator, paid);
-            }
-
-            emit LiquidationCashflow(liquidator, trader, asset, paid, req);
-        }
-
-        uint256 mmBase = _mulChecked(baseMaintenanceMarginPerContract, totalContractsClosed);
-        uint256 penaltyBase = Math.mulDiv(mmBase, liquidationPenaltyBps, BPS, Math.Rounding.Floor);
-
-        uint256 remainingBase = penaltyBase;
-        uint256 seizedBaseTotal = 0;
-
-        if (remainingBase > 0) {
-            _syncVaultBestEffort(trader, baseCollateralToken);
-
-            uint256 balBase = _collateralVault.balances(trader, baseCollateralToken);
-            uint256 seizeBaseTokenAmt = remainingBase <= balBase ? remainingBase : balBase;
-
-            if (seizeBaseTokenAmt > 0) {
-                _collateralVault.transferBetweenAccounts(baseCollateralToken, trader, liquidator, seizeBaseTokenAmt);
-                seizedBaseTotal = _addChecked(seizedBaseTotal, seizeBaseTokenAmt);
-                remainingBase -= seizeBaseTokenAmt;
-
-                emit LiquidationSeize(liquidator, trader, baseCollateralToken, seizeBaseTokenAmt, seizeBaseTokenAmt);
-            }
-        }
-
-        if (remainingBase > 0) {
-            for (uint256 i = 0; i < assetsCount; i++) {
-                if (remainingBase == 0) break;
-
-                address tok = cashAssets[i];
-                if (tok == address(0) || tok == baseCollateralToken) continue;
-
-                CollateralVault.CollateralTokenConfig memory cfg = _vaultCfg(tok);
-                if (!cfg.isSupported || cfg.decimals == 0) continue;
-
-                _syncVaultBestEffort(trader, tok);
-
-                (uint256 neededTok, bool ok) = MarginEngineSeizureLib.baseValueToTokenAmountUp(
-                    tok, remainingBase, baseCollateralToken, _collateralVault, _oracle, liquidationOracleMaxDelay
-                );
-                if (!ok || neededTok == 0) continue;
-
-                uint256 balTok = _collateralVault.balances(trader, tok);
-                uint256 seizeTok = neededTok <= balTok ? neededTok : balTok;
-                if (seizeTok == 0) continue;
-
-                uint256 pxTokBase = _getOraclePriceChecked(tok, baseCollateralToken);
-                uint256 seizedBaseApprox = MarginEngineSeizureLib.tokenAmountToBaseValueDown(
-                    tok, seizeTok, pxTokBase, baseCollateralToken, _collateralVault
-                );
-
-                _collateralVault.transferBetweenAccounts(tok, trader, liquidator, seizeTok);
-
-                uint256 applied = seizedBaseApprox <= remainingBase ? seizedBaseApprox : remainingBase;
-                seizedBaseTotal = _addChecked(seizedBaseTotal, applied);
-                remainingBase -= applied;
-
-                emit LiquidationSeize(liquidator, trader, tok, seizeTok, applied);
-            }
-        }
+        // V2G-P size remediation: the cash settlement + base seizure + cross-collateral
+        // seizure block was extracted to {MarginEngineLiquidationLib.settleCashAndSeize}.
+        // Behaviour is byte-identical: same external CV/Oracle calls, same events
+        // (emitted from the library under the engine's address via DELEGATECALL).
+        uint256 seizedBaseTotal = MarginEngineLiquidationLib.settleCashAndSeize(
+            liquidator,
+            trader,
+            cashAssets,
+            cashRequested,
+            assetsCount,
+            totalContractsClosed,
+            baseMaintenanceMarginPerContract,
+            liquidationPenaltyBps,
+            baseCollateralToken,
+            _collateralVault,
+            _oracle,
+            liquidationOracleMaxDelay
+        );
 
         IRiskModule.AccountRisk memory riskAfter = _riskModule.computeAccountRisk(trader);
         uint256 ratioAfterBps = _marginRatioBpsFromRisk(riskAfter.equityBase, riskAfter.maintenanceMarginBase);

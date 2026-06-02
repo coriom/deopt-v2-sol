@@ -83,8 +83,14 @@ contract WireFeesManagerV2Option is Script {
             revert EnableRequiresWire();
         }
 
-        uint256 deployerPk = vm.envUint("DEPLOYER_PRIVATE_KEY");
-        vm.startBroadcast(deployerPk);
+        // V2G-P keystore mode: PK is optional. When unset Foundry uses
+        // `--account <keystore>` / `--sender <addr>` from the CLI.
+        uint256 deployerPk = vm.envOr("DEPLOYER_PRIVATE_KEY", uint256(0));
+        if (deployerPk != 0) {
+            vm.startBroadcast(deployerPk);
+        } else {
+            vm.startBroadcast();
+        }
 
         if (inputs.wireConfirmed) {
             _applyWire(inputs);
@@ -106,8 +112,15 @@ contract WireFeesManagerV2Option is Script {
     //////////////////////////////////////////////////////////////*/
 
     function _readInputs() internal view returns (WiringInputs memory inputs) {
-        uint256 deployerPk = vm.envUint("DEPLOYER_PRIVATE_KEY");
-        inputs.caller = vm.addr(deployerPk);
+        // V2G-P keystore mode: derive caller from PK when set, otherwise from
+        // `DEPLOYER_ADDRESS` env (defaulting to the canonical V2 deployer EOA).
+        uint256 deployerPk = vm.envOr("DEPLOYER_PRIVATE_KEY", uint256(0));
+        address envDeployer = vm.envOr("DEPLOYER_ADDRESS", address(0xc35F7A8A103A9A4464adfaa76B9B514093D23C27));
+        if (deployerPk != 0) {
+            inputs.caller = vm.addr(deployerPk);
+        } else {
+            inputs.caller = envDeployer;
+        }
         inputs.marginEngine = _envAddressOrZero("MARGIN_ENGINE_ADDRESS");
         inputs.feesManagerV2 = _envAddressOrZero("FEES_MANAGER_V2_ADDRESS");
 

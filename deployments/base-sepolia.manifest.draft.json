@@ -325,7 +325,10 @@
     "a3Fallback": true,
     "deployer": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
     "deployResultDoc": "docs/PERP_ENGINE_V2_A3_DEPLOY_REWIRE_RESULT_V2F_H.md",
-    "deployBlockRange": [42182809, 42182816],
+    "deployBlockRange": [
+      42182809,
+      42182816
+    ],
     "deployTxHashes": [
       "0x247839433bce2d88ad3db1f276417504e41439cf13513a7f29d28dc6b0e7e7c9",
       "0x2a3de8c3d03c3b1cff1bcbd26dda325c5f00926368dc34cd38a7b47e4dbfc8a4",
@@ -347,7 +350,10 @@
   },
   "perpEngineV2Phase2Rewire": {
     "status": "rewired_a3_v2_disabled",
-    "rewireBlockRange": [42182919, 42182924],
+    "rewireBlockRange": [
+      42182919,
+      42182924
+    ],
     "rewireResultDoc": "docs/PERP_ENGINE_V2_A3_DEPLOY_REWIRE_RESULT_V2F_H.md",
     "rewireScript": "script/RewirePerpEngineV2.s.sol:RewirePerpEngineV2",
     "rewireBroadcastedBy": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
@@ -432,14 +438,14 @@
     "smokePrice1e8": "300000000000",
     "tradePathSummary": "executor -> PerpMatchingEngine.executeTrade(PerpTrade, buyerSig, sellerSig) -> PerpEngine.applyTrade(Trade)",
     "blockers": [
-      "PerpMatchingEngine.paused() = true — operator must broadcast V2F-I §7a unpause first.",
-      "buyer != seller required by _isStructurallyValid — operator must supply PERP_SMOKE_BUYER_PRIVATE_KEY and PERP_SMOKE_SELLER_PRIVATE_KEY for two distinct funded EOAs at broadcast time.",
+      "PerpMatchingEngine.paused() = true \u2014 operator must broadcast V2F-I \u00a77a unpause first.",
+      "buyer != seller required by _isStructurallyValid \u2014 operator must supply PERP_SMOKE_BUYER_PRIVATE_KEY and PERP_SMOKE_SELLER_PRIVATE_KEY for two distinct funded EOAs at broadcast time.",
       "Both buyer and seller EOAs must hold enough mUSDC in CollateralVault to cover the V1 trading fee on the smoke notional."
     ],
     "preconditionsObserved": {
       "NEW.marketActivationState_1": 0,
       "NEW.marketState_1": "(0, 0, 0, 0)",
-      "NEW.launchOpenInterestCap1e8_1": "0 (disabled — setLaunchOpenInterestCap not required)",
+      "NEW.launchOpenInterestCap1e8_1": "0 (disabled \u2014 setLaunchOpenInterestCap not required)",
       "NEW.marketEmergencyCloseOnly_1": false,
       "NEW.feesManagerV2": "0x0000000000000000000000000000000000000000",
       "NEW.useFeesManagerV2": false,
@@ -486,8 +492,8 @@
       "REFRESH_MOCK_FEEDS_CONFIRM": "true",
       "SET_LAUNCH_OI_CAP_CONFIRM": "false",
       "SMOKE_V1_PERP_ON_NEW_CONFIRM": "true",
-      "PERP_SMOKE_BUYER_PRIVATE_KEY": "<operator supplies — not committed>",
-      "PERP_SMOKE_SELLER_PRIVATE_KEY": "<operator supplies — not committed>"
+      "PERP_SMOKE_BUYER_PRIVATE_KEY": "<operator supplies \u2014 not committed>",
+      "PERP_SMOKE_SELLER_PRIVATE_KEY": "<operator supplies \u2014 not committed>"
     },
     "humanBroadcasted": false
   },
@@ -514,7 +520,10 @@
     "buyerIsMaker": false,
     "buyer": "0x8B94A83D1AD3bD2337b1886E7962CA8E0bba9A34",
     "seller": "0x475Fe397FA56884952D350aa9EE1c3946964BC0C",
-    "blockRange": [42188597, 42188599],
+    "blockRange": [
+      42188597,
+      42188599
+    ],
     "gasUsed": 633692,
     "txHashes": {
       "ethPrimarySetPrice": "0xc995991e01dcf22c5804ec3dac67226af99d713b07b0dff1ab1e2f3804c8fe99",
@@ -585,7 +594,10 @@
     "status": "wired_disabled",
     "resultDoc": "docs/PERP_FEES_MANAGER_V2_WIRE_PREFLIGHT_AND_RESULT_V2F_K.md",
     "script": "script/WireFeesManagerV2Perp.s.sol:WireFeesManagerV2Perp",
-    "blockRange": [42187653, 42187654],
+    "blockRange": [
+      42187653,
+      42187654
+    ],
     "gasUsed": 95866,
     "txHashes": {
       "setFeesManagerV2_on_NEW": "0x566400c3285a2f3f419c86c1720de81d99310ba082a75d9daeab6c3f2168fdf7",
@@ -636,7 +648,10 @@
     "sellerEoa": "0x475Fe397FA56884952D350aa9EE1c3946964BC0C",
     "fundUsdcAmountNative": 1000000,
     "fundEthWeiPerEoa": "300000000000000",
-    "blockRange": [42186991, 42186998],
+    "blockRange": [
+      42186991,
+      42186998
+    ],
     "gasUsed": 457004,
     "txHashes": [
       "0x50a69624fde869024db170e319c90fc0ff86814250b525c4756991646e4b5c41",
@@ -664,7 +679,10 @@
     "size1e8": 1,
     "price1e8": "300000000000",
     "buyerIsMaker": false,
-    "blockRange": [42187181, 42187183],
+    "blockRange": [
+      42187181,
+      42187183
+    ],
     "gasUsed": 866140,
     "txHashes": {
       "ethPrimarySetPrice": "0x0ba07d22b1eea4b03b58cf8a47f9f65d8ad67ee6503156fe9ddbef4fe9d86b59",
@@ -734,7 +752,10 @@
   "marginEngineV2Phase2Rewire": {
     "status": "rewired_v2_disabled",
     "marginEngineCutoverBlock": 42073772,
-    "cutoverBlockRange": [42073764, 42073772],
+    "cutoverBlockRange": [
+      42073764,
+      42073772
+    ],
     "rewireResultDoc": "docs/MARGIN_ENGINE_V2_REWIRE_BROADCAST_RESULT_V2D_R.md",
     "rewireScript": "script/RewireMarginEngineV2.s.sol:RewireMarginEngineV2",
     "rewireBroadcastedBy": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
@@ -773,5 +794,176 @@
       },
       "blockedOnHumanApproval": true
     }
-  }
+  },
+  "marginEngineV2gp": {
+    "milestone": "V2G-P",
+    "broadcast_date": "2026-06-02",
+    "broadcaster": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+    "broadcaster_method": "Foundry keystore --account deopt-deployer",
+    "newMarginEngine": "0x506cD65a63C53c66ab572B9f9dd819B7BfE00D30",
+    "newMarginEngineLiquidationLib": "0xB72A7BC82747cE2a0e11df1307B8cB7Ef085cc18",
+    "newOptionMatchingEngineCanonical": "0x5a5EBF9A9CCd7c012518569DE8283982982670f6",
+    "newOptionMatchingEngineAbandonedOrphan": "0xADE406D7e59Cf9511bC8b96b6f6d8056f90f95D7",
+    "previousMarginEngineV2GpOldOrphan": "0x287Cef479be5889eEfCa847F9e73C860898f48Cc",
+    "previousOptionMatchingEngine": "0xf2D1D85cD363Be3bc160d14883C80e7C2c4F420b",
+    "broadcasts": [
+      {
+        "step": "1-deploy-margin-engine",
+        "txHash": "0x4dac7888dc09bd0b5ad1e4ec784638ab4ccf1c5d999b99430ef41f2ae046510d",
+        "libraryDeployTxHash": "0x9fc0b5d10a8dd659259a76ad4d114bad8a6077200ab26de642614e8fa5bc1b4d",
+        "blocks": "42319414-42319425",
+        "gasUsed": 6814033,
+        "txCount": 12,
+        "notes": "12-tx bundle: 1 CREATE2 library deploy via Singleton Deployer + 1 CREATE engine + 10 owner-only internal wiring. First attempt at tx 0xf1d41f2a... failed with EIP-170 violation; size remediation applied; this second attempt succeeded under 24576-byte limit (final 24463 bytes)."
+      },
+      {
+        "step": "2-deploy-ome",
+        "txHash": "0x3cd027419d8fc47b8a4f00f6ab2f2f2378dddfb561ae4e8e911cfc76ea015029",
+        "block": 42319838,
+        "gasUsed": 2386731,
+        "txCount": 1,
+        "notes": "Canonical OME = OME_2. The first deploy at tx 0xf09aced9... produced OME_1 0xADE4...95D7 which is now an inert orphan; operator chose Option A using OME_2 as canonical."
+      },
+      {
+        "step": "3-rewire",
+        "txHashFirst": "0x25d3e3ea62a25e2e126e73933283ff6363e09725586e5669f61a472db9449b0e",
+        "blocks": "42319996-42320004",
+        "gasUsed": 362427,
+        "txCount": 9,
+        "notes": "Rewires 6 dependents (CV, RiskModule, generic MatchingEngine, OLD OME, InsuranceFund, RiskGovernor) from OLD ME to NEW ME."
+      },
+      {
+        "step": "4-retarget-new-me-matching-engine",
+        "txHash": "0x221425f0f4effe0e635ee656bc3d47ed6686786ed4ca1a3b01cdcb2cb1f5bf8e",
+        "block": 42320172,
+        "gasUsed": 31549,
+        "txCount": 1,
+        "notes": "NEW_ME.setMatchingEngine(NEW_OME canonical)."
+      },
+      {
+        "step": "5-wire-fees-manager-v2",
+        "txHashes": [
+          "0x8a1259af7dcf2b292e71c5fb3c15cf3042d15ef8834af0549d559f7cb4be02df",
+          "0xd626339d287744faf1fcdac1140f9edef5f45ca80a56da1cefed570c51449b08"
+        ],
+        "blocks": "42320407-42320408",
+        "gasUsed": 96056,
+        "txCount": 2,
+        "notes": "NEW_ME.setFeesManagerV2(FM_V2) + FM_V2.setFeeConsumer(NEW_ME, true). V2 still disabled at this stage."
+      },
+      {
+        "step": "6-enable-fees-manager-v2-dispatch",
+        "txHash": "0xd7f137e92eabb176ed80d2134ec348e78c6adecb232fc85cd420759ea9e52874",
+        "block": 42320622,
+        "gasUsed": 30650,
+        "txCount": 1,
+        "notes": "NEW_ME.setUseFeesManagerV2(true). OPTION RFQ functional end-to-end from this block forward."
+      },
+      {
+        "step": "7-first-live-rfq-smoke",
+        "txHash": "0x0509d4a49d5c243c0506bd1988526cb841c1f4da40dad0ab08df9d7eca7e89e8",
+        "block": 42321819,
+        "gasUsed": 1010586,
+        "txCount": 1,
+        "notes": "First live OPTION RFQ trade. Taker 0x77cA...0020 (Tier-2) paid 19 mUSDC fee (94 ppm); maker 0x290b...9274 (Tier-4) received 10 mUSDC rebate (-50 ppm); rebateBudget(mUSDC) 999987 -> 999977. EIP-712 digest 0xd97d29306c26123cc21606c25a5ed1c635445927833b173f910fa4ac9c212446. 21 logs total.",
+        "rfq": {
+          "intentId": "0x0000000000000000000000000000000000000000000000000000000000000001",
+          "buyer_taker_Tier2": "0x77cA9DD6cCce2D692FB23877a2db7178807b0020",
+          "seller_maker_Tier4": "0x290bD12C93E467Bf51c51f5273D35bdDb19e9274",
+          "optionId": "24145907678156652148089862289363692212069910767044828147380657249455352740183",
+          "premiumPerContract": 200000,
+          "quantity": 1,
+          "buyerIsMaker": false,
+          "buyerNonce": 0,
+          "sellerNonce": 0,
+          "takerFeePpm": 94,
+          "takerFeeAmount": 19,
+          "makerRebatePpm": -50,
+          "makerRebateAmount": 10,
+          "rebateBudgetBefore": 999987,
+          "rebateBudgetAfter": 999977
+        }
+      }
+    ],
+    "failedAttempts": [
+      {
+        "step": "1-deploy-margin-engine-first-attempt-eip170",
+        "txHash": "0xf1d41f2a53e55799570d887cc2a36997daaa02a39aa865c3682457920fc87dcc",
+        "block": 42318106,
+        "status": 0,
+        "gasUsedSunk": 7996652,
+        "rootCause": "MarginEngine runtime bytecode 26835 bytes > EIP-170 24576-byte limit. Foundry warned but accepted operator override; on-chain CREATE reverted.",
+        "remediation": "Removed 6 unused clear* admin setters, removed cancelOwnershipTransfer + renounceOwnership + clearEmergencyModes (all 0 callers), extracted MarginEngine.liquidate cash+seizure block to new external library MarginEngineLiquidationLib (DELEGATECALL pattern). Final runtime 24463 bytes (113 under limit). New EIP-170 guard test added at test/unit/margin/MarginEngineDeploySize.t.sol.",
+        "incidentDoc": "deopt-v2-sol/docs/MARGIN_ENGINE_RFQ_DEPLOY_SIZE_FAILURE_V2G_P.md"
+      }
+    ],
+    "abandonedDuplicate": {
+      "ome1": "0xADE406D7e59Cf9511bC8b96b6f6d8056f90f95D7",
+      "deployTxHash": "0xf09aced9bab34930625d42b44c396f4a489aa2e71a6ed6f39f525f876493793e",
+      "deployBlock": 42319607,
+      "gasUsed": 2386731,
+      "incomingReferences": 0,
+      "cleanupAction": "none \u2014 inert orphan bytecode; documented in V2G-P result doc \u00a77"
+    },
+    "scriptPatches": [
+      {
+        "file": "script/DeployMarginEngineV2.s.sol",
+        "patch": "V2G-P keystore-mode: DEPLOYER_PRIVATE_KEY optional; reads DEPLOYER_ADDRESS env (defaults canonical); requires effective deployer == 0xc35F7A8A103A9A4464adfaa76B9B514093D23C27; broadcasts via no-arg vm.startBroadcast() in keystore mode."
+      },
+      {
+        "file": "script/DeployOptionMatchingEngine.s.sol",
+        "patch": "V2G-P keystore-mode: same pattern as DeployMarginEngineV2."
+      },
+      {
+        "file": "script/RewireMarginEngineV2.s.sol",
+        "patch": "V2G-P keystore-mode: DEPLOYER_PRIVATE_KEY optional; caller derived from DEPLOYER_ADDRESS or canonical default."
+      },
+      {
+        "file": "script/WireFeesManagerV2Option.s.sol",
+        "patch": "V2G-P keystore-mode: DEPLOYER_PRIVATE_KEY optional; caller derived from DEPLOYER_ADDRESS or canonical default."
+      },
+      {
+        "file": "script/SmokeOptionRfqV2FeesExecute.s.sol",
+        "patch": "V2G-P2: converted from view-only digest-report scaffold to real safe-by-default broadcaster. Reads OPTION_SMOKE_BUYER_PRIVATE_KEY / OPTION_SMOKE_SELLER_PRIVATE_KEY env; address-asserts Tier-2/Tier-4 EOAs; cross-checks local _rfqDigest vs OME.hashRfqTrade(t); signs via vm.sign and broadcasts OME.executeRfqTrade. Refuses mainnet. Operator broadcast gated by SMOKE_OPTION_RFQ_V2_FEES_EXECUTE_CONFIRM=true."
+      }
+    ],
+    "sizeRemediation": {
+      "marginEngineRuntimeBytecodeBefore": 26835,
+      "marginEngineRuntimeBytecodeAfter": 24463,
+      "eip170Limit": 24576,
+      "marginUnderLimit": 113,
+      "ciGuard": "test/unit/margin/MarginEngineDeploySize.t.sol::test_marginEngine_runtime_under_eip170",
+      "libraryExtracted": "0xB72A7BC82747cE2a0e11df1307B8cB7Ef085cc18 (MarginEngineLiquidationLib)"
+    },
+    "backendPickupStatus": "complete \u2014 shell-env override applied (HOST=127.0.0.1 residual), 10 forced indexer ticks caught up to V2G-P RFQ block 42321819; /admin/fees/onchain decodes RFQ tx; /metrics shows option charged_v2{new}=1, {old}=3, {unknown}=0; rebateBudget(mUSDC)=999977",
+    "resultDoc": "deopt-v2-backend/docs/OPTION_RFQ_LIVE_DEPLOY_REWIRE_SMOKE_RESULT_V2G_P.md",
+    "indexerCatchupNote": "OPTION_EVENT_INDEXER_POLL_INTERVAL_MS=86400000 (24h) + batch=5000 means natural catch-up to block 42321819 would have taken ~13 days. Used POST /admin/options/events/tick (synchronous, X-Admin-Token gated) 10\u00d7 to force-scan across the gap. Tick #10 reported logs_found=21 / events_indexed=21 at last_indexed_block=42323683 \u2014 exactly the V2G-P RFQ tx receipt log count.",
+    "residualHygiene": "Current backend bound to HOST=127.0.0.1; Prom container cannot scrape via host.docker.internal so DeoptV2FeeMetricsAbsent is firing despite the backend /metrics endpoint serving correct V2G-P data. Fix at next backend restart via /tmp/restart_backend_v2gp_pickup.sh (sets HOST=0.0.0.0).",
+    "postPickupMetricsBaseline": {
+      "option_fee_charged_v2_by_consumer": {
+        "new": 1,
+        "old": 3,
+        "unknown": 0
+      },
+      "option_fee_rebated_v2_by_consumer": {
+        "new": 1,
+        "old": 1,
+        "unknown": 0
+      },
+      "perp_fee_charged_v2_by_consumer": {
+        "new": 3,
+        "old": 0,
+        "unknown": 0
+      },
+      "perp_fee_rebated_v2_by_consumer": {
+        "new": 1,
+        "old": 0,
+        "unknown": 0
+      },
+      "rebate_budget_mUSDC": 999977,
+      "anomaly_unknown_consumer_events": 0
+    }
+  },
+  "marginEngineV2gpStatus": "deployed_and_rewired_v2_enabled_first_rfq_smoke_complete",
+  "marginEngineV2gpBroadcastDate": "2026-06-02"
 }

@@ -12,35 +12,28 @@ interface IUseFeesManagerV2 {
     function useFeesManagerV2() external view returns (bool);
 }
 
+interface IMatchingEngineGetter {
+    function matchingEngine() external view returns (address);
+}
+
 /// @title SmokeOptionRfqV2FeesExecute
-/// @notice V2G-P1 OPTION RFQ smoke execute **scaffold**. Strictly
-///         safe-by-default: defaults to preflight-only and refuses to
-///         broadcast unless `SMOKE_OPTION_RFQ_V2_FEES_EXECUTE_CONFIRM=true`
-///         AND the maker / taker / executor signatures are produced by
-///         the operator off-chain. This script does NOT broadcast on
-///         its own — V2G-P1 leaves the actual signed RFQ trade to
-///         V2G-P2 once the operator review window opens.
+/// @notice V2G-P2 OPTION RFQ smoke executor. Safe-by-default: refuses
+///         to broadcast unless `SMOKE_OPTION_RFQ_V2_FEES_EXECUTE_CONFIRM=true`,
+///         and ALWAYS refuses mainnet. When confirmed, the script
+///         derives the canonical Tier-2 taker + Tier-4 maker addresses
+///         from `OPTION_SMOKE_BUYER_PRIVATE_KEY` /
+///         `OPTION_SMOKE_SELLER_PRIVATE_KEY`, signs the EIP-712 RFQ
+///         digest with each key, and calls
+///         `OptionMatchingEngine.executeRfqTrade(t, buyerSig, sellerSig)`
+///         from the executor (Foundry keystore — `--account`).
 /// @dev
-///   The current scope is:
-///     - read all required env (preflight + executor + RFQ-specific);
-///     - run the same fees-side preflight as {SmokeOptionRfqV2Fees};
-///     - rebuild the EIP-712 RFQ digest the operator would sign;
-///     - log the digest and ABI-encoded `executeRfqTrade` calldata
-///       template (signatures left as placeholders).
-///   It explicitly does NOT:
-///     - sign with any private key beyond the deployer (used only for
-///       `OptionMatchingEngine.isExecutor` check via `vm.addr`);
-///     - call `OptionMatchingEngine.executeRfqTrade(...)`;
-///     - mutate FeesManagerV2 / MarginEngine / OptionMatchingEngine.
-///
-///   The `SMOKE_OPTION_RFQ_V2_FEES_EXECUTE_CONFIRM` gate flips the
-///   logging from "preflight only" to "preflight + digest report",
-///   not "broadcast." Even when set, no transactions are sent.
-///
-///   When V2G-P2 wires the actual signing flow, the broadcast block
-///   should be added inside the `if (inputs.smokeConfirmed) { ... }`
-///   branch and gated by an additional explicit operator-side flag
-///   (e.g. `SMOKE_OPTION_RFQ_V2_FEES_BROADCAST_CONFIRM=true`).
+///   The V2G-P1 scaffold's digest + preflight logic is preserved
+///   verbatim; the V2G-P2 patch only adds the signing + broadcast
+///   block, plus address-assertion + executor-check.  The script
+///   still does NOT touch FeesManagerV2 / MarginEngine /
+///   OptionMatchingEngine state directly — every state change
+///   flows through `executeRfqTrade(...)` and the protocol's
+///   authorized paths.
 contract SmokeOptionRfqV2FeesExecute is Script {
     /*//////////////////////////////////////////////////////////////
                                   TYPES
@@ -90,12 +83,30 @@ contract SmokeOptionRfqV2FeesExecute is Script {
     error MarginEngineDoesNotUseFeesManagerV2();
     error MainnetForbidden(uint256 chainId);
     error RebateBudgetTooLow(uint256 actual, uint256 minBudget);
+    /// @notice V2G-P2 — `OPTION_SMOKE_BUYER_PRIVATE_KEY` not set or zero.
+    error SmokeBuyerKeyNotSet();
+    /// @notice V2G-P2 — `OPTION_SMOKE_SELLER_PRIVATE_KEY` not set or zero.
+    error SmokeSellerKeyNotSet();
+    /// @notice V2G-P2 — derived buyer address does not match the
+    ///         {Inputs}.buyer slot derived from MAKER/TAKER + buyerIsMaker.
+    error BuyerKeyAddressMismatch(address derived, address expected);
+    /// @notice V2G-P2 — derived seller address does not match.
+    error SellerKeyAddressMismatch(address derived, address expected);
+    /// @notice V2G-P2 — the OME does not consider the broadcast signer
+    ///         an authorized executor.
+    error DeployerNotExecutor(address signer);
+    /// @notice V2G-P2 — the OME does not point at the configured
+    ///         MarginEngine.
+    error OmeMarginEngineMismatch(address omeMarginEngine, address expected);
+    /// @notice V2G-P2 — the MarginEngine does not have the OME as its
+    ///         authorized matching engine.
+    error MarginEngineMatchingEngineMismatch(address meMatching, address expectedOme);
 
     /*//////////////////////////////////////////////////////////////
                                    RUN
     //////////////////////////////////////////////////////////////*/
 
-    function run() external view {
+    function run() external {
         Inputs memory inputs = _readInputs();
 
         if (block.chainid == 8453) revert MainnetForbidden(block.chainid);
@@ -109,19 +120,100 @@ contract SmokeOptionRfqV2FeesExecute is Script {
 
         _validateInputs(inputs);
         _validatePreflight(inputs);
+        _validateWiring(inputs);
 
-        bytes32 digest = _rfqDigest(inputs);
+        _executeRfqSmoke(inputs);
+    }
+
+    /// @notice V2G-P2 broadcast leg. Split into its own function so the
+    ///         locals don't share `run()`'s stack frame (avoids the
+    ///         via-IR stack-too-deep on the trade struct + signature
+    ///         tuple expansion).
+    function _executeRfqSmoke(Inputs memory inputs) internal {
+        // V2G-P2 — derive the maker/taker signer addresses from the
+        // smoke private keys.  These keys are read from env (never
+        // logged); only the derived addresses are surfaced.
+        uint256 buyerPk = vm.envOr("OPTION_SMOKE_BUYER_PRIVATE_KEY", uint256(0));
+        uint256 sellerPk = vm.envOr("OPTION_SMOKE_SELLER_PRIVATE_KEY", uint256(0));
+        if (buyerPk == 0) revert SmokeBuyerKeyNotSet();
+        if (sellerPk == 0) revert SmokeSellerKeyNotSet();
+
+        _assertSignerMatch(inputs, buyerPk, sellerPk);
+
+        OptionMatchingEngine.OptionRfqTrade memory t = _buildOptionRfqTrade(inputs);
+        bytes32 digest = OptionMatchingEngine(inputs.optionMatchingEngine).hashRfqTrade(t);
+
+        // Cross-check against the local digest reconstruction. If they
+        // diverge that's a script bug — refuse to proceed.
+        require(_rfqDigest(inputs) == digest, "rfq digest divergence");
+
+        bytes memory buyerSig = _signDigest(buyerPk, digest);
+        bytes memory sellerSig = _signDigest(sellerPk, digest);
 
         _logInputs(inputs);
         _logDigestPayload(inputs, digest);
+        _logSignerSummary(vm.addr(buyerPk), vm.addr(sellerPk));
 
-        console2.log("V2G-P1 RFQ execute scaffold complete. Operator action required:");
-        console2.log(" 1. Sign the digest below with maker + taker EOAs out-of-band.");
-        console2.log(" 2. Call OptionMatchingEngine.executeRfqTrade(OptionRfqTrade, buyerSig, sellerSig)");
-        console2.log("    through the gated backend executor.");
-        console2.log(" 3. Verify the V2 fee events arrive in /admin/fees/onchain with");
-        console2.log("    flow_kind=rfq and the expected feeAmount per V2G-N table.");
-        console2.log(" 4. This script did NOT broadcast.");
+        // Single broadcast — the executor is whoever Foundry resolves via
+        // `--account <keystore>` / `--sender` / `--unlocked`.  No env
+        // private key is read for the broadcast leg.  The OME's
+        // `onlyExecutor` gate already verified in {_validateWiring}.
+        vm.startBroadcast();
+        OptionMatchingEngine(inputs.optionMatchingEngine).executeRfqTrade(t, buyerSig, sellerSig);
+        vm.stopBroadcast();
+
+        _logPostBroadcast(t);
+    }
+
+    function _assertSignerMatch(Inputs memory inputs, uint256 buyerPk, uint256 sellerPk) internal view {
+        address expectedBuyer = inputs.buyerIsMaker ? inputs.maker : inputs.taker;
+        address expectedSeller = inputs.buyerIsMaker ? inputs.taker : inputs.maker;
+        address derivedBuyer = vm.addr(buyerPk);
+        address derivedSeller = vm.addr(sellerPk);
+        if (derivedBuyer != expectedBuyer) revert BuyerKeyAddressMismatch(derivedBuyer, expectedBuyer);
+        if (derivedSeller != expectedSeller) revert SellerKeyAddressMismatch(derivedSeller, expectedSeller);
+    }
+
+    function _buildOptionRfqTrade(Inputs memory inputs)
+        internal
+        view
+        returns (OptionMatchingEngine.OptionRfqTrade memory t)
+    {
+        t.intentId = inputs.intentId;
+        t.buyer = inputs.buyerIsMaker ? inputs.maker : inputs.taker;
+        t.seller = inputs.buyerIsMaker ? inputs.taker : inputs.maker;
+        t.optionId = inputs.optionId;
+        t.underlying = inputs.underlying;
+        t.settlementAsset = inputs.settlementAsset;
+        t.expiry = inputs.expiry;
+        t.strike1e8 = inputs.strike1e8;
+        t.isCall = inputs.isCall;
+        t.contractSize1e8 = inputs.contractSize1e8;
+        t.quantity = inputs.quantity;
+        t.premiumPerContract = inputs.premiumPerContract;
+        t.buyerIsMaker = inputs.buyerIsMaker;
+        t.buyerNonce = uint256(inputs.buyerNonce);
+        t.sellerNonce = uint256(inputs.sellerNonce);
+        t.deadline = block.timestamp + inputs.deadlineSeconds;
+    }
+
+    function _signDigest(uint256 pk, bytes32 digest) internal view returns (bytes memory sig) {
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(pk, digest);
+        sig = abi.encodePacked(r, s, v);
+    }
+
+    function _logPostBroadcast(OptionMatchingEngine.OptionRfqTrade memory t) internal pure {
+        console2.log("V2G-P2 RFQ smoke broadcast complete.");
+        console2.log(" intentId            ", uint256(t.intentId));
+        console2.log(" buyer  (RFQ side)   ", t.buyer);
+        console2.log(" seller (RFQ side)   ", t.seller);
+        console2.log(" quantity            ", t.quantity);
+        console2.log(" premiumPerContract  ", t.premiumPerContract);
+        console2.log("Operator next steps:");
+        console2.log(" 1. Capture the on-chain tx hash from forge output.");
+        console2.log(" 2. Verify FeeChargedV2 + FeeRebatedV2 events with flow=RFQ.");
+        console2.log(" 3. Verify rebateBudget decreased on FM-V2 by the expected rebate amount.");
+        console2.log(" 4. Verify backend /admin/fees/onchain?tx_hash=<hash> echoes the V2 fee schedule.");
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -179,6 +271,36 @@ contract SmokeOptionRfqV2FeesExecute is Script {
         if (budget < inputs.minRebateBudget) {
             revert RebateBudgetTooLow(budget, inputs.minRebateBudget);
         }
+    }
+
+    /// @notice V2G-P2 — assert the on-chain wiring matches what the
+    ///         broadcast assumes:
+    ///          - OME.marginEngine() == configured MarginEngine
+    ///          - MarginEngine.matchingEngine() == configured OME
+    ///          - OME.isExecutor(<broadcast signer>) == true
+    ///         The broadcast signer is read from env `DEPLOYER_ADDRESS`
+    ///         (defaulting to the canonical V2 deployer EOA), which
+    ///         matches the address Foundry will use under
+    ///         `--account deopt-deployer --sender 0xc35F…3C27`.
+    function _validateWiring(Inputs memory inputs) internal view {
+        OptionMatchingEngine ome = OptionMatchingEngine(inputs.optionMatchingEngine);
+        address omeMargin = address(ome.marginEngine());
+        if (omeMargin != inputs.marginEngine) revert OmeMarginEngineMismatch(omeMargin, inputs.marginEngine);
+
+        address meMatching = IMatchingEngineGetter(inputs.marginEngine).matchingEngine();
+        if (meMatching != inputs.optionMatchingEngine) {
+            revert MarginEngineMatchingEngineMismatch(meMatching, inputs.optionMatchingEngine);
+        }
+
+        address signer = vm.envOr("DEPLOYER_ADDRESS", address(0xc35F7A8A103A9A4464adfaa76B9B514093D23C27));
+        if (!ome.isExecutor(signer)) revert DeployerNotExecutor(signer);
+    }
+
+    function _logSignerSummary(address derivedBuyer, address derivedSeller) internal pure {
+        console2.log("V2G-P2 RFQ smoke signers:");
+        console2.log("  buyer addr  (Tier2 taker) ", derivedBuyer);
+        console2.log("  seller addr (Tier4 maker) ", derivedSeller);
+        console2.log("  signatures composed from OPTION_SMOKE_*_PRIVATE_KEY env (never logged)");
     }
 
     /// @dev Reproduce the EIP-712 digest the operator must sign. Pulls

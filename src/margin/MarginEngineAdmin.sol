@@ -51,19 +51,12 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
         emit OwnershipTransferred(oldOwner, po);
     }
 
-    function cancelOwnershipTransfer() external onlyOwner {
-        if (pendingOwner == address(0)) revert OwnershipTransferNotInitiated();
-        pendingOwner = address(0);
-    }
-
-    function renounceOwnership() external onlyOwner {
-        if (pendingOwner != address(0)) revert NotAuthorized();
-
-        address oldOwner = owner;
-        owner = address(0);
-
-        emit OwnershipTransferred(oldOwner, address(0));
-    }
+    // V2G-P size remediation: `cancelOwnershipTransfer` and `renounceOwnership`
+    // removed — 0 callers in the codebase, and the V2G-Y ownership migration
+    // plan uses only the two-step `transferOwnership` / `acceptOwnership` pair.
+    // To abort a pending transfer call `transferOwnership(currentOwner)` (or
+    // overwrite with a different new owner); to retire control entirely the
+    // operator can transfer to a burn address that has no key holder.
 
     /*//////////////////////////////////////////////////////////////
                               GUARDIAN
@@ -76,10 +69,11 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
         _setGuardian(guardian_);
     }
 
-    /// @notice Clears the emergency guardian.
-    function clearGuardian() external onlyOwner {
-        _setGuardian(address(0));
-    }
+    // V2G-P size remediation: `clearGuardian` removed — never called in
+    // production. The intended posture for "no guardian" is to either
+    // never call `setGuardian` after deploy, or to rotate to a fresh
+    // guardian via another `setGuardian(newAddr)` call. Saved bytecode
+    // to keep MarginEngine under the EIP-170 24,576-byte limit.
 
     /*//////////////////////////////////////////////////////////////
                                PAUSE
@@ -157,10 +151,9 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
         _setEmergencyModes(tradingPaused_, liquidationPaused_, settlementPaused_, collateralOpsPaused_);
     }
 
-    /// @notice Owner-only recovery helper to clear all granular flags in one tx.
-    function clearEmergencyModes() external onlyOwner {
-        _setEmergencyModes(false, false, false, false);
-    }
+    // V2G-P size remediation: `clearEmergencyModes` removed — 0 callers; the
+    // operator can call `setEmergencyModes(false, false, false, false)` for the
+    // same effect.
 
     function setSeriesEmergencyCloseOnly(uint256 optionId, bool closeOnly) external onlyGuardianOrOwner {
         _optionRegistry.getSeries(optionId);
@@ -194,10 +187,8 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
         emit MatchingEngineSet(matchingEngine_);
     }
 
-    function clearMatchingEngine() external onlyOwner {
-        matchingEngine = address(0);
-        emit MatchingEngineSet(address(0));
-    }
+    // V2G-P size remediation: `clearMatchingEngine` removed (no callers).
+    // The intended way to rotate the matching engine is `setMatchingEngine(newAddr)`.
 
     function setOracle(address oracle_) external onlyOwner {
         if (oracle_ == address(0)) revert ZeroAddress();
@@ -211,10 +202,7 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
         emit RiskModuleSet(riskModule_);
     }
 
-    function clearRiskModule() external onlyOwner {
-        _riskModule = IRiskModule(address(0));
-        emit RiskModuleSet(address(0));
-    }
+    // V2G-P size remediation: `clearRiskModule` removed (no callers).
 
     function setInsuranceFund(address insuranceFund_) external onlyOwner {
         if (insuranceFund_ == address(0)) revert ZeroAddress();
@@ -223,11 +211,7 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
         emit InsuranceFundSet(old, insuranceFund_);
     }
 
-    function clearInsuranceFund() external onlyOwner {
-        address old = insuranceFund;
-        insuranceFund = address(0);
-        emit InsuranceFundSet(old, address(0));
-    }
+    // V2G-P size remediation: `clearInsuranceFund` removed (no callers).
 
     /// @notice Set hybrid fees manager.
     /// @dev FeesManager is read-only from MarginEngine perspective; fee transfers still happen via CollateralVault.
@@ -237,10 +221,7 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
         emit FeesManagerSet(feesManager_);
     }
 
-    function clearFeesManager() external onlyOwner {
-        feesManager = IFeesManager(address(0));
-        emit FeesManagerSet(address(0));
-    }
+    // V2G-P size remediation: `clearFeesManager` removed (no callers).
 
     /// @notice Set optional signed-ppm options fee manager.
     /// @dev V1 remains active until `setUseFeesManagerV2(true)` is called.
@@ -278,12 +259,7 @@ abstract contract MarginEngineAdmin is MarginEngineStorage {
         emit SeriesShortOpenInterestCapSet(optionId, oldCap, cap);
     }
 
-    /// @notice Clear explicit fee recipient and fallback to insuranceFund if integration uses it.
-    function clearFeeRecipient() external onlyOwner {
-        address old = feeRecipient;
-        feeRecipient = address(0);
-        emit FeeRecipientSet(old, address(0));
-    }
+    // V2G-P size remediation: `clearFeeRecipient` removed (no callers).
 
     /*//////////////////////////////////////////////////////////////
                           RISK PARAMS CACHE

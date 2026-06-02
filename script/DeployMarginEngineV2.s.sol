@@ -7,7 +7,7 @@ import {MarginEngine} from "../src/margin/MarginEngine.sol";
 
 /// @title DeployMarginEngineV2
 /// @notice Safe-by-default deployment preflight for a fresh, FeesManagerV2-compatible MarginEngine
-///         on Base Sepolia (V2D-L).
+///         on Base Sepolia (V2D-L; V2G-P signer-source patch).
 /// @dev
 ///  V2D-K confirmed the live MarginEngine at `0x6c5665de…5b5F8` is non-upgradeable and predates V2D-D.
 ///  This script deploys a new MarginEngine from the current `src/margin/MarginEngine.sol` build (which
@@ -22,8 +22,31 @@ import {MarginEngine} from "../src/margin/MarginEngine.sol";
 ///    - never enables `useFeesManagerV2` (the constructor leaves it `false` and this script does not flip it);
 ///    - never touches `FeesManagerV2`, perps, or any external dependent;
 ///    - never prints the private key (only the derived deployer address);
-///    - aborts if any required address is `address(0)` or has no code on the target chain.
+///    - aborts if any required address is `address(0)` or has no code on the target chain;
+///    - aborts unless the effective broadcast/deployer address equals
+///      {CANONICAL_DEPLOYER}.
+///
+///  Signer source (V2G-P): two mutually-exclusive paths, picked by env presence.
+///    - PK mode (backward compatible): set `DEPLOYER_PRIVATE_KEY` to a non-zero
+///      hex value. The script derives the deployer address via {vm.addr} and
+///      broadcasts via `vm.startBroadcast(privateKey)`.
+///    - Keystore mode (V2G-P new): leave `DEPLOYER_PRIVATE_KEY` unset (or set
+///      it to `0`). The script broadcasts via `vm.startBroadcast()` (no-arg),
+///      so Foundry's CLI resolves the signer from `--account <keystore>` /
+///      `--sender <addr>` / `--unlocked`. The deployer address is taken from
+///      env `DEPLOYER_ADDRESS` if set, otherwise defaults to
+///      {CANONICAL_DEPLOYER}; the value is logged and validated.
+///    The mandatory canonical-deployer check protects both modes from a
+///    rogue signer accidentally taking ownership of the new MarginEngine.
 contract DeployMarginEngineV2 is Script {
+    /*//////////////////////////////////////////////////////////////
+                                CONSTANTS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice V2G-P — only address allowed to deploy a new V2 MarginEngine.
+    ///         Matches the live owner of every V2 contract on Base Sepolia.
+    address internal constant CANONICAL_DEPLOYER = 0xc35F7A8A103A9A4464adfaa76B9B514093D23C27;
+
     /*//////////////////////////////////////////////////////////////
                                   TYPES
     //////////////////////////////////////////////////////////////*/
@@ -66,6 +89,13 @@ contract DeployMarginEngineV2 is Script {
     error PostDeployOwnerMismatch(address expected, address actual);
     error PostDeployUseFeesManagerV2NotFalse();
     error PostDeployFeesManagerV2NotZero();
+    /// @notice V2G-P — `DEPLOYER_PRIVATE_KEY` is set but the address
+    ///         it derives to does not match the `DEPLOYER_ADDRESS`
+    ///         env (or canonical default). Refuses to broadcast.
+    error DeployerPrivateKeyAddressMismatch(address fromPk, address fromEnv);
+    /// @notice V2G-P — the resolved deployer is not the canonical
+    ///         V2 deployer EOA. Refuses to broadcast.
+    error DeployerNotCanonical(address provided, address required);
 
     /*//////////////////////////////////////////////////////////////
                                    RUN
@@ -92,8 +122,30 @@ contract DeployMarginEngineV2 is Script {
     //////////////////////////////////////////////////////////////*/
 
     function _readInputs() internal view returns (DeployInputs memory inputs) {
-        uint256 deployerPk = vm.envUint("DEPLOYER_PRIVATE_KEY");
-        inputs.deployer = vm.addr(deployerPk);
+        // V2G-P — `DEPLOYER_PRIVATE_KEY` is now optional. When set + non-zero
+        // the script derives the deployer from the key (back-compat). When
+        // unset (or zero) the script relies on Foundry's CLI
+        // `--account <keystore>` / `--sender <addr>` to provide the signer,
+        // and the deployer address comes from env `DEPLOYER_ADDRESS` (or
+        // {CANONICAL_DEPLOYER} as a safe default). Either way we then assert
+        // the resolved deployer equals {CANONICAL_DEPLOYER}.
+        uint256 deployerPk = vm.envOr("DEPLOYER_PRIVATE_KEY", uint256(0));
+        address envDeployer = vm.envOr("DEPLOYER_ADDRESS", CANONICAL_DEPLOYER);
+
+        if (deployerPk != 0) {
+            address derived = vm.addr(deployerPk);
+            if (derived != envDeployer) {
+                revert DeployerPrivateKeyAddressMismatch(derived, envDeployer);
+            }
+            inputs.deployer = derived;
+        } else {
+            inputs.deployer = envDeployer;
+        }
+
+        if (inputs.deployer != CANONICAL_DEPLOYER) {
+            revert DeployerNotCanonical(inputs.deployer, CANONICAL_DEPLOYER);
+        }
+
         inputs.initialOwner = vm.envOr("INITIAL_OWNER", inputs.deployer);
         inputs.initialGuardian = vm.envOr("INITIAL_GUARDIAN", inputs.initialOwner);
 
@@ -138,8 +190,15 @@ contract DeployMarginEngineV2 is Script {
     }
 
     function _broadcastDeployAndWire(DeployInputs memory inputs) internal returns (address newMarginEngine) {
-        uint256 deployerPk = vm.envUint("DEPLOYER_PRIVATE_KEY");
-        vm.startBroadcast(deployerPk);
+        // V2G-P — pick signer source. PK env wins when set (back-compat);
+        // otherwise no-arg broadcast defers to Foundry's
+        // `--account` / `--sender` resolution.
+        uint256 deployerPk = vm.envOr("DEPLOYER_PRIVATE_KEY", uint256(0));
+        if (deployerPk != 0) {
+            vm.startBroadcast(deployerPk);
+        } else {
+            vm.startBroadcast();
+        }
 
         // Constructor: owner / option product registry / collateral vault / oracle.
         MarginEngine engine = new MarginEngine(
@@ -188,6 +247,15 @@ contract DeployMarginEngineV2 is Script {
         console2.log("MarginEngineV2 deployment preflight V2D-L");
         console2.log("chainId", block.chainid);
         console2.log("deployer (sanitized, no key)", inputs.deployer);
+        // V2G-P — surface which signer source is active so the operator
+        // can audit the broadcast path. The value is just a flag, never
+        // the key itself.
+        console2.log(
+            "signer source",
+            vm.envOr("DEPLOYER_PRIVATE_KEY", uint256(0)) != 0
+                ? "DEPLOYER_PRIVATE_KEY env"
+                : "Foundry --account / --sender"
+        );
         console2.log("initialOwner", inputs.initialOwner);
         console2.log("initialGuardian", inputs.initialGuardian);
         console2.log("optionProductRegistry", inputs.optionProductRegistry);
