@@ -23,8 +23,20 @@ import {FeesManagerV2} from "../src/fees/FeesManagerV2.sol";
 ///  to cover the would-be rebates during the smoke. The check is
 ///  read-only and never reverts on the call site.
 ///
+///  V2G-RX-FM-P1 signer-source policy (matches DeployMarginEngineV2):
+///    - When `DEPLOYER_PRIVATE_KEY` is set + non-zero the script derives
+///      the caller from the key and broadcasts via
+///      `vm.startBroadcast(pk)`.
+///    - When unset (or zero) the script broadcasts via no-arg
+///      `vm.startBroadcast()` and defers signer resolution to Foundry's
+///      `--account <keystore>` / `--sender <addr>` CLI flags. The caller
+///      address comes from `DEPLOYER_ADDRESS` (defaulting to
+///      {CANONICAL_DEPLOYER}).
+///    - Either way, the resolved caller must equal {CANONICAL_DEPLOYER}.
+///    - V2G-RX-FM-P1 chain guard: aborts on Base mainnet (chainId 8453)
+///      unless `MAINNET_OK=true`.
+///
 ///  Required env in all cases:
-///    - `DEPLOYER_PRIVATE_KEY` (owner key)
 ///    - `FEES_MANAGER_V2_ADDRESS`
 ///    - `REBATE_TOKEN`
 ///    - `REBATE_BUDGET_AMOUNT`
@@ -37,6 +49,13 @@ import {FeesManagerV2} from "../src/fees/FeesManagerV2.sol";
 ///  Mutating call gated by:
 ///    - `FUND_FEES_MANAGER_V2_REBATE_BUDGET_CONFIRM=true`
 contract FundFeesManagerV2RebateBudget is Script {
+    /*//////////////////////////////////////////////////////////////
+                                CONSTANTS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice V2G-RX-FM-P1 — canonical deployer EOA.
+    address internal constant CANONICAL_DEPLOYER = 0xc35F7A8A103A9A4464adfaa76B9B514093D23C27;
+
     /*//////////////////////////////////////////////////////////////
                                   TYPES
     //////////////////////////////////////////////////////////////*/
@@ -69,6 +88,15 @@ contract FundFeesManagerV2RebateBudget is Script {
     error NotOwner(address caller, address owner);
     error RebateFundingAccountUnset();
     error BudgetDidNotIncrease(uint256 before_, uint256 after_, uint256 expectedDelta);
+    /// @notice V2G-RX-FM-P1 — both `DEPLOYER_PRIVATE_KEY` and
+    ///         `DEPLOYER_ADDRESS` are set but disagree.
+    error DeployerPrivateKeyAddressMismatch(address fromPk, address fromEnv);
+    /// @notice V2G-RX-FM-P1 — resolved caller is not the canonical
+    ///         deployer EOA.
+    error DeployerNotCanonical(address provided, address required);
+    /// @notice V2G-RX-FM-P1 — refused on Base mainnet unless
+    ///         `MAINNET_OK=true`.
+    error MainnetWithoutOk(uint256 chainId);
 
     /*//////////////////////////////////////////////////////////////
                                    RUN
@@ -77,6 +105,12 @@ contract FundFeesManagerV2RebateBudget is Script {
     function run() external {
         Inputs memory inputs = _readInputs();
         _validateInputs(inputs);
+
+        // V2G-RX-FM-P1 — chain guard.
+        bool mainnetOk = vm.envOr("MAINNET_OK", false);
+        if (block.chainid == 8453 && !mainnetOk) {
+            revert MainnetWithoutOk(block.chainid);
+        }
 
         Snapshot memory before_ = _snapshot(inputs);
         _logInputs(inputs);
@@ -89,8 +123,13 @@ contract FundFeesManagerV2RebateBudget is Script {
             return;
         }
 
-        uint256 deployerPk = vm.envUint("DEPLOYER_PRIVATE_KEY");
-        vm.startBroadcast(deployerPk);
+        // V2G-RX-FM-P1 — keystore-mode-aware broadcast.
+        uint256 deployerPk = vm.envOr("DEPLOYER_PRIVATE_KEY", uint256(0));
+        if (deployerPk != 0) {
+            vm.startBroadcast(deployerPk);
+        } else {
+            vm.startBroadcast();
+        }
         FeesManagerV2(inputs.feesManager).fundRebateBudget(inputs.token, inputs.amount);
         vm.stopBroadcast();
 
@@ -104,8 +143,22 @@ contract FundFeesManagerV2RebateBudget is Script {
     //////////////////////////////////////////////////////////////*/
 
     function _readInputs() internal view returns (Inputs memory inputs) {
-        uint256 deployerPk = vm.envUint("DEPLOYER_PRIVATE_KEY");
-        inputs.caller = vm.addr(deployerPk);
+        // V2G-RX-FM-P1 — keystore-mode-aware signer resolution.
+        uint256 deployerPk = vm.envOr("DEPLOYER_PRIVATE_KEY", uint256(0));
+        address envDeployer = vm.envOr("DEPLOYER_ADDRESS", CANONICAL_DEPLOYER);
+        if (deployerPk != 0) {
+            address derived = vm.addr(deployerPk);
+            if (derived != envDeployer) {
+                revert DeployerPrivateKeyAddressMismatch(derived, envDeployer);
+            }
+            inputs.caller = derived;
+        } else {
+            inputs.caller = envDeployer;
+        }
+        if (inputs.caller != CANONICAL_DEPLOYER) {
+            revert DeployerNotCanonical(inputs.caller, CANONICAL_DEPLOYER);
+        }
+
         inputs.feesManager = _envAddressOrZero("FEES_MANAGER_V2_ADDRESS");
         inputs.token = _envAddressOrZero("REBATE_TOKEN");
         inputs.fundingAccountFromEnv = _envAddressOrZero("REBATE_FUNDING_ACCOUNT");

@@ -78,6 +78,9 @@ contract DeployFeesManagerV2 is Script {
     /// @notice V2G-RX-FM — the resolved deployer is not the canonical
     ///         V2 deployer EOA.
     error DeployerNotCanonical(address provided, address required);
+    /// @notice V2G-RX-FM-P1 — refused on Base mainnet unless
+    ///         `MAINNET_OK=true`.
+    error MainnetWithoutOk(uint256 chainId);
 
     /*//////////////////////////////////////////////////////////////
                                    RUN
@@ -86,6 +89,14 @@ contract DeployFeesManagerV2 is Script {
     function run() external returns (address feesManagerV2) {
         PreflightInputs memory inputs = _readInputs();
         _validateInputs(inputs);
+
+        // V2G-RX-FM-P1 — chain guard. Aborts on Base mainnet unless
+        // the operator has explicitly opted in.
+        bool mainnetOk = vm.envOr("MAINNET_OK", false);
+        if (block.chainid == 8453 && !mainnetOk) {
+            revert MainnetWithoutOk(block.chainid);
+        }
+
         _logSanitizedConfig(inputs);
 
         if (!inputs.deployConfirmed) {
