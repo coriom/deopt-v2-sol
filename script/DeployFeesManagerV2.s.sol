@@ -16,8 +16,17 @@ import {FeesManagerV2} from "../src/fees/FeesManagerV2.sol";
 ///    - rebate budget funding is opt-in via a separate `FUND_REBATE_BUDGET_CONFIRM=true` flag,
 ///      intended for local/fork validation only.
 ///
+///  V2G-RX-FM signer-source policy (matches V2G-P DeployMarginEngineV2):
+///    - When `DEPLOYER_PRIVATE_KEY` is set + non-zero the script derives the
+///      deployer from the key and broadcasts via `vm.startBroadcast(pk)`.
+///    - When unset (or zero) the script broadcasts via no-arg
+///      `vm.startBroadcast()` and defers signer resolution to Foundry's
+///      `--account <keystore>` / `--sender <addr>` CLI flags. The deployer
+///      address comes from `DEPLOYER_ADDRESS` (defaulting to
+///      {CANONICAL_DEPLOYER}).
+///    - Either way, the resolved deployer must equal {CANONICAL_DEPLOYER}.
+///
 ///  Required env when confirmed:
-///    - DEPLOYER_PRIVATE_KEY
 ///    - INITIAL_OWNER (or falls back to deployer)
 ///    - FEES_MANAGER_V2_FEE_RECIPIENT
 ///    - FEES_MANAGER_V2_REBATE_FUNDING_ACCOUNT
@@ -27,6 +36,16 @@ import {FeesManagerV2} from "../src/fees/FeesManagerV2.sol";
 ///    - FEES_MANAGER_V2_INITIAL_REBATE_BUDGET
 ///    - FUND_REBATE_BUDGET_CONFIRM=true (required to actually fund)
 contract DeployFeesManagerV2 is Script {
+    /*//////////////////////////////////////////////////////////////
+                                CONSTANTS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice V2G-RX-FM — the canonical deployer EOA expected to own
+    ///         every V2 broadcast on Base Sepolia. Any divergence
+    ///         (either via `--account` / `--sender` resolution or via
+    ///         a mismatched `DEPLOYER_PRIVATE_KEY`) reverts.
+    address internal constant CANONICAL_DEPLOYER = 0xc35F7A8A103A9A4464adfaa76B9B514093D23C27;
+
     /*//////////////////////////////////////////////////////////////
                                   TYPES
     //////////////////////////////////////////////////////////////*/
@@ -53,6 +72,12 @@ contract DeployFeesManagerV2 is Script {
     error PostDeployOwnerMismatch(address expected, address actual);
     error PostDeployRebateFundingAccountMismatch(address expected, address actual);
     error InvalidRebateAssetForBudget();
+    /// @notice V2G-RX-FM — both `DEPLOYER_PRIVATE_KEY` and
+    ///         `DEPLOYER_ADDRESS` are set but disagree.
+    error DeployerPrivateKeyAddressMismatch(address fromPk, address fromEnv);
+    /// @notice V2G-RX-FM — the resolved deployer is not the canonical
+    ///         V2 deployer EOA.
+    error DeployerNotCanonical(address provided, address required);
 
     /*//////////////////////////////////////////////////////////////
                                    RUN
@@ -79,8 +104,30 @@ contract DeployFeesManagerV2 is Script {
     //////////////////////////////////////////////////////////////*/
 
     function _readInputs() internal view returns (PreflightInputs memory inputs) {
-        uint256 deployerPk = vm.envUint("DEPLOYER_PRIVATE_KEY");
-        inputs.deployer = vm.addr(deployerPk);
+        // V2G-RX-FM — keystore-mode-aware signer resolution. Pattern
+        // matches V2G-P DeployMarginEngineV2: PK env wins when set
+        // (back-compat); otherwise we rely on Foundry's CLI
+        // `--account` / `--sender` to provide the signer, and the
+        // deployer address comes from `DEPLOYER_ADDRESS` (defaulting
+        // to {CANONICAL_DEPLOYER}). The resolved deployer must equal
+        // {CANONICAL_DEPLOYER}.
+        uint256 deployerPk = vm.envOr("DEPLOYER_PRIVATE_KEY", uint256(0));
+        address envDeployer = vm.envOr("DEPLOYER_ADDRESS", CANONICAL_DEPLOYER);
+
+        if (deployerPk != 0) {
+            address derived = vm.addr(deployerPk);
+            if (derived != envDeployer) {
+                revert DeployerPrivateKeyAddressMismatch(derived, envDeployer);
+            }
+            inputs.deployer = derived;
+        } else {
+            inputs.deployer = envDeployer;
+        }
+
+        if (inputs.deployer != CANONICAL_DEPLOYER) {
+            revert DeployerNotCanonical(inputs.deployer, CANONICAL_DEPLOYER);
+        }
+
         inputs.initialOwner = vm.envOr("INITIAL_OWNER", inputs.deployer);
 
         inputs.feeRecipient = _envAddressOrZero("FEES_MANAGER_V2_FEE_RECIPIENT");
@@ -103,9 +150,15 @@ contract DeployFeesManagerV2 is Script {
     }
 
     function _broadcastDeploy(PreflightInputs memory inputs) internal returns (address feesManagerV2) {
-        uint256 deployerPk = vm.envUint("DEPLOYER_PRIVATE_KEY");
-
-        vm.startBroadcast(deployerPk);
+        // V2G-RX-FM — pick signer source. PK env wins when set
+        // (back-compat); otherwise no-arg broadcast defers to Foundry's
+        // `--account` / `--sender` resolution.
+        uint256 deployerPk = vm.envOr("DEPLOYER_PRIVATE_KEY", uint256(0));
+        if (deployerPk != 0) {
+            vm.startBroadcast(deployerPk);
+        } else {
+            vm.startBroadcast();
+        }
 
         FeesManagerV2 manager = new FeesManagerV2(inputs.initialOwner, inputs.feeRecipient);
         manager.setRebateFundingAccount(inputs.rebateFundingAccount);
