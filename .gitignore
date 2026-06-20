@@ -3,6 +3,13 @@ cache/
 out/
 foundry.lock
 
+# Operator-private inputs (NEVER commit populated copies).
+operator-private/
+*.private.md
+*.private.env
+.env.sepolia.local
+.env.sepolia.private
+
 # Agentic Programming Docs
 AGENTS.md
 ARCHITECTURE_MAP.md

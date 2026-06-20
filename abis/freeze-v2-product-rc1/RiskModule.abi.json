@@ -1,0 +1,1816 @@
+{
+  "contractName": "RiskModule",
+  "abi": [
+    {
+      "type": "constructor",
+      "inputs": [
+        {
+          "name": "_owner",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "_vault",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "_registry",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "_marginEngine",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "_oracle",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "acceptOwnership",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "baseCollateralToken",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "baseDecimals",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint8",
+          "internalType": "uint8"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "baseMaintenanceMarginPerContract",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "cancelOwnershipTransfer",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "clearEmergencyModes",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "clearGuardian",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "collateralConfigs",
+      "inputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "weightBps",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "isEnabled",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "collateralTokens",
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "collateralValuationPaused",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "collateralVault",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "contract CollateralVault"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "computeAccountRisk",
+      "inputs": [
+        {
+          "name": "trader",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "risk",
+          "type": "tuple",
+          "internalType": "struct IRiskModule.AccountRisk",
+          "components": [
+            {
+              "name": "equityBase",
+              "type": "int256",
+              "internalType": "int256"
+            },
+            {
+              "name": "maintenanceMarginBase",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "initialMarginBase",
+              "type": "uint256",
+              "internalType": "uint256"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "computeAccountRiskBreakdown",
+      "inputs": [
+        {
+          "name": "trader",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "breakdown",
+          "type": "tuple",
+          "internalType": "struct IRiskModule.AccountRiskBreakdown",
+          "components": [
+            {
+              "name": "equityBase",
+              "type": "int256",
+              "internalType": "int256"
+            },
+            {
+              "name": "maintenanceMarginBase",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "initialMarginBase",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "collateral",
+              "type": "tuple",
+              "internalType": "struct IRiskModule.CollateralState",
+              "components": [
+                {
+                  "name": "grossCollateralValueBase",
+                  "type": "uint256",
+                  "internalType": "uint256"
+                },
+                {
+                  "name": "adjustedCollateralValueBase",
+                  "type": "uint256",
+                  "internalType": "uint256"
+                }
+              ]
+            },
+            {
+              "name": "products",
+              "type": "tuple",
+              "internalType": "struct IRiskModule.ProductRiskState",
+              "components": [
+                {
+                  "name": "unrealizedPnlBase",
+                  "type": "int256",
+                  "internalType": "int256"
+                },
+                {
+                  "name": "fundingAccruedBase",
+                  "type": "int256",
+                  "internalType": "int256"
+                },
+                {
+                  "name": "optionsInitialMarginBase",
+                  "type": "uint256",
+                  "internalType": "uint256"
+                },
+                {
+                  "name": "optionsMaintenanceMarginBase",
+                  "type": "uint256",
+                  "internalType": "uint256"
+                },
+                {
+                  "name": "perpsInitialMarginBase",
+                  "type": "uint256",
+                  "internalType": "uint256"
+                },
+                {
+                  "name": "perpsMaintenanceMarginBase",
+                  "type": "uint256",
+                  "internalType": "uint256"
+                },
+                {
+                  "name": "residualBadDebtBase",
+                  "type": "uint256",
+                  "internalType": "uint256"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "computeCollateralState",
+      "inputs": [
+        {
+          "name": "trader",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "state",
+          "type": "tuple",
+          "internalType": "struct IRiskModule.CollateralState",
+          "components": [
+            {
+              "name": "grossCollateralValueBase",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "adjustedCollateralValueBase",
+              "type": "uint256",
+              "internalType": "uint256"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "computeDetailedAccountRisk",
+      "inputs": [
+        {
+          "name": "trader",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "detail",
+          "type": "tuple",
+          "internalType": "struct IRiskModule.DetailedAccountRisk",
+          "components": [
+            {
+              "name": "equityBase",
+              "type": "int256",
+              "internalType": "int256"
+            },
+            {
+              "name": "maintenanceMarginBase",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "initialMarginBase",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "freeCollateralBase",
+              "type": "int256",
+              "internalType": "int256"
+            },
+            {
+              "name": "marginRatioBps",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "collateralContributions",
+              "type": "tuple[]",
+              "internalType": "struct IRiskModule.CollateralContribution[]",
+              "components": [
+                {
+                  "name": "token",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "balance",
+                  "type": "uint256",
+                  "internalType": "uint256"
+                },
+                {
+                  "name": "weightBps",
+                  "type": "uint256",
+                  "internalType": "uint256"
+                },
+                {
+                  "name": "isEnabled",
+                  "type": "bool",
+                  "internalType": "bool"
+                },
+                {
+                  "name": "valuationAvailable",
+                  "type": "bool",
+                  "internalType": "bool"
+                },
+                {
+                  "name": "grossCollateralValueBase",
+                  "type": "uint256",
+                  "internalType": "uint256"
+                },
+                {
+                  "name": "adjustedCollateralValueBase",
+                  "type": "uint256",
+                  "internalType": "uint256"
+                }
+              ]
+            },
+            {
+              "name": "productContributions",
+              "type": "tuple[]",
+              "internalType": "struct IRiskModule.ProductContribution[]",
+              "components": [
+                {
+                  "name": "productId",
+                  "type": "uint8",
+                  "internalType": "uint8"
+                },
+                {
+                  "name": "maintenanceMarginBase",
+                  "type": "uint256",
+                  "internalType": "uint256"
+                },
+                {
+                  "name": "initialMarginBase",
+                  "type": "uint256",
+                  "internalType": "uint256"
+                },
+                {
+                  "name": "shortLiabilityBase",
+                  "type": "uint256",
+                  "internalType": "uint256"
+                },
+                {
+                  "name": "unrealizedPnlBase",
+                  "type": "int256",
+                  "internalType": "int256"
+                },
+                {
+                  "name": "fundingAccruedBase",
+                  "type": "int256",
+                  "internalType": "int256"
+                },
+                {
+                  "name": "residualBadDebtBase",
+                  "type": "uint256",
+                  "internalType": "uint256"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "computeFreeCollateral",
+      "inputs": [
+        {
+          "name": "trader",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "freeCollateralBase",
+          "type": "int256",
+          "internalType": "int256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "computeMarginRatioBps",
+      "inputs": [
+        {
+          "name": "trader",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "computeProductRiskState",
+      "inputs": [
+        {
+          "name": "trader",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "state",
+          "type": "tuple",
+          "internalType": "struct IRiskModule.ProductRiskState",
+          "components": [
+            {
+              "name": "unrealizedPnlBase",
+              "type": "int256",
+              "internalType": "int256"
+            },
+            {
+              "name": "fundingAccruedBase",
+              "type": "int256",
+              "internalType": "int256"
+            },
+            {
+              "name": "optionsInitialMarginBase",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "optionsMaintenanceMarginBase",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "perpsInitialMarginBase",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "perpsMaintenanceMarginBase",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "residualBadDebtBase",
+              "type": "uint256",
+              "internalType": "uint256"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getCollateralTokens",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address[]",
+          "internalType": "address[]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getEffectiveOptionRiskPolicy",
+      "inputs": [
+        {
+          "name": "underlying",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "policy",
+          "type": "tuple",
+          "internalType": "struct RiskModuleViews.EffectiveOptionRiskPolicyView",
+          "components": [
+            {
+              "name": "underlying",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "baseMaintenanceMarginPerContract",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "imFactorBps",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "oracleDownMmMultiplierBps",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "usesGlobalFallback",
+              "type": "bool",
+              "internalType": "bool"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getOptionRiskConfig",
+      "inputs": [
+        {
+          "name": "underlying",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "baseMaintenanceMarginPerContract",
+          "type": "uint128",
+          "internalType": "uint128"
+        },
+        {
+          "name": "optionImFactorBps",
+          "type": "uint32",
+          "internalType": "uint32"
+        },
+        {
+          "name": "optionOracleDownMmMultiplierBps",
+          "type": "uint32",
+          "internalType": "uint32"
+        },
+        {
+          "name": "isConfigured",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getResidualBadDebt",
+      "inputs": [
+        {
+          "name": "trader",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "amountBase",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getUnderlyingSpot",
+      "inputs": [
+        {
+          "name": "underlying",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "settlementAsset",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "price",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "updatedAt",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getWithdrawableAmount",
+      "inputs": [
+        {
+          "name": "trader",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "token",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "withdrawable",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "guardian",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "imFactorBps",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "marginEngine",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "contract IMarginEngineState"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "maxOracleDelay",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "optionRegistry",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "contract OptionProductRegistry"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "oracle",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "contract IOracle"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "oracleDownMmMultiplierBps",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "owner",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "pause",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "pauseCollateralValuation",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "pauseRiskChecks",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "pauseWithdrawPreviews",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "paused",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "pendingOwner",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "perpEngine",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "perpRiskModule",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "contract IPerpRiskModule"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "previewWithdrawImpact",
+      "inputs": [
+        {
+          "name": "trader",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "token",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "preview",
+          "type": "tuple",
+          "internalType": "struct IRiskModule.WithdrawPreview",
+          "components": [
+            {
+              "name": "requestedAmount",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "maxWithdrawable",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "marginRatioBeforeBps",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "marginRatioAfterBps",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "wouldBreachMargin",
+              "type": "bool",
+              "internalType": "bool"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "renounceOwnership",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "riskChecksPaused",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "setCollateralConfig",
+      "inputs": [
+        {
+          "name": "token",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "weightBps",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "isEnabled",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setEmergencyModes",
+      "inputs": [
+        {
+          "name": "riskChecksPaused_",
+          "type": "bool",
+          "internalType": "bool"
+        },
+        {
+          "name": "collateralValuationPaused_",
+          "type": "bool",
+          "internalType": "bool"
+        },
+        {
+          "name": "withdrawPreviewPaused_",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setGuardian",
+      "inputs": [
+        {
+          "name": "guardian_",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setMarginEngine",
+      "inputs": [
+        {
+          "name": "_marginEngine",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setMaxOracleDelay",
+      "inputs": [
+        {
+          "name": "_maxOracleDelay",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setOptionFallbackRiskParams",
+      "inputs": [
+        {
+          "name": "_baseToken",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "_baseMMPerContract",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "_imFactorBps",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setOracle",
+      "inputs": [
+        {
+          "name": "_oracle",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setOracleDownMmMultiplier",
+      "inputs": [
+        {
+          "name": "_multiplierBps",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setPerpEngine",
+      "inputs": [
+        {
+          "name": "_perpEngine",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setPerpRiskModule",
+      "inputs": [
+        {
+          "name": "_perpRiskModule",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setRiskParams",
+      "inputs": [
+        {
+          "name": "_baseToken",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "_baseMMPerContract",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "_imFactorBps",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "syncCollateralTokensFromVault",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "added",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "transferOwnership",
+      "inputs": [
+        {
+          "name": "newOwner",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "unpause",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "unpauseCollateralValuation",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "unpauseRiskChecks",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "unpauseWithdrawPreviews",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "withdrawPreviewPaused",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "event",
+      "name": "CollateralConfigSet",
+      "inputs": [
+        {
+          "name": "token",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "weightBps",
+          "type": "uint64",
+          "indexed": false,
+          "internalType": "uint64"
+        },
+        {
+          "name": "isEnabled",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "CollateralTokensSyncedFromVault",
+      "inputs": [
+        {
+          "name": "added",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "CollateralValuationPauseSet",
+      "inputs": [
+        {
+          "name": "isPaused",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "EmergencyModeUpdated",
+      "inputs": [
+        {
+          "name": "riskChecksPaused",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        },
+        {
+          "name": "collateralValuationPaused",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        },
+        {
+          "name": "withdrawPreviewPaused",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "GlobalPauseSet",
+      "inputs": [
+        {
+          "name": "isPaused",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "GuardianSet",
+      "inputs": [
+        {
+          "name": "oldGuardian",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "newGuardian",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "MarginEngineSet",
+      "inputs": [
+        {
+          "name": "oldMarginEngine",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "newMarginEngine",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "MaxOracleDelaySet",
+      "inputs": [
+        {
+          "name": "oldMaxOracleDelay",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "newMaxOracleDelay",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "OracleDownMmMultiplierSet",
+      "inputs": [
+        {
+          "name": "oldMultiplierBps",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "newMultiplierBps",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "OracleSet",
+      "inputs": [
+        {
+          "name": "oldOracle",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "newOracle",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "OwnershipTransferStarted",
+      "inputs": [
+        {
+          "name": "previousOwner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "pendingOwner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "OwnershipTransferred",
+      "inputs": [
+        {
+          "name": "previousOwner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "newOwner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "Paused",
+      "inputs": [
+        {
+          "name": "account",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "PerpEngineSet",
+      "inputs": [
+        {
+          "name": "oldPerpEngine",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "newPerpEngine",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "PerpRiskModuleSet",
+      "inputs": [
+        {
+          "name": "oldPerpRiskModule",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "newPerpRiskModule",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "RiskChecksPauseSet",
+      "inputs": [
+        {
+          "name": "isPaused",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "RiskParamsSet",
+      "inputs": [
+        {
+          "name": "baseCollateralToken",
+          "type": "address",
+          "indexed": false,
+          "internalType": "address"
+        },
+        {
+          "name": "baseMaintenanceMarginPerContract",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "imFactorBps",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "Unpaused",
+      "inputs": [
+        {
+          "name": "account",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "WithdrawPreviewPauseSet",
+      "inputs": [
+        {
+          "name": "isPaused",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "error",
+      "name": "BaseTokenNotConfigured",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "CollateralValuationPaused",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "DecimalsDiffOverflow",
+      "inputs": [
+        {
+          "name": "token",
+          "type": "address",
+          "internalType": "address"
+        }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "DecimalsOverflow",
+      "inputs": [
+        {
+          "name": "token",
+          "type": "address",
+          "internalType": "address"
+        }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "GuardianNotAuthorized",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "InvalidContractSize",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "InvalidParams",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "MathOverflow",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "NotAuthorized",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "OracleUnavailable",
+      "inputs": [
+        {
+          "name": "base",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "quote",
+          "type": "address",
+          "internalType": "address"
+        }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "OwnershipTransferNotInitiated",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "PausedError",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "QuantityAbsOverflow",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "QuantityInt128Min",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "RiskChecksPaused",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "SafeCastOverflowedIntToUint",
+      "inputs": [
+        {
+          "name": "value",
+          "type": "int256",
+          "internalType": "int256"
+        }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "SafeCastOverflowedUintDowncast",
+      "inputs": [
+        {
+          "name": "bits",
+          "type": "uint8",
+          "internalType": "uint8"
+        },
+        {
+          "name": "value",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "SafeCastOverflowedUintToInt",
+      "inputs": [
+        {
+          "name": "value",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "TokenDecimalsNotConfigured",
+      "inputs": [
+        {
+          "name": "token",
+          "type": "address",
+          "internalType": "address"
+        }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "TokenNotConfigured",
+      "inputs": [
+        {
+          "name": "token",
+          "type": "address",
+          "internalType": "address"
+        }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "TokenNotSupportedInVault",
+      "inputs": [
+        {
+          "name": "token",
+          "type": "address",
+          "internalType": "address"
+        }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "WithdrawPreviewPaused",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "ZeroAddress",
+      "inputs": []
+    }
+  ],
+  "methodIdentifiers": {
+    "acceptOwnership()": "79ba5097",
+    "baseCollateralToken()": "20d0d069",
+    "baseDecimals()": "33f76178",
+    "baseMaintenanceMarginPerContract()": "238d89fc",
+    "cancelOwnershipTransfer()": "23452b9c",
+    "clearEmergencyModes()": "5a08bba7",
+    "clearGuardian()": "ae77f7a3",
+    "collateralConfigs(address)": "8cf18e64",
+    "collateralTokens(uint256)": "172c48c7",
+    "collateralValuationPaused()": "df24259e",
+    "collateralVault()": "0bece79c",
+    "computeAccountRisk(address)": "833087ef",
+    "computeAccountRiskBreakdown(address)": "5e58e5bf",
+    "computeCollateralState(address)": "2318ce4d",
+    "computeDetailedAccountRisk(address)": "64decf64",
+    "computeFreeCollateral(address)": "ace413f7",
+    "computeMarginRatioBps(address)": "e769f5b0",
+    "computeProductRiskState(address)": "4f9f6cf6",
+    "getCollateralTokens()": "b58eb63f",
+    "getEffectiveOptionRiskPolicy(address)": "7a9a6187",
+    "getOptionRiskConfig(address)": "595c08aa",
+    "getResidualBadDebt(address)": "a0372f08",
+    "getUnderlyingSpot(address,address)": "d7fdaaca",
+    "getWithdrawableAmount(address,address)": "46c58227",
+    "guardian()": "452a9320",
+    "imFactorBps()": "2e868742",
+    "marginEngine()": "004006e0",
+    "maxOracleDelay()": "52f1edcc",
+    "optionRegistry()": "3b4567b0",
+    "oracle()": "7dc0d1d0",
+    "oracleDownMmMultiplierBps()": "1f5b7d51",
+    "owner()": "8da5cb5b",
+    "pause()": "8456cb59",
+    "pauseCollateralValuation()": "072361ba",
+    "pauseRiskChecks()": "a2a723a7",
+    "pauseWithdrawPreviews()": "51c8a99f",
+    "paused()": "5c975abb",
+    "pendingOwner()": "e30c3978",
+    "perpEngine()": "48ba4d2b",
+    "perpRiskModule()": "c838abc7",
+    "previewWithdrawImpact(address,address,uint256)": "56c5289e",
+    "renounceOwnership()": "715018a6",
+    "riskChecksPaused()": "adcac01e",
+    "setCollateralConfig(address,uint64,bool)": "57c8c184",
+    "setEmergencyModes(bool,bool,bool)": "6d8c7d3f",
+    "setGuardian(address)": "8a0dac4a",
+    "setMarginEngine(address)": "f5c6bf0a",
+    "setMaxOracleDelay(uint256)": "cd3b691c",
+    "setOptionFallbackRiskParams(address,uint256,uint256)": "8c08f42f",
+    "setOracle(address)": "7adbf973",
+    "setOracleDownMmMultiplier(uint256)": "69f66b50",
+    "setPerpEngine(address)": "b619daf7",
+    "setPerpRiskModule(address)": "d90cff24",
+    "setRiskParams(address,uint256,uint256)": "7c1fcd17",
+    "syncCollateralTokensFromVault()": "0abb8342",
+    "transferOwnership(address)": "f2fde38b",
+    "unpause()": "3f4ba83a",
+    "unpauseCollateralValuation()": "fd119599",
+    "unpauseRiskChecks()": "ffe2c24f",
+    "unpauseWithdrawPreviews()": "fa7366fe",
+    "withdrawPreviewPaused()": "faac51af"
+  },
+  "sourceCommit": "d133e2c",
+  "generatedAt": "2026-06-10",
+  "freezeTag": "v2-product-freeze-rc1",
+  "notes": "Generated from forge build artefact. Not mainnet deployed. Not audited. Testnet beta."
+}

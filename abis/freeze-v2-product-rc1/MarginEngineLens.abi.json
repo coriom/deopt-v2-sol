@@ -1,0 +1,2094 @@
+{
+  "contractName": "MarginEngineLens",
+  "abi": [
+    {
+      "type": "function",
+      "name": "getAccountState",
+      "inputs": [
+        {
+          "name": "marginEngine",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "trader",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "s",
+          "type": "tuple",
+          "internalType": "struct MarginEngineLens.AccountState",
+          "components": [
+            {
+              "name": "equityBase",
+              "type": "int256",
+              "internalType": "int256"
+            },
+            {
+              "name": "maintenanceMarginBase",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "initialMarginBase",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "freeCollateralBase",
+              "type": "int256",
+              "internalType": "int256"
+            },
+            {
+              "name": "marginRatioBps",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "openSeriesCount",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "totalShortOpenContracts",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "liquidatable",
+              "type": "bool",
+              "internalType": "bool"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getProtocolSettlementAccountingSlice",
+      "inputs": [
+        {
+          "name": "marginEngine",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "start",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "end",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "totals",
+          "type": "tuple",
+          "internalType": "struct MarginEngineLens.ProtocolSettlementSliceTotals",
+          "components": [
+            {
+              "name": "seriesCount",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "totalCollected",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "totalPaid",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "totalBadDebt",
+              "type": "uint256",
+              "internalType": "uint256"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getSeriesSettlementAccounting",
+      "inputs": [
+        {
+          "name": "marginEngine",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "state",
+          "type": "tuple",
+          "internalType": "struct MarginEngineTypes.SeriesSettlementState",
+          "components": [
+            {
+              "name": "totalCollected",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "totalPaid",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "totalBadDebt",
+              "type": "uint256",
+              "internalType": "uint256"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "previewAccountSettlement",
+      "inputs": [
+        {
+          "name": "marginEngine",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "trader",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "p",
+          "type": "tuple",
+          "internalType": "struct MarginEngineTypes.SettlementPreview",
+          "components": [
+            {
+              "name": "pnl",
+              "type": "int256",
+              "internalType": "int256"
+            },
+            {
+              "name": "grossAmount",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "collectibleAmount",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "payableFromSettlementSink",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "insurancePreview",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "residualBadDebtPreview",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "isSettled",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "canSettle",
+              "type": "bool",
+              "internalType": "bool"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "previewDetailedSettlement",
+      "inputs": [
+        {
+          "name": "marginEngine",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "trader",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "p",
+          "type": "tuple",
+          "internalType": "struct MarginEngineLens.DetailedSettlementPreview",
+          "components": [
+            {
+              "name": "optionId",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "settlementAsset",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "seriesActive",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "seriesExpired",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "settlementPaused",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "settlementPriceSet",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "settlementFinalizedAt",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "settlementPrice",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "proposalExists",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "proposedSettlementPrice",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "proposalTimestamp",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "settlementFinalityDelay",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "proposalReady",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "settlementReady",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "accountSettled",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "positionQuantity",
+              "type": "int128",
+              "internalType": "int128"
+            },
+            {
+              "name": "payoffPerContract",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "pnl",
+              "type": "int256",
+              "internalType": "int256"
+            },
+            {
+              "name": "grossSettlementAmount",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "isShortLiability",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "shortLiabilityAmount",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "traderSettlementAssetBalance",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "settlementSinkBalance",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "collateralCoveragePreview",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "insuranceCoveragePreview",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "residualShortfallPreview",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "residualBadDebtPreview",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "grossSettlementAmountBaseAvailable",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "grossSettlementAmountBase",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "accountCashflowDeltaBaseAvailable",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "accountCashflowDeltaBase",
+              "type": "int256",
+              "internalType": "int256"
+            },
+            {
+              "name": "riskAfterAvailable",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "riskBefore",
+              "type": "tuple",
+              "internalType": "struct MarginEngineLens.SettlementRiskSnapshot",
+              "components": [
+                {
+                  "name": "equityBase",
+                  "type": "int256",
+                  "internalType": "int256"
+                },
+                {
+                  "name": "maintenanceMarginBase",
+                  "type": "uint256",
+                  "internalType": "uint256"
+                },
+                {
+                  "name": "initialMarginBase",
+                  "type": "uint256",
+                  "internalType": "uint256"
+                },
+                {
+                  "name": "marginRatioBps",
+                  "type": "uint256",
+                  "internalType": "uint256"
+                }
+              ]
+            },
+            {
+              "name": "riskAfter",
+              "type": "tuple",
+              "internalType": "struct MarginEngineLens.SettlementRiskSnapshot",
+              "components": [
+                {
+                  "name": "equityBase",
+                  "type": "int256",
+                  "internalType": "int256"
+                },
+                {
+                  "name": "maintenanceMarginBase",
+                  "type": "uint256",
+                  "internalType": "uint256"
+                },
+                {
+                  "name": "initialMarginBase",
+                  "type": "uint256",
+                  "internalType": "uint256"
+                },
+                {
+                  "name": "marginRatioBps",
+                  "type": "uint256",
+                  "internalType": "uint256"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "previewLiquidation",
+      "inputs": [
+        {
+          "name": "marginEngine",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "trader",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "optionIds",
+          "type": "uint256[]",
+          "internalType": "uint256[]"
+        },
+        {
+          "name": "quantities",
+          "type": "uint128[]",
+          "internalType": "uint128[]"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "p",
+          "type": "tuple",
+          "internalType": "struct MarginEngineLens.OptionsLiquidationPreview",
+          "components": [
+            {
+              "name": "liquidatable",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "marginRatioBeforeBps",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "equityBeforeBase",
+              "type": "int256",
+              "internalType": "int256"
+            },
+            {
+              "name": "maintenanceMarginBeforeBase",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "initialMarginBeforeBase",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "totalShortContracts",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "maxCloseContracts",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "totalContractsPreviewed",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "executedQuantities",
+              "type": "uint128[]",
+              "internalType": "uint128[]"
+            },
+            {
+              "name": "pricePerContract",
+              "type": "uint256[]",
+              "internalType": "uint256[]"
+            },
+            {
+              "name": "settlementAssets",
+              "type": "address[]",
+              "internalType": "address[]"
+            },
+            {
+              "name": "cashRequestedByAsset",
+              "type": "uint256[]",
+              "internalType": "uint256[]"
+            },
+            {
+              "name": "cashAssetCount",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "penaltyBase",
+              "type": "uint256",
+              "internalType": "uint256"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "previewTradeFees",
+      "inputs": [
+        {
+          "name": "marginEngine",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "quantity",
+          "type": "uint128",
+          "internalType": "uint128"
+        },
+        {
+          "name": "price",
+          "type": "uint128",
+          "internalType": "uint128"
+        },
+        {
+          "name": "buyer",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "seller",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "buyerIsMaker",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "settlementAsset",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "recipient",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "premium",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "notionalImplicit",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "buyerQuote",
+          "type": "tuple",
+          "internalType": "struct IFeesManager.FeeQuote",
+          "components": [
+            {
+              "name": "notionalFee",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "premiumCapFee",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "appliedFee",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "cappedByPremium",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "paramsUsed",
+              "type": "tuple",
+              "internalType": "struct IFeesManager.FeeParams",
+              "components": [
+                {
+                  "name": "notionalFeeBps",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "premiumCapBps",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "sellerQuote",
+          "type": "tuple",
+          "internalType": "struct IFeesManager.FeeQuote",
+          "components": [
+            {
+              "name": "notionalFee",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "premiumCapFee",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "appliedFee",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "cappedByPremium",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "paramsUsed",
+              "type": "tuple",
+              "internalType": "struct IFeesManager.FeeParams",
+              "components": [
+                {
+                  "name": "notionalFeeBps",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                },
+                {
+                  "name": "premiumCapBps",
+                  "type": "uint16",
+                  "internalType": "uint16"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "event",
+      "name": "AccountSettled",
+      "inputs": [
+        {
+          "name": "trader",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "pnl",
+          "type": "int256",
+          "indexed": false,
+          "internalType": "int256"
+        },
+        {
+          "name": "collectedFromTrader",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "paidToTrader",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "badDebt",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "AccountSettlementResolved",
+      "inputs": [
+        {
+          "name": "trader",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "settlementAsset",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "positionQuantity",
+          "type": "int128",
+          "indexed": false,
+          "internalType": "int128"
+        },
+        {
+          "name": "settlementPrice",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "payoffPerContract",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "pnl",
+          "type": "int256",
+          "indexed": false,
+          "internalType": "int256"
+        },
+        {
+          "name": "grossSettlementAmount",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "CollateralDeposited",
+      "inputs": [
+        {
+          "name": "trader",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "token",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "CollateralOpsPauseSet",
+      "inputs": [
+        {
+          "name": "paused",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "CollateralWithdrawn",
+      "inputs": [
+        {
+          "name": "trader",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "token",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "marginRatioAfterBps",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "EmergencyModeUpdated",
+      "inputs": [
+        {
+          "name": "tradingPaused",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        },
+        {
+          "name": "liquidationPaused",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        },
+        {
+          "name": "settlementPaused",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        },
+        {
+          "name": "collateralOpsPaused",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "FeeRecipientSet",
+      "inputs": [
+        {
+          "name": "oldRecipient",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "newRecipient",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "FeesManagerSet",
+      "inputs": [
+        {
+          "name": "newFeesManager",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "FeesManagerV2EnabledSet",
+      "inputs": [
+        {
+          "name": "enabled",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "FeesManagerV2Set",
+      "inputs": [
+        {
+          "name": "newFeesManagerV2",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "GlobalPauseSet",
+      "inputs": [
+        {
+          "name": "paused",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "GuardianSet",
+      "inputs": [
+        {
+          "name": "oldGuardian",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "newGuardian",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "InsuranceFundSet",
+      "inputs": [
+        {
+          "name": "oldFund",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "newFund",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "Liquidation",
+      "inputs": [
+        {
+          "name": "liquidator",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "trader",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "optionIds",
+          "type": "uint256[]",
+          "indexed": false,
+          "internalType": "uint256[]"
+        },
+        {
+          "name": "quantitiesExecuted",
+          "type": "uint128[]",
+          "indexed": false,
+          "internalType": "uint128[]"
+        },
+        {
+          "name": "collateralSeizedBaseValue",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "LiquidationCashflow",
+      "inputs": [
+        {
+          "name": "liquidator",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "trader",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "settlementAsset",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "cashPaidByTrader",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "cashRequested",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "LiquidationHardenParamsSet",
+      "inputs": [
+        {
+          "name": "liquidationCloseFactorBps",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "minLiquidationImprovementBps",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "LiquidationOracleMaxDelaySet",
+      "inputs": [
+        {
+          "name": "oldDelay",
+          "type": "uint32",
+          "indexed": false,
+          "internalType": "uint32"
+        },
+        {
+          "name": "newDelay",
+          "type": "uint32",
+          "indexed": false,
+          "internalType": "uint32"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "LiquidationParamsSet",
+      "inputs": [
+        {
+          "name": "liquidationThresholdBps",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "liquidationPenaltyBps",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "LiquidationPauseSet",
+      "inputs": [
+        {
+          "name": "paused",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "LiquidationPricingParamsSet",
+      "inputs": [
+        {
+          "name": "liquidationPriceSpreadBps",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "minLiquidationPriceBpsOfIntrinsic",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "LiquidationSeize",
+      "inputs": [
+        {
+          "name": "liquidator",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "trader",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "token",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "amountToken",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "seizedBaseValue",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "MatchingEngineSet",
+      "inputs": [
+        {
+          "name": "newMatchingEngine",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "OracleSet",
+      "inputs": [
+        {
+          "name": "newOracle",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "OwnershipTransferStarted",
+      "inputs": [
+        {
+          "name": "previousOwner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "pendingOwner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "OwnershipTransferred",
+      "inputs": [
+        {
+          "name": "previousOwner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "newOwner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "Paused",
+      "inputs": [
+        {
+          "name": "account",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "RiskModuleSet",
+      "inputs": [
+        {
+          "name": "newRiskModule",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "RiskParamsSet",
+      "inputs": [
+        {
+          "name": "baseCollateralToken",
+          "type": "address",
+          "indexed": false,
+          "internalType": "address"
+        },
+        {
+          "name": "baseMaintenanceMarginPerContract",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "imFactorBps",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "SeriesActivationStateSet",
+      "inputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "oldState",
+          "type": "uint8",
+          "indexed": false,
+          "internalType": "uint8"
+        },
+        {
+          "name": "newState",
+          "type": "uint8",
+          "indexed": false,
+          "internalType": "uint8"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "SeriesEmergencyCloseOnlySet",
+      "inputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "oldCloseOnly",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        },
+        {
+          "name": "newCloseOnly",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "SeriesEmergencyCloseOnlyUpdated",
+      "inputs": [
+        {
+          "name": "caller",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "oldCloseOnly",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        },
+        {
+          "name": "newCloseOnly",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "SeriesSettlementAccountingUpdated",
+      "inputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "totalCollected",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "totalPaid",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "totalBadDebt",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "SeriesShortOpenInterestCapSet",
+      "inputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "oldCap",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "newCap",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "SettlementBadDebtRecorded",
+      "inputs": [
+        {
+          "name": "trader",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "residualBadDebt",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "SettlementCollectionShortfall",
+      "inputs": [
+        {
+          "name": "trader",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "requestedAmount",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "collectedAmount",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "residualBadDebt",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "SettlementInsuranceCoverage",
+      "inputs": [
+        {
+          "name": "trader",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "requestedAmount",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "paidAmount",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "SettlementPauseSet",
+      "inputs": [
+        {
+          "name": "paused",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "SettlementShortfall",
+      "inputs": [
+        {
+          "name": "trader",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "requestedAmount",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "paidFromSettlementSink",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "shortfall",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "TradeExecuted",
+      "inputs": [
+        {
+          "name": "buyer",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "seller",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "quantity",
+          "type": "uint128",
+          "indexed": false,
+          "internalType": "uint128"
+        },
+        {
+          "name": "price",
+          "type": "uint128",
+          "indexed": false,
+          "internalType": "uint128"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "TradingFeeCharged",
+      "inputs": [
+        {
+          "name": "trader",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "recipient",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "settlementAsset",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "isMaker",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        },
+        {
+          "name": "premium",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "notionalImplicit",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "notionalFee",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "premiumCapFee",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "appliedFee",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "cappedByPremium",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "TradingPauseSet",
+      "inputs": [
+        {
+          "name": "paused",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "Unpaused",
+      "inputs": [
+        {
+          "name": "account",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "error",
+      "name": "AmountZero",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "CollateralOpsPaused",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "DecimalsOverflow",
+      "inputs": [
+        {
+          "name": "token",
+          "type": "address",
+          "internalType": "address"
+        }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "FeesManagerV2QuoteInvalid",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "FeesManagerV2RebateFundingNotSet",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "FeesRecipientEqualsCounterparty",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "FeesRecipientEqualsTrader",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "FeesRecipientNotSet",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "GuardianNotAuthorized",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "InsuranceFundNotSet",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "InvalidActivationState",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "InvalidContractSize",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "InvalidLiquidationParams",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "InvalidTrade",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "LengthMismatch",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "LiquidationCloseFactorZero",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "LiquidationNotImproving",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "LiquidationNothingToDo",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "LiquidationPaused",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "LiquidationPricingParamsInvalid",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "MarginRequirementBreached",
+      "inputs": [
+        {
+          "name": "trader",
+          "type": "address",
+          "internalType": "address"
+        }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "MathOverflow",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "NoBaseCollateral",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "NotAuthorized",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "NotExpired",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "NotLiquidatable",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "OraclePriceStale",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "OraclePriceUnavailable",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "OwnershipTransferNotInitiated",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "PausedError",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "PnlOverflow",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "QuantityMinNotAllowed",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "QuantityTooLarge",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "RiskModuleNotSet",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "RiskParamsMismatch",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "SafeCastOverflowedIntToUint",
+      "inputs": [
+        {
+          "name": "value",
+          "type": "int256",
+          "internalType": "int256"
+        }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "SafeCastOverflowedUintDowncast",
+      "inputs": [
+        {
+          "name": "bits",
+          "type": "uint8",
+          "internalType": "uint8"
+        },
+        {
+          "name": "value",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "SafeCastOverflowedUintToInt",
+      "inputs": [
+        {
+          "name": "value",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "SeriesExpired",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "SeriesNotActiveCloseOnly",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "SeriesShortOpenInterestCapExceeded",
+      "inputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "openInterest",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "cap",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "SettlementAlreadyProcessed",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "SettlementAssetNotConfigured",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "SettlementNotSet",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "SettlementPaused",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "TradingPaused",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "VaultDepositForNotSupported",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "VaultWithdrawForNotSupported",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "WithdrawTooLarge",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "WithdrawWouldBreachMargin",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "ZeroAddress",
+      "inputs": []
+    }
+  ],
+  "methodIdentifiers": {
+    "getAccountState(address,address)": "a57bd4cc",
+    "getProtocolSettlementAccountingSlice(address,uint256,uint256)": "b85043bf",
+    "getSeriesSettlementAccounting(address,uint256)": "bc546a3d",
+    "previewAccountSettlement(address,uint256,address)": "e80299c3",
+    "previewDetailedSettlement(address,uint256,address)": "884ceaae",
+    "previewLiquidation(address,address,uint256[],uint128[])": "3c9cb0e4",
+    "previewTradeFees(address,uint256,uint128,uint128,address,address,bool)": "6ffe6d79"
+  },
+  "sourceCommit": "d133e2c",
+  "generatedAt": "2026-06-10",
+  "freezeTag": "v2-product-freeze-rc1",
+  "notes": "Generated from forge build artefact. Not mainnet deployed. Not audited. Testnet beta."
+}

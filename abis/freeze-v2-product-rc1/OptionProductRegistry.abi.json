@@ -1,0 +1,2436 @@
+{
+  "contractName": "OptionProductRegistry",
+  "abi": [
+    {
+      "type": "constructor",
+      "inputs": [
+        {
+          "name": "_owner",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "BPS",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "MAX_IM_FACTOR_BPS",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint32",
+          "internalType": "uint32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "MAX_ORACLE_DOWN_MM_MULTIPLIER_BPS",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint32",
+          "internalType": "uint32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "MAX_SPOT_SHOCK_BPS",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "MAX_VOL_SHOCK_BPS",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "MIN_IM_FACTOR_BPS",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint32",
+          "internalType": "uint32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "MIN_ORACLE_DOWN_MM_MULTIPLIER_BPS",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint32",
+          "internalType": "uint32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "PRICE_SCALE",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "acceptOwnership",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "cancelOwnershipTransfer",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "cancelSettlementProposal",
+      "inputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "clearEmergencyModes",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "clearGuardian",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "computeOptionId",
+      "inputs": [
+        {
+          "name": "underlying",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "settlementAsset",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "expiry",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "strike",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "contractSize1e8",
+          "type": "uint128",
+          "internalType": "uint128"
+        },
+        {
+          "name": "isCall",
+          "type": "bool",
+          "internalType": "bool"
+        },
+        {
+          "name": "isEuropean",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "name": "configPaused",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "createSeries",
+      "inputs": [
+        {
+          "name": "underlying",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "settlementAsset",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "expiry",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "strike",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "contractSize1e8",
+          "type": "uint128",
+          "internalType": "uint128"
+        },
+        {
+          "name": "isCall",
+          "type": "bool",
+          "internalType": "bool"
+        },
+        {
+          "name": "isEuropean",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "createSeries",
+      "inputs": [
+        {
+          "name": "underlying",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "settlementAsset",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "expiry",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "strike",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "isCall",
+          "type": "bool",
+          "internalType": "bool"
+        },
+        {
+          "name": "isEuropean",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "createStrip",
+      "inputs": [
+        {
+          "name": "underlying",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "settlementAsset",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "expiry",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "strikes",
+          "type": "uint64[]",
+          "internalType": "uint64[]"
+        },
+        {
+          "name": "contractSize1e8",
+          "type": "uint128",
+          "internalType": "uint128"
+        },
+        {
+          "name": "isEuropean",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "createStrip",
+      "inputs": [
+        {
+          "name": "underlying",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "settlementAsset",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "expiry",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "strikes",
+          "type": "uint64[]",
+          "internalType": "uint64[]"
+        },
+        {
+          "name": "isEuropean",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "creationPaused",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "finalizeSettlementPrice",
+      "inputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "getActiveSeriesByUnderlying",
+      "inputs": [
+        {
+          "name": "underlying",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "activeIds",
+          "type": "uint256[]",
+          "internalType": "uint256[]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getAllOptionIds",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256[]",
+          "internalType": "uint256[]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getAllOptionIdsSlice",
+      "inputs": [
+        {
+          "name": "start",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "end",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "slice",
+          "type": "uint256[]",
+          "internalType": "uint256[]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getOptionRiskConfig",
+      "inputs": [
+        {
+          "name": "underlying",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "cfg",
+          "type": "tuple",
+          "internalType": "struct OptionProductRegistry.OptionRiskConfig",
+          "components": [
+            {
+              "name": "baseMaintenanceMarginPerContract",
+              "type": "uint128",
+              "internalType": "uint128"
+            },
+            {
+              "name": "imFactorBps",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "oracleDownMmMultiplierBps",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "isConfigured",
+              "type": "bool",
+              "internalType": "bool"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getSeries",
+      "inputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "tuple",
+          "internalType": "struct OptionProductRegistry.OptionSeries",
+          "components": [
+            {
+              "name": "underlying",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "settlementAsset",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "expiry",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "strike",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "contractSize1e8",
+              "type": "uint128",
+              "internalType": "uint128"
+            },
+            {
+              "name": "isCall",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "isEuropean",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "exists",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "isActive",
+              "type": "bool",
+              "internalType": "bool"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getSeriesByUnderlying",
+      "inputs": [
+        {
+          "name": "underlying",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256[]",
+          "internalType": "uint256[]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getSeriesByUnderlyingSlice",
+      "inputs": [
+        {
+          "name": "underlying",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "start",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "end",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "slice",
+          "type": "uint256[]",
+          "internalType": "uint256[]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getSeriesEconomicParams",
+      "inputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "settlementAsset",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "strike",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "contractSize1e8",
+          "type": "uint128",
+          "internalType": "uint128"
+        },
+        {
+          "name": "isCall",
+          "type": "bool",
+          "internalType": "bool"
+        },
+        {
+          "name": "isEuropean",
+          "type": "bool",
+          "internalType": "bool"
+        },
+        {
+          "name": "isActive",
+          "type": "bool",
+          "internalType": "bool"
+        },
+        {
+          "name": "expiry",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getSeriesIfExists",
+      "inputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "s",
+          "type": "tuple",
+          "internalType": "struct OptionProductRegistry.OptionSeries",
+          "components": [
+            {
+              "name": "underlying",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "settlementAsset",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "expiry",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "strike",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "contractSize1e8",
+              "type": "uint128",
+              "internalType": "uint128"
+            },
+            {
+              "name": "isCall",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "isEuropean",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "exists",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "isActive",
+              "type": "bool",
+              "internalType": "bool"
+            }
+          ]
+        },
+        {
+          "name": "exists",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getSettlementFinalizedAt",
+      "inputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint64",
+          "internalType": "uint64"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getSettlementInfo",
+      "inputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "settlementPrice",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "isSet",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getSettlementProposal",
+      "inputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "proposedPrice",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "proposedAt",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "exists",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getStrikeNotional1e8",
+      "inputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "quantity",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "strikeNotional1e8",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getStrikeNotionalPerContract1e8",
+      "inputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "strikeNotional1e8",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getUnderlyingConfig",
+      "inputs": [
+        {
+          "name": "underlying",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "cfg",
+          "type": "tuple",
+          "internalType": "struct OptionProductRegistry.UnderlyingConfig",
+          "components": [
+            {
+              "name": "oracle",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "spotShockDownBps",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "spotShockUpBps",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "volShockDownBps",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "volShockUpBps",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "isEnabled",
+              "type": "bool",
+              "internalType": "bool"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getUnderlyingRiskProfile",
+      "inputs": [
+        {
+          "name": "underlying",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "profile",
+          "type": "tuple",
+          "internalType": "struct OptionProductRegistry.UnderlyingRiskProfile",
+          "components": [
+            {
+              "name": "underlying",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "underlyingConfig",
+              "type": "tuple",
+              "internalType": "struct OptionProductRegistry.UnderlyingConfig",
+              "components": [
+                {
+                  "name": "oracle",
+                  "type": "address",
+                  "internalType": "address"
+                },
+                {
+                  "name": "spotShockDownBps",
+                  "type": "uint64",
+                  "internalType": "uint64"
+                },
+                {
+                  "name": "spotShockUpBps",
+                  "type": "uint64",
+                  "internalType": "uint64"
+                },
+                {
+                  "name": "volShockDownBps",
+                  "type": "uint64",
+                  "internalType": "uint64"
+                },
+                {
+                  "name": "volShockUpBps",
+                  "type": "uint64",
+                  "internalType": "uint64"
+                },
+                {
+                  "name": "isEnabled",
+                  "type": "bool",
+                  "internalType": "bool"
+                }
+              ]
+            },
+            {
+              "name": "optionRiskConfig",
+              "type": "tuple",
+              "internalType": "struct OptionProductRegistry.OptionRiskConfig",
+              "components": [
+                {
+                  "name": "baseMaintenanceMarginPerContract",
+                  "type": "uint128",
+                  "internalType": "uint128"
+                },
+                {
+                  "name": "imFactorBps",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "oracleDownMmMultiplierBps",
+                  "type": "uint32",
+                  "internalType": "uint32"
+                },
+                {
+                  "name": "isConfigured",
+                  "type": "bool",
+                  "internalType": "bool"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "guardian",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "isSeriesCreator",
+      "inputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "isSettled",
+      "inputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "isSettlementAssetAllowed",
+      "inputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "minExpiryDelay",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "optionRiskConfigs",
+      "inputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "baseMaintenanceMarginPerContract",
+          "type": "uint128",
+          "internalType": "uint128"
+        },
+        {
+          "name": "imFactorBps",
+          "type": "uint32",
+          "internalType": "uint32"
+        },
+        {
+          "name": "oracleDownMmMultiplierBps",
+          "type": "uint32",
+          "internalType": "uint32"
+        },
+        {
+          "name": "isConfigured",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "owner",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "pause",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "pauseConfig",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "pauseCreation",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "pauseSettlement",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "paused",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "pendingOwner",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "renounceOwnership",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "seriesAt",
+      "inputs": [
+        {
+          "name": "index",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "seriesExists",
+      "inputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "seriesMetadata",
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "setEmergencyModes",
+      "inputs": [
+        {
+          "name": "creationPaused_",
+          "type": "bool",
+          "internalType": "bool"
+        },
+        {
+          "name": "settlementPaused_",
+          "type": "bool",
+          "internalType": "bool"
+        },
+        {
+          "name": "configPaused_",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setGuardian",
+      "inputs": [
+        {
+          "name": "guardian_",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setMinExpiryDelay",
+      "inputs": [
+        {
+          "name": "_minExpiryDelay",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setOptionRiskConfig",
+      "inputs": [
+        {
+          "name": "underlying",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "cfg",
+          "type": "tuple",
+          "internalType": "struct OptionProductRegistry.OptionRiskConfig",
+          "components": [
+            {
+              "name": "baseMaintenanceMarginPerContract",
+              "type": "uint128",
+              "internalType": "uint128"
+            },
+            {
+              "name": "imFactorBps",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "oracleDownMmMultiplierBps",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "isConfigured",
+              "type": "bool",
+              "internalType": "bool"
+            }
+          ]
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setSeriesActive",
+      "inputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "isActive",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setSeriesCreator",
+      "inputs": [
+        {
+          "name": "account",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "allowed",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setSeriesMetadata",
+      "inputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "metadata",
+          "type": "bytes32",
+          "internalType": "bytes32"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setSettlementAssetAllowed",
+      "inputs": [
+        {
+          "name": "asset",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "allowed",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setSettlementFinalityDelay",
+      "inputs": [
+        {
+          "name": "_delay",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setSettlementOperator",
+      "inputs": [
+        {
+          "name": "account",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setSettlementPrice",
+      "inputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "settlementPrice",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setUnderlyingConfig",
+      "inputs": [
+        {
+          "name": "underlying",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "cfg",
+          "type": "tuple",
+          "internalType": "struct OptionProductRegistry.UnderlyingConfig",
+          "components": [
+            {
+              "name": "oracle",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "spotShockDownBps",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "spotShockUpBps",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "volShockDownBps",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "volShockUpBps",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "isEnabled",
+              "type": "bool",
+              "internalType": "bool"
+            }
+          ]
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setUnderlyingRiskProfile",
+      "inputs": [
+        {
+          "name": "underlying",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "underlyingCfg",
+          "type": "tuple",
+          "internalType": "struct OptionProductRegistry.UnderlyingConfig",
+          "components": [
+            {
+              "name": "oracle",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "spotShockDownBps",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "spotShockUpBps",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "volShockDownBps",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "volShockUpBps",
+              "type": "uint64",
+              "internalType": "uint64"
+            },
+            {
+              "name": "isEnabled",
+              "type": "bool",
+              "internalType": "bool"
+            }
+          ]
+        },
+        {
+          "name": "optionRiskCfg",
+          "type": "tuple",
+          "internalType": "struct OptionProductRegistry.OptionRiskConfig",
+          "components": [
+            {
+              "name": "baseMaintenanceMarginPerContract",
+              "type": "uint128",
+              "internalType": "uint128"
+            },
+            {
+              "name": "imFactorBps",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "oracleDownMmMultiplierBps",
+              "type": "uint32",
+              "internalType": "uint32"
+            },
+            {
+              "name": "isConfigured",
+              "type": "bool",
+              "internalType": "bool"
+            }
+          ]
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "settlementFinalityDelay",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "settlementOperator",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "settlementPaused",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "totalSeries",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "transferOwnership",
+      "inputs": [
+        {
+          "name": "newOwner",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "underlyingConfigs",
+      "inputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "oracle",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "spotShockDownBps",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "spotShockUpBps",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "volShockDownBps",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "volShockUpBps",
+          "type": "uint64",
+          "internalType": "uint64"
+        },
+        {
+          "name": "isEnabled",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "unpause",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "unpauseConfig",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "unpauseCreation",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "unpauseSettlement",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "event",
+      "name": "ConfigPauseSet",
+      "inputs": [
+        {
+          "name": "isPaused",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "CreationPauseSet",
+      "inputs": [
+        {
+          "name": "isPaused",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "EmergencyModeUpdated",
+      "inputs": [
+        {
+          "name": "creationPaused",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        },
+        {
+          "name": "settlementPaused",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        },
+        {
+          "name": "configPaused",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "GlobalPauseSet",
+      "inputs": [
+        {
+          "name": "isPaused",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "GuardianSet",
+      "inputs": [
+        {
+          "name": "guardian",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "MinExpiryDelaySet",
+      "inputs": [
+        {
+          "name": "oldDelay",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "newDelay",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "OptionRiskConfigSet",
+      "inputs": [
+        {
+          "name": "underlying",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "baseMaintenanceMarginPerContract",
+          "type": "uint128",
+          "indexed": false,
+          "internalType": "uint128"
+        },
+        {
+          "name": "imFactorBps",
+          "type": "uint32",
+          "indexed": false,
+          "internalType": "uint32"
+        },
+        {
+          "name": "oracleDownMmMultiplierBps",
+          "type": "uint32",
+          "indexed": false,
+          "internalType": "uint32"
+        },
+        {
+          "name": "isConfigured",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "OwnershipTransferStarted",
+      "inputs": [
+        {
+          "name": "previousOwner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "pendingOwner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "OwnershipTransferred",
+      "inputs": [
+        {
+          "name": "previousOwner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "newOwner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "Paused",
+      "inputs": [
+        {
+          "name": "account",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "SeriesCreated",
+      "inputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "underlying",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "settlementAsset",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "expiry",
+          "type": "uint64",
+          "indexed": false,
+          "internalType": "uint64"
+        },
+        {
+          "name": "strike",
+          "type": "uint64",
+          "indexed": false,
+          "internalType": "uint64"
+        },
+        {
+          "name": "contractSize1e8",
+          "type": "uint128",
+          "indexed": false,
+          "internalType": "uint128"
+        },
+        {
+          "name": "isCall",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        },
+        {
+          "name": "isEuropean",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "SeriesCreatorSet",
+      "inputs": [
+        {
+          "name": "account",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "isAllowed",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "SeriesMetadataSet",
+      "inputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "metadata",
+          "type": "bytes32",
+          "indexed": false,
+          "internalType": "bytes32"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "SeriesStatusUpdated",
+      "inputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "isActive",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "SettlementAssetConfigured",
+      "inputs": [
+        {
+          "name": "asset",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "isAllowed",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "SettlementFinalityDelaySet",
+      "inputs": [
+        {
+          "name": "oldDelay",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "newDelay",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "SettlementOperatorSet",
+      "inputs": [
+        {
+          "name": "account",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "SettlementPauseSet",
+      "inputs": [
+        {
+          "name": "isPaused",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "SettlementPriceFinalized",
+      "inputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "settlementPrice",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "finalizedAt",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "SettlementPriceProposed",
+      "inputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "proposedPrice",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        },
+        {
+          "name": "proposedAt",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "SettlementProposalCancelled",
+      "inputs": [
+        {
+          "name": "optionId",
+          "type": "uint256",
+          "indexed": true,
+          "internalType": "uint256"
+        },
+        {
+          "name": "cancelledAt",
+          "type": "uint256",
+          "indexed": false,
+          "internalType": "uint256"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "UnderlyingConfigSet",
+      "inputs": [
+        {
+          "name": "underlying",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "oracle",
+          "type": "address",
+          "indexed": false,
+          "internalType": "address"
+        },
+        {
+          "name": "spotShockDownBps",
+          "type": "uint64",
+          "indexed": false,
+          "internalType": "uint64"
+        },
+        {
+          "name": "spotShockUpBps",
+          "type": "uint64",
+          "indexed": false,
+          "internalType": "uint64"
+        },
+        {
+          "name": "volShockDownBps",
+          "type": "uint64",
+          "indexed": false,
+          "internalType": "uint64"
+        },
+        {
+          "name": "volShockUpBps",
+          "type": "uint64",
+          "indexed": false,
+          "internalType": "uint64"
+        },
+        {
+          "name": "isEnabled",
+          "type": "bool",
+          "indexed": false,
+          "internalType": "bool"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "Unpaused",
+      "inputs": [
+        {
+          "name": "account",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "error",
+      "name": "ConfigPausedError",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "CreationPaused",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "EmptyStrikes",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "ExpiryInPast",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "ExpiryTooSoon",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "GuardianNotAuthorized",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "IndexOutOfBounds",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "InvalidContractSize",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "InvalidDelay",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "InvalidOptionRiskConfig",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "InvalidUnderlyingConfig",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "NoSettlementProposal",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "NotAuthorized",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "NotExpiredYet",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "OwnershipTransferNotInitiated",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "RegistryPaused",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "SeriesAlreadyExists",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "SettlementAlreadySet",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "SettlementAssetNotAllowed",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "SettlementFinalityDelayNotElapsed",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "SettlementPaused",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "SettlementPriceZero",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "SettlementProposalAlreadyExists",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "SettlementZero",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "StrikeZero",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "UnderlyingNotEnabled",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "UnderlyingZero",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "UnknownSeries",
+      "inputs": []
+    },
+    {
+      "type": "error",
+      "name": "ZeroAddress",
+      "inputs": []
+    }
+  ],
+  "methodIdentifiers": {
+    "BPS()": "249d39e9",
+    "MAX_IM_FACTOR_BPS()": "f35b0116",
+    "MAX_ORACLE_DOWN_MM_MULTIPLIER_BPS()": "3a7220c3",
+    "MAX_SPOT_SHOCK_BPS()": "f997e05d",
+    "MAX_VOL_SHOCK_BPS()": "03994b66",
+    "MIN_IM_FACTOR_BPS()": "c5e1dbd3",
+    "MIN_ORACLE_DOWN_MM_MULTIPLIER_BPS()": "e5687626",
+    "PRICE_SCALE()": "c33f59d3",
+    "acceptOwnership()": "79ba5097",
+    "cancelOwnershipTransfer()": "23452b9c",
+    "cancelSettlementProposal(uint256)": "cf1fbc2b",
+    "clearEmergencyModes()": "5a08bba7",
+    "clearGuardian()": "ae77f7a3",
+    "computeOptionId(address,address,uint64,uint64,uint128,bool,bool)": "7fc7ea51",
+    "configPaused()": "47fc0b80",
+    "createSeries(address,address,uint64,uint64,bool,bool)": "6c305ba5",
+    "createSeries(address,address,uint64,uint64,uint128,bool,bool)": "298fc3c7",
+    "createStrip(address,address,uint64,uint64[],bool)": "4b6a2ea0",
+    "createStrip(address,address,uint64,uint64[],uint128,bool)": "2dbbae99",
+    "creationPaused()": "bd12dd64",
+    "finalizeSettlementPrice(uint256)": "e3cbd811",
+    "getActiveSeriesByUnderlying(address)": "5a54815e",
+    "getAllOptionIds()": "04c51d97",
+    "getAllOptionIdsSlice(uint256,uint256)": "545df0ec",
+    "getOptionRiskConfig(address)": "595c08aa",
+    "getSeries(uint256)": "1160da15",
+    "getSeriesByUnderlying(address)": "7d2b8f28",
+    "getSeriesByUnderlyingSlice(address,uint256,uint256)": "0291b1fa",
+    "getSeriesEconomicParams(uint256)": "e5b68a69",
+    "getSeriesIfExists(uint256)": "c268e50a",
+    "getSettlementFinalizedAt(uint256)": "f6051a21",
+    "getSettlementInfo(uint256)": "71892da8",
+    "getSettlementProposal(uint256)": "80c51b39",
+    "getStrikeNotional1e8(uint256,uint256)": "2a0ad43f",
+    "getStrikeNotionalPerContract1e8(uint256)": "f564dd30",
+    "getUnderlyingConfig(address)": "6414376c",
+    "getUnderlyingRiskProfile(address)": "0edc0078",
+    "guardian()": "452a9320",
+    "isSeriesCreator(address)": "38893e0b",
+    "isSettled(uint256)": "785ecb37",
+    "isSettlementAssetAllowed(address)": "41b72842",
+    "minExpiryDelay()": "4c9c68d0",
+    "optionRiskConfigs(address)": "b82a1f71",
+    "owner()": "8da5cb5b",
+    "pause()": "8456cb59",
+    "pauseConfig()": "7017c724",
+    "pauseCreation()": "a7d7fa1f",
+    "pauseSettlement()": "d57f9525",
+    "paused()": "5c975abb",
+    "pendingOwner()": "e30c3978",
+    "renounceOwnership()": "715018a6",
+    "seriesAt(uint256)": "2b53cd6f",
+    "seriesExists(uint256)": "3c7eb38d",
+    "seriesMetadata(uint256)": "b30f662c",
+    "setEmergencyModes(bool,bool,bool)": "6d8c7d3f",
+    "setGuardian(address)": "8a0dac4a",
+    "setMinExpiryDelay(uint256)": "5e7c5f84",
+    "setOptionRiskConfig(address,(uint128,uint32,uint32,bool))": "ca8cd8e5",
+    "setSeriesActive(uint256,bool)": "8baeb23d",
+    "setSeriesCreator(address,bool)": "b5d1cf17",
+    "setSeriesMetadata(uint256,bytes32)": "f1324e3c",
+    "setSettlementAssetAllowed(address,bool)": "dd4d8a46",
+    "setSettlementFinalityDelay(uint256)": "8aaabc6c",
+    "setSettlementOperator(address)": "448758d5",
+    "setSettlementPrice(uint256,uint256)": "4d958179",
+    "setUnderlyingConfig(address,(address,uint64,uint64,uint64,uint64,bool))": "c65d7598",
+    "setUnderlyingRiskProfile(address,(address,uint64,uint64,uint64,uint64,bool),(uint128,uint32,uint32,bool))": "fbbc348f",
+    "settlementFinalityDelay()": "4b27b5a4",
+    "settlementOperator()": "1b6984e8",
+    "settlementPaused()": "4168632d",
+    "totalSeries()": "0c6a595a",
+    "transferOwnership(address)": "f2fde38b",
+    "underlyingConfigs(address)": "4bc6963d",
+    "unpause()": "3f4ba83a",
+    "unpauseConfig()": "ca788c5f",
+    "unpauseCreation()": "86e4d110",
+    "unpauseSettlement()": "76d9ff2c"
+  },
+  "sourceCommit": "d133e2c",
+  "generatedAt": "2026-06-10",
+  "freezeTag": "v2-product-freeze-rc1",
+  "notes": "Generated from forge build artefact. Not mainnet deployed. Not audited. Testnet beta."
+}

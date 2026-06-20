@@ -1,0 +1,85 @@
+{
+  "freezeTag": "v2-product-freeze-rc1",
+  "sourceCommit": "d133e2c",
+  "generatedAt": "2026-06-10",
+  "status": "TESTNET_BETA_ONLY_NOT_AUDITED_NOT_MAINNET_DEPLOYED",
+  "contracts": [
+    {
+      "name": "OptionProductRegistry",
+      "abiPath": "abis/freeze-v2-product-rc1/OptionProductRegistry.abi.json",
+      "externalFunctionCount": 77,
+      "eventCount": 23,
+      "selectorCount": 77
+    },
+    {
+      "name": "OptionMatchingEngine",
+      "abiPath": "abis/freeze-v2-product-rc1/OptionMatchingEngine.abi.json",
+      "externalFunctionCount": 32,
+      "eventCount": 12,
+      "selectorCount": 32
+    },
+    {
+      "name": "MarginEngine",
+      "abiPath": "abis/freeze-v2-product-rc1/MarginEngine.abi.json",
+      "externalFunctionCount": 81,
+      "eventCount": 42,
+      "selectorCount": 81
+    },
+    {
+      "name": "CollateralVault",
+      "abiPath": "abis/freeze-v2-product-rc1/CollateralVault.abi.json",
+      "externalFunctionCount": 71,
+      "eventCount": 26,
+      "selectorCount": 71
+    },
+    {
+      "name": "CollateralVaultViews",
+      "abiPath": "abis/freeze-v2-product-rc1/CollateralVaultViews.abi.json",
+      "externalFunctionCount": 60,
+      "eventCount": 26,
+      "selectorCount": 60
+    },
+    {
+      "name": "FeesManagerV2",
+      "abiPath": "abis/freeze-v2-product-rc1/FeesManagerV2.abi.json",
+      "externalFunctionCount": 32,
+      "eventCount": 14,
+      "selectorCount": 32
+    },
+    {
+      "name": "ProtocolFeeVault",
+      "abiPath": "abis/freeze-v2-product-rc1/ProtocolFeeVault.abi.json",
+      "externalFunctionCount": 22,
+      "eventCount": 10,
+      "selectorCount": 22
+    },
+    {
+      "name": "OracleRouter",
+      "abiPath": "abis/freeze-v2-product-rc1/OracleRouter.abi.json",
+      "externalFunctionCount": 30,
+      "eventCount": 13,
+      "selectorCount": 30
+    },
+    {
+      "name": "MarginEngineLens",
+      "abiPath": "abis/freeze-v2-product-rc1/MarginEngineLens.abi.json",
+      "externalFunctionCount": 7,
+      "eventCount": 42,
+      "selectorCount": 7
+    },
+    {
+      "name": "InsuranceFund",
+      "abiPath": "abis/freeze-v2-product-rc1/InsuranceFund.abi.json",
+      "externalFunctionCount": 45,
+      "eventCount": 23,
+      "selectorCount": 45
+    },
+    {
+      "name": "RiskModule",
+      "abiPath": "abis/freeze-v2-product-rc1/RiskModule.abi.json",
+      "externalFunctionCount": 61,
+      "eventCount": 19,
+      "selectorCount": 61
+    }
+  ]
+}
