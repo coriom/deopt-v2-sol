@@ -246,6 +246,15 @@ review is **mandatory before closed test**.
   companion documentation repository (not tracked in this
   Solidity repository beyond this ADR).
 
+## Companion contract specification
+
+`ONCHAIN_SUBACCOUNT_CONTRACT_SPEC_V1.md` — added 2026-07-24 by
+`ONCHAIN-SUBACCOUNT-CONTRACT-SPEC-V1`. Concrete function
+signatures, storage layouts, event schemas, engine capabilities,
+D.1/D.2 action classification, and machine-checkable invariants
+(I-1..I-9). The companion spec is the authoritative reference
+for the future experimental implementation milestone.
+
 ## No audit or production claim
 
 This ADR is a design decision only. It does not claim:
