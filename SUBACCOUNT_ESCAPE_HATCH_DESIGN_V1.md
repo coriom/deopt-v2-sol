@@ -12,6 +12,11 @@ real funds and public rollout.
 Companion documents:
 - `ONCHAIN_SUBACCOUNT_ARCHITECTURE_V1.md`
 - `ONCHAIN_SUBACCOUNT_CONTRACT_SPEC_V1.md`
+- `SUBACCOUNT_CHAIN_RECONSTRUCTION_DESIGN_V1.md`
+
+Product-owner approval (2026-07-24): the proposed invariants
+INV-ESC-07, INV-REC-07, INV-OPS-07 are approved and integrated
+by the chain-reconstruction milestone. Invariant count now 66.
 
 ## Purpose
 

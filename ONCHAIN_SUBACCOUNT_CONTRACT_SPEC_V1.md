@@ -289,6 +289,17 @@ implementation MUST produce.
   capability bit (`CAP_RECOVERY_ACTIVATE`, reserved), the
   `withdrawPauseAutoClearBlock` mechanism (already reserved on
   the vault), and the `badDebt[subKey][token]` slot addition.
+- Chain-reconstruction design (added 2026-07-24 by
+  `SUBACCOUNT-CHAIN-RECONSTRUCTION-DESIGN-V1`):
+  `SUBACCOUNT_CHAIN_RECONSTRUCTION_DESIGN_V1.md` — defines
+  deployment manifest format, canonical event identity
+  `(chainId, blockHash, txHash, logIndex)`, raw event journal,
+  6-state event lifecycle, deterministic reorg algorithm, 6-phase
+  empty-DB reconstruction, projection model, backend readiness
+  gate, and the reserved migration event interface required for
+  the future migration milestone. Chain-reconstruction integrates
+  3 new invariants (INV-ESC-07, INV-REC-07, INV-OPS-07) —
+  invariant count 63 → 66.
 
 ## No audit or production claim
 
