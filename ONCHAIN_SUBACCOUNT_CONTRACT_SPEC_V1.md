@@ -278,6 +278,17 @@ implementation MUST produce.
   documentation repository, not tracked in this Solidity
   repository beyond this file + the ADR).
 - Architecture ADR: `ONCHAIN_SUBACCOUNT_ARCHITECTURE_V1.md`.
+- Escape-hatch design (added 2026-07-24 by
+  `SUBACCOUNT-ESCAPE-HATCH-DESIGN-V1`):
+  `SUBACCOUNT_ESCAPE_HATCH_DESIGN_V1.md` — defines recovery
+  activation model, `SM-Rec` state machine, `recoveryWithdrawable`
+  accounting, `IEscapeController` + `IRecoveryFinalizer` +
+  `IFallbackOracle` + `IRecoveryView` interfaces, and the
+  `recoveryEpoch` binding required in every future EIP-712
+  payload. Recovery-side additions include one new engine
+  capability bit (`CAP_RECOVERY_ACTIVATE`, reserved), the
+  `withdrawPauseAutoClearBlock` mechanism (already reserved on
+  the vault), and the `badDebt[subKey][token]` slot addition.
 
 ## No audit or production claim
 
