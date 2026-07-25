@@ -13,10 +13,21 @@ Companion documents:
 - `ONCHAIN_SUBACCOUNT_ARCHITECTURE_V1.md`
 - `ONCHAIN_SUBACCOUNT_CONTRACT_SPEC_V1.md`
 - `SUBACCOUNT_CHAIN_RECONSTRUCTION_DESIGN_V1.md`
+- `SUBACCOUNTS_ONCHAIN_MIGRATION_DESIGN_V1.md`
 
 Product-owner approval (2026-07-24): the proposed invariants
 INV-ESC-07, INV-REC-07, INV-OPS-07 are approved and integrated
-by the chain-reconstruction milestone. Invariant count now 66.
+by the chain-reconstruction milestone. INV-MIG-05, INV-MIG-06,
+INV-MIG-07, INV-MIG-08 are approved and integrated by the
+migration-design milestone. Invariant count now **70**.
+
+Migration interaction: escape / recovery remains available at
+source before F4 lock; recovery state is imported to destination
+per snapshot; recovery epoch is monotone across migration; F4
+lock encompasses `IEscapeController.escapeWithdraw` at source
+after user claims at destination — preventing dual-spend via
+escape + claim. See
+`SUBACCOUNTS_ONCHAIN_MIGRATION_DESIGN_V1.md` for details.
 
 ## Purpose
 

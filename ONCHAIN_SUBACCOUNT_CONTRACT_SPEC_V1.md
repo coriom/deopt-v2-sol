@@ -300,6 +300,17 @@ implementation MUST produce.
   the future migration milestone. Chain-reconstruction integrates
   3 new invariants (INV-ESC-07, INV-REC-07, INV-OPS-07) —
   invariant count 63 → 66.
+- Migration design (added 2026-07-24 by
+  `SUBACCOUNTS-ONCHAIN-MIGRATION-DESIGN-V1`):
+  `SUBACCOUNTS_ONCHAIN_MIGRATION_DESIGN_V1.md` — defines the
+  immediate M1 fresh-Base-Sepolia posture (no state import) and
+  the future production M5+M6 hybrid strategy (snapshot + Merkle
+  claim + user-authorized migration). Freezes the `SM-Mig` state
+  machine, composite source freeze (F2+F3+F4+F6+F8),
+  duplicate-import protection, cross-domain signature separation,
+  and multi-manifest reconstruction. Migration integrates 4 new
+  invariants (INV-MIG-05, INV-MIG-06, INV-MIG-07, INV-MIG-08) —
+  invariant count 66 → 70.
 
 ## No audit or production claim
 

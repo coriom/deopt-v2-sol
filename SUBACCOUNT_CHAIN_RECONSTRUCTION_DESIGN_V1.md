@@ -14,6 +14,17 @@ Companion documents:
 - `ONCHAIN_SUBACCOUNT_ARCHITECTURE_V1.md`
 - `ONCHAIN_SUBACCOUNT_CONTRACT_SPEC_V1.md`
 - `SUBACCOUNT_ESCAPE_HATCH_DESIGN_V1.md`
+- `SUBACCOUNTS_ONCHAIN_MIGRATION_DESIGN_V1.md`
+
+Migration interaction (added 2026-07-24 by
+`SUBACCOUNTS-ONCHAIN-MIGRATION-DESIGN-V1`): the migration design
+consumes the reserved event interface + multi-manifest
+reconstruction rules from this document. Reconstruction across a
+migration boundary uses namespaced projections per
+`deployment_version` per D-MIG-11. `migration_mappings`
+projection joins source and destination via
+`SubaccountMigrationRegistered` + `MigrationClaimed` events. No
+private operator DB mapping required (D-MIG-12).
 
 ## Purpose
 
