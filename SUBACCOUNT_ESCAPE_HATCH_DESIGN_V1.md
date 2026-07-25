@@ -14,6 +14,12 @@ Companion documents:
 - `ONCHAIN_SUBACCOUNT_CONTRACT_SPEC_V1.md`
 - `SUBACCOUNT_CHAIN_RECONSTRUCTION_DESIGN_V1.md`
 - `SUBACCOUNTS_ONCHAIN_MIGRATION_DESIGN_V1.md`
+- `ONCHAIN_SUBACCOUNT_EXPERIMENTAL_IMPLEMENTATION_PLAN_V1.md`
+  (2026-07-25) — escape controller + recovery finalizer +
+  recovery view + fallback oracle land in WP-10A/B; recovery
+  properties P-1..P-9 + AT-22, AT-26, AT-30, AT-35, AT-36, AT-37
+  owned by WP-10 per implementation-plan
+  `09_INVARIANT_TRACEABILITY.md`.
 
 Product-owner approval (2026-07-24): the proposed invariants
 INV-ESC-07, INV-REC-07, INV-OPS-07 are approved and integrated

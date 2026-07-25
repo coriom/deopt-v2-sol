@@ -15,6 +15,12 @@ Companion documents:
 - `ONCHAIN_SUBACCOUNT_CONTRACT_SPEC_V1.md`
 - `SUBACCOUNT_ESCAPE_HATCH_DESIGN_V1.md`
 - `SUBACCOUNTS_ONCHAIN_MIGRATION_DESIGN_V1.md`
+- `ONCHAIN_SUBACCOUNT_EXPERIMENTAL_IMPLEMENTATION_PLAN_V1.md`
+  (2026-07-25) — reconstruction pipeline lands in WP-14
+  (manifest loader, raw event journal, projection builder, reorg
+  manager, state validator, readiness state, reconstruction CLI).
+  R-P-1..R-P-9 properties + AT-18, AT-23, AT-24, AT-25 mapped to
+  WP-14 per implementation-plan `09_INVARIANT_TRACEABILITY.md`.
 
 Migration interaction (added 2026-07-24 by
 `SUBACCOUNTS-ONCHAIN-MIGRATION-DESIGN-V1`): the migration design

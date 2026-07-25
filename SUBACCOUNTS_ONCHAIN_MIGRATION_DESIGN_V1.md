@@ -15,6 +15,13 @@ Companion documents:
 - `ONCHAIN_SUBACCOUNT_CONTRACT_SPEC_V1.md`
 - `SUBACCOUNT_ESCAPE_HATCH_DESIGN_V1.md`
 - `SUBACCOUNT_CHAIN_RECONSTRUCTION_DESIGN_V1.md`
+- `ONCHAIN_SUBACCOUNT_EXPERIMENTAL_IMPLEMENTATION_PLAN_V1.md`
+  (2026-07-25) — fresh Base Sepolia deployment posture (M1) is
+  the immediate implementation target; the migration bridge
+  contracts + associated WP remain deferred to a future production
+  migration milestone; INV-MIG-04/07/08 mapped to WP-05 + WP-08 +
+  WP-02/WP-15 in this implementation cycle per implementation-plan
+  `09_INVARIANT_TRACEABILITY.md`.
 
 ## Purpose
 

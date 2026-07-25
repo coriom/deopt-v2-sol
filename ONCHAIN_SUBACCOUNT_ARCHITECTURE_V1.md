@@ -10,6 +10,16 @@ Not an audit sign-off. Not an implementation approval. Not a
 production-readiness claim. Independent human security reviewer
 status remains **PENDING**.
 
+Downstream consumers:
+
+- `ONCHAIN_SUBACCOUNT_CONTRACT_SPEC_V1.md`
+- `SUBACCOUNT_ESCAPE_HATCH_DESIGN_V1.md`
+- `SUBACCOUNT_CHAIN_RECONSTRUCTION_DESIGN_V1.md`
+- `SUBACCOUNTS_ONCHAIN_MIGRATION_DESIGN_V1.md`
+- `ONCHAIN_SUBACCOUNT_EXPERIMENTAL_IMPLEMENTATION_PLAN_V1.md`
+  (2026-07-25) — dependency-ordered implementation plan; 20 work
+  packages; Options-first; fresh Base Sepolia posture preserved.
+
 ## Purpose
 
 Concise canonical architecture decision record for the DeOpt V1

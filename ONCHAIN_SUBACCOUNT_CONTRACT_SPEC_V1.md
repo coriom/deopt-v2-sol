@@ -11,6 +11,18 @@ real funds and public rollout.
 
 Companion ADR: `ONCHAIN_SUBACCOUNT_ARCHITECTURE_V1.md`.
 
+Downstream consumers:
+
+- `SUBACCOUNT_ESCAPE_HATCH_DESIGN_V1.md`
+- `SUBACCOUNT_CHAIN_RECONSTRUCTION_DESIGN_V1.md`
+- `SUBACCOUNTS_ONCHAIN_MIGRATION_DESIGN_V1.md`
+- `ONCHAIN_SUBACCOUNT_EXPERIMENTAL_IMPLEMENTATION_PLAN_V1.md`
+  (2026-07-25) — this specification is the source of truth for the
+  ordered implementation milestones + WP acceptance criteria + event
+  schema + capability enum. Implementation-plan milestone owns
+  translation to WPs (20 in total) without adding new normative
+  content.
+
 ## Approved architecture
 
 Option D — Hybrid Registry + Shared Ledger with Modular Execution
