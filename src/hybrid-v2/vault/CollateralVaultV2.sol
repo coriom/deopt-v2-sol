@@ -168,6 +168,11 @@ abstract contract CollateralVaultV2 is CollateralVaultV2Core {
     ///         holds one or more capability bits.
     error EngineStillAuthorized(address engine);
 
+    /// @notice `governanceReleaseOrphanedLock` refused because the abstract
+    ///         `_requireOrphanedReleaseProof` hook reported that unresolved
+    ///         obligations still back the reservation.
+    error UnresolvedOrphanedObligation(bytes32 subKey, address token, address engine, uint256 amount);
+
     /*//////////////////////////////////////////////////////////////
                               MODIFIERS
     //////////////////////////////////////////////////////////////*/
@@ -209,6 +214,30 @@ abstract contract CollateralVaultV2 is CollateralVaultV2Core {
     ///      the post-transfer source state would be unsafe. No default is
     ///      provided.
     function _requireInternalTransferAllowed(bytes32 sourceSubKey, address token, uint256 amount) internal view virtual;
+
+    /// @dev Concrete inheritors MUST implement this to prove that the reservation
+    ///      being released via `governanceReleaseOrphanedLock` has NO remaining
+    ///      economic obligation. Capability revocation alone is NOT sufficient
+    ///      proof — this hook is the WP-04B safety-patch elevation of that
+    ///      requirement into a chain-side check.
+    ///
+    ///      A concrete implementation MUST demonstrate that AT LEAST all of the
+    ///      following hold for `(subKey, token, engine, amount)` before returning:
+    ///        - every position or open obligation backed by this reservation is
+    ///          closed / settled / liquidated;
+    ///        - no pending execution can consume the reservation;
+    ///        - no recovery-side reservation covers the same collateral.
+    ///      Production wiring lives in WP-10 escape/recovery integration; the
+    ///      hook receives the full `(subKey, token, engine, amount)` context so
+    ///      a downstream inheritor can consult the positions ledger, recovery
+    ///      state and settlement queues.
+    ///
+    ///      NO default implementation. NO permissive production fallback. Test
+    ///      harnesses MAY implement the hook as a configurable allow / reject.
+    function _requireOrphanedReleaseProof(bytes32 subKey, address token, address engine, uint256 amount)
+        internal
+        view
+        virtual;
 
     /*//////////////////////////////////////////////////////////////
                         DEPOSIT PAUSE OVERRIDE
@@ -281,15 +310,24 @@ abstract contract CollateralVaultV2 is CollateralVaultV2Core {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Timelocked release of a reservation held by a fully-revoked engine.
-    /// @dev Governance-only. Preconditions per spec 07:
+    /// @dev Governance-only. Preconditions per spec 07 + the WP-04B safety patch:
     ///       - engine capability bitmap is exactly zero (i.e., engine is fully
-    ///         revoked and cannot itself `applyUnlock`);
+    ///         revoked and cannot itself `applyUnlock`) — DEFENSIVE only, not
+    ///         sufficient by itself;
     ///       - reservation exists at `_lockedByEngine[subKey][token][engine]`;
-    ///       - amount does not exceed the reservation.
+    ///       - amount does not exceed the reservation;
+    ///       - `_requireOrphanedReleaseProof(subKey, token, engine, amount)` — the
+    ///         abstract objective-proof hook — must NOT revert. Concrete
+    ///         inheritors override this hook to consult the positions ledger /
+    ///         recovery state / settlement queues (WP-10). No production default.
+    ///
     ///      Effect: decrements the per-engine reservation and the aggregate
     ///      `_totalLocked`. No token movement. The released amount returns to
     ///      the subaccount's available balance (no third-party recipient).
     ///      `reason` is documented in the emitted event for auditability.
+    ///
+    ///      All accounting state mutations occur AFTER the proof hook succeeds,
+    ///      so a rejecting hook rolls back the entire operation (VAULT-B-I16).
     function governanceReleaseOrphanedLock(
         bytes32 subKey,
         address token,
@@ -304,6 +342,11 @@ abstract contract CollateralVaultV2 is CollateralVaultV2Core {
 
         uint256 reserved = _lockedByEngine[subKey][token][engine];
         if (reserved < amount) revert InsufficientEngineReservation(amount, reserved);
+
+        // Safety-patch gate: capability revocation is NOT sufficient. Concrete
+        // inheritors MUST prove the reservation has no remaining economic
+        // obligation. Reverts BEFORE any state mutation so rollback is total.
+        _requireOrphanedReleaseProof(subKey, token, engine, amount);
 
         _lockedByEngine[subKey][token][engine] = reserved - amount;
         _totalLocked[subKey][token] -= amount;

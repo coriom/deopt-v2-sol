@@ -4,6 +4,78 @@
 
 **IMPLEMENTED_AND_VALIDATED_EXPERIMENTAL** — 2026-07-26.
 
+### Safety patch (2026-07-26)
+
+`ONCHAIN-SUBACCOUNT-COLLATERAL-VAULT-V2-B-SAFETY-PATCH` completed on the
+same day. Two corrective outcomes were validated **without expanding
+Vault economic scope**:
+
+1. **Risk-hook mutability audit:**
+   `RISK_HOOK_OVERRIDE_PATH_ALREADY_VALID`. Both risk hooks
+   (`_requireWithdrawalAllowed`, `_requireInternalTransferAllowed`) are
+   already declared `internal view virtual` on the production abstract,
+   so a future concrete inheritor (WP-07) can override with a real
+   `IRiskModule` view call. A test harness
+   (`RiskModuleIntegrationVault`) proves this by storing an immutable
+   `IMockRiskModuleView` reference and consulting
+   `riskModule.withdrawalAllowed` / `riskModule.transferAllowed`. Both
+   accept and reject paths validated with full state rollback.
+   Verdict: `FUTURE_IRISKMODULE_VIEW_INTEGRATION_COMPILES_AND_ROLLS_BACK_SAFELY`.
+
+2. **Orphaned-lock safety patch:**
+   The original `governanceReleaseOrphanedLock` gated only on
+   `msg.sender == governance` + `engineCapabilityBits(engine) == 0`.
+   Capability revocation is defensive authorization state, not
+   objective proof of settled obligations. The safety patch adds a
+   pure `internal view virtual` hook:
+
+   ```solidity
+   function _requireOrphanedReleaseProof(
+       bytes32 subKey,
+       address token,
+       address engine,
+       uint256 amount
+   ) internal view virtual;
+   ```
+
+   `governanceReleaseOrphanedLock` now calls this hook BEFORE any state
+   mutation. Concrete production inheritors MUST override to consult
+   the positions ledger + recovery state + settlement queues (arriving
+   with WP-10). No permissive production default. Reject → total
+   rollback (invariant VAULT-B-I16). Capability revocation alone is
+   NOT sufficient (invariant VAULT-B-I15). Verdict:
+   `ORPHANED_LOCK_RELEASE_GATED_BY_ABSTRACT_OBJECTIVE_PROOF` (supersedes
+   the earlier `ORPHANED_LOCK_RELEASE_IMPLEMENTED_SAFELY` conclusion).
+
+Additions from the safety patch:
+
+- `src/hybrid-v2/vault/CollateralVaultV2.sol` — added
+  `_requireOrphanedReleaseProof` abstract hook + `UnresolvedOrphanedObligation`
+  error; wired hook call into `governanceReleaseOrphanedLock` before any
+  storage mutation.
+- `test/hybrid-v2/vault/harness/CollateralVaultV2Harness.sol` —
+  configurable orphan-proof implementation (default allow; global reject
+  + per-`(subKey, token, engine)` veto).
+- `test/hybrid-v2/vault/harness/RiskModuleIntegrationVault.sol` —
+  test-only concrete Vault with immutable `IMockRiskModuleView`
+  reference, proving WP-07 override pattern.
+- `test/hybrid-v2/vault/mocks/MockRiskModule.sol` — configurable
+  `IMockRiskModuleView` mock.
+- `test/hybrid-v2/vault/CollateralVaultV2SafetyPatch.t.sol` — 7 tests.
+- `test/hybrid-v2/vault/RiskModuleIntegration.t.sol` — 7 tests.
+- `test/hybrid-v2/vault/CollateralVaultV2Invariant.t.sol` — VAULT-B-I15
+  and VAULT-B-I16 appended.
+
+Test delta introduced by the safety patch: +7 safety-patch + 7
+risk-module integration + 2 new invariants = 16 tests. Full suite:
+**46 suites, 678 tests, 0 failed** (baseline 44/662).
+
+Verdict:
+`CAPABILITY_REVOCATION_ALONE_CANNOT_RELEASE_RESERVATIONS`.
+
+Verdict:
+`ONCHAIN_SUBACCOUNT_COLLATERAL_VAULT_V2_B_SAFETY_PATCH_COMPLETE`.
+
 `EXPERIMENTAL — NOT SECURITY APPROVED`.
 
 Not an audit sign-off. Not a security-review sign-off. Not a deployment

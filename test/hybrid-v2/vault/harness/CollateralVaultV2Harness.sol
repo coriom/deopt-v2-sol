@@ -17,9 +17,16 @@ contract CollateralVaultV2Harness is CollateralVaultV2 {
     bool public allowWithdrawals = true;
     bool public allowInternalTransfers = true;
 
+    /// @notice Whether the orphaned-release proof hook approves calls by default.
+    ///         Tests may toggle to simulate a downstream WP-10 rejection.
+    bool public allowOrphanedRelease = true;
+
     /// @notice Optional per-(subKey, token) veto flags for finer-grained tests.
     mapping(bytes32 => mapping(address => bool)) public vetoWithdrawal;
     mapping(bytes32 => mapping(address => bool)) public vetoInternalTransfer;
+
+    /// @notice Optional per-(subKey, token, engine) veto for orphan-release proof.
+    mapping(bytes32 => mapping(address => mapping(address => bool))) public vetoOrphanedRelease;
 
     constructor(address registry_, address governance_, address guardian_)
         CollateralVaultV2Core(registry_, governance_, guardian_)
@@ -55,6 +62,19 @@ contract CollateralVaultV2Harness is CollateralVaultV2 {
         if (vetoInternalTransfer[sourceSubKey][token]) revert UnsafeTransfer();
     }
 
+    /// @dev Test-only orphan-release proof. Real production wiring in WP-10 will
+    ///      consult the positions ledger, recovery state, and settlement queues.
+    function _requireOrphanedReleaseProof(bytes32 subKey, address token, address engine, uint256 amount)
+        internal
+        view
+        override
+    {
+        if (!allowOrphanedRelease) revert UnresolvedOrphanedObligation(subKey, token, engine, amount);
+        if (vetoOrphanedRelease[subKey][token][engine]) {
+            revert UnresolvedOrphanedObligation(subKey, token, engine, amount);
+        }
+    }
+
     /*//////////////////////////////////////////////////////////////
                             TEST CONTROLS
     //////////////////////////////////////////////////////////////*/
@@ -73,6 +93,14 @@ contract CollateralVaultV2Harness is CollateralVaultV2 {
 
     function setVetoInternalTransfer(bytes32 subKey, address token, bool veto) external {
         vetoInternalTransfer[subKey][token] = veto;
+    }
+
+    function setAllowOrphanedRelease(bool allowed) external {
+        allowOrphanedRelease = allowed;
+    }
+
+    function setVetoOrphanedRelease(bytes32 subKey, address token, address engine, bool veto) external {
+        vetoOrphanedRelease[subKey][token][engine] = veto;
     }
 
     /// @notice Test-only manual seed for `_balanceOf` + `_totalAccounted`. Lets

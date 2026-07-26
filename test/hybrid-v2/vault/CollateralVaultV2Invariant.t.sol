@@ -246,6 +246,130 @@ contract CollateralVaultV2Invariants is StdInvariant, Test {
         }
     }
 
+    /* -------------------------- VAULT-B-I15 ------------------------- */
+
+    /// @notice Safety-patch invariant: capability revocation alone (via either
+    ///         guardian or governance) is INSUFFICIENT to release or consume an
+    ///         outstanding engine reservation. We revoke a random engine, hold
+    ///         the orphan-release proof globally rejecting, and confirm the
+    ///         governance release cannot succeed.
+    function invariant_vault_b_i15_capabilityRevocationCannotReleaseReservations() external {
+        uint256 nOwners = handler.ownerCount();
+        uint256 nEngines = handler.engineCount();
+        // Reject all orphan-release proof calls during this check.
+        vault.setAllowOrphanedRelease(false);
+        for (uint256 i = 0; i < nOwners; i++) {
+            address owner = handler.ownerAt(i);
+            for (uint32 id = 1; id <= 2; id++) {
+                if (!registry.existsOf(owner, id)) continue;
+                bytes32 key = registry.subKeyOf(owner, id);
+                for (uint256 e = 0; e < nEngines; e++) {
+                    address engine = handler.engineAt(e);
+                    uint256 reserved = vault.lockedByEngineOf(key, address(usdc), engine);
+                    if (reserved == 0) continue;
+                    uint256 bitsBefore = vault.engineCapabilityBits(engine);
+                    if (bitsBefore != 0) {
+                        // Fully revoke and confirm release still refuses.
+                        vm.prank(GUARDIAN);
+                        vault.guardianRevokeEngine(engine);
+                    }
+                    uint256 aggBefore = vault.lockedOf(key, address(usdc));
+                    vm.prank(GOVERNANCE);
+                    vm.expectRevert(
+                        abi.encodeWithSelector(
+                            CollateralVaultV2.UnresolvedOrphanedObligation.selector,
+                            key,
+                            address(usdc),
+                            engine,
+                            reserved
+                        )
+                    );
+                    vault.governanceReleaseOrphanedLock(key, address(usdc), engine, reserved, "vault-b-i15");
+                    // State preserved.
+                    assertEq(vault.lockedByEngineOf(key, address(usdc), engine), reserved);
+                    assertEq(vault.lockedOf(key, address(usdc)), aggBefore);
+                    // Restore capability bits for subsequent handler calls.
+                    if (bitsBefore != 0) {
+                        vm.prank(GOVERNANCE);
+                        vault.setEngineCapability(engine, bitsBefore, true);
+                    }
+                }
+            }
+        }
+        // Restore permissive default.
+        vault.setAllowOrphanedRelease(true);
+    }
+
+    /* -------------------------- VAULT-B-I16 ------------------------- */
+
+    /// @notice Safety-patch invariant: a failed objective orphan-proof check
+    ///         produces NO partial accounting mutation. Balance, aggregate,
+    ///         per-engine reservation, totalAccounted, and physical custody
+    ///         all remain identical across a reject-and-recover cycle.
+    function invariant_vault_b_i16_orphanProofFailureIsAtomic() external {
+        // Snapshot the entire mirror set BEFORE the reject attempt.
+        (uint256 aggBefore, uint256 accountedBefore, uint256 physicalBefore) = _snapshotForV(address(usdc));
+
+        // Try to release for every current reservation with proof rejecting.
+        vault.setAllowOrphanedRelease(false);
+        uint256 nOwners = handler.ownerCount();
+        uint256 nEngines = handler.engineCount();
+        for (uint256 i = 0; i < nOwners; i++) {
+            address owner = handler.ownerAt(i);
+            for (uint32 id = 1; id <= 2; id++) {
+                if (!registry.existsOf(owner, id)) continue;
+                bytes32 key = registry.subKeyOf(owner, id);
+                for (uint256 e = 0; e < nEngines; e++) {
+                    address engine = handler.engineAt(e);
+                    uint256 reserved = vault.lockedByEngineOf(key, address(usdc), engine);
+                    if (reserved == 0) continue;
+                    uint256 bits = vault.engineCapabilityBits(engine);
+                    if (bits != 0) {
+                        vm.prank(GUARDIAN);
+                        vault.guardianRevokeEngine(engine);
+                    }
+                    vm.prank(GOVERNANCE);
+                    (bool ok,) = address(vault)
+                        .call(
+                            abi.encodeWithSelector(
+                                CollateralVaultV2.governanceReleaseOrphanedLock.selector,
+                                key,
+                                address(usdc),
+                                engine,
+                                reserved,
+                                "vault-b-i16"
+                            )
+                        );
+                    assertFalse(ok, "rejected release MUST NOT succeed");
+                    if (bits != 0) {
+                        vm.prank(GOVERNANCE);
+                        vault.setEngineCapability(engine, bits, true);
+                    }
+                }
+            }
+        }
+        vault.setAllowOrphanedRelease(true);
+
+        // Confirm nothing changed.
+        (uint256 aggAfter, uint256 accountedAfter, uint256 physicalAfter) = _snapshotForV(address(usdc));
+        assertEq(aggAfter, aggBefore, "aggregate locked changed after rejected release");
+        assertEq(accountedAfter, accountedBefore, "totalAccounted changed after rejected release");
+        assertEq(physicalAfter, physicalBefore, "physical custody changed after rejected release");
+    }
+
+    function _snapshotForV(address token) internal view returns (uint256 agg, uint256 accounted, uint256 physical) {
+        uint256 nOwners = handler.ownerCount();
+        for (uint256 i = 0; i < nOwners; i++) {
+            address owner = handler.ownerAt(i);
+            for (uint32 id = 1; id <= 2; id++) {
+                bytes32 key = registry.subKeyOf(owner, id);
+                agg += vault.lockedOf(key, token);
+            }
+        }
+        accounted = vault.totalAccounted(token);
+        physical = IERC20(token).balanceOf(address(vault));
+    }
+
     /* ---------------------------------------------------------------- */
     /* helpers                                                          */
     /* ---------------------------------------------------------------- */
