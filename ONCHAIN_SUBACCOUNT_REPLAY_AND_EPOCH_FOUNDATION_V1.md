@@ -2,7 +2,11 @@
 
 ## Status
 
-`IMPLEMENTED_PENDING_VALIDATION` — 2026-07-26. Product owner: Coriolan Morel.
+`IMPLEMENTED_AND_VALIDATED_EXPERIMENTAL` — 2026-07-26. Product owner: Coriolan Morel.
+
+Landed at `deopt-v2-sol` commit `816e288`
+(`feat(subaccounts): add replay and epoch foundation`, +3055 lines,
+12 files, from base `b6b2eb6`). Push: `b6b2eb6..816e288  main -> main`.
 
 `EXPERIMENTAL — NOT SECURITY APPROVED`.
 
