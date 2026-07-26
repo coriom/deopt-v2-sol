@@ -184,7 +184,18 @@ abstract contract CollateralVaultV2Core is VaultCapabilityController, Reentrancy
     ///
     ///      Uses SafeERC20; validates the exact physical balance delta; reverts
     ///      `InvalidTokenBalanceDelta` on any shortfall (fee-on-transfer / rebasing).
-    function deposit(uint32 subaccountId, address token, uint256 amount) external nonReentrant {
+    ///
+    ///      Marked `virtual` so downstream extensions (WP-04B) can wrap with pause
+    ///      or emergency modifiers. Body is factored into `_executeDeposit` so
+    ///      derived contracts can share the logic without super-calling external.
+    function deposit(uint32 subaccountId, address token, uint256 amount) external virtual nonReentrant {
+        _executeDeposit(subaccountId, token, amount);
+    }
+
+    /// @dev Internal owner-path deposit body. Callers MUST hold the reentrancy
+    ///      guard before entering (external entrypoints in this abstract or in
+    ///      derived contracts apply `nonReentrant`).
+    function _executeDeposit(uint32 subaccountId, address token, uint256 amount) internal {
         address owner = msg.sender;
         if (owner == address(0)) revert InvalidOwner();
         if (subaccountId == 0) revert InvalidSubaccountId();
@@ -205,7 +216,20 @@ abstract contract CollateralVaultV2Core is VaultCapabilityController, Reentrancy
     /// @dev Payer = `msg.sender`, credited owner = `owner`. Does NOT lazily register.
     ///      Requires `(owner, subaccountId)` to already exist. Payer receives no
     ///      ownership or withdrawal authority.
-    function depositFor(address owner, uint32 subaccountId, address token, uint256 amount) external nonReentrant {
+    ///
+    ///      Marked `virtual` for the same reason as `deposit`. Body factored
+    ///      into `_executeDepositFor`.
+    function depositFor(address owner, uint32 subaccountId, address token, uint256 amount)
+        external
+        virtual
+        nonReentrant
+    {
+        _executeDepositFor(owner, subaccountId, token, amount);
+    }
+
+    /// @dev Internal third-party-path deposit body. Callers MUST hold the
+    ///      reentrancy guard before entering.
+    function _executeDepositFor(address owner, uint32 subaccountId, address token, uint256 amount) internal {
         if (owner == address(0)) revert InvalidOwner();
         if (subaccountId == 0) revert InvalidSubaccountId();
         if (token == address(0)) revert InvalidToken();
