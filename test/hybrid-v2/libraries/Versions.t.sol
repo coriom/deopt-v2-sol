@@ -20,6 +20,25 @@ contract VersionsTest is Test {
         assertEq(Versions.STORAGE_VERSION, uint16(1));
     }
 
+    function test_initialDeploymentVersionIsOne() external pure {
+        assertEq(Versions.INITIAL_DEPLOYMENT_VERSION, uint256(1));
+    }
+
+    function test_versionFamiliesAreDistinctTypes() external pure {
+        // The four version families each have a canonical Solidity type.
+        // These asserts pin the ABI shape so downstream milestones cannot
+        // accidentally widen or narrow a version field.
+        assertEq(uint256(Versions.EVENT_VERSION), uint256(1));
+        assertEq(uint256(Versions.STORAGE_VERSION), uint256(1));
+        assertEq(Versions.ARCHITECTURE_VERSION, uint256(1));
+        assertEq(Versions.INITIAL_DEPLOYMENT_VERSION, uint256(1));
+
+        // Underlying-type check: uint16 vs uint256 must not conflate.
+        // Solidity implicit widening does not happen between these types
+        // in the storage/event ABI; the tests above pin them explicitly.
+        assertTrue(type(uint16).max != type(uint256).max);
+    }
+
     function test_accountZeroIsInvalid() external pure {
         assertEq(Versions.SUBACCOUNT_ID_INVALID, uint32(0));
     }

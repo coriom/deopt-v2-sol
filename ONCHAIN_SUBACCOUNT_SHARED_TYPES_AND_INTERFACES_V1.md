@@ -224,19 +224,45 @@ implementations).
 
 ## Version representations
 
-- `EVENT_VERSION = uint16(1)` — emitted in every event per spec 13.
-- `ARCHITECTURE_VERSION = uint256(1)` — bound in EIP-712 payloads per
-  spec 08 + INV-MIG-07.
-- `STORAGE_VERSION = uint16(1)` — used by `IRiskModule.supportsCanonicalStorageVersion(uint16)`
-  for compatibility checks per spec 06.
+Four separate version families are recognised by the approved specs, each
+identifying a distinct concept:
 
-All three live in `Versions.sol` as `uint16` / `uint256` file-level
-constants (via a library holder for explicit import).
+| Family | Solidity type | Purpose | Source |
+|---|---|---|---|
+| `EVENT_VERSION` | `uint16` | Event-schema version emitted in every subaccount-scoped event | contract-spec 13 |
+| `ARCHITECTURE_VERSION` | `uint256` | Protocol architecture / schema family; bound in EIP-712 payloads | contract-spec 08 + INV-MIG-07 |
+| `STORAGE_VERSION` | `uint16` | Storage / schema compatibility for replaceable modules; exposed via `IRiskModule.supportsCanonicalStorageVersion(uint16)` | contract-spec 06 |
+| `deploymentVersion` | `uint256` (per-deployment immutable) | Per-deployment monotonic identifier; not a global constant | migration-design 10 + 15 + 16 + D-MIG-25 |
 
-Deployment version (per-network manifest hash) is NOT a Solidity
-constant — it lives in the off-chain deployment manifest (WP-11) and is
-supplied at deployment time via constructor immutables in downstream
-contracts. Not applicable to this milestone.
+All three GLOBAL constants live in `Versions.sol`:
+
+- `EVENT_VERSION = uint16(1)`.
+- `ARCHITECTURE_VERSION = uint256(1)`.
+- `STORAGE_VERSION = uint16(1)`.
+
+`deploymentVersion` is per-deployment monotonic (D-MIG-25 FROZEN: "V2
+deployment version bumped to `deploymentVersion = 2` (or operator's next
+monotonic value)"). It is therefore NOT a compile-time global constant.
+Instead the canonical Solidity type is documented as `uint256` (matches
+migration event ABI `deploymentVersion: uint256` in
+`migration-design/10_EVENTS_AND_MANIFESTS.md`). Downstream contracts
+(WP-02 registry, WP-04 vault, WP-08 engines, etc.) supply the value at
+deployment time via constructor `immutable`. `Versions.sol` exports
+`INITIAL_DEPLOYMENT_VERSION = uint256(1)` as the sentinel value for a
+first-ever fresh deployment and to pin the underlying type at compile
+time.
+
+`deploymentVersion` MUST NOT be embedded inside `subKey` derivation
+(spec 02). Cross-deployment domain separation is achieved via:
+
+1. `verifyingContract` in EIP-712 domain fields (spec 08); and
+2. The deployment-scoped registry address encoded into `subKey` (spec 02).
+
+`STORAGE_VERSION` and `deploymentVersion` are NOT equivalent:
+`STORAGE_VERSION` describes a replaceable module's on-chain storage
+layout compatibility (bumps on module storage refactors under the same
+deployment); `deploymentVersion` describes the per-deployment namespace
+(bumps on every deployment cutover regardless of module storage changes).
 
 ## Capability representation
 
@@ -273,10 +299,29 @@ A separate `ICapabilityController` interface is NOT introduced in this
 milestone. Rationale: spec 07 and spec 15 both place the capability
 model INSIDE `ICollateralVault` (`setEngineCapability` +
 `engineCapabilityBits` + `isAuthorizedEngine` + `guardianRevokeEngine`
-+ `governanceReleaseOrphanedLock`). A separate controller interface
-would drift from spec without benefit. If WP-03 later needs to extract
-a separate controller module, it may add the interface then. Recorded
-as `D-STI-02 FROZEN` (see decision register at end).
++ `governanceReleaseOrphanedLock`).
+
+**Capability-controller ownership verdict:**
+`CAPABILITY_CONTROLLER_IS_VAULT_OWNED`. Contract-spec 07 + spec 15 place
+the capability grant/revoke/query surface as functions ON
+`ICollateralVault`. Capability governance is therefore not a separate
+canonical contract; it is an integrated subsystem of the vault. The
+plan file names (`ONCHAIN-SUBACCOUNT-CAPABILITY-CONTROLLER-V1`,
+`src/registry/CapabilityController.sol` in the file plan, `WP-03` in
+work packages) refer to the SUB-MILESTONE that implements the vault's
+capability subsystem BEFORE the wider vault accounting milestones
+(WP-04A/B). That sub-milestone lands the capability storage + grant/
+revoke behavior on the vault contract with its own commit boundary; it
+does NOT deploy a separate `CapabilityController` contract, and no
+separate `ICapabilityController` interface exists.
+
+The plan doc rollout under
+`~/DEOPT/docs/onchain-subaccounts-v1/experimental-implementation-plan/`
+retains the WP-03 milestone name for continuity with prior decisions
+and cross-references; downstream planning refresh will clarify inline
+that WP-03 implements the vault-owned capability subsystem. No
+interface file is required from WP-01. Recorded as `D-STI-02 FROZEN`
+(see decision register at end).
 
 ## ABI encoding policy
 
@@ -463,6 +508,8 @@ or economic behavior.
 | D-STI-06 | License stays BSL-1.1 for all new files | FROZEN |
 | D-STI-07 | Directory convention: `src/hybrid-v2/` + `test/hybrid-v2/` (hyphen) | FROZEN |
 | D-STI-08 | Capability set = 14 canonical + `CAP_RECOVERY_ACTIVATE` (bit 14) from escape-hatch/15 = 15 total | FROZEN |
+| D-STI-09 | `deploymentVersion` is per-deployment `uint256` immutable (not a compile-time global); `INITIAL_DEPLOYMENT_VERSION = 1` documents the canonical type + sentinel | FROZEN |
+| D-STI-10 | Capability-controller ownership = vault-owned; WP-03 implements the vault's capability subsystem (no separate contract, no separate interface) | FROZEN |
 
 None BLOCKING. None DEFERRED_WITH_OWNER.
 
