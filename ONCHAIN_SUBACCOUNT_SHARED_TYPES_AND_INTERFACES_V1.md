@@ -4,6 +4,20 @@
 
 **IMPLEMENTED_AND_VALIDATED_EXPERIMENTAL** — 2026-07-25.
 
+### ABI corrections after initial land
+
+- **2026-07-26 — `setAuthorizedEngine` + `AuthorizedEngineSet` removed
+  from `ICollateralVault`** as part of
+  `ONCHAIN-SUBACCOUNT-COLLATERAL-VAULT-V2-A`. Rationale: spec 07 defines
+  `isAuthorizedEngine(engine)` as DERIVED (`engineCapabilityBits(engine)
+  != 0`), which leaves no clean semantics for an independent boolean
+  setter or its paired event. The sole engine-authority entrypoint is
+  `setEngineCapability(engine, capabilityBits, allowed)` and the sole
+  signal is `EngineCapabilityChanged(engine, addedBits, removedBits,
+  eventVersion)`. Verdict:
+  `SET_AUTHORIZED_ENGINE_IS_OBSOLETE_AND_REMOVED`. No parallel boolean
+  storage, no adapter path.
+
 `EXPERIMENTAL — NOT SECURITY APPROVED`.
 
 Not an audit sign-off. Not a security-review sign-off. Not a deployment

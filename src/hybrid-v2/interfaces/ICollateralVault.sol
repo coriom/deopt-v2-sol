@@ -119,12 +119,10 @@ interface ICollateralVault {
                            ADMIN (TIMELOCKED)
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Activate or deactivate `engine`.
-    /// @dev Caller MUST be the ProtocolTimelock.
-    function setAuthorizedEngine(address engine, bool allowed) external;
-
     /// @notice Grant or revoke a bitmask of capabilities on `engine`.
-    /// @dev Caller MUST be the ProtocolTimelock.
+    /// @dev Caller MUST be the ProtocolTimelock. This is the SOLE engine-authority
+    ///      entrypoint: `isAuthorizedEngine(engine)` is derived from
+    ///      `engineCapabilityBits(engine) != 0` per spec 07.
     function setEngineCapability(address engine, uint256 capabilityBits, bool allowed) external;
 
     /// @notice Add a token to the whitelist.
@@ -214,8 +212,6 @@ interface ICollateralVault {
     event CollateralUnlocked(
         bytes32 indexed subKey, address indexed token, address indexed engine, uint256 amount, uint16 eventVersion
     );
-
-    event AuthorizedEngineSet(address indexed engine, bool allowed, uint16 eventVersion);
 
     event EngineCapabilityChanged(address indexed engine, uint256 addedBits, uint256 removedBits, uint16 eventVersion);
 
