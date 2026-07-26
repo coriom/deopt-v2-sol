@@ -4,7 +4,14 @@
 
 **DESIGN COMPLETE — DOCS ONLY** — 2026-07-25. Product owner: Coriolan Morel.
 
-`AWAITING_EXPLICIT_PRODUCT_OWNER_EXPERIMENTAL_IMPLEMENTATION_APPROVAL`.
+`PRODUCT_OWNER_AUTHORIZES_WITH_NON_BLOCKING_CONDITIONS` (2026-07-25). Only
+the first implementation milestone
+`ONCHAIN-SUBACCOUNT-SHARED-TYPES-AND-INTERFACES-V1` is launched by this
+authorization. Every subsequent milestone requires its own separate
+authorization. Base Sepolia + local dev only. No mainnet. No real user
+funds. No production, public-testnet, or security-readiness claim. Perps
+V2 remains out of scope. Human internal reviewer + external audit remain
+mandatory at their later release gates.
 
 Not an audit sign-off. Not an implementation approval. Not a
 deployment approval. Not a production-readiness claim. Not a
