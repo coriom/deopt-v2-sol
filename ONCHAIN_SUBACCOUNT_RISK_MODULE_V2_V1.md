@@ -2,7 +2,11 @@
 
 ## Status
 
-`IMPLEMENTED_PENDING_VALIDATION` — 2026-07-27. Product owner: Coriolan Morel.
+`IMPLEMENTED_AND_VALIDATED_EXPERIMENTAL` — 2026-07-27. Product owner: Coriolan Morel.
+
+Landed at `deopt-v2-sol` commit `5b5af2d`
+(`feat(subaccounts): add options risk module v2`, +2274 lines,
+9 files, from base `096f21f`). Push: `096f21f..5b5af2d main -> main`.
 
 `EXPERIMENTAL — NOT SECURITY APPROVED`.
 
