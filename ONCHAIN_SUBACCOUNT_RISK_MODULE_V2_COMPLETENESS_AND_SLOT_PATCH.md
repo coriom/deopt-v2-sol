@@ -6,6 +6,37 @@ Product-owner authorization: `PRODUCT_OWNER_AUTHORIZES_WITH_NON_BLOCKING_CONDITI
 Predecessor: `ONCHAIN-SUBACCOUNT-RISK-MODULE-V2-V1` (WP-07).
 Blocks: `ONCHAIN-SUBACCOUNT-MARGIN-ENGINE-V2-V1` (WP-08).
 
+## Supersedes — 2026-07-27 (BOUNDEDNESS-AND-LIQUIDATION-SAFETY-PATCH)
+
+Two Part-F/Part-J conclusions from this doc are tightened by the
+subsequent
+`ONCHAIN-SUBACCOUNT-RISK-MODULE-V2-BOUNDEDNESS-AND-LIQUIDATION-SAFETY-PATCH`:
+
+- **Part J (Single RiskModule authority)**: RM-1 is now enforced at
+  the SOURCE level, not just documentation + test-only reference. The
+  new abstract `src/hybrid-v2/risk/VaultRiskModuleConsumer.sol`
+  provides a production consumer boundary that WP-08 MarginEngine
+  MUST inherit. Its constructor takes only the Vault; the RiskModule
+  is canonically sourced from `Vault.RISK_MODULE()`. Verdict:
+  `SINGLE_RISKMODULE_CONSUMER_BOUNDARY_ENFORCED`.
+- **Part D (Collateral completeness)**: the
+  `COLLATERAL_OMISSION_PROVEN_CONSERVATIVE` verdict is affirmed for
+  withdrawal / internal transfer but is INSUFFICIENT for liquidation.
+  Additional verdicts:
+  `COLLATERAL_OMISSION_NOT_SUFFICIENT_FOR_LIQUIDATION` and
+  `LIQUIDATION_REMAINS_DISABLED_PENDING_COLLATERAL_COMPLETENESS`.
+  Liquidation enforcement waits for either a bounded canonical Vault
+  token enumeration (CT-2) or a deployment-fixed bounded token
+  universe (CT-1).
+
+Additionally: the WP-07 `liquidationStatus` fail-closed model
+returned `ELIGIBLE_FOR_LIQUIDATION` on any hook failure, which is a
+wrongful-liquidation-authority pattern. That has been corrected to
+`RiskModuleUnavailable` revert (LQ-2). See the patch doc §Part G.
+
+Full detail:
+`ONCHAIN_SUBACCOUNT_RISK_MODULE_V2_BOUNDEDNESS_AND_LIQUIDATION_SAFETY_PATCH.md`.
+
 ## Purpose
 
 Narrow prerequisite patch before WP-08 MarginEngineV2. Resolves four

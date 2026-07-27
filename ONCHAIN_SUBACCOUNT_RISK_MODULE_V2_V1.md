@@ -8,6 +8,49 @@ Landed at `deopt-v2-sol` commit `5b5af2d`
 (`feat(subaccounts): add options risk module v2`, +2274 lines,
 9 files, from base `096f21f`). Push: `096f21f..5b5af2d main -> main`.
 
+## Supersedes — 2026-07-27 (BOUNDEDNESS-AND-LIQUIDATION-SAFETY-PATCH)
+
+The narrow prerequisite safety patch
+`ONCHAIN-SUBACCOUNT-RISK-MODULE-V2-BOUNDEDNESS-AND-LIQUIDATION-SAFETY-PATCH`
+corrects two latent WP-07 issues without changing the abstract's
+scope or interface shape:
+
+- **Liquidation fail-safe fix**: `liquidationStatus(subKey)` no
+  longer silently returns `ELIGIBLE_FOR_LIQUIDATION` on
+  indeterminate hooks (stale provider, unknown subKey, zero subKey,
+  hook failure). It now REVERTS `RiskModuleUnavailable` /
+  `SubKeyRequired` / `UnknownSubaccount`. Rationale: spec 06 §
+  "Behaviour when the risk module is unavailable" requires
+  "Liquidation triggers MUST NOT trigger if `liquidationStatus`
+  cannot be computed." The prior WP-07 implementation violated this
+  rule by returning affirmative liquidation authority under
+  uncertainty. Downstream WP-08 execution MUST wrap the call in
+  try/catch and treat any revert as "no authority" (see
+  `test_documentsConsumerTryCatchPattern`).
+- **Production single-RiskModule consumer boundary**: previous
+  RM-1 enforcement was documentation + test-only. The new
+  `src/hybrid-v2/risk/VaultRiskModuleConsumer.sol` abstract
+  contract provides a compile-time-enforceable boundary that any
+  future WP-08 MarginEngineV2 (and any other consumer) MUST inherit.
+  Its constructor accepts ONLY `address vault_`; the RiskModule is
+  canonically sourced from `Vault.RISK_MODULE()`. No independent
+  module argument, no setter, no rotation surface.
+
+Additional finding: `RISK_FORMULAS_FROZEN_PROVIDER_IMPLEMENTATION_DEFERRED`
+is confirmed with an explicit per-formula table (see the patch doc
+§Part K).
+
+Blocking condition surfaced (product decision required BEFORE
+WP-08): `ACTIVE_SERIES_BOUND_REQUIRES_PRODUCT_DECISION`. Neither the
+completeness proof nor the fail-safe fix bound the WP-08 concrete
+`_computeMarginRequirement` gas surface. Until the per-subaccount
+active-series maximum M is frozen, WP-08 MUST NOT enable liquidation
+(also enforced by
+`LIQUIDATION_REMAINS_DISABLED_PENDING_COLLATERAL_COMPLETENESS`).
+
+Full detail:
+`ONCHAIN_SUBACCOUNT_RISK_MODULE_V2_BOUNDEDNESS_AND_LIQUIDATION_SAFETY_PATCH.md`.
+
 ## Supersedes — 2026-07-27 (COMPLETENESS-AND-SLOT-PATCH)
 
 The narrow prerequisite milestone
