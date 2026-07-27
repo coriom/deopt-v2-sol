@@ -337,16 +337,27 @@ contract RiskModuleV2UnitFuzz is Test {
         assertEq(uint8(module.liquidationStatus(sk)), uint8(LiquidationStatus.ELIGIBLE_FOR_LIQUIDATION));
     }
 
-    function test_liquidationStatus_eligibleOnStale() public {
+    function test_liquidationStatus_revertsOnStale() public {
+        // Superseded by BOUNDEDNESS-AND-LIQUIDATION-SAFETY-PATCH (2026-07-27):
+        // stale provider → RiskModuleUnavailable revert (not ELIGIBLE). See
+        // RiskModuleV2 NatSpec + `RISK-LIQ-I1`.
         bytes32 sk = _sk(ownerA, 1);
         module.setRequiredMargin(sk, 100e18);
         module.setAvailableMargin(sk, 100e18);
         module.setProviderStale(true);
-        assertEq(uint8(module.liquidationStatus(sk)), uint8(LiquidationStatus.ELIGIBLE_FOR_LIQUIDATION));
+        vm.expectRevert(IRiskModule.RiskModuleUnavailable.selector);
+        module.liquidationStatus(sk);
     }
 
-    function test_liquidationStatus_eligibleOnZeroSubKey() public view {
-        assertEq(uint8(module.liquidationStatus(bytes32(0))), uint8(LiquidationStatus.ELIGIBLE_FOR_LIQUIDATION));
+    function test_liquidationStatus_revertsOnZeroSubKey() public {
+        vm.expectRevert(RiskModuleV2.SubKeyRequired.selector);
+        module.liquidationStatus(bytes32(0));
+    }
+
+    function test_liquidationStatus_revertsOnUnknownSubaccount() public {
+        bytes32 fake = registry.subKeyOf(address(0x99999), 42);
+        vm.expectRevert(abi.encodeWithSelector(RiskModuleV2.UnknownSubaccount.selector, fake));
+        module.liquidationStatus(fake);
     }
 
     /*//////////////////////////////////////////////////////////////

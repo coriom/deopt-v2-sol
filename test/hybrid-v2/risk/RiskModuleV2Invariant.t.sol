@@ -97,9 +97,12 @@ contract RiskModuleV2Invariants is Test {
     /// forge-config: default.invariant.runs = 64
     /// forge-config: default.invariant.depth = 64
     function invariant_I4_I5_stateReflectsProviderStale() public view {
-        // When the provider is globally stale, every module view that is
+        // When the provider is globally stale, every user-outflow view that is
         // fail-closed on the safety-negative side returns the safety-negative
-        // decision.
+        // decision. The `liquidationStatus` view now REVERTS on stale hooks
+        // (per BOUNDEDNESS-AND-LIQUIDATION-SAFETY-PATCH — an unavailable risk
+        // signal MUST NOT authorize seizure) so we assert the revert instead of
+        // an affirmative status. See `RISK-LIQ-I1`.
         if (!module.providerStale()) return;
         uint256 n = handler.trackedSubKeysLength();
         for (uint256 i = 0; i < n; i++) {
@@ -107,7 +110,12 @@ contract RiskModuleV2Invariants is Test {
             assertFalse(module.marginHealthy(sk));
             assertFalse(module.withdrawalAllowed(sk, address(token), 1));
             assertFalse(module.transferAllowed(sk, address(token), 1));
-            assertTrue(module.liquidationStatus(sk) == LiquidationStatus.ELIGIBLE_FOR_LIQUIDATION);
+            try module.liquidationStatus(sk) returns (LiquidationStatus s) {
+                s;
+                revert("expected liquidationStatus to revert on stale provider");
+            } catch {
+                // expected: RiskModuleUnavailable
+            }
         }
     }
 

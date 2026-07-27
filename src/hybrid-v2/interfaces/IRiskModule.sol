@@ -38,6 +38,17 @@ interface IRiskModule {
     function transferAllowed(bytes32 sourceSubKey, address token, uint256 amount) external view returns (bool);
 
     /// @notice Aggregated liquidation status for `subKey`.
+    /// @dev Implementations MUST fail-safe on the LIQUIDATION SIDE: an
+    ///      indeterminate risk state (missing / stale / unsupported /
+    ///      reverting hook) MUST NOT return `ELIGIBLE_FOR_LIQUIDATION` or any
+    ///      other value that a consumer might interpret as authorization to
+    ///      seize collateral. The frozen 3-value enum has no INDETERMINATE
+    ///      state, so uncertainty MUST be surfaced via revert
+    ///      (`RiskModuleUnavailable`). Downstream liquidation execution MUST
+    ///      wrap the call in try/catch and treat any revert as "no
+    ///      authority". Per spec 06 §"Behaviour when the risk module is
+    ///      unavailable": "Liquidation triggers MUST NOT trigger if
+    ///      `liquidationStatus` cannot be computed."
     function liquidationStatus(bytes32 subKey) external view returns (LiquidationStatus);
 
     /// @notice Product availability flags for `subKey`.

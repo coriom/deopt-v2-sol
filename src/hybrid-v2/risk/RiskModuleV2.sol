@@ -287,18 +287,38 @@ abstract contract RiskModuleV2 is IRiskModule {
     //////////////////////////////////////////////////////////////*/
 
     /// @inheritdoc IRiskModule
-    /// @dev Fail-closed: returns `ELIGIBLE_FOR_LIQUIDATION` on hook failure.
-    ///      Rationale: an unavailable risk module is a stronger signal to freeze
-    ///      than to permit trading; downstream liquidation execution (WP-08)
-    ///      independently verifies before seizing collateral, so this default
-    ///      cannot itself trigger seizure.
+    /// @dev Fail-safe on the LIQUIDATION SIDE: an indeterminate risk state
+    ///      (missing / stale / unsupported / reverting hook) MUST NOT return
+    ///      any affirmative liquidation authority. Uncertainty about health is
+    ///      NOT uncertainty about seizure permission — silently converting an
+    ///      unavailable risk view into `ELIGIBLE_FOR_LIQUIDATION` would create
+    ///      wrongful liquidation authority the moment ANY downstream consumer
+    ///      trusts the enum value.
+    ///
+    ///      Semantics under the frozen 3-value `LiquidationStatus` enum
+    ///      (HEALTHY / WARN / ELIGIBLE_FOR_LIQUIDATION) — no INDETERMINATE
+    ///      state exists — so uncertainty is surfaced via revert:
+    ///        - zero subKey → `SubKeyRequired`;
+    ///        - unknown subKey → `UnknownSubaccount`;
+    ///        - either hook returns `ok=false` → `RiskModuleUnavailable`
+    ///          (matches the identical pattern already used by
+    ///          `marginRequirement` / `availableMargin` / `marginRatio`).
+    ///      Downstream WP-08 liquidation execution MUST wrap this call in
+    ///      try/catch and translate any revert into "no liquidation
+    ///      authority" (see also `RISK-LIQ-I1`). Spec 06 explicitly requires:
+    ///      "Liquidation triggers MUST NOT trigger if `liquidationStatus`
+    ///      cannot be computed."
+    ///
+    ///      Superseded 2026-07-27 by
+    ///      `ONCHAIN-SUBACCOUNT-RISK-MODULE-V2-BOUNDEDNESS-AND-LIQUIDATION-SAFETY-PATCH`.
+    ///      Prior fail-closed-to-ELIGIBLE behavior violated spec 06 and is now
+    ///      corrected.
     function liquidationStatus(bytes32 subKey) external view returns (LiquidationStatus) {
-        if (subKey == bytes32(0)) return LiquidationStatus.ELIGIBLE_FOR_LIQUIDATION;
-        if (REGISTRY.ownerOf(subKey) == address(0)) return LiquidationStatus.ELIGIBLE_FOR_LIQUIDATION;
+        _requireKnownSubaccount(subKey);
         (uint256 required, bool okReq) = _computeMarginRequirement(subKey);
-        if (!okReq) return LiquidationStatus.ELIGIBLE_FOR_LIQUIDATION;
+        if (!okReq) revert RiskModuleUnavailable();
         (uint256 available, bool okAvail) = _computeAvailableMargin(subKey);
-        if (!okAvail) return LiquidationStatus.ELIGIBLE_FOR_LIQUIDATION;
+        if (!okAvail) revert RiskModuleUnavailable();
         if (available >= required) return LiquidationStatus.HEALTHY;
         // Concrete inheritors MAY refine WARN thresholds by overriding
         // `_isWarnStatus`. Default: any shortfall → ELIGIBLE.
