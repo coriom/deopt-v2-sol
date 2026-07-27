@@ -2,7 +2,11 @@
 
 ## Status
 
-`IMPLEMENTED_PENDING_VALIDATION` — 2026-07-27. Product owner: Coriolan Morel.
+`IMPLEMENTED_AND_VALIDATED_EXPERIMENTAL` — 2026-07-27. Product owner: Coriolan Morel.
+
+Landed at `deopt-v2-sol` commit `98aa21a`
+(`feat(subaccounts): add options positions ledger`, +2270 lines,
+7 files, from base `3cda8f6`). Push: `3cda8f6..98aa21a main -> main`.
 
 `EXPERIMENTAL — NOT SECURITY APPROVED`.
 
