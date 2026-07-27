@@ -57,6 +57,35 @@ interface IOptionsPositionsLedger {
     /// @dev Hint for off-chain reconciliation iteration. Bounded per subKey.
     function activeSeriesCount(bytes32 subKey) external view returns (uint32);
 
+    /// @notice O(1) canonical membership check for the active-series set of `subKey`.
+    /// @dev A series is "active" when its `OptionPosition` row has any non-zero
+    ///      quantity or premium-accumulator field. Semantics match the
+    ///      `activeSeriesCount` counter (WP-06 `_isPositionAllZero`).
+    ///      Returns `false` on `bytes32(0)` subKey or zero `seriesId`.
+    function isActiveSeries(bytes32 subKey, uint256 seriesId) external view returns (bool);
+
+    /// @notice Complete on-chain proof that `seriesIds` is EXACTLY the set of
+    ///         active option series for `subKey`.
+    /// @dev The proof is discharged by the conjunction of three conditions,
+    ///      any single failure of which returns `false`:
+    ///        1. `seriesIds.length == activeSeriesCount(subKey)` — count equality
+    ///           binds cardinality;
+    ///        2. `seriesIds` is strictly increasing — enforces uniqueness AND a
+    ///           canonical ordering (deterministic across callers);
+    ///        3. every element is active per `isActiveSeries` — every supplied
+    ///           id maps to a real active row.
+    ///      Together these three conditions prove set equality: the supplied
+    ///      array is a length-N set of distinct active members, and the active
+    ///      set has cardinality N, therefore the supplied set IS the active set
+    ///      (no omission, no duplication, no substitution).
+    ///
+    ///      Pure view: no reverts on invalid input. Consumers (e.g. WP-08
+    ///      MarginEngine) MUST call this BEFORE treating any caller-supplied
+    ///      series array as canonical portfolio evidence. Rationale + verdict
+    ///      recorded in `ONCHAIN_SUBACCOUNT_RISK_MODULE_V2_COMPLETENESS_AND_SLOT_PATCH.md`
+    ///      §Part C.
+    function verifyActiveSeriesArrayComplete(bytes32 subKey, uint256[] calldata seriesIds) external view returns (bool);
+
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/

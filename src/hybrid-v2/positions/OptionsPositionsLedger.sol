@@ -284,6 +284,16 @@ contract OptionsPositionsLedger is IOptionsPositionsLedger {
         PositionTypes.OptionPosition storage p = _positions[subKey][seriesId];
         if (p.settlementState == STATE_FULL) revert OptionAlreadySettled();
 
+        // Snapshot active-set membership BEFORE mutation. A settlement of a
+        // never-touched series is a state-transition-only no-op (no economic
+        // effect) and MUST NOT alter `_activeSeriesCount`. Unlike `applyExercise`
+        // / `applyLiquidation` (which revert if the relevant side is zero and
+        // therefore guarantee `wasActive == true`), `applySettlement` accepts a
+        // clean row — so we guard the decrement explicitly. Required by
+        // INV-COMP-I2 (count equals |active set|) — patched under
+        // `RISK-MODULE-V2-COMPLETENESS-AND-SLOT-PATCH`.
+        bool wasActive = !_isPositionAllZero(p);
+
         // Settlement zeros both sides that remain — long is settled at intrinsic
         // (economic value credited to the vault by WP-08 in the same tx); short
         // obligations are extinguished at the settlement price. The ledger owns
@@ -313,7 +323,9 @@ contract OptionsPositionsLedger is IOptionsPositionsLedger {
                 subKey, seriesId, SIDE_SHORT, msg.sender, owner, subaccountId, Versions.EVENT_VERSION
             );
         }
-        _maybeDecrementActive(subKey, p);
+        if (wasActive) {
+            _maybeDecrementActive(subKey, p);
+        }
     }
 
     /// @inheritdoc IOptionsPositionsLedger
@@ -371,6 +383,37 @@ contract OptionsPositionsLedger is IOptionsPositionsLedger {
     /// @inheritdoc IOptionsPositionsLedger
     function activeSeriesCount(bytes32 subKey) external view returns (uint32) {
         return _activeSeriesCount[subKey];
+    }
+
+    /// @inheritdoc IOptionsPositionsLedger
+    function isActiveSeries(bytes32 subKey, uint256 seriesId) external view returns (bool) {
+        if (subKey == bytes32(0) || seriesId == 0) return false;
+        return !_isPositionAllZero(_positions[subKey][seriesId]);
+    }
+
+    /// @inheritdoc IOptionsPositionsLedger
+    function verifyActiveSeriesArrayComplete(bytes32 subKey, uint256[] calldata seriesIds)
+        external
+        view
+        returns (bool)
+    {
+        if (subKey == bytes32(0)) return false;
+        // Length must equal the canonical active-series count. Any missing or
+        // extra active series breaks this equality before any per-element cost.
+        if (seriesIds.length != _activeSeriesCount[subKey]) return false;
+        uint256 prev = 0;
+        uint256 n = seriesIds.length;
+        for (uint256 i = 0; i < n; i++) {
+            uint256 sid = seriesIds[i];
+            // Reject zero seriesId (matches mutation-side `SeriesIdRequired`) +
+            // enforce strictly increasing order (uniqueness + canonical order).
+            if (sid == 0) return false;
+            if (sid <= prev) return false;
+            // Every element must correspond to an active position row.
+            if (_isPositionAllZero(_positions[subKey][sid])) return false;
+            prev = sid;
+        }
+        return true;
     }
 
     /*//////////////////////////////////////////////////////////////
