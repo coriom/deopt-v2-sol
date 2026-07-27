@@ -8,6 +8,49 @@ Landed at `deopt-v2-sol` commit `5b5af2d`
 (`feat(subaccounts): add options risk module v2`, +2274 lines,
 9 files, from base `096f21f`). Push: `096f21f..5b5af2d main -> main`.
 
+## Supersedes — 2026-07-27 (COMPLETENESS-AND-SLOT-PATCH)
+
+The narrow prerequisite milestone
+`ONCHAIN-SUBACCOUNT-RISK-MODULE-V2-COMPLETENESS-AND-SLOT-PATCH`
+finalizes four questions left implicit by this doc, without changing
+the RiskModule contract itself:
+
+- **Position completeness**: WP-07's `_computeMarginRequirement` hook
+  now has a canonical companion primitive at the Ledger boundary —
+  `IOptionsPositionsLedger.verifyActiveSeriesArrayComplete(subKey, seriesIds[])`
+  — which WP-08 concrete inheritors MUST call before treating any
+  caller-supplied series list as canonical portfolio evidence.
+  Verdict: `POSITION_PORTFOLIO_COMPLETENESS_ALREADY_PROVEN`. The
+  proof uses only pre-existing storage (`_activeSeriesCount` +
+  per-element `_isPositionAllZero`) plus strict-monotonic ordering; no
+  new active-series maximum bound is required.
+- **Collateral completeness**: WP-04B Vault has no debt / negative
+  mapping. Verdict: `COLLATERAL_OMISSION_PROVEN_CONSERVATIVE`. WP-08
+  concrete `_computeAvailableMargin` MUST be a monotone-non-decreasing
+  function of per-token contributions to preserve this.
+- **Risk formulas**: Formula SHAPE is frozen (legacy inheritance +
+  spec 06 aggregate rule). Parameter VALUES remain DEPLOYMENT-CONFIG
+  per approved governance timelock (D-C-11). Verdict:
+  `RISK_FORMULAS_RESOLVED_PARAMETERS_DEPLOYMENT_CONFIG`.
+- **RiskModule slot / authority**: Verdict:
+  `SINGLE_IMMUTABLE_RISK_MODULE_PER_DEPLOYMENT` (RM-1). The Vault
+  holds the sole immutable `RISK_MODULE` slot. Downstream consumers
+  (WP-08 MarginEngine, WP-10 EscapeController) MUST source their
+  reference from `CollateralVaultV2RiskIntegrated(vault).RISK_MODULE()`
+  — never accept an independent constructor arg. Pattern tested by
+  `DownstreamConsumerCorrect` in
+  `test/hybrid-v2/risk/RiskModuleV2SlotAuthority.t.sol`. In-place
+  timelocked rotation stays deferred to a future milestone; V1 posture
+  is "fresh Vault redeploy = fresh cutover" (spec 06 §C-01).
+
+The prior WP-07 conclusion "backend-provided arrays remain unsafe as
+canonical proof" is now closed by the ledger-side verifier: the backend
+supplies a candidate; the ledger PROVES canonical. Post-patch verdict:
+`NO_BACKEND_LIST_USED_AS_CANONICAL_PORTFOLIO_PROOF`.
+
+Full detail:
+`ONCHAIN_SUBACCOUNT_RISK_MODULE_V2_COMPLETENESS_AND_SLOT_PATCH.md`.
+
 `EXPERIMENTAL — NOT SECURITY APPROVED`.
 
 Not an audit sign-off. Not a security-reviewer sign-off. Not a deployment

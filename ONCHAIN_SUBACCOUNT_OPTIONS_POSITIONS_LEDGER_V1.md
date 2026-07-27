@@ -8,6 +8,33 @@ Landed at `deopt-v2-sol` commit `98aa21a`
 (`feat(subaccounts): add options positions ledger`, +2270 lines,
 7 files, from base `3cda8f6`). Push: `3cda8f6..98aa21a main -> main`.
 
+## Supersedes — 2026-07-27 (COMPLETENESS-AND-SLOT-PATCH)
+
+The narrow prerequisite milestone
+`ONCHAIN-SUBACCOUNT-RISK-MODULE-V2-COMPLETENESS-AND-SLOT-PATCH`
+extends this ledger with two view-only additions and one bug fix:
+
+- Interface + implementation additions (`IOptionsPositionsLedger` +
+  `OptionsPositionsLedger`):
+  - `isActiveSeries(bytes32 subKey, uint256 seriesId) view returns (bool)`
+    — O(1) canonical membership check.
+  - `verifyActiveSeriesArrayComplete(bytes32 subKey, uint256[] calldata seriesIds) view returns (bool)`
+    — binds the completeness proof (count equality + strict-monotonic
+    ordering + per-element active-check) into a callable primitive
+    consumed by WP-08 MarginEngine before treating any caller-supplied
+    series list as canonical portfolio evidence.
+- Bug fix in `applySettlement`: snapshot `wasActive =
+  !_isPositionAllZero(p)` before mutation; only call
+  `_maybeDecrementActive` if `wasActive`. Required by invariant
+  `RISK-COMP-I2` (count equals |active set|) because a settlement of a
+  never-touched series otherwise decrements the counter for a series
+  that was never counted. `applyExercise` / `applyLiquidation` are
+  unaffected because they revert on zero side (pre-mutation always
+  active).
+
+Full rationale + tests + invariants in
+`ONCHAIN_SUBACCOUNT_RISK_MODULE_V2_COMPLETENESS_AND_SLOT_PATCH.md`.
+
 `EXPERIMENTAL — NOT SECURITY APPROVED`.
 
 Not an audit sign-off. Not a security-reviewer sign-off. Not a deployment
