@@ -8,6 +8,30 @@ Landed at `deopt-v2-sol` commit `5b5af2d`
 (`feat(subaccounts): add options risk module v2`, +2274 lines,
 9 files, from base `096f21f`). Push: `096f21f..5b5af2d main -> main`.
 
+## Supersedes — 2026-07-27 (RISK-EXECUTION-BOUNDS-AND-COLLATERAL-UNIVERSE-V1)
+
+The `ONCHAIN-SUBACCOUNT-RISK-EXECUTION-BOUNDS-AND-COLLATERAL-UNIVERSE-V1`
+milestone closes the two product decisions the previous safety patch
+surfaced:
+
+- **`MAX_ACTIVE_SERIES_PER_SUBACCOUNT = 32`** frozen on the ledger.
+  Bounds every WP-08 concrete `_computeMarginRequirement` walk at O(32).
+- **`MAX_COLLATERAL_TOKENS = 8`** frozen on the Vault. Bounds every
+  WP-08 concrete `_computeAvailableMargin` walk at O(8). The canonical
+  collateral universe is append-only, insertion-ordered, and exposed
+  via `ICollateralVault.collateralUniverse()` / `collateralTokenAt()`
+  / `collateralTokenCount()` / `isKnownCollateralToken()`.
+
+Consequence: WP-08 is UNBLOCKED. Prior verdicts that gated readiness
+(`LIQUIDATION_REMAINS_DISABLED_PENDING_COLLATERAL_COMPLETENESS`,
+`COLLATERAL_LIQUIDATION_COMPLETENESS_REQUIRES_EXTENSION`) are closed by
+the canonical bounded universe on the Vault side. The abstract
+RiskModule remains unchanged; concrete WP-08 inheritors bind the
+provider and iterate the bounded inputs. `RiskModuleV2.liquidationStatus`
+still fail-safe-reverts on any indeterminate hook.
+
+Full contract: `ONCHAIN_SUBACCOUNT_RISK_EXECUTION_BOUNDS_AND_COLLATERAL_UNIVERSE_V1.md`.
+
 ## Supersedes — 2026-07-27 (BOUNDEDNESS-AND-LIQUIDATION-SAFETY-PATCH)
 
 The narrow prerequisite safety patch

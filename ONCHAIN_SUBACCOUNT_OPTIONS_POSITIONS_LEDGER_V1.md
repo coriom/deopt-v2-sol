@@ -8,6 +8,31 @@ Landed at `deopt-v2-sol` commit `98aa21a`
 (`feat(subaccounts): add options positions ledger`, +2270 lines,
 7 files, from base `3cda8f6`). Push: `3cda8f6..98aa21a main -> main`.
 
+## Supersedes — 2026-07-27 (RISK-EXECUTION-BOUNDS-AND-COLLATERAL-UNIVERSE-V1)
+
+The `ONCHAIN-SUBACCOUNT-RISK-EXECUTION-BOUNDS-AND-COLLATERAL-UNIVERSE-V1`
+milestone tightens the ledger's active-series bookkeeping by making the
+per-subaccount maximum a canonical immutable constant:
+
+```solidity
+uint32 public constant MAX_ACTIVE_SERIES_PER_SUBACCOUNT = 32;
+```
+
+Exposed additively via `IOptionsPositionsLedger.maxActiveSeriesPerSubaccount()`.
+Enforcement is on the zero → non-zero transition inside
+`_maybeIncrementActive` — a 33rd activation reverts
+`ActiveSeriesLimitExceeded(subKey, currentCount, maximum)` BEFORE the
+position row is mutated, so failed transactions leave zero partial
+state. Mutations of already-active positions, risk-reducing paths
+(exercise, liquidation-quantity-reduction, settlement), and reactivation
+after freeing capacity are NOT blocked. The verifier also rejects
+supplied arrays longer than 32 up front (bounds verify gas at O(32)).
+
+`RISK-BOUND-I1` (count <= 32) and `RISK-BOUND-I3` (atomic revert on
+breach) are asserted at 64×64 invariant depth. See
+`ONCHAIN_SUBACCOUNT_RISK_EXECUTION_BOUNDS_AND_COLLATERAL_UNIVERSE_V1.md`
+for the full contract.
+
 ## Supersedes — 2026-07-27 (COMPLETENESS-AND-SLOT-PATCH)
 
 The narrow prerequisite milestone
