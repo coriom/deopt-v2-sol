@@ -106,8 +106,44 @@ interface ICollateralVault {
     /// @notice Bitmask of capabilities currently granted to `engine`.
     function engineCapabilityBits(address engine) external view returns (uint256);
 
-    /// @notice Token whitelist check.
+    /// @notice Token whitelist check for CURRENT deposits.
+    /// @dev Distinct from `isKnownCollateralToken`: a token may be known
+    ///      (and hold existing balances) while currently disabled for new
+    ///      deposits. Risk views that require the CANONICAL COLLATERAL
+    ///      UNIVERSE (e.g. WP-08 liquidation completeness) MUST iterate the
+    ///      universe views below, NOT this enable flag.
     function supportedTokens(address token) external view returns (bool);
+
+    /*//////////////////////////////////////////////////////////////
+                    CANONICAL COLLATERAL UNIVERSE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Frozen V1 maximum number of DISTINCT collateral tokens that
+    ///         may ever enter the canonical collateral universe of this
+    ///         Vault deployment. Immutable per deployment (no governance
+    ///         setter). Raising it requires a new versioned Vault deployment
+    ///         and cutover. Rationale in
+    ///         `ONCHAIN_SUBACCOUNT_RISK_EXECUTION_BOUNDS_AND_COLLATERAL_UNIVERSE_V1.md`.
+    function maxCollateralTokens() external view returns (uint256);
+
+    /// @notice Current number of tokens in the canonical collateral universe.
+    /// @dev Monotone non-decreasing. Bounded above by `maxCollateralTokens()`.
+    function collateralTokenCount() external view returns (uint256);
+
+    /// @notice Token at position `index` in insertion order (order of FIRST
+    ///         enablement). Reverts on out-of-range index.
+    function collateralTokenAt(uint256 index) external view returns (address);
+
+    /// @notice `true` iff `token` has EVER entered the canonical universe.
+    ///         Once true, never becomes false. Independent of the current
+    ///         deposit-enablement flag returned by `supportedTokens`.
+    function isKnownCollateralToken(address token) external view returns (bool);
+
+    /// @notice The entire canonical collateral universe in insertion order.
+    /// @dev Bounded size (<= `maxCollateralTokens()`, i.e. 8 in V1). Includes
+    ///      tokens that were later disabled — they retain balances + are
+    ///      part of the canonical liquidation-completeness universe.
+    function collateralUniverse() external view returns (address[] memory);
 
     /// @notice Well-known internal subKey for the protocol fee vault.
     function protocolFeeVaultSubKey() external view returns (bytes32);
@@ -229,6 +265,11 @@ interface ICollateralVault {
     event SupportedTokenAdded(address indexed token, uint16 eventVersion);
     event SupportedTokenRemoved(address indexed token, uint16 eventVersion);
 
+    /// @notice Emitted the FIRST time a token enters the canonical collateral
+    ///         universe. NOT re-emitted on re-enable of an already-known token.
+    ///         `index` is the insertion position in the bounded universe.
+    event CollateralTokenEnteredUniverse(address indexed token, uint256 index, uint16 eventVersion);
+
     event PauseFlagChanged(bytes32 indexed flag, bool paused, address indexed by, uint16 eventVersion);
 
     event BadDebtSocialized(bytes32 indexed subKey, address indexed token, uint256 residual, uint16 eventVersion);
@@ -259,4 +300,11 @@ interface ICollateralVault {
     error UnsafeTransfer();
     error InternalTransferSameSubaccount();
     error InternalTransferCrossOwner();
+
+    /// @notice First-enablement of a new collateral token would push the
+    ///         canonical universe above `maxCollateralTokens()`.
+    error CollateralUniverseLimitExceeded(uint256 currentCount, uint256 maximum);
+
+    /// @notice `collateralTokenAt(index)` called with an out-of-bounds index.
+    error CollateralUniverseIndexOutOfBounds(uint256 index, uint256 count);
 }

@@ -54,8 +54,19 @@ interface IOptionsPositionsLedger {
     function positionOf(bytes32 subKey, uint256 seriesId) external view returns (PositionTypes.OptionPosition memory);
 
     /// @notice Number of active series for `subKey`.
-    /// @dev Hint for off-chain reconciliation iteration. Bounded per subKey.
+    /// @dev Hint for off-chain reconciliation iteration. Bounded per subKey
+    ///      by the frozen `MAX_ACTIVE_SERIES_PER_SUBACCOUNT` cap.
     function activeSeriesCount(bytes32 subKey) external view returns (uint32);
+
+    /// @notice Canonical, immutable, per-subaccount maximum active-series
+    ///         count for this ledger deployment.
+    /// @dev Product-owner decision `PRODUCT_OWNER_DECISION_FROZEN_FOR_HYBRID_V2_V1`
+    ///      (Coriolan Morel, 2026-07-27). Value = 32 in V1. Raising it
+    ///      requires a new versioned ledger deployment and cutover — there
+    ///      is NO governance setter. `applyFill` reverts
+    ///      `ActiveSeriesLimitExceeded` on any zero → non-zero transition
+    ///      that would exceed this value.
+    function maxActiveSeriesPerSubaccount() external view returns (uint32);
 
     /// @notice O(1) canonical membership check for the active-series set of `subKey`.
     /// @dev A series is "active" when its `OptionPosition` row has any non-zero

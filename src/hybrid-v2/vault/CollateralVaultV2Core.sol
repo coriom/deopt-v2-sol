@@ -61,10 +61,27 @@ abstract contract CollateralVaultV2Core is VaultCapabilityController, Reentrancy
     ISubaccountRegistry public immutable REGISTRY;
 
     /*//////////////////////////////////////////////////////////////
+                                CONSTANTS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Frozen V1 maximum number of DISTINCT collateral tokens that
+    ///         may ever enter the canonical collateral universe of this
+    ///         Vault deployment.
+    /// @dev Product-owner decision `PRODUCT_OWNER_DECISION_FROZEN_FOR_HYBRID_V2_V1`
+    ///      (Coriolan Morel, 2026-07-27). The universe is APPEND-ONLY:
+    ///      disabling a token does NOT free a slot. Raising this value
+    ///      requires a new versioned Vault deployment and cutover — there
+    ///      is NO governance setter. Full contract in
+    ///      `ONCHAIN_SUBACCOUNT_RISK_EXECUTION_BOUNDS_AND_COLLATERAL_UNIVERSE_V1.md`.
+    uint256 public constant MAX_COLLATERAL_TOKENS = 8;
+
+    /*//////////////////////////////////////////////////////////////
                                 STORAGE
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev Token allowlist. `true` iff governance has enabled the token for deposits.
+    /// @dev Token allowlist for CURRENT DEPOSITS. `true` iff governance has
+    ///      enabled the token. Separate from `_knownCollateralToken` which
+    ///      tracks whether the token has ever entered the canonical universe.
     mapping(address => bool) internal _tokenEnabled;
 
     /// @dev Canonical isolated balance per (subKey, token).
@@ -74,6 +91,18 @@ abstract contract CollateralVaultV2Core is VaultCapabilityController, Reentrancy
     ///      `IERC20(token).balanceOf(address(this)) >= _totalAccounted[token]`
     ///      MUST hold at all times.
     mapping(address => uint256) internal _totalAccounted;
+
+    /// @dev Canonical bounded collateral universe. Insertion order matches
+    ///      the sequence of FIRST enablement per token; a token that is
+    ///      later disabled remains in the array (its existing balances +
+    ///      liability persist and remain visible to the RiskModule).
+    ///      Bounded by `MAX_COLLATERAL_TOKENS`.
+    address[] internal _collateralUniverse;
+
+    /// @dev `true` iff `token` has ever been enabled — i.e. entered the
+    ///      canonical universe. Distinct from `_tokenEnabled` which tracks
+    ///      current deposit enablement. Once true, never becomes false.
+    mapping(address => bool) internal _knownCollateralToken;
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
@@ -98,6 +127,12 @@ abstract contract CollateralVaultV2Core is VaultCapabilityController, Reentrancy
     /// @notice Emitted when governance disables a token for new deposits.
     /// @dev Existing balances are preserved unconditionally.
     event SupportedTokenRemoved(address indexed token, uint16 eventVersion);
+
+    /// @notice Emitted the FIRST time a token enters the canonical
+    ///         collateral universe (i.e. its first enablement). NOT
+    ///         re-emitted on re-enable.
+    /// @dev `index` is the insertion index within `_collateralUniverse`.
+    event CollateralTokenEnteredUniverse(address indexed token, uint256 index, uint16 eventVersion);
 
     /*//////////////////////////////////////////////////////////////
                                 ERRORS
@@ -136,6 +171,15 @@ abstract contract CollateralVaultV2Core is VaultCapabilityController, Reentrancy
     ///      when governance mistakenly enables such a token.
     error InvalidTokenBalanceDelta(uint256 requested, uint256 credited);
 
+    /// @notice First-enablement of a new token would push the canonical
+    ///         collateral universe above `MAX_COLLATERAL_TOKENS`.
+    /// @dev Only raised on the FIRST enablement of a token. Re-enable of an
+    ///      already-known token does not consume a slot.
+    error CollateralUniverseLimitExceeded(uint256 currentCount, uint256 maximum);
+
+    /// @notice `collateralTokenAt(index)` called with an out-of-bounds index.
+    error CollateralUniverseIndexOutOfBounds(uint256 index, uint256 count);
+
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -153,10 +197,28 @@ abstract contract CollateralVaultV2Core is VaultCapabilityController, Reentrancy
 
     /// @notice Enable `token` for deposits. Governance-only.
     /// @dev Reverts `InvalidToken` on zero, `TokenAlreadySupported` on duplicate.
-    ///      Emits `SupportedTokenAdded`.
+    ///      On the FIRST enablement of a token, this call also inserts it
+    ///      into the canonical bounded collateral universe (append-only)
+    ///      and emits `CollateralTokenEnteredUniverse`. Re-enable of an
+    ///      already-known token does NOT insert or emit again. Reverts
+    ///      `CollateralUniverseLimitExceeded` when the universe is full
+    ///      (`MAX_COLLATERAL_TOKENS` distinct tokens ever enabled).
+    ///      Emits `SupportedTokenAdded` on every successful enablement.
     function addSupportedToken(address token) external onlyGovernance {
         if (token == address(0)) revert InvalidToken();
         if (_tokenEnabled[token]) revert TokenAlreadySupported();
+
+        // First-enablement path: enter the canonical universe.
+        if (!_knownCollateralToken[token]) {
+            uint256 current = _collateralUniverse.length;
+            if (current >= MAX_COLLATERAL_TOKENS) {
+                revert CollateralUniverseLimitExceeded(current, MAX_COLLATERAL_TOKENS);
+            }
+            _knownCollateralToken[token] = true;
+            _collateralUniverse.push(token);
+            emit CollateralTokenEnteredUniverse(token, current, Versions.EVENT_VERSION);
+        }
+
         _tokenEnabled[token] = true;
         emit SupportedTokenAdded(token, Versions.EVENT_VERSION);
     }
@@ -259,9 +321,54 @@ abstract contract CollateralVaultV2Core is VaultCapabilityController, Reentrancy
     }
 
     /// @notice Whether `token` is currently enabled for new deposits.
-    /// @dev Matches `ICollateralVault.supportedTokens`.
+    /// @dev Matches `ICollateralVault.supportedTokens`. Distinct from
+    ///      `isKnownCollateralToken` — a token may be known (and hold
+    ///      existing balances) while currently disabled for new deposits.
     function supportedTokens(address token) external view returns (bool) {
         return _tokenEnabled[token];
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                    CANONICAL COLLATERAL UNIVERSE VIEWS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Frozen V1 maximum number of distinct collateral tokens that
+    ///         may ever enter the canonical collateral universe.
+    /// @dev Constant view; equal to `MAX_COLLATERAL_TOKENS`.
+    function maxCollateralTokens() external pure returns (uint256) {
+        return MAX_COLLATERAL_TOKENS;
+    }
+
+    /// @notice Current number of tokens in the canonical collateral
+    ///         universe. Never decreases. Bounded by `MAX_COLLATERAL_TOKENS`.
+    function collateralTokenCount() external view returns (uint256) {
+        return _collateralUniverse.length;
+    }
+
+    /// @notice Token at position `index` in insertion order. Reverts
+    ///         `CollateralUniverseIndexOutOfBounds` on out-of-range.
+    /// @dev Insertion order matches the sequence of FIRST enablement per
+    ///      token. Later disablement does NOT affect ordering or membership.
+    function collateralTokenAt(uint256 index) external view returns (address) {
+        uint256 len = _collateralUniverse.length;
+        if (index >= len) revert CollateralUniverseIndexOutOfBounds(index, len);
+        return _collateralUniverse[index];
+    }
+
+    /// @notice `true` iff `token` has EVER entered the canonical universe.
+    /// @dev Once true, never becomes false. Distinct from `supportedTokens`
+    ///      (current deposit-enablement flag). The liquidation-completeness
+    ///      universe is defined by this membership, NOT by the enable flag,
+    ///      because a disabled token may still hold user balances.
+    function isKnownCollateralToken(address token) external view returns (bool) {
+        return _knownCollateralToken[token];
+    }
+
+    /// @notice The entire canonical collateral universe in insertion order.
+    /// @dev Return size is bounded above by `MAX_COLLATERAL_TOKENS` (8). No
+    ///      unbounded allocation. Disabled tokens remain present.
+    function collateralUniverse() external view returns (address[] memory) {
+        return _collateralUniverse;
     }
 
     /// @notice Aggregate accounted liability for `token` across all subaccounts.

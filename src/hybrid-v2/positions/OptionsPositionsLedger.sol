@@ -97,6 +97,15 @@ contract OptionsPositionsLedger is IOptionsPositionsLedger {
     uint8 public constant STATE_PARTIAL = 1;
     uint8 public constant STATE_FULL = 2;
 
+    /// @notice Frozen V1 per-subaccount maximum active-series count.
+    /// @dev Product-owner decision `PRODUCT_OWNER_DECISION_FROZEN_FOR_HYBRID_V2_V1`
+    ///      (Coriolan Morel, 2026-07-27). Immutable for the deployment; there
+    ///      is NO governance setter. Raising this value requires a new
+    ///      versioned ledger deployment and cutover. Rationale + full
+    ///      enforcement contract in
+    ///      `ONCHAIN_SUBACCOUNT_RISK_EXECUTION_BOUNDS_AND_COLLATERAL_UNIVERSE_V1.md`.
+    uint32 public constant MAX_ACTIVE_SERIES_PER_SUBACCOUNT = 32;
+
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
     //////////////////////////////////////////////////////////////*/
@@ -152,7 +161,19 @@ contract OptionsPositionsLedger is IOptionsPositionsLedger {
     error OptionPremiumBasisOverflow();
 
     /// @notice `activeSeriesCount[subKey]` would exceed `type(uint32).max`.
+    /// @dev Preserved as a defensive floor even though the frozen
+    ///      `MAX_ACTIVE_SERIES_PER_SUBACCOUNT` (32) trips first.
     error OptionActiveSeriesOverflow();
+
+    /// @notice A zero → non-zero position transition would push
+    ///         `activeSeriesCount[subKey]` above the frozen
+    ///         `MAX_ACTIVE_SERIES_PER_SUBACCOUNT` (32).
+    /// @dev Enforced only on the zero → non-zero transition
+    ///      (see `_maybeIncrementActive`). Mutations of already-active
+    ///      positions, risk-reducing paths (exercise, liquidation,
+    ///      settlement), and reactivation after freeing capacity are NOT
+    ///      blocked.
+    error ActiveSeriesLimitExceeded(bytes32 subKey, uint32 currentCount, uint32 maximum);
 
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
@@ -386,6 +407,11 @@ contract OptionsPositionsLedger is IOptionsPositionsLedger {
     }
 
     /// @inheritdoc IOptionsPositionsLedger
+    function maxActiveSeriesPerSubaccount() external pure returns (uint32) {
+        return MAX_ACTIVE_SERIES_PER_SUBACCOUNT;
+    }
+
+    /// @inheritdoc IOptionsPositionsLedger
     function isActiveSeries(bytes32 subKey, uint256 seriesId) external view returns (bool) {
         if (subKey == bytes32(0) || seriesId == 0) return false;
         return !_isPositionAllZero(_positions[subKey][seriesId]);
@@ -398,6 +424,12 @@ contract OptionsPositionsLedger is IOptionsPositionsLedger {
         returns (bool)
     {
         if (subKey == bytes32(0)) return false;
+        // Early-reject inputs beyond the frozen per-subaccount cap. Because
+        // `_maybeIncrementActive` enforces the same cap on the mutation side,
+        // no valid canonical set can exceed it — a longer supplied array is
+        // by construction non-canonical. Rejecting up front bounds worst-case
+        // gas at `MAX_ACTIVE_SERIES_PER_SUBACCOUNT` per verify call.
+        if (seriesIds.length > MAX_ACTIVE_SERIES_PER_SUBACCOUNT) return false;
         // Length must equal the canonical active-series count. Any missing or
         // extra active series breaks this equality before any per-element cost.
         if (seriesIds.length != _activeSeriesCount[subKey]) return false;
@@ -437,10 +469,20 @@ contract OptionsPositionsLedger is IOptionsPositionsLedger {
     }
 
     /// @dev `applyFill` pre-mutation hook: if EVERY position field is currently
-    ///      zero, increment the active-series counter.
+    ///      zero (i.e. the fill is a zero → non-zero transition), enforce the
+    ///      frozen per-subaccount `MAX_ACTIVE_SERIES_PER_SUBACCOUNT` cap and
+    ///      then increment the active-series counter. Enforcement happens
+    ///      BEFORE the position row is mutated, so a rejected 33rd activation
+    ///      produces zero partial state (RISK-BOUND-I3).
     function _maybeIncrementActive(bytes32 subKey, PositionTypes.OptionPosition storage p) internal {
         if (_isPositionAllZero(p)) {
             uint32 c = _activeSeriesCount[subKey];
+            if (c >= MAX_ACTIVE_SERIES_PER_SUBACCOUNT) {
+                revert ActiveSeriesLimitExceeded(subKey, c, MAX_ACTIVE_SERIES_PER_SUBACCOUNT);
+            }
+            // Defensive overflow guard preserved. Under the frozen cap the
+            // limit trips first, but we keep the type-max floor to protect
+            // against a future cap raise beyond `type(uint32).max`.
             if (c == type(uint32).max) revert OptionActiveSeriesOverflow();
             unchecked {
                 _activeSeriesCount[subKey] = c + 1;
