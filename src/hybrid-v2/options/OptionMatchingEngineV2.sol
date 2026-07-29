@@ -6,6 +6,7 @@ import {SignatureChecker} from "@openzeppelin/contracts/utils/cryptography/Signa
 
 import {ReplayAndEpochController} from "../security/ReplayAndEpochController.sol";
 import {IntentHash} from "../libraries/IntentHash.sol";
+import {SubKey} from "../libraries/SubKey.sol";
 import {Versions} from "../libraries/Versions.sol";
 
 import {IOptionMatchingEngine} from "../interfaces/IOptionMatchingEngine.sol";
@@ -15,15 +16,19 @@ import {IOptionsPositionsLedger} from "../interfaces/IOptionsPositionsLedger.sol
 import {IMarginEngine} from "../interfaces/IMarginEngine.sol";
 import {IRiskModule} from "../interfaces/IRiskModule.sol";
 import {IOptionsRiskProvider} from "../interfaces/IOptionsRiskProvider.sol";
+import {ISubaccountRegistry} from "../interfaces/ISubaccountRegistry.sol";
 
 import {CollateralVaultV2RiskIntegrated} from "../risk/CollateralVaultV2RiskIntegrated.sol";
 import {MarginEngineV2} from "../margin/MarginEngineV2.sol";
 import {OptionOrderTypes} from "./OptionOrderTypes.sol";
 
 /// @title OptionMatchingEngineV2
-/// @notice WP-08B — Concrete Options execution engine. Atomically composes
-///         Registry identity, EIP-712 signature envelopes, WP-05 replay
-///         protection, canonical Options position mutation, Vault-scoped
+/// @notice WP-08B (concrete Options execution engine) as amended by
+///         `ONCHAIN-SUBACCOUNT-OPTION-ORDER-LIFECYCLE-AND-NONCE-V2-PATCH`.
+///         Atomically composes Registry identity, EIP-712 signature
+///         envelopes, canonical on-chain order lifecycle
+///         (filled-quantity + individual cancel + per-subaccount bulk
+///         cancel), canonical Options position mutation, Vault-scoped
 ///         Options premium transfer, engine-owned margin reservation, and
 ///         post-state MarginEngine health checks.
 /// @dev
@@ -36,68 +41,87 @@ import {OptionOrderTypes} from "./OptionOrderTypes.sol";
 ///     through the mandatory `IOptionExecutionFeeHook`. Concrete fee
 ///     integration (Vault-side `applyFeeDebit` + `applyRebateCredit`) lands
 ///     with the future FeesManager V2 milestone.
-///   - No on-chain filled-quantity accumulator: PF-2 semantics — each
-///     signed intent is a SINGLE EXACT FILL of `quantity1e8`. Nonce
-///     consumed per intent.
 ///
-///  Frozen semantics:
+///  Order lifecycle (post-patch — supersedes PF-2 exact-fill):
+///   - `orderId = _hashSignedActionEnvelopeDigest(envelope)` — the frozen
+///     EIP-712 typed-data digest of the outer envelope. Unique per
+///     (owner, subKey, engine, action, architectureVersion, nonce,
+///     deadline, ownerRecoveryEpoch, subaccountRecoveryEpoch, payloadHash)
+///     with `payloadHash` further binding all `OptionOrder` fields
+///     including the signer-chosen `salt`.
+///   - `_filledQuantity1e8[orderId]` is monotone non-decreasing. Sum of
+///     any past `OptionOrderFilled` events for `orderId` equals the
+///     current stored value.
+///   - `_cancelledOrder[orderId]` transitions false → true exactly once.
+///     Cannot be re-armed. IOC termination, individual cancellation, and
+///     bulk cancellation are three sources of this transition.
+///   - `_minValidOrderNonce[subKey]` is monotone non-decreasing per subKey.
+///     Every envelope submitted for `subKey` with `envelope.nonce < min`
+///     reverts `OrderNonceStale`.
+///   - The engine does NOT call the base `_consumeNonce` primitive —
+///     sequential per-signer nonces from `ReplayAndEpochController` are
+///     bypassed for signed option orders because the reusable-fill model
+///     requires the same envelope to be presentable across multiple
+///     `executeMatch` calls. Replay protection is provided instead by the
+///     monotone `_filledQuantity1e8[orderId]` cap and by the terminal
+///     `_cancelledOrder[orderId]` flag.
+///   - The engine does NOT call `_consumeIntent` either — it emits its
+///     own `OptionOrderFilled` and `OptionOrderCancelled` events for
+///     reconstruction. `IntentConsumed` on the base is preserved for
+///     other future engines that DO use the base sequential model.
+///
+///  Frozen semantics preserved from WP-08B:
 ///   - Buyer = SIDE_LONG, seller = SIDE_SHORT. Every matched pair MUST have
 ///     opposite sides.
 ///   - Buyer and seller MAY belong to different owners.
-///   - Identical subKey self-trade is REJECTED (single subKey cannot be
-///     both sides).
-///   - Sibling-subaccount trade (same-owner, distinct subaccounts) is
-///     REJECTED in V1. Cross-owner trade REQUIRED for real market activity.
+///   - Identical subKey self-trade is REJECTED.
 ///   - Roles are exchanged: one side signs `role = MAKER`, the other signs
 ///     `role = TAKER`. Post-only orders MUST sign `role = MAKER`.
 ///   - Both counterparties MUST sign the same `pricePerContract1e8` and
-///     `quantity1e8`. The engine does NOT compute an "execution premium"
-///     from independent limits — the signed price IS the execution price.
+///     `premiumToken`.
 ///   - Both signed `limitPricePerContract1e8` values MUST accept the
 ///     signed price (buyer: price ≤ limit; seller: price ≥ limit).
+///   - Buyer and seller MAY sign different `quantity1e8` maxima — the
+///     engine executes only the per-call `fillQuantity1e8` bounded by
+///     `min(buyer.remaining, seller.remaining)`.
 ///
-///  Atomicity (Part P):
+///  Atomicity:
 ///   Order inside `executeMatch`:
 ///     1. `nonReentrant`.
 ///     2. Not paused.
 ///     3. Envelope binding + payload-hash validation for both sides.
 ///     4. EOA + ERC-1271 signature verification via OZ SignatureChecker.
 ///     5. Deadline + epoch freshness for both sides.
-///     6. Order compatibility (series, premium token, side, price,
-///        quantity, TIF, role, self-trade check).
-///     7. Series metadata resolution (via `IOptionsRiskProvider`) — active,
-///        not expired, contractSize1e8 == 1e8, settlementAsset == QUOTE_TOKEN.
-///     8. Fee hook quote for both sides (V1: rebate MUST be zero).
-///     9. Nonce consumption + intent consumption for both sides.
-///    10. Ledger `applyFill` for buyer (long).
-///    11. Ledger `applyFill` for seller (short).
-///    12. Vault `applyOptionPremiumTransfer(buyerSubKey, sellerSubKey,
-///        premiumToken, totalPremium)` — atomic entitlement swap. Buyer's
-///        AVAILABLE balance is decremented (never locked collateral).
-///    13. Compute seller-side IM in native premium-token units via
-///        MarginEngine's witness view; adjust `Vault.applyLock` on the
-///        seller's engine reservation by the DELTA between target and
-///        current per-engine reservation.
-///    14. Buyer-side IM (long-only in V1 contributes 0 to portfolio margin,
-///        so the buyer's target reservation is 0 — but the code still
-///        walks the buyer's witness for the health check).
+///     6. Order compatibility (series, premium token, side, price, role,
+///        self-trade check).
+///     7. Series metadata resolution (via `IOptionsRiskProvider`).
+///     8. Lifecycle preconditions (min-valid-nonce, not cancelled, remaining
+///        capacity, TIF rules — FOK requires fill == max && filledBefore == 0).
+///     9. Fee hook quote for both sides (V1: rebate MUST be zero).
+///    10. Advance canonical filled-quantity for both sides. Mark IOC
+///        orders cancelled on any fill. Emit `OptionOrderFilled` per side.
+///    11. Ledger `applyFill` for buyer (long).
+///    12. Ledger `applyFill` for seller (short).
+///    13. Vault `applyOptionPremiumTransfer` — atomic entitlement swap.
+///    14. Sync seller-side reservation via MarginEngine target IM.
 ///    15. MarginEngine `isHealthy` for BOTH sides on POST-STATE witness.
 ///    16. Emit `OptionOrderPairExecuted`.
 ///   Any downstream revert unwinds the entire transaction (Solidity
-///   atomicity). No partial mutation can survive.
+///   atomicity). No partial mutation — including filled-quantity or
+///   cancellation flags — can survive.
 ///
-///  Reservation policy (Part K verdict
+///  Reservation policy (preserved from WP-08B —
 ///  `OPTION_MARGIN_RESERVATION_SERIES_SETTLEMENT_TOKEN`):
-///   - Reservations are held in the series' `settlementAsset`, which for
-///     V1 MUST equal the RiskModule's frozen `QUOTE_TOKEN`.
-///   - Target reservation = IM in 1e18 quote units → scaled DOWN to native
-///     token units by `10^(18 - quoteDecimals)`. Rounded UP so the
-///     reservation is at LEAST the required IM.
-///   - Only the SELLER-side reservation is meaningful in V1 (long
-///     positions have zero portfolio-margin contribution).
-///   - The engine adjusts its OWN reservation via `applyLock` (deltas) or
-///     `applyUnlock` (deltas). It never touches another engine's slot.
+///   - Reservations held in the series' `settlementAsset` which MUST equal
+///     RISK_MODULE.QUOTE_TOKEN.
+///   - Target = seller-side IM (long positions contribute zero in V1).
+///   - The engine adjusts its OWN reservation via `applyLock` /
+///     `applyUnlock` deltas. It never touches another engine's slot.
 contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochController, ReentrancyGuard {
+    /*//////////////////////////////////////////////////////////////
+                              IMMUTABLES
+    //////////////////////////////////////////////////////////////*/
+
     /// @notice Canonical Vault. Same object every consumer of the same
     ///         deployment sees. Immutable at construction.
     ICollateralVault public immutable VAULT;
@@ -106,9 +130,6 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
     ///         `RISK_MODULE()` at construction. Enforces RM-1
     ///         (`SINGLE_IMMUTABLE_RISK_MODULE_PER_DEPLOYMENT`).
     IRiskModule public immutable RISK_MODULE;
-    /*//////////////////////////////////////////////////////////////
-                              IMMUTABLES
-    //////////////////////////////////////////////////////////////*/
 
     /// @notice Canonical Options positions ledger sourced from the
     ///         MarginEngine's binding.
@@ -143,13 +164,18 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
     /// @notice EIP-712 domain version — mirrored on ReplayAndEpochController.
     string internal constant EIP712_VERSION = "1";
 
+    /// @dev Terminal-reason encoding for `OptionOrderFilled.terminalReason`.
+    uint8 internal constant TERMINAL_NONE = 0;
+    uint8 internal constant TERMINAL_FULLY_FILLED = 1;
+    uint8 internal constant TERMINAL_IOC_REMAINDER = 2;
+    uint8 internal constant TERMINAL_FOK_CONSUMED = 3;
+
     /*//////////////////////////////////////////////////////////////
                                  STATE
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Guardian-only pause flag (D-C-04 shape). No governance path
-    ///         may fabricate a trade — this flag is a REJECTION shortcut
-    ///         only. It cannot mutate any economic state.
+    /// @notice Guardian-only pause flag. Does NOT mutate any economic
+    ///         state — refuses new executions only.
     bool public executionPaused;
 
     /// @notice Guardian address — capability-gated ONLY for pause.
@@ -158,21 +184,23 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
     /// @notice Governance address — capability-gated ONLY for guardian rotation.
     address public immutable GOVERNANCE;
 
+    /// @dev Canonical cumulative filled quantity per `orderId`.
+    ///      Reconstruction: sum of every `OptionOrderFilled.fillQuantity1e8`
+    ///      for the same `orderId` since deployment.
+    mapping(bytes32 => uint128) private _filledQuantity1e8;
+
+    /// @dev Terminal cancellation flag per `orderId`. Transitions
+    ///      false → true exactly once and never resets.
+    mapping(bytes32 => bool) private _cancelledOrder;
+
+    /// @dev Per-subKey monotonic minimum valid `envelope.nonce`. Zero on
+    ///      first sighting. `advanceMinValidOrderNonce` bumps monotonically.
+    mapping(bytes32 => uint256) private _minValidOrderNonce;
+
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    /// @param vault_        Canonical Vault. Constructor derives the
-    ///                      RiskModule from this via `VaultRiskModuleConsumer`.
-    /// @param marginEngine_ Concrete `MarginEngineV2` deployment. MUST bind
-    ///                      the same Vault + RiskModule.
-    /// @param feeHook_      Concrete `IOptionExecutionFeeHook` deployment.
-    ///                      Zero-fee test hooks are acceptable in tests;
-    ///                      production hook is FeesManager V2 adapter.
-    /// @param guardian_     Guardian address permitted to set `executionPaused`.
-    /// @param governance_   Governance address permitted to rotate the
-    ///                      guardian only.
-    /// @param engineVersion_ Engine version tag (non-zero).
     constructor(
         address vault_,
         address marginEngine_,
@@ -185,9 +213,7 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
         if (guardian_ == address(0) || governance_ == address(0)) revert InvalidDependency();
         if (engineVersion_ == 0) revert InvalidDependency();
 
-        // Read RISK_MODULE from the Vault directly (RM-1 posture — same
-        // pattern as `VaultRiskModuleConsumer`, inlined here because that
-        // abstract collides with `ReplayAndEpochController.ARCHITECTURE_VERSION`).
+        // Read RISK_MODULE from the Vault directly (RM-1 posture).
         IRiskModule module = CollateralVaultV2RiskIntegrated(vault_).RISK_MODULE();
         if (address(module) == address(0)) revert InvalidDependency();
 
@@ -215,8 +241,7 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
     }
 
     /// @dev Extract the Registry address from the Vault BEFORE the constructor
-    ///      body runs so it can be passed to the `ReplayAndEpochController`
-    ///      base initializer.
+    ///      body runs.
     function _readRegistry(address vault_) internal view returns (address) {
         if (vault_ == address(0)) revert InvalidDependency();
         return address(ICollateralVaultWithRegistry(vault_).REGISTRY());
@@ -237,6 +262,21 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
         return _hashSignedActionEnvelopeDigest(envelope);
     }
 
+    /// @inheritdoc IOptionMatchingEngine
+    function filledQuantityOf(bytes32 orderId) external view returns (uint128) {
+        return _filledQuantity1e8[orderId];
+    }
+
+    /// @inheritdoc IOptionMatchingEngine
+    function isOrderCancelled(bytes32 orderId) external view returns (bool) {
+        return _cancelledOrder[orderId];
+    }
+
+    /// @inheritdoc IOptionMatchingEngine
+    function minValidOrderNonceOf(bytes32 subKey) external view returns (uint256) {
+        return _minValidOrderNonce[subKey];
+    }
+
     /*//////////////////////////////////////////////////////////////
                                  PAUSE
     //////////////////////////////////////////////////////////////*/
@@ -248,31 +288,58 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
         executionPaused = true;
     }
 
-    /// @notice Governance-only unpause (D-C-04 asymmetry: pause = guardian
-    ///         OR governance immediate; unpause = governance only).
+    /// @notice Governance-only unpause.
     function unpauseExecution() external {
         if (msg.sender != GOVERNANCE) revert InvalidDependency();
         executionPaused = false;
     }
 
-    /// @dev Scratchpad packing every value derived during `executeMatch`
-    ///      that would otherwise blow the stack. Held in memory so the
-    ///      compiler can keep a small pointer on the stack and reach the
-    ///      fields via SSA loads.
-    struct ExecutionScratch {
-        bytes32 buyerOrderHash;
-        bytes32 sellerOrderHash;
-        bytes32 buyerIntent;
-        bytes32 sellerIntent;
-        uint128 buyerFee;
-        uint128 sellerFee;
-        uint256 totalPremiumNative;
-        bytes32 executionId;
+    /*//////////////////////////////////////////////////////////////
+                     LIFECYCLE MUTATIONS (OWNER PATH)
+    //////////////////////////////////////////////////////////////*/
+
+    /// @inheritdoc IOptionMatchingEngine
+    function cancelSignedOrder(IntentHash.SignedActionEnvelope calldata envelope) external {
+        _requireEnvelopeBindingValid(envelope);
+        bytes32 orderId = _hashSignedActionEnvelopeDigest(envelope);
+        if (msg.sender != envelope.owner) revert NotOrderOwner(orderId, msg.sender, envelope.owner);
+        if (_cancelledOrder[orderId]) revert OrderCancelled(orderId);
+        _cancelledOrder[orderId] = true;
+        emit OptionOrderCancelled(orderId, envelope.subKey, envelope.owner, msg.sender, Versions.EVENT_VERSION);
+    }
+
+    /// @inheritdoc IOptionMatchingEngine
+    function advanceMinValidOrderNonce(uint32 subaccountId, uint256 newMin) external {
+        if (subaccountId == 0) revert InvalidSubaccountId();
+        address owner = msg.sender;
+        if (!ISubaccountRegistry(REGISTRY).existsOf(owner, subaccountId)) {
+            revert SubaccountNotFoundForOwner(owner, subaccountId);
+        }
+        bytes32 subKey = SubKey.deriveHere(REGISTRY, owner, subaccountId);
+        uint256 current = _minValidOrderNonce[subKey];
+        if (newMin <= current) revert MinValidOrderNonceNotAdvancing(subKey, current, newMin);
+        _minValidOrderNonce[subKey] = newMin;
+        emit OptionSubaccountMinValidOrderNonceAdvanced(subKey, owner, current, newMin, owner, Versions.EVENT_VERSION);
     }
 
     /*//////////////////////////////////////////////////////////////
                         EXECUTION ENTRYPOINT
     //////////////////////////////////////////////////////////////*/
+
+    /// @dev Scratchpad packing every value derived during `executeMatch`
+    ///      that would otherwise blow the stack.
+    struct ExecutionScratch {
+        bytes32 buyerOrderId;
+        bytes32 sellerOrderId;
+        uint128 buyerFilledBefore;
+        uint128 sellerFilledBefore;
+        uint128 buyerFilledAfter;
+        uint128 sellerFilledAfter;
+        uint128 buyerFee;
+        uint128 sellerFee;
+        uint256 totalPremiumNative;
+        bytes32 executionId;
+    }
 
     /// @inheritdoc IOptionMatchingEngine
     function executeMatch(
@@ -282,6 +349,7 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
         IntentHash.SignedActionEnvelope calldata sellerEnvelope,
         bytes calldata sellerSignature,
         OptionOrderTypes.OptionOrder calldata sellerOrder,
+        uint128 fillQuantity1e8,
         uint256[] calldata buyerActiveSeriesIds,
         uint256[] calldata sellerActiveSeriesIds
     ) external nonReentrant returns (bytes32 executionId) {
@@ -294,12 +362,19 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
         _requireCompatibleOrders(buyerOrder, sellerOrder, buyerEnvelope.subKey, sellerEnvelope.subKey);
         _requireSeriesTradeable(buyerOrder.seriesId, buyerOrder.premiumToken);
 
-        (s.buyerFee, s.sellerFee) = _quoteBothFees(buyerEnvelope.subKey, sellerEnvelope.subKey, buyerOrder);
+        (s.buyerFee, s.sellerFee) =
+            _quoteBothFees(buyerEnvelope.subKey, sellerEnvelope.subKey, buyerOrder, fillQuantity1e8);
 
-        _consumeAllReplayState(buyerEnvelope, sellerEnvelope, s);
+        _advanceLifecycleAndEmit(buyerEnvelope, buyerOrder, sellerEnvelope, sellerOrder, fillQuantity1e8, s);
 
-        _applyLedgerFills(buyerEnvelope.subKey, sellerEnvelope.subKey, buyerOrder);
-        s.totalPremiumNative = _computeTotalPremiumNative(buyerOrder.quantity1e8, buyerOrder.pricePerContract1e8);
+        _applyLedgerFills(
+            buyerEnvelope.subKey,
+            sellerEnvelope.subKey,
+            buyerOrder.seriesId,
+            fillQuantity1e8,
+            buyerOrder.pricePerContract1e8
+        );
+        s.totalPremiumNative = _computeTotalPremiumNative(fillQuantity1e8, buyerOrder.pricePerContract1e8);
         if (s.totalPremiumNative > 0) {
             ICollateralVault(address(VAULT))
                 .applyOptionPremiumTransfer(
@@ -316,8 +391,9 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
             revert UnsafePostTradeMargin(sellerEnvelope.subKey);
         }
 
-        s.executionId = keccak256(abi.encode(s.buyerIntent, s.sellerIntent, block.number, block.timestamp));
-        _emitExecution(buyerEnvelope, sellerEnvelope, buyerOrder, sellerOrder, s);
+        s.executionId =
+            keccak256(abi.encode(s.buyerOrderId, s.sellerOrderId, block.number, block.timestamp, fillQuantity1e8));
+        _emitExecution(buyerEnvelope, sellerEnvelope, buyerOrder, sellerOrder, fillQuantity1e8, s);
         executionId = s.executionId;
     }
 
@@ -334,13 +410,13 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
     ) internal view {
         _requireEnvelopeBindingValid(buyerEnvelope);
         _requireEnvelopeBindingValid(sellerEnvelope);
-        s.buyerOrderHash = OptionOrderTypes.hashOrder(buyerOrder);
-        s.sellerOrderHash = OptionOrderTypes.hashOrder(sellerOrder);
-        if (s.buyerOrderHash != buyerEnvelope.payloadHash) {
-            revert OrderPayloadHashMismatch(buyerEnvelope.payloadHash, s.buyerOrderHash);
+        bytes32 bHash = OptionOrderTypes.hashOrder(buyerOrder);
+        bytes32 sHash = OptionOrderTypes.hashOrder(sellerOrder);
+        if (bHash != buyerEnvelope.payloadHash) {
+            revert OrderPayloadHashMismatch(buyerEnvelope.payloadHash, bHash);
         }
-        if (s.sellerOrderHash != sellerEnvelope.payloadHash) {
-            revert OrderPayloadHashMismatch(sellerEnvelope.payloadHash, s.sellerOrderHash);
+        if (sHash != sellerEnvelope.payloadHash) {
+            revert OrderPayloadHashMismatch(sellerEnvelope.payloadHash, sHash);
         }
         if (buyerEnvelope.action != OptionOrderTypes.ACTION_OPTION_ORDER) revert InvalidDependency();
         if (sellerEnvelope.action != OptionOrderTypes.ACTION_OPTION_ORDER) revert InvalidDependency();
@@ -358,6 +434,8 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
             sellerEnvelope.ownerRecoveryEpoch,
             sellerEnvelope.subaccountRecoveryEpoch
         );
+        s.buyerOrderId = _hashSignedActionEnvelopeDigest(buyerEnvelope);
+        s.sellerOrderId = _hashSignedActionEnvelopeDigest(sellerEnvelope);
     }
 
     function _validateSignatures(
@@ -370,37 +448,146 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
         _requireSignerAuthorized(sellerEnvelope, sellerSignature);
     }
 
-    function _consumeAllReplayState(
+    /// @dev Advance canonical lifecycle state for both sides, emit
+    ///      per-side `OptionOrderFilled` events. Applies min-valid-nonce
+    ///      + cancellation checks, TIF preconditions, and terminates IOC
+    ///      orders on any fill.
+    function _advanceLifecycleAndEmit(
         IntentHash.SignedActionEnvelope calldata buyerEnvelope,
+        OptionOrderTypes.OptionOrder calldata buyerOrder,
         IntentHash.SignedActionEnvelope calldata sellerEnvelope,
+        OptionOrderTypes.OptionOrder calldata sellerOrder,
+        uint128 fillQuantity1e8,
         ExecutionScratch memory s
     ) internal {
-        _consumeNonce(buyerEnvelope.signer, buyerEnvelope.nonce);
-        _consumeNonce(sellerEnvelope.signer, sellerEnvelope.nonce);
-        s.buyerIntent = _hashSignedActionEnvelopeDigest(buyerEnvelope);
-        s.sellerIntent = _hashSignedActionEnvelopeDigest(sellerEnvelope);
-        _consumeIntent(s.buyerIntent, buyerEnvelope.signer, OptionOrderTypes.ACTION_OPTION_ORDER);
-        _consumeIntent(s.sellerIntent, sellerEnvelope.signer, OptionOrderTypes.ACTION_OPTION_ORDER);
+        _requireOrderStillLive(s.buyerOrderId, buyerEnvelope.subKey, buyerEnvelope.nonce);
+        _requireOrderStillLive(s.sellerOrderId, sellerEnvelope.subKey, sellerEnvelope.nonce);
+
+        s.buyerFilledBefore = _filledQuantity1e8[s.buyerOrderId];
+        s.sellerFilledBefore = _filledQuantity1e8[s.sellerOrderId];
+
+        _requireFillFitsSide(s.buyerOrderId, buyerOrder, fillQuantity1e8, s.buyerFilledBefore);
+        _requireFillFitsSide(s.sellerOrderId, sellerOrder, fillQuantity1e8, s.sellerFilledBefore);
+
+        s.buyerFilledAfter = s.buyerFilledBefore + fillQuantity1e8;
+        s.sellerFilledAfter = s.sellerFilledBefore + fillQuantity1e8;
+
+        _filledQuantity1e8[s.buyerOrderId] = s.buyerFilledAfter;
+        _filledQuantity1e8[s.sellerOrderId] = s.sellerFilledAfter;
+
+        (bool bTerm, uint8 bReason) = _terminationForFill(buyerOrder, s.buyerFilledAfter);
+        (bool sTerm, uint8 sReason) = _terminationForFill(sellerOrder, s.sellerFilledAfter);
+
+        // Only set the cancellation flag when termination leaves UNFILLED
+        // remainder (IOC-with-remainder). Orders where filledAfter has
+        // reached the signed maximum are already blocked on retry by the
+        // `_requireFillFitsSide` filledBefore >= signedMax check — so no
+        // extra flag is needed and cancellation events remain focused on
+        // owner-driven or IOC-driven terminations rather than routine
+        // full-fill completion.
+        if (bTerm && s.buyerFilledAfter < buyerOrder.quantity1e8) {
+            _cancelledOrder[s.buyerOrderId] = true;
+        }
+        if (sTerm && s.sellerFilledAfter < sellerOrder.quantity1e8) {
+            _cancelledOrder[s.sellerOrderId] = true;
+        }
+
+        emit OptionOrderFilled(
+            s.buyerOrderId,
+            buyerEnvelope.subKey,
+            buyerOrder.seriesId,
+            OptionOrderTypes.SIDE_LONG,
+            buyerOrder.timeInForce,
+            fillQuantity1e8,
+            s.buyerFilledBefore,
+            s.buyerFilledAfter,
+            buyerOrder.quantity1e8,
+            bTerm,
+            bReason,
+            msg.sender,
+            Versions.EVENT_VERSION
+        );
+        emit OptionOrderFilled(
+            s.sellerOrderId,
+            sellerEnvelope.subKey,
+            sellerOrder.seriesId,
+            OptionOrderTypes.SIDE_SHORT,
+            sellerOrder.timeInForce,
+            fillQuantity1e8,
+            s.sellerFilledBefore,
+            s.sellerFilledAfter,
+            sellerOrder.quantity1e8,
+            sTerm,
+            sReason,
+            msg.sender,
+            Versions.EVENT_VERSION
+        );
+    }
+
+    /// @dev Fail if the order is stale (nonce below cutoff) or cancelled.
+    function _requireOrderStillLive(bytes32 orderId, bytes32 subKey, uint256 envelopeNonce) internal view {
+        uint256 minValid = _minValidOrderNonce[subKey];
+        if (envelopeNonce < minValid) revert OrderNonceStale(subKey, envelopeNonce, minValid);
+        if (_cancelledOrder[orderId]) revert OrderCancelled(orderId);
+    }
+
+    /// @dev Fail if the per-call fill quantity would exceed the side's
+    ///      remaining signed capacity, if the fill is zero, or if a TIF
+    ///      rule is violated (FOK: fill MUST equal signedMax AND
+    ///      filledBefore MUST be zero).
+    function _requireFillFitsSide(
+        bytes32 orderId,
+        OptionOrderTypes.OptionOrder calldata order,
+        uint128 fillQuantity1e8,
+        uint128 filledBefore
+    ) internal pure {
+        if (fillQuantity1e8 == 0) revert QuantityZero();
+        if (order.quantity1e8 == 0) revert QuantityZero();
+        if (filledBefore >= order.quantity1e8) {
+            revert OrderAlreadyFullyFilled(orderId, filledBefore, order.quantity1e8);
+        }
+        uint128 remaining;
+        unchecked {
+            remaining = order.quantity1e8 - filledBefore;
+        }
+        if (fillQuantity1e8 > remaining) {
+            revert FillQuantityInvalid(fillQuantity1e8, remaining, remaining);
+        }
+        if (order.timeInForce == OptionOrderTypes.TIF_FOK) {
+            if (fillQuantity1e8 != order.quantity1e8 || filledBefore != 0) {
+                revert FokRequiresFullFillFromZero(orderId, fillQuantity1e8, order.quantity1e8, filledBefore);
+            }
+        }
+    }
+
+    /// @dev Determine whether THIS fill terminates the order and the
+    ///      reason. Fully-filled is terminal regardless of TIF. IOC is
+    ///      terminal on any fill. FOK is terminal on the (only) fill.
+    function _terminationForFill(OptionOrderTypes.OptionOrder calldata order, uint128 filledAfter)
+        internal
+        pure
+        returns (bool terminal, uint8 reason)
+    {
+        if (filledAfter >= order.quantity1e8) {
+            if (order.timeInForce == OptionOrderTypes.TIF_FOK) return (true, TERMINAL_FOK_CONSUMED);
+            return (true, TERMINAL_FULLY_FILLED);
+        }
+        if (order.timeInForce == OptionOrderTypes.TIF_IOC) return (true, TERMINAL_IOC_REMAINDER);
+        return (false, TERMINAL_NONE);
     }
 
     function _applyLedgerFills(
         bytes32 buyerSubKey,
         bytes32 sellerSubKey,
-        OptionOrderTypes.OptionOrder calldata buyerOrder
+        uint256 seriesId,
+        uint128 fillQuantity1e8,
+        uint128 pricePerContract1e8
     ) internal {
         OPTIONS_LEDGER.applyFill(
-            buyerSubKey,
-            buyerOrder.seriesId,
-            OptionOrderTypes.SIDE_LONG,
-            buyerOrder.quantity1e8,
-            buyerOrder.pricePerContract1e8
+            buyerSubKey, seriesId, OptionOrderTypes.SIDE_LONG, fillQuantity1e8, pricePerContract1e8
         );
         OPTIONS_LEDGER.applyFill(
-            sellerSubKey,
-            buyerOrder.seriesId,
-            OptionOrderTypes.SIDE_SHORT,
-            buyerOrder.quantity1e8,
-            buyerOrder.pricePerContract1e8
+            sellerSubKey, seriesId, OptionOrderTypes.SIDE_SHORT, fillQuantity1e8, pricePerContract1e8
         );
     }
 
@@ -409,12 +596,13 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
         IntentHash.SignedActionEnvelope calldata sellerEnvelope,
         OptionOrderTypes.OptionOrder calldata buyerOrder,
         OptionOrderTypes.OptionOrder calldata sellerOrder,
+        uint128 fillQuantity1e8,
         ExecutionScratch memory s
     ) internal {
         emit OptionOrderPairExecuted(
             s.executionId,
-            s.buyerOrderHash,
-            s.sellerOrderHash,
+            s.buyerOrderId,
+            s.sellerOrderId,
             buyerOrder.seriesId,
             buyerEnvelope.subKey,
             sellerEnvelope.subKey,
@@ -422,7 +610,7 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
             sellerEnvelope.owner,
             buyerEnvelope.subaccountId,
             sellerEnvelope.subaccountId,
-            buyerOrder.quantity1e8,
+            fillQuantity1e8,
             buyerOrder.pricePerContract1e8,
             s.totalPremiumNative,
             buyerOrder.premiumToken,
@@ -445,7 +633,6 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
         internal
         view
     {
-        // V1 policy: signer field MUST equal owner. Delegation deferred.
         if (envelope.signer != envelope.owner) {
             revert InvalidSigner(envelope.subKey, envelope.signer, envelope.owner);
         }
@@ -462,9 +649,7 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
         bytes32 sellerSubKey
     ) internal pure {
         if (buyerOrder.quantity1e8 == 0) revert QuantityZero();
-        if (buyerOrder.quantity1e8 != sellerOrder.quantity1e8) {
-            revert QuantityDisagreement(buyerOrder.quantity1e8, sellerOrder.quantity1e8);
-        }
+        if (sellerOrder.quantity1e8 == 0) revert QuantityZero();
         if (buyerOrder.seriesId == 0) revert InvalidSeries(0);
         if (buyerOrder.seriesId != sellerOrder.seriesId) {
             revert SeriesMismatch(buyerOrder.seriesId, sellerOrder.seriesId);
@@ -492,9 +677,7 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
         ) {
             revert PostOnlyRoleViolation(sellerSubKey);
         }
-        // TIF combination check: POST_ONLY + IOC/FOK is forbidden — a taker
-        // TIF cannot pair with a POST_ONLY maker whose TIF requires it to be
-        // resting.
+        // Two POST_ONLY sides cannot pair (both maker).
         if (
             buyerOrder.timeInForce == OptionOrderTypes.TIF_POST_ONLY
                 && sellerOrder.timeInForce == OptionOrderTypes.TIF_POST_ONLY
@@ -505,13 +688,13 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
         if (buyerOrder.pricePerContract1e8 != sellerOrder.pricePerContract1e8) {
             revert PremiumDisagreement(buyerOrder.pricePerContract1e8, sellerOrder.pricePerContract1e8);
         }
-        // Buyer's limit is a MAX (buyer signs a maximum they'll pay).
+        // Buyer's limit is a MAX.
         if (buyerOrder.pricePerContract1e8 > buyerOrder.limitPricePerContract1e8) {
             revert PremiumOutsideLimit(
                 buyerOrder.pricePerContract1e8, buyerOrder.limitPricePerContract1e8, OptionOrderTypes.SIDE_LONG
             );
         }
-        // Seller's limit is a MIN (seller signs a minimum they'll accept).
+        // Seller's limit is a MIN.
         if (sellerOrder.pricePerContract1e8 < sellerOrder.limitPricePerContract1e8) {
             revert PremiumOutsideLimit(
                 sellerOrder.pricePerContract1e8, sellerOrder.limitPricePerContract1e8, OptionOrderTypes.SIDE_SHORT
@@ -530,11 +713,12 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
         if (s.expiry <= block.timestamp) revert InvalidSeries(seriesId);
     }
 
-    function _quoteBothFees(bytes32 buyerSubKey, bytes32 sellerSubKey, OptionOrderTypes.OptionOrder calldata buyerOrder)
-        internal
-        view
-        returns (uint128 buyerFee, uint128 sellerFee)
-    {
+    function _quoteBothFees(
+        bytes32 buyerSubKey,
+        bytes32 sellerSubKey,
+        OptionOrderTypes.OptionOrder calldata buyerOrder,
+        uint128 fillQuantity1e8
+    ) internal view returns (uint128 buyerFee, uint128 sellerFee) {
         uint128 buyerRebate;
         uint128 sellerRebate;
         bool okBuyer;
@@ -542,14 +726,14 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
         (buyerFee, buyerRebate, okBuyer) = FEE_HOOK.quoteExecutionFee(
             buyerSubKey,
             buyerOrder.premiumToken,
-            buyerOrder.quantity1e8,
+            fillQuantity1e8,
             buyerOrder.pricePerContract1e8,
             OptionOrderTypes.ROLE_TAKER
         );
         (sellerFee, sellerRebate, okSeller) = FEE_HOOK.quoteExecutionFee(
             sellerSubKey,
             buyerOrder.premiumToken,
-            buyerOrder.quantity1e8,
+            fillQuantity1e8,
             buyerOrder.pricePerContract1e8,
             OptionOrderTypes.ROLE_MAKER
         );
@@ -557,23 +741,17 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
         if (!okSeller || sellerRebate != 0) revert FeeHookRejected(sellerSubKey);
     }
 
-    /// @dev `totalPremium_native = quantity1e8 * pricePerContract1e8 / 1e8`
-    ///      then scale from 1e8 to `10^quoteDecimals` — the RiskModule's
-    ///      QUOTE_TOKEN native scale. Round UP against the buyer.
-    function _computeTotalPremiumNative(uint128 quantity1e8, uint128 pricePerContract1e8)
+    /// @dev `totalPremium_native = fillQuantity1e8 * pricePerContract1e8 / 1e8`
+    ///      then scale from 1e8 to `10^quoteDecimals`. Round UP against the buyer.
+    function _computeTotalPremiumNative(uint128 fillQuantity1e8, uint128 pricePerContract1e8)
         internal
         view
         returns (uint256 amount)
     {
-        if (quantity1e8 == 0 || pricePerContract1e8 == 0) return 0;
-        // In 1e8 quote units: totalPremium_1e8 = qty * price / 1e8.
-        uint256 totalPremium1e8 = (uint256(quantity1e8) * uint256(pricePerContract1e8)) / 1e8;
-        // Native units for a 6-dec QUOTE_TOKEN: divide by 10^(8-6) = 100.
-        // For an 8-dec QUOTE_TOKEN: divide by 1.
-        // For an 18-dec QUOTE_TOKEN: MULTIPLY by 10^10 (see note below).
+        if (fillQuantity1e8 == 0 || pricePerContract1e8 == 0) return 0;
+        uint256 totalPremium1e8 = (uint256(fillQuantity1e8) * uint256(pricePerContract1e8)) / 1e8;
         if (QUOTE_DECIMALS <= 8) {
             uint256 divisor = 10 ** (8 - uint256(QUOTE_DECIMALS));
-            // Round UP against the buyer.
             amount = (totalPremium1e8 + divisor - 1) / divisor;
         } else {
             uint256 mult = 10 ** (uint256(QUOTE_DECIMALS) - 8);
@@ -582,8 +760,7 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
     }
 
     /// @dev Adjust the seller-side engine reservation to the current post-state
-    ///      target IM. Uses the MarginEngine's witness-taking view for the
-    ///      1e18 aggregate then scales to native premium-token units.
+    ///      target IM.
     function _syncSellerReservation(
         bytes32 sellerSubKey,
         uint256[] calldata sellerActiveSeriesIds,
@@ -603,8 +780,6 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
 
     /// @dev Scale a 1e18 quote-value into native `QUOTE_TOKEN` units. Rounds
     ///      UP against the trader for reservation target.
-    ///      `value1e18 = value1e8 * 1e10` (see `OptionsRiskMath.scale1e8To1e18`).
-    ///      Native = value1e18 * 10^QUOTE_DECIMALS / 1e18.
     function _scale1e18ToNative(uint256 value1e18) internal view returns (uint256 native) {
         if (value1e18 == 0) return 0;
         if (QUOTE_DECIMALS >= 18) {
@@ -612,16 +787,13 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
             native = value1e18 * mult;
         } else {
             uint256 divisor = 10 ** (18 - uint256(QUOTE_DECIMALS));
-            // Round UP so the reservation is at LEAST the required IM.
             native = (value1e18 + divisor - 1) / divisor;
         }
     }
 }
 
 /// @dev Compile-time helper interface used ONLY by the constructor's
-///      `_readRegistry`. Reading `ICollateralVault.REGISTRY()` before the
-///      base constructor runs cannot use the immutable in `VaultRiskModuleConsumer`,
-///      so we cast the raw vault address.
+///      `_readRegistry`.
 interface ICollateralVaultWithRegistry {
     function REGISTRY() external view returns (address);
 }

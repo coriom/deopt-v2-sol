@@ -10,9 +10,11 @@ import {IntentHash} from "../../../src/hybrid-v2/libraries/IntentHash.sol";
 import {PositionTypes} from "../../../src/hybrid-v2/libraries/PositionTypes.sol";
 
 /// @title OptionMatchingEngineV2Reconstruction
-/// @notice `ONCHAIN-SUBACCOUNT-OPTION-MATCHING-ENGINE-V2-V1` — proves the
-///         execution engine's book state can be reconstructed entirely from
-///         events, with NO backend or off-chain database dependency.
+/// @notice `ONCHAIN-SUBACCOUNT-OPTION-MATCHING-ENGINE-V2-V1` +
+///         `ONCHAIN-SUBACCOUNT-OPTION-ORDER-LIFECYCLE-AND-NONCE-V2-PATCH` —
+///         proves the execution engine's book state can be reconstructed
+///         entirely from events, with NO backend or off-chain database
+///         dependency.
 contract OptionMatchingEngineV2Reconstruction is OptionMatchingEngineV2TestBase {
     function test_reconstruction_singleFillEmitsAllReconstructionFields() public {
         _fund(alice, 1, 1000e6);
@@ -29,10 +31,9 @@ contract OptionMatchingEngineV2Reconstruction is OptionMatchingEngineV2TestBase 
         uint256[] memory ids = new uint256[](1);
         ids[0] = 1;
         vm.recordLogs();
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
         Vm.Log[] memory logs = vm.getRecordedLogs();
 
-        // Locate the OptionOrderPairExecuted event.
         bytes32 execTopic = IOptionMatchingEngine.OptionOrderPairExecuted.selector;
         uint256 execIdx = type(uint256).max;
         for (uint256 i = 0; i < logs.length; i++) {
@@ -42,10 +43,35 @@ contract OptionMatchingEngineV2Reconstruction is OptionMatchingEngineV2TestBase 
             }
         }
         assertLt(execIdx, logs.length, "OptionOrderPairExecuted not found");
-        // Topics: [0]=selector, [1]=executionId, [2]=buyerOrderHash, [3]=sellerOrderHash.
         assertEq(logs[execIdx].topics.length, 4);
-        assertEq(logs[execIdx].topics[2], OptionOrderTypes.hashOrder(bOrder));
-        assertEq(logs[execIdx].topics[3], OptionOrderTypes.hashOrder(sOrder));
+        // buyerOrderId == envelope digest.
+        assertEq(logs[execIdx].topics[2], engine.hashSignedActionEnvelopeDigest(bEnv));
+        assertEq(logs[execIdx].topics[3], engine.hashSignedActionEnvelopeDigest(sEnv));
+    }
+
+    function test_reconstruction_perSideOptionOrderFilledEventPresent() public {
+        _fund(alice, 1, 1000e6);
+        _fund(bob, 1, 1000e6);
+        (
+            IntentHash.SignedActionEnvelope memory bEnv,
+            bytes memory bSig,
+            OptionOrderTypes.OptionOrder memory bOrder,
+            IntentHash.SignedActionEnvelope memory sEnv,
+            bytes memory sSig,
+            OptionOrderTypes.OptionOrder memory sOrder
+        ) = _buildDefaultMatch(0, 0);
+        uint256[] memory ids = new uint256[](1);
+        ids[0] = 1;
+        vm.recordLogs();
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        bytes32 filledTopic = IOptionMatchingEngine.OptionOrderFilled.selector;
+        uint256 count;
+        for (uint256 i = 0; i < logs.length; i++) {
+            if (logs[i].topics[0] == filledTopic) count++;
+        }
+        // Exactly two OptionOrderFilled events — one per side.
+        assertEq(count, 2, "expected 2 OptionOrderFilled events");
     }
 
     function test_reconstruction_premiumTransferEventPresent() public {
@@ -62,9 +88,8 @@ contract OptionMatchingEngineV2Reconstruction is OptionMatchingEngineV2TestBase 
         uint256[] memory ids = new uint256[](1);
         ids[0] = 1;
         vm.recordLogs();
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        // Check OptionPremiumTransferred event was emitted.
         bytes32 premiumTopic = keccak256("OptionPremiumTransferred(bytes32,bytes32,address,uint256,address,uint16)");
         bool found;
         for (uint256 i = 0; i < logs.length; i++) {
@@ -77,8 +102,6 @@ contract OptionMatchingEngineV2Reconstruction is OptionMatchingEngineV2TestBase 
     }
 
     function test_reconstruction_stateRecomputableFromEventsAlone() public {
-        // Execute one trade then verify the CANONICAL state (ledger positions +
-        // vault balances) matches what an indexer would compute from events.
         _fund(alice, 1, 1000e6);
         _fund(bob, 1, 1000e6);
         (
@@ -92,25 +115,24 @@ contract OptionMatchingEngineV2Reconstruction is OptionMatchingEngineV2TestBase 
 
         uint256[] memory ids = new uint256[](1);
         ids[0] = 1;
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
 
         bytes32 aliceSk = _sk(alice, 1);
         bytes32 bobSk = _sk(bob, 1);
-        // Alice bought 1 long, paid 100 USDC (= 100e6 native).
         assertEq(vault.balanceOf(aliceSk, address(usdc)), 900e6);
-        // Bob sold 1 short, received 100 USDC.
         assertEq(vault.balanceOf(bobSk, address(usdc)), 1100e6);
-        // Positions.
         PositionTypes.OptionPosition memory alicePos = ledger.positionOf(aliceSk, 1);
         PositionTypes.OptionPosition memory bobPos = ledger.positionOf(bobSk, 1);
         assertEq(uint256(alicePos.longQuantity1e8), 1e8);
         assertEq(uint256(bobPos.shortQuantity1e8), 1e8);
     }
 
-    function test_reconstruction_replayStateIndependentOfBackend() public {
-        // Prove nonces + intent-consumed are computable from on-chain state only.
-        _fund(alice, 1, 1000e6);
-        _fund(bob, 1, 1000e6);
+    /// @notice Post-patch lifecycle state (filled qty, cancellation, min-nonce)
+    ///         is entirely derivable from on-chain state / events with no
+    ///         backend dependency.
+    function test_reconstruction_lifecycleStateIndependentOfBackend() public {
+        _fund(alice, 1, 2000e6);
+        _fund(bob, 1, 2000e6);
         (
             IntentHash.SignedActionEnvelope memory bEnv,
             bytes memory bSig,
@@ -121,12 +143,40 @@ contract OptionMatchingEngineV2Reconstruction is OptionMatchingEngineV2TestBase 
         ) = _buildDefaultMatch(0, 0);
         uint256[] memory ids = new uint256[](1);
         ids[0] = 1;
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
-        assertEq(engine.nonces(alice), 1);
-        assertEq(engine.nonces(bob), 1);
-        bytes32 buyerIntent = engine.hashSignedActionEnvelopeDigest(bEnv);
-        bytes32 sellerIntent = engine.hashSignedActionEnvelopeDigest(sEnv);
-        assertTrue(engine.isIntentConsumed(buyerIntent));
-        assertTrue(engine.isIntentConsumed(sellerIntent));
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
+
+        bytes32 buyerOrderId = engine.hashSignedActionEnvelopeDigest(bEnv);
+        bytes32 sellerOrderId = engine.hashSignedActionEnvelopeDigest(sEnv);
+        // Filled quantities recoverable from on-chain view.
+        assertEq(uint256(engine.filledQuantityOf(buyerOrderId)), 1e8);
+        assertEq(uint256(engine.filledQuantityOf(sellerOrderId)), 1e8);
+        // Not cancelled because full-fill uses filledBefore check, not the flag.
+        assertFalse(engine.isOrderCancelled(buyerOrderId));
+        assertFalse(engine.isOrderCancelled(sellerOrderId));
+        // No min-nonce advance.
+        assertEq(engine.minValidOrderNonceOf(_sk(alice, 1)), 0);
+        assertEq(engine.minValidOrderNonceOf(_sk(bob, 1)), 0);
+    }
+
+    /// @notice Cancellation reconstructible: after an owner cancels, the
+    ///         on-chain view + emitted event both reflect terminal state.
+    function test_reconstruction_cancellationReconstructibleAfterDbLoss() public {
+        (IntentHash.SignedActionEnvelope memory bEnv,,,,,) = _buildDefaultMatch(0, 0);
+        vm.recordLogs();
+        vm.prank(alice);
+        engine.cancelSignedOrder(bEnv);
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        bytes32 topic = IOptionMatchingEngine.OptionOrderCancelled.selector;
+        bool found;
+        for (uint256 i = 0; i < logs.length; i++) {
+            if (logs[i].topics[0] == topic) {
+                found = true;
+                break;
+            }
+        }
+        assertTrue(found, "OptionOrderCancelled event not emitted");
+
+        bytes32 buyerOrderId = engine.hashSignedActionEnvelopeDigest(bEnv);
+        assertTrue(engine.isOrderCancelled(buyerOrderId));
     }
 }

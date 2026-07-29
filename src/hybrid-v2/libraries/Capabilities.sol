@@ -81,9 +81,16 @@ library Capabilities {
     /// @notice The highest currently-assigned capability bit index.
     /// @dev Downstream tooling MAY use this to iterate assigned bits.
     ///      Reserved bits above this index are for future capabilities.
+    ///      Bit 15 is the CAP_APPLY_OPTIONS_PREMIUM boundary added by WP-08B
+    ///      and preserved unchanged by
+    ///      `ONCHAIN-SUBACCOUNT-OPTION-ORDER-LIFECYCLE-AND-NONCE-V2-PATCH`.
+    ///      Bit 16 remains RESERVED for a future capability extension and
+    ///      MUST NOT be granted by any code path in this deployment.
     uint8 internal constant HIGHEST_ASSIGNED_BIT = 15;
 
     /// @notice Bitmask of every capability currently declared.
     /// @dev Sum of all CAP_* constants above (bits 0..15 set, bits 16..255 zero).
+    ///      Any bit at or above index 16 in an engine capability bitmap
+    ///      indicates a corrupted or unauthorized grant path.
     uint256 internal constant ALL_CAPABILITIES = (1 << 16) - 1;
 }

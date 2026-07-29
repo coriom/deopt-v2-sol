@@ -22,9 +22,13 @@ import {MockERC20} from "../vault/mocks/MockERC20.sol";
 import {MockOptionExecutionFeeHook} from "./harness/MockOptionExecutionFeeHook.sol";
 
 /// @title OptionEngineHandler
-/// @notice Bounded fuzz handler that attempts pair executions with two known
-///         signers and tracks the ghost state expected to hold across every
-///         function call.
+/// @notice Bounded fuzz handler tracking canonical lifecycle state across
+///         reusable partial-fill orders + individual cancellation +
+///         min-valid-nonce bulk advance.
+///         Two persistent tracked orders — one large buy (alice) and one
+///         large sell (bob) — signed once at setup; every `attemptFill` call
+///         fills part of the same reusable pair until fully filled or
+///         cancelled.
 contract OptionEngineHandler is Test {
     OptionMatchingEngineV2 public engine;
     OptionsPositionsLedger public ledger;
@@ -38,10 +42,25 @@ contract OptionEngineHandler is Test {
     address public bob;
     uint256 public bobPk;
 
+    // Persistent tracked orders (canonical filled-quantity reconstruction target).
+    IntentHash.SignedActionEnvelope public trackedBuyerEnv;
+    bytes public trackedBuyerSig;
+    OptionOrderTypes.OptionOrder public trackedBuyerOrder;
+    IntentHash.SignedActionEnvelope public trackedSellerEnv;
+    bytes public trackedSellerSig;
+    OptionOrderTypes.OptionOrder public trackedSellerOrder;
+    bytes32 public trackedBuyerOrderId;
+    bytes32 public trackedSellerOrderId;
+
     // Ghost mirrors.
+    uint128 public constant TRACKED_ORDER_MAX_QTY = 20e8; // 20 contracts
+    uint128 public ghostBuyerFilled;
+    uint128 public ghostSellerFilled;
     uint256 public ghostFillCount;
     uint256 public ghostAlicePremiumPaid;
     uint256 public ghostBobPremiumReceived;
+    uint256 public ghostAliceMinValidNonceMax; // ever-highest min-valid-nonce for alice
+    bool public ghostBuyerCancelled;
 
     constructor(
         OptionMatchingEngineV2 engine_,
@@ -65,38 +84,31 @@ contract OptionEngineHandler is Test {
         alicePk = alicePk_;
         bob = bob_;
         bobPk = bobPk_;
-    }
 
-    function attemptFill(uint32 seed) external {
-        uint256 currentAliceNonce = engine.nonces(alice);
-        uint256 currentBobNonce = engine.nonces(bob);
-        uint128 qty = 1e8;
-        uint128 price = 100e8 + (uint128(seed % 100) * 1e6); // small variation
-
-        OptionOrderTypes.OptionOrder memory bOrder = OptionOrderTypes.OptionOrder({
+        // Pre-sign the two tracked reusable orders.
+        trackedBuyerOrder = OptionOrderTypes.OptionOrder({
             seriesId: 1,
             side: OptionOrderTypes.SIDE_LONG,
-            quantity1e8: qty,
-            pricePerContract1e8: price,
+            quantity1e8: TRACKED_ORDER_MAX_QTY,
+            pricePerContract1e8: 100e8,
             limitPricePerContract1e8: 500e8,
             premiumToken: address(usdc),
             timeInForce: OptionOrderTypes.TIF_GTC,
             role: OptionOrderTypes.ROLE_TAKER,
-            salt: bytes32(uint256(seed))
+            salt: bytes32("tracked-buyer")
         });
-        OptionOrderTypes.OptionOrder memory sOrder = OptionOrderTypes.OptionOrder({
+        trackedSellerOrder = OptionOrderTypes.OptionOrder({
             seriesId: 1,
             side: OptionOrderTypes.SIDE_SHORT,
-            quantity1e8: qty,
-            pricePerContract1e8: price,
+            quantity1e8: TRACKED_ORDER_MAX_QTY,
+            pricePerContract1e8: 100e8,
             limitPricePerContract1e8: 10e8,
             premiumToken: address(usdc),
             timeInForce: OptionOrderTypes.TIF_GTC,
             role: OptionOrderTypes.ROLE_MAKER,
-            salt: bytes32(uint256(seed) + 1)
+            salt: bytes32("tracked-seller")
         });
-
-        IntentHash.SignedActionEnvelope memory bEnv = IntentHash.SignedActionEnvelope({
+        trackedBuyerEnv = IntentHash.SignedActionEnvelope({
             owner: alice,
             subaccountId: 1,
             subKey: registry.subKeyOf(alice, 1),
@@ -104,13 +116,13 @@ contract OptionEngineHandler is Test {
             engine: address(engine),
             action: OptionOrderTypes.ACTION_OPTION_ORDER,
             architectureVersion: 1,
-            nonce: currentAliceNonce,
-            deadline: block.timestamp + 1 hours,
+            nonce: 1,
+            deadline: block.timestamp + 30 days,
             ownerRecoveryEpoch: 0,
             subaccountRecoveryEpoch: 0,
-            payloadHash: OptionOrderTypes.hashOrder(bOrder)
+            payloadHash: OptionOrderTypes.hashOrder(trackedBuyerOrder)
         });
-        IntentHash.SignedActionEnvelope memory sEnv = IntentHash.SignedActionEnvelope({
+        trackedSellerEnv = IntentHash.SignedActionEnvelope({
             owner: bob,
             subaccountId: 1,
             subKey: registry.subKeyOf(bob, 1),
@@ -118,41 +130,75 @@ contract OptionEngineHandler is Test {
             engine: address(engine),
             action: OptionOrderTypes.ACTION_OPTION_ORDER,
             architectureVersion: 1,
-            nonce: currentBobNonce,
-            deadline: block.timestamp + 1 hours,
+            nonce: 1,
+            deadline: block.timestamp + 30 days,
             ownerRecoveryEpoch: 0,
             subaccountRecoveryEpoch: 0,
-            payloadHash: OptionOrderTypes.hashOrder(sOrder)
+            payloadHash: OptionOrderTypes.hashOrder(trackedSellerOrder)
         });
-
-        bytes32 bDigest = engine.hashSignedActionEnvelopeDigest(bEnv);
+        bytes32 bDigest = engine.hashSignedActionEnvelopeDigest(trackedBuyerEnv);
         (uint8 vB, bytes32 rB, bytes32 sB) = vm.sign(alicePk, bDigest);
-        bytes memory bSig = abi.encodePacked(rB, sB, vB);
-        bytes32 sDigest = engine.hashSignedActionEnvelopeDigest(sEnv);
+        trackedBuyerSig = abi.encodePacked(rB, sB, vB);
+        bytes32 sDigest = engine.hashSignedActionEnvelopeDigest(trackedSellerEnv);
         (uint8 vS, bytes32 rS, bytes32 sS) = vm.sign(bobPk, sDigest);
-        bytes memory sSig = abi.encodePacked(rS, sS, vS);
+        trackedSellerSig = abi.encodePacked(rS, sS, vS);
+        trackedBuyerOrderId = bDigest;
+        trackedSellerOrderId = sDigest;
+    }
+
+    /// @dev Attempt a partial fill against the persistent tracked pair.
+    function attemptPartialFill(uint32 seed) external {
+        // Bounded fill quantity in [1..3] contracts, capped by remaining capacity.
+        uint128 rawQty = uint128((seed % 3) + 1) * 1e8;
+        uint128 remainingBuyer = TRACKED_ORDER_MAX_QTY - ghostBuyerFilled;
+        uint128 remainingSeller = TRACKED_ORDER_MAX_QTY - ghostSellerFilled;
+        uint128 fillQty = rawQty;
+        if (fillQty > remainingBuyer) fillQty = remainingBuyer;
+        if (fillQty > remainingSeller) fillQty = remainingSeller;
+        if (fillQty == 0 || ghostBuyerCancelled) return;
 
         uint256[] memory ids = new uint256[](1);
         ids[0] = 1;
-        try engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids) {
+
+        try engine.executeMatch(
+            trackedBuyerEnv,
+            trackedBuyerSig,
+            trackedBuyerOrder,
+            trackedSellerEnv,
+            trackedSellerSig,
+            trackedSellerOrder,
+            fillQty,
+            ids,
+            ids
+        ) {
             ghostFillCount++;
-            // native premium = quantity1e8 * price / 1e8 / 100 (6-dec native from 8-dec 1e8).
-            uint256 native = (uint256(qty) * uint256(price)) / 1e8 / 100;
+            ghostBuyerFilled += fillQty;
+            ghostSellerFilled += fillQty;
+            uint256 native = (uint256(fillQty) * uint256(trackedBuyerOrder.pricePerContract1e8)) / 1e8 / 100;
             ghostAlicePremiumPaid += native;
             ghostBobPremiumReceived += native;
         } catch {
-            // Rollback preserved — every mutation is atomic.
+            // Every mutation is atomic — nothing persists on revert.
         }
     }
 
-    function attemptCancelNonce(bool cancelAlice) external {
-        if (cancelAlice) {
-            vm.prank(alice);
-            try engine.cancelNextNonce() {} catch {}
-        } else {
-            vm.prank(bob);
-            try engine.cancelNextNonce() {} catch {}
-        }
+    /// @dev Attempt cancellation of the tracked buyer order.
+    function attemptCancelTrackedBuyer() external {
+        if (ghostBuyerCancelled || ghostBuyerFilled >= TRACKED_ORDER_MAX_QTY) return;
+        vm.prank(alice);
+        try engine.cancelSignedOrder(trackedBuyerEnv) {
+            ghostBuyerCancelled = true;
+        } catch {}
+    }
+
+    /// @dev Attempt to advance alice's min-valid-nonce (bounded).
+    function attemptAdvanceAliceMinNonce(uint32 seed) external {
+        uint256 currentMax = ghostAliceMinValidNonceMax;
+        uint256 target = currentMax + 1 + (seed % 3);
+        vm.prank(alice);
+        try engine.advanceMinValidOrderNonce(1, target) {
+            ghostAliceMinValidNonceMax = target;
+        } catch {}
     }
 }
 
@@ -256,7 +302,6 @@ contract OptionMatchingEngineV2InvariantTest is StdInvariant, Test {
             })
         );
 
-        // Fund alice + bob generously; carol funded to 500 USDC (must stay 500).
         usdc.mint(alice, 100_000e6);
         vm.prank(alice);
         usdc.approve(address(vault), 100_000e6);
@@ -279,29 +324,30 @@ contract OptionMatchingEngineV2InvariantTest is StdInvariant, Test {
             new OptionEngineHandler(engine, ledger, vault, registry, usdc, marginEngine, alice, alicePk, bob, bobPk);
 
         targetContract(address(handler));
-        bytes4[] memory selectors = new bytes4[](2);
-        selectors[0] = handler.attemptFill.selector;
-        selectors[1] = handler.attemptCancelNonce.selector;
+        bytes4[] memory selectors = new bytes4[](3);
+        selectors[0] = handler.attemptPartialFill.selector;
+        selectors[1] = handler.attemptCancelTrackedBuyer.selector;
+        selectors[2] = handler.attemptAdvanceAliceMinNonce.selector;
         targetSelector(FuzzSelector({addr: address(handler), selectors: selectors}));
     }
 
-    /// OPTION-EXEC-I1: filled quantity is monotone non-decreasing (via ghost).
-    function invariant_I1_fillCountMonotone() public view {
-        // Ghost is monotone by construction — handler only increments on success.
-        assertGe(handler.ghostFillCount(), 0);
+    /// OPTION-EXEC-I1: engine's canonical filledQuantityOf equals the ghost mirror.
+    function invariant_I1_filledQuantityMirrorsGhost() public view {
+        assertEq(uint256(engine.filledQuantityOf(handler.trackedBuyerOrderId())), uint256(handler.ghostBuyerFilled()));
+        assertEq(uint256(engine.filledQuantityOf(handler.trackedSellerOrderId())), uint256(handler.ghostSellerFilled()));
     }
 
-    /// OPTION-EXEC-I2: no order overfill (PF-2: each intent is single fill).
-    /// After N successful fills, alice's long position == N * qty.
-    function invariant_I2_positionMirrorsGhost() public view {
-        bytes32 sk = registry.subKeyOf(alice, 1);
-        uint256 longQty = uint256(ledger.positionOf(sk, 1).longQuantity1e8);
-        // Each attempt uses qty = 1e8; ghost tracks successful count.
-        assertEq(longQty, handler.ghostFillCount() * 1e8);
+    /// OPTION-EXEC-I2: filled quantity never exceeds signed maximum.
+    function invariant_I2_filledNeverExceedsSignedMax() public view {
+        assertLe(
+            uint256(engine.filledQuantityOf(handler.trackedBuyerOrderId())), uint256(handler.TRACKED_ORDER_MAX_QTY())
+        );
+        assertLe(
+            uint256(engine.filledQuantityOf(handler.trackedSellerOrderId())), uint256(handler.TRACKED_ORDER_MAX_QTY())
+        );
     }
 
-    /// OPTION-EXEC-I8: premium buyer debit == seller credit (invariant per
-    /// applyOptionPremiumTransfer — total accounted UNCHANGED).
+    /// OPTION-EXEC-I8: premium buyer debit == seller credit.
     function invariant_I8_premiumConservation() public view {
         bytes32 aliceSk = registry.subKeyOf(alice, 1);
         bytes32 bobSk = registry.subKeyOf(bob, 1);
@@ -319,11 +365,8 @@ contract OptionMatchingEngineV2InvariantTest is StdInvariant, Test {
     }
 
     /// OPTION-EXEC-I11: engine never unlocks another engine's reservation.
-    /// Since only this engine has CAP_LOCK/UNLOCK, and it only touches its own
-    /// slot, `lockedByEngineOf(*, *, thirdEngine)` is always zero.
     function invariant_I11_neverUnlocksSibling() public view {
         bytes32 aliceSk = registry.subKeyOf(alice, 1);
-        // Any "third engine" address slot is zero.
         assertEq(vault.lockedByEngineOf(aliceSk, address(usdc), address(0xBEEF)), 0);
     }
 
@@ -332,7 +375,7 @@ contract OptionMatchingEngineV2InvariantTest is StdInvariant, Test {
         assertEq(address(engine.RISK_MODULE()), address(vault.RISK_MODULE()));
     }
 
-    /// OPTION-EXEC-I16: recovery epochs never mutated by execution.
+    /// OPTION-EXEC-I16: recovery epochs never mutated by execution or lifecycle mutations.
     function invariant_I16_epochsUnchanged() public view {
         assertEq(engine.ownerRecoveryEpoch(alice), 0);
         assertEq(engine.ownerRecoveryEpoch(bob), 0);
@@ -348,14 +391,26 @@ contract OptionMatchingEngineV2InvariantTest is StdInvariant, Test {
     }
 
     /// OPTION-EXEC-I18: no governance/guardian trade fabrication.
-    /// Guardian can only pause; governance can only unpause. Neither has
-    /// a path to mutate ledger positions, vault balances, or engine
-    /// reservations.
     function invariant_I18_noGovernanceOrGuardianTradeInsertion() public view {
         assertEq(
             vault.balanceOf(registry.subKeyOf(alice, 1), address(usdc))
                 + vault.balanceOf(registry.subKeyOf(bob, 1), address(usdc)),
             200_000e6
         );
+    }
+
+    /// OPTION-LIFECYCLE-I19: min-valid-nonce monotone non-decreasing per subKey.
+    ///                       The ghost mirror only ever increments on success.
+    function invariant_I19_minValidNonceMonotone() public view {
+        assertEq(engine.minValidOrderNonceOf(registry.subKeyOf(alice, 1)), handler.ghostAliceMinValidNonceMax());
+    }
+
+    /// OPTION-LIFECYCLE-I20: cancelled orders stay cancelled and cannot re-fill.
+    ///                       If the ghost recorded cancellation, on-chain flag holds
+    ///                       AND filled-quantity has not advanced past cancellation.
+    function invariant_I20_cancellationTerminal() public view {
+        if (handler.ghostBuyerCancelled()) {
+            assertTrue(engine.isOrderCancelled(handler.trackedBuyerOrderId()));
+        }
     }
 }

@@ -15,17 +15,17 @@ import {PositionTypes} from "../../../src/hybrid-v2/libraries/PositionTypes.sol"
 import {MockERC1271Wallet} from "./harness/MockERC1271Wallet.sol";
 
 /// @title OptionMatchingEngineV2Execution
-/// @notice `ONCHAIN-SUBACCOUNT-OPTION-MATCHING-ENGINE-V2-V1` — end-to-end
-///         signed-order execution: orders + signatures + premium + positions +
-///         reservations + fees + rollback.
+/// @notice `ONCHAIN-SUBACCOUNT-OPTION-MATCHING-ENGINE-V2-V1` +
+///         `ONCHAIN-SUBACCOUNT-OPTION-ORDER-LIFECYCLE-AND-NONCE-V2-PATCH` —
+///         end-to-end signed-order execution with reusable-order lifecycle.
 contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
     /*//////////////////////////////////////////////////////////////
                          HAPPY PATH — EOA/EOA
     //////////////////////////////////////////////////////////////*/
 
     function test_happyPath_fullFillEOAtoEOA() public {
-        _fund(alice, 1, 1000e6); // buyer funds 1000 USDC
-        _fund(bob, 1, 1000e6); // seller funds 1000 USDC (collateral for short)
+        _fund(alice, 1, 1000e6);
+        _fund(bob, 1, 1000e6);
 
         (
             IntentHash.SignedActionEnvelope memory bEnv,
@@ -46,10 +46,9 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
         uint256 aliceBalBefore = vault.balanceOf(aliceSk, address(usdc));
         uint256 bobBalBefore = vault.balanceOf(bobSk, address(usdc));
 
-        bytes32 execId = engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, buyerActive, sellerActive);
+        bytes32 execId = engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, buyerActive, sellerActive);
         assertTrue(execId != bytes32(0));
 
-        // 100e8 * 1e8 / 1e8 = 100e8 quote-1e8. Native (6-dec): 100e8 / 100 = 1e8 (100 USDC).
         assertEq(vault.balanceOf(aliceSk, address(usdc)), aliceBalBefore - 100e6);
         assertEq(vault.balanceOf(bobSk, address(usdc)), bobBalBefore + 100e6);
 
@@ -60,9 +59,14 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
         assertEq(uint256(bobPos.longQuantity1e8), 0);
         assertEq(uint256(bobPos.shortQuantity1e8), 1e8);
 
-        // Seller reservation locked at IM.
         uint256 sellerLocked = vault.lockedByEngineOf(bobSk, address(usdc), address(engine));
         assertGt(sellerLocked, 0);
+
+        // Lifecycle: buyer + seller both fully filled — filledQuantity == signed max.
+        bytes32 buyerOrderId = engine.hashSignedActionEnvelopeDigest(bEnv);
+        bytes32 sellerOrderId = engine.hashSignedActionEnvelopeDigest(sEnv);
+        assertEq(uint256(engine.filledQuantityOf(buyerOrderId)), 1e8);
+        assertEq(uint256(engine.filledQuantityOf(sellerOrderId)), 1e8);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -79,7 +83,6 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
             bytes memory sSig,
             OptionOrderTypes.OptionOrder memory sOrder
         ) = _buildDefaultMatch(0, 0);
-        // Point seller envelope to same subKey as buyer.
         sEnv.owner = alice;
         sEnv.signer = alice;
         sEnv.subKey = _sk(alice, 1);
@@ -88,11 +91,10 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
         uint256[] memory ids = new uint256[](1);
         ids[0] = 1;
         vm.expectRevert(abi.encodeWithSelector(IOptionMatchingEngine.SelfTrade.selector, _sk(alice, 1)));
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
     }
 
     function test_rejects_zeroAccountId() public {
-        // Envelope with subaccountId 0 must revert per WP-05.
         (
             IntentHash.SignedActionEnvelope memory bEnv,
             bytes memory bSig,
@@ -106,7 +108,7 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
 
         uint256[] memory ids = new uint256[](0);
         vm.expectRevert(ReplayAndEpochController.InvalidSubaccountId.selector);
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -134,7 +136,7 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
                 IOptionMatchingEngine.SameSideMatch.selector, OptionOrderTypes.SIDE_LONG, OptionOrderTypes.SIDE_LONG
             )
         );
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
     }
 
     function test_rejects_differentSeries() public {
@@ -155,12 +157,15 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
 
         uint256[] memory ids = new uint256[](0);
         vm.expectRevert(abi.encodeWithSelector(IOptionMatchingEngine.SeriesMismatch.selector, 1, 2));
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
     }
 
-    function test_rejects_quantityDisagreement() public {
-        _fund(alice, 1, 1000e6);
-        _fund(bob, 1, 1000e6);
+    /// @notice Post-patch: buyer and seller MAY sign different quantity maxes.
+    ///         The engine fills `min(buyerRemaining, sellerRemaining)` and the
+    ///         higher-signed side retains capacity for a subsequent fill.
+    function test_asymmetricSignedQuantity_fillsMinRemaining() public {
+        _fund(alice, 1, 20_000e6);
+        _fund(bob, 1, 20_000e6);
         (
             IntentHash.SignedActionEnvelope memory bEnv,
             bytes memory bSig,
@@ -169,15 +174,23 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
             bytes memory sSig,
             OptionOrderTypes.OptionOrder memory sOrder
         ) = _buildDefaultMatch(0, 0);
-        sOrder.quantity1e8 = 2e8;
+        // Buyer signs qty=5, seller signs qty=3. First fill = 3 (min).
+        bOrder.quantity1e8 = 5e8;
+        sOrder.quantity1e8 = 3e8;
+        bEnv.payloadHash = OptionOrderTypes.hashOrder(bOrder);
         sEnv.payloadHash = OptionOrderTypes.hashOrder(sOrder);
+        bSig = _sign(alicePk, bEnv);
         sSig = _sign(bobPk, sEnv);
 
-        uint256[] memory ids = new uint256[](0);
-        vm.expectRevert(
-            abi.encodeWithSelector(IOptionMatchingEngine.QuantityDisagreement.selector, uint128(1e8), uint128(2e8))
-        );
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
+        uint256[] memory ids = new uint256[](1);
+        ids[0] = 1;
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 3e8, ids, ids);
+
+        bytes32 buyerOrderId = engine.hashSignedActionEnvelopeDigest(bEnv);
+        bytes32 sellerOrderId = engine.hashSignedActionEnvelopeDigest(sEnv);
+        assertEq(uint256(engine.filledQuantityOf(buyerOrderId)), 3e8);
+        assertEq(uint256(engine.filledQuantityOf(sellerOrderId)), 3e8);
+        // Seller was fully filled → no remaining. Buyer still has 2e8 remaining.
     }
 
     function test_rejects_priceDisagreement() public {
@@ -199,7 +212,7 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
         vm.expectRevert(
             abi.encodeWithSelector(IOptionMatchingEngine.PremiumDisagreement.selector, uint128(100e8), uint128(90e8))
         );
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
     }
 
     function test_rejects_buyerLimitViolation() public {
@@ -213,7 +226,6 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
             bytes memory sSig,
             OptionOrderTypes.OptionOrder memory sOrder
         ) = _buildDefaultMatch(0, 0);
-        // Buyer signed a max of 50e8 but execution price is 100e8.
         bOrder.limitPricePerContract1e8 = 50e8;
         bEnv.payloadHash = OptionOrderTypes.hashOrder(bOrder);
         bSig = _sign(alicePk, bEnv);
@@ -227,7 +239,7 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
                 OptionOrderTypes.SIDE_LONG
             )
         );
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
     }
 
     function test_rejects_postOnlyTakerRole() public {
@@ -241,14 +253,13 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
             bytes memory sSig,
             OptionOrderTypes.OptionOrder memory sOrder
         ) = _buildDefaultMatch(0, 0);
-        // Buyer signed as taker + post-only — impossible combination.
         bOrder.timeInForce = OptionOrderTypes.TIF_POST_ONLY;
         bEnv.payloadHash = OptionOrderTypes.hashOrder(bOrder);
         bSig = _sign(alicePk, bEnv);
 
         uint256[] memory ids = new uint256[](0);
         vm.expectRevert(abi.encodeWithSelector(IOptionMatchingEngine.PostOnlyRoleViolation.selector, _sk(alice, 1)));
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
     }
 
     function test_rejects_bothMakerRoles() public {
@@ -277,7 +288,7 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
                 OptionOrderTypes.ROLE_MAKER
             )
         );
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -295,15 +306,14 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
             bytes memory sSig,
             OptionOrderTypes.OptionOrder memory sOrder
         ) = _buildDefaultMatch(0, 0);
-        // Buyer's `signer` field != `owner`.
         bEnv.signer = carol;
-        bSig = _sign(alicePk, bEnv); // signed with alicePk but signer=carol
+        bSig = _sign(alicePk, bEnv);
 
         uint256[] memory ids = new uint256[](0);
         vm.expectRevert(
             abi.encodeWithSelector(IOptionMatchingEngine.InvalidSigner.selector, _sk(alice, 1), carol, alice)
         );
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
     }
 
     function test_rejects_invalidSignatureBytes() public {
@@ -318,7 +328,6 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
             bytes memory sSig,
             OptionOrderTypes.OptionOrder memory sOrder
         ) = _buildDefaultMatch(0, 0);
-        // Random 65-byte signature.
         bytes memory badSig = new bytes(65);
         for (uint256 i = 0; i < 65; i++) {
             badSig[i] = 0xAA;
@@ -328,7 +337,7 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
         vm.expectRevert(
             abi.encodeWithSelector(IOptionMatchingEngine.InvalidSigner.selector, _sk(alice, 1), alice, alice)
         );
-        engine.executeMatch(bEnv, badSig, bOrder, sEnv, sSig, sOrder, ids, ids);
+        engine.executeMatch(bEnv, badSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -351,10 +360,13 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
 
         uint256[] memory ids = new uint256[](0);
         vm.expectRevert();
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
     }
 
-    function test_rejects_replayedIntent() public {
+    /// @notice Post-patch replay guard: the same envelope re-submitted after
+    ///         a full fill reverts because filledBefore has reached signed
+    ///         max — no residual capacity for another fill.
+    function test_rejects_replayAfterFullFill() public {
         _fund(alice, 1, 2000e6);
         _fund(bob, 1, 2000e6);
         (
@@ -367,10 +379,15 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
         ) = _buildDefaultMatch(0, 0);
         uint256[] memory ids = new uint256[](1);
         ids[0] = 1;
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
-        // Same signatures + envelopes replayed → nonce mismatch on buyer.
-        vm.expectRevert();
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
+        bytes32 buyerOrderId = engine.hashSignedActionEnvelopeDigest(bEnv);
+        // Second call reverts: buyer's filled has reached signed max.
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IOptionMatchingEngine.OrderAlreadyFullyFilled.selector, buyerOrderId, uint128(1e8), uint128(1e8)
+            )
+        );
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
     }
 
     function test_rejects_wrongEngine() public {
@@ -389,18 +406,289 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
 
         uint256[] memory ids = new uint256[](0);
         vm.expectRevert();
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
     }
 
     /*//////////////////////////////////////////////////////////////
-                       CANCELLATION
+                       LIFECYCLE — GTC PARTIAL FILLS
     //////////////////////////////////////////////////////////////*/
 
-    function test_cancelNextNonce_blocksFuturePairExecution() public {
+    function test_gtc_partialFill_thenSecondFillCompletes() public {
+        _fund(alice, 1, 20_000e6);
+        _fund(bob, 1, 20_000e6);
+        // Both sign qty=10, fill 3 then 7.
+        OptionOrderTypes.OptionOrder memory bOrder = OptionOrderTypes.OptionOrder({
+            seriesId: 1,
+            side: OptionOrderTypes.SIDE_LONG,
+            quantity1e8: 10e8,
+            pricePerContract1e8: 100e8,
+            limitPricePerContract1e8: 200e8,
+            premiumToken: address(usdc),
+            timeInForce: OptionOrderTypes.TIF_GTC,
+            role: OptionOrderTypes.ROLE_TAKER,
+            salt: bytes32("b-gtc")
+        });
+        OptionOrderTypes.OptionOrder memory sOrder = OptionOrderTypes.OptionOrder({
+            seriesId: 1,
+            side: OptionOrderTypes.SIDE_SHORT,
+            quantity1e8: 10e8,
+            pricePerContract1e8: 100e8,
+            limitPricePerContract1e8: 50e8,
+            premiumToken: address(usdc),
+            timeInForce: OptionOrderTypes.TIF_GTC,
+            role: OptionOrderTypes.ROLE_MAKER,
+            salt: bytes32("s-gtc")
+        });
+        IntentHash.SignedActionEnvelope memory bEnv =
+            _makeEnvelope(alice, 1, 1, block.timestamp + 1 hours, OptionOrderTypes.hashOrder(bOrder));
+        IntentHash.SignedActionEnvelope memory sEnv =
+            _makeEnvelope(bob, 1, 1, block.timestamp + 1 hours, OptionOrderTypes.hashOrder(sOrder));
+        bytes memory bSig = _sign(alicePk, bEnv);
+        bytes memory sSig = _sign(bobPk, sEnv);
+
+        uint256[] memory ids = new uint256[](1);
+        ids[0] = 1;
+
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 3e8, ids, ids);
+        bytes32 buyerOrderId = engine.hashSignedActionEnvelopeDigest(bEnv);
+        bytes32 sellerOrderId = engine.hashSignedActionEnvelopeDigest(sEnv);
+        assertEq(uint256(engine.filledQuantityOf(buyerOrderId)), 3e8);
+        assertEq(uint256(engine.filledQuantityOf(sellerOrderId)), 3e8);
+
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 7e8, ids, ids);
+        assertEq(uint256(engine.filledQuantityOf(buyerOrderId)), 10e8);
+        assertEq(uint256(engine.filledQuantityOf(sellerOrderId)), 10e8);
+
+        // Third attempt on same fully-filled orders reverts.
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IOptionMatchingEngine.OrderAlreadyFullyFilled.selector, buyerOrderId, uint128(10e8), uint128(10e8)
+            )
+        );
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
+    }
+
+    function test_gtc_rejectsFillExceedingRemaining() public {
+        _fund(alice, 1, 2000e6);
+        _fund(bob, 1, 2000e6);
+        (
+            IntentHash.SignedActionEnvelope memory bEnv,
+            bytes memory bSig,
+            OptionOrderTypes.OptionOrder memory bOrder,
+            IntentHash.SignedActionEnvelope memory sEnv,
+            bytes memory sSig,
+            OptionOrderTypes.OptionOrder memory sOrder
+        ) = _buildDefaultMatch(0, 0);
+        uint256[] memory ids = new uint256[](1);
+        ids[0] = 1;
+        // Signed qty = 1e8, requesting 2e8 → invalid.
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IOptionMatchingEngine.FillQuantityInvalid.selector, uint128(2e8), uint128(1e8), uint128(1e8)
+            )
+        );
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 2e8, ids, ids);
+    }
+
+    function test_gtc_rejectsZeroFillQuantity() public {
+        _fund(alice, 1, 2000e6);
+        _fund(bob, 1, 2000e6);
+        (
+            IntentHash.SignedActionEnvelope memory bEnv,
+            bytes memory bSig,
+            OptionOrderTypes.OptionOrder memory bOrder,
+            IntentHash.SignedActionEnvelope memory sEnv,
+            bytes memory sSig,
+            OptionOrderTypes.OptionOrder memory sOrder
+        ) = _buildDefaultMatch(0, 0);
+        uint256[] memory ids = new uint256[](1);
+        ids[0] = 1;
+        vm.expectRevert(IOptionMatchingEngine.QuantityZero.selector);
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 0, ids, ids);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                       LIFECYCLE — IOC + FOK
+    //////////////////////////////////////////////////////////////*/
+
+    function test_ioc_terminatesOrderAfterAnyFill() public {
+        _fund(alice, 1, 20_000e6);
+        _fund(bob, 1, 20_000e6);
+        OptionOrderTypes.OptionOrder memory bOrder = OptionOrderTypes.OptionOrder({
+            seriesId: 1,
+            side: OptionOrderTypes.SIDE_LONG,
+            quantity1e8: 10e8,
+            pricePerContract1e8: 100e8,
+            limitPricePerContract1e8: 200e8,
+            premiumToken: address(usdc),
+            timeInForce: OptionOrderTypes.TIF_IOC,
+            role: OptionOrderTypes.ROLE_TAKER,
+            salt: bytes32("b-ioc")
+        });
+        OptionOrderTypes.OptionOrder memory sOrder = OptionOrderTypes.OptionOrder({
+            seriesId: 1,
+            side: OptionOrderTypes.SIDE_SHORT,
+            quantity1e8: 10e8,
+            pricePerContract1e8: 100e8,
+            limitPricePerContract1e8: 50e8,
+            premiumToken: address(usdc),
+            timeInForce: OptionOrderTypes.TIF_GTC,
+            role: OptionOrderTypes.ROLE_MAKER,
+            salt: bytes32("s-gtc")
+        });
+        IntentHash.SignedActionEnvelope memory bEnv =
+            _makeEnvelope(alice, 1, 2, block.timestamp + 1 hours, OptionOrderTypes.hashOrder(bOrder));
+        IntentHash.SignedActionEnvelope memory sEnv =
+            _makeEnvelope(bob, 1, 2, block.timestamp + 1 hours, OptionOrderTypes.hashOrder(sOrder));
+        bytes memory bSig = _sign(alicePk, bEnv);
+        bytes memory sSig = _sign(bobPk, sEnv);
+
+        uint256[] memory ids = new uint256[](1);
+        ids[0] = 1;
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 3e8, ids, ids);
+        bytes32 buyerOrderId = engine.hashSignedActionEnvelopeDigest(bEnv);
+        // IOC buyer is now cancelled after 3-of-10 fill.
+        assertTrue(engine.isOrderCancelled(buyerOrderId));
+        // Second attempt reverts.
+        vm.expectRevert(abi.encodeWithSelector(IOptionMatchingEngine.OrderCancelled.selector, buyerOrderId));
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 7e8, ids, ids);
+    }
+
+    function test_fok_requiresFullFillFromZero() public {
+        _fund(alice, 1, 2000e6);
+        _fund(bob, 1, 2000e6);
+        OptionOrderTypes.OptionOrder memory bOrder = OptionOrderTypes.OptionOrder({
+            seriesId: 1,
+            side: OptionOrderTypes.SIDE_LONG,
+            quantity1e8: 5e8,
+            pricePerContract1e8: 100e8,
+            limitPricePerContract1e8: 200e8,
+            premiumToken: address(usdc),
+            timeInForce: OptionOrderTypes.TIF_FOK,
+            role: OptionOrderTypes.ROLE_TAKER,
+            salt: bytes32("b-fok")
+        });
+        OptionOrderTypes.OptionOrder memory sOrder = OptionOrderTypes.OptionOrder({
+            seriesId: 1,
+            side: OptionOrderTypes.SIDE_SHORT,
+            quantity1e8: 5e8,
+            pricePerContract1e8: 100e8,
+            limitPricePerContract1e8: 50e8,
+            premiumToken: address(usdc),
+            timeInForce: OptionOrderTypes.TIF_GTC,
+            role: OptionOrderTypes.ROLE_MAKER,
+            salt: bytes32("s-gtc-fok")
+        });
+        IntentHash.SignedActionEnvelope memory bEnv =
+            _makeEnvelope(alice, 1, 3, block.timestamp + 1 hours, OptionOrderTypes.hashOrder(bOrder));
+        IntentHash.SignedActionEnvelope memory sEnv =
+            _makeEnvelope(bob, 1, 3, block.timestamp + 1 hours, OptionOrderTypes.hashOrder(sOrder));
+        bytes memory bSig = _sign(alicePk, bEnv);
+        bytes memory sSig = _sign(bobPk, sEnv);
+        uint256[] memory ids = new uint256[](1);
+        ids[0] = 1;
+        bytes32 buyerOrderId = engine.hashSignedActionEnvelopeDigest(bEnv);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IOptionMatchingEngine.FokRequiresFullFillFromZero.selector,
+                buyerOrderId,
+                uint128(3e8),
+                uint128(5e8),
+                uint128(0)
+            )
+        );
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 3e8, ids, ids);
+    }
+
+    function test_fok_fullFillFromZeroSucceeds() public {
+        _fund(alice, 1, 20_000e6);
+        _fund(bob, 1, 20_000e6);
+        OptionOrderTypes.OptionOrder memory bOrder = OptionOrderTypes.OptionOrder({
+            seriesId: 1,
+            side: OptionOrderTypes.SIDE_LONG,
+            quantity1e8: 5e8,
+            pricePerContract1e8: 100e8,
+            limitPricePerContract1e8: 200e8,
+            premiumToken: address(usdc),
+            timeInForce: OptionOrderTypes.TIF_FOK,
+            role: OptionOrderTypes.ROLE_TAKER,
+            salt: bytes32("b-fok-ok")
+        });
+        OptionOrderTypes.OptionOrder memory sOrder = OptionOrderTypes.OptionOrder({
+            seriesId: 1,
+            side: OptionOrderTypes.SIDE_SHORT,
+            quantity1e8: 5e8,
+            pricePerContract1e8: 100e8,
+            limitPricePerContract1e8: 50e8,
+            premiumToken: address(usdc),
+            timeInForce: OptionOrderTypes.TIF_GTC,
+            role: OptionOrderTypes.ROLE_MAKER,
+            salt: bytes32("s-gtc-fok-ok")
+        });
+        IntentHash.SignedActionEnvelope memory bEnv =
+            _makeEnvelope(alice, 1, 4, block.timestamp + 1 hours, OptionOrderTypes.hashOrder(bOrder));
+        IntentHash.SignedActionEnvelope memory sEnv =
+            _makeEnvelope(bob, 1, 4, block.timestamp + 1 hours, OptionOrderTypes.hashOrder(sOrder));
+        bytes memory bSig = _sign(alicePk, bEnv);
+        bytes memory sSig = _sign(bobPk, sEnv);
+        uint256[] memory ids = new uint256[](1);
+        ids[0] = 1;
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 5e8, ids, ids);
+        bytes32 buyerOrderId = engine.hashSignedActionEnvelopeDigest(bEnv);
+        assertEq(uint256(engine.filledQuantityOf(buyerOrderId)), 5e8);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                     LIFECYCLE — CANCELLATION
+    //////////////////////////////////////////////////////////////*/
+
+    function test_cancelSignedOrder_ownerBlocksFutureExecution() public {
         _fund(alice, 1, 1000e6);
         _fund(bob, 1, 1000e6);
+        (
+            IntentHash.SignedActionEnvelope memory bEnv,
+            bytes memory bSig,
+            OptionOrderTypes.OptionOrder memory bOrder,
+            IntentHash.SignedActionEnvelope memory sEnv,
+            bytes memory sSig,
+            OptionOrderTypes.OptionOrder memory sOrder
+        ) = _buildDefaultMatch(0, 0);
         vm.prank(alice);
-        engine.cancelNextNonce(); // alice's next nonce is now 1
+        engine.cancelSignedOrder(bEnv);
+        bytes32 buyerOrderId = engine.hashSignedActionEnvelopeDigest(bEnv);
+        assertTrue(engine.isOrderCancelled(buyerOrderId));
+
+        uint256[] memory ids = new uint256[](0);
+        vm.expectRevert(abi.encodeWithSelector(IOptionMatchingEngine.OrderCancelled.selector, buyerOrderId));
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
+    }
+
+    function test_cancelSignedOrder_rejectsNonOwner() public {
+        (IntentHash.SignedActionEnvelope memory bEnv,,,,,) = _buildDefaultMatch(0, 0);
+        bytes32 buyerOrderId = engine.hashSignedActionEnvelopeDigest(bEnv);
+        vm.expectRevert(abi.encodeWithSelector(IOptionMatchingEngine.NotOrderOwner.selector, buyerOrderId, bob, alice));
+        vm.prank(bob);
+        engine.cancelSignedOrder(bEnv);
+    }
+
+    function test_cancelSignedOrder_rejectsDoubleCancel() public {
+        (IntentHash.SignedActionEnvelope memory bEnv,,,,,) = _buildDefaultMatch(0, 0);
+        vm.prank(alice);
+        engine.cancelSignedOrder(bEnv);
+        bytes32 buyerOrderId = engine.hashSignedActionEnvelopeDigest(bEnv);
+        vm.expectRevert(abi.encodeWithSelector(IOptionMatchingEngine.OrderCancelled.selector, buyerOrderId));
+        vm.prank(alice);
+        engine.cancelSignedOrder(bEnv);
+    }
+
+    function test_advanceMinValidOrderNonce_bulkInvalidates() public {
+        _fund(alice, 1, 1000e6);
+        _fund(bob, 1, 1000e6);
+        // Alice advances min-valid to 5 → any envelope with nonce < 5 fails.
+        vm.prank(alice);
+        engine.advanceMinValidOrderNonce(1, 5);
+        assertEq(engine.minValidOrderNonceOf(_sk(alice, 1)), 5);
+
         (
             IntentHash.SignedActionEnvelope memory bEnv,
             bytes memory bSig,
@@ -410,11 +698,68 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
             OptionOrderTypes.OptionOrder memory sOrder
         ) = _buildDefaultMatch(0, 0);
         uint256[] memory ids = new uint256[](0);
-        // Buyer's envelope still uses nonce 0.
         vm.expectRevert(
-            abi.encodeWithSelector(ReplayAndEpochController.BadNonce.selector, alice, uint256(1), uint256(0))
+            abi.encodeWithSelector(
+                IOptionMatchingEngine.OrderNonceStale.selector, _sk(alice, 1), uint256(0), uint256(5)
+            )
         );
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
+    }
+
+    function test_advanceMinValidOrderNonce_mustStrictlyAdvance() public {
+        vm.prank(alice);
+        engine.advanceMinValidOrderNonce(1, 10);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                IOptionMatchingEngine.MinValidOrderNonceNotAdvancing.selector, _sk(alice, 1), uint256(10), uint256(10)
+            )
+        );
+        vm.prank(alice);
+        engine.advanceMinValidOrderNonce(1, 10);
+    }
+
+    function test_multipleConcurrentLiveOrders_perSubaccount() public {
+        _fund(alice, 1, 3000e6);
+        _fund(bob, 1, 3000e6);
+        // Alice signs THREE orders with nonces 1, 2, 3 (three concurrent live buys).
+        // Fill each in a distinct pair.
+        for (uint256 i = 1; i <= 3; i++) {
+            OptionOrderTypes.OptionOrder memory bOrder = OptionOrderTypes.OptionOrder({
+                seriesId: 1,
+                side: OptionOrderTypes.SIDE_LONG,
+                quantity1e8: 1e8,
+                pricePerContract1e8: 100e8,
+                limitPricePerContract1e8: 200e8,
+                premiumToken: address(usdc),
+                timeInForce: OptionOrderTypes.TIF_GTC,
+                role: OptionOrderTypes.ROLE_TAKER,
+                salt: bytes32(i)
+            });
+            OptionOrderTypes.OptionOrder memory sOrder = OptionOrderTypes.OptionOrder({
+                seriesId: 1,
+                side: OptionOrderTypes.SIDE_SHORT,
+                quantity1e8: 1e8,
+                pricePerContract1e8: 100e8,
+                limitPricePerContract1e8: 50e8,
+                premiumToken: address(usdc),
+                timeInForce: OptionOrderTypes.TIF_GTC,
+                role: OptionOrderTypes.ROLE_MAKER,
+                salt: bytes32(i + 100)
+            });
+            IntentHash.SignedActionEnvelope memory bEnv =
+                _makeEnvelope(alice, 1, i, block.timestamp + 1 hours, OptionOrderTypes.hashOrder(bOrder));
+            IntentHash.SignedActionEnvelope memory sEnv =
+                _makeEnvelope(bob, 1, i, block.timestamp + 1 hours, OptionOrderTypes.hashOrder(sOrder));
+            bytes memory bSig = _sign(alicePk, bEnv);
+            bytes memory sSig = _sign(bobPk, sEnv);
+            uint256[] memory ids = new uint256[](1);
+            ids[0] = 1;
+            engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
+        }
+
+        bytes32 aliceSk = _sk(alice, 1);
+        PositionTypes.OptionPosition memory alicePos = ledger.positionOf(aliceSk, 1);
+        assertEq(uint256(alicePos.longQuantity1e8), 3e8);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -441,7 +786,7 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
 
         uint256[] memory ids = new uint256[](0);
         vm.expectRevert(abi.encodeWithSelector(IOptionMatchingEngine.InvalidSeries.selector, 42));
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -450,9 +795,6 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
 
     function test_rejects_undercollateralizedSeller() public {
         _fund(alice, 1, 1000e6);
-        // Bob has near-zero collateral — reservation lock or post-margin check
-        // fails closed. Both paths revert atomically — the test asserts revert
-        // without pinning to a specific error selector.
         _fund(bob, 1, 1e6);
         (
             IntentHash.SignedActionEnvelope memory bEnv,
@@ -465,14 +807,14 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
         uint256[] memory ids = new uint256[](1);
         ids[0] = 1;
         vm.expectRevert();
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
     }
 
     /*//////////////////////////////////////////////////////////////
                      ROLLBACK ATOMICITY
     //////////////////////////////////////////////////////////////*/
 
-    function test_rollback_failedPostStateRestoresLedgerAndBalances() public {
+    function test_rollback_failedPostStateRestoresLedgerBalancesAndLifecycle() public {
         _fund(alice, 1, 1000e6);
         _fund(bob, 1, 1e6);
         (
@@ -492,18 +834,21 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
         uint256 bobBalBefore = vault.balanceOf(bobSk, address(usdc));
         uint32 aliceActiveBefore = ledger.activeSeriesCount(aliceSk);
         uint32 bobActiveBefore = ledger.activeSeriesCount(bobSk);
-        uint256 aliceNonceBefore = engine.nonces(alice);
-        uint256 bobNonceBefore = engine.nonces(bob);
+        bytes32 buyerOrderId = engine.hashSignedActionEnvelopeDigest(bEnv);
+        bytes32 sellerOrderId = engine.hashSignedActionEnvelopeDigest(sEnv);
 
         vm.expectRevert();
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
 
         assertEq(vault.balanceOf(aliceSk, address(usdc)), aliceBalBefore);
         assertEq(vault.balanceOf(bobSk, address(usdc)), bobBalBefore);
         assertEq(uint256(ledger.activeSeriesCount(aliceSk)), uint256(aliceActiveBefore));
         assertEq(uint256(ledger.activeSeriesCount(bobSk)), uint256(bobActiveBefore));
-        assertEq(engine.nonces(alice), aliceNonceBefore);
-        assertEq(engine.nonces(bob), bobNonceBefore);
+        // Lifecycle state preserved: filled untouched, not cancelled.
+        assertEq(uint256(engine.filledQuantityOf(buyerOrderId)), 0);
+        assertEq(uint256(engine.filledQuantityOf(sellerOrderId)), 0);
+        assertFalse(engine.isOrderCancelled(buyerOrderId));
+        assertFalse(engine.isOrderCancelled(sellerOrderId));
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -524,7 +869,7 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
         ) = _buildDefaultMatch(0, 0);
         uint256[] memory ids = new uint256[](0);
         vm.expectRevert(abi.encodeWithSelector(IOptionMatchingEngine.FeeHookRejected.selector, _sk(alice, 1)));
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
     }
 
     function test_rejects_feeHookEmittingRebate() public {
@@ -541,7 +886,7 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
         ) = _buildDefaultMatch(0, 0);
         uint256[] memory ids = new uint256[](0);
         vm.expectRevert();
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -563,7 +908,7 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
         ) = _buildDefaultMatch(0, 0);
         uint256[] memory ids = new uint256[](0);
         vm.expectRevert(IOptionMatchingEngine.ExecutionPaused.selector);
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -571,7 +916,6 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
     //////////////////////////////////////////////////////////////*/
 
     function test_siblingSubaccount_untouched() public {
-        // Buyer alice/1 + seller bob/1 executes; carol/1 completely untouched.
         _fund(alice, 1, 1000e6);
         _fund(bob, 1, 1000e6);
         _fund(carol, 1, 500e6);
@@ -585,7 +929,7 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
         ) = _buildDefaultMatch(0, 0);
         uint256[] memory ids = new uint256[](1);
         ids[0] = 1;
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
 
         bytes32 carolSk = _sk(carol, 1);
         assertEq(vault.balanceOf(carolSk, address(usdc)), 500e6);

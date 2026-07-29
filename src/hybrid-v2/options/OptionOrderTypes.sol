@@ -24,26 +24,42 @@ pragma solidity ^0.8.20;
 ///     ambiguous byte-boundary collisions between `bytes32` fields are
 ///     structurally impossible.
 ///
-///  Frozen semantics (Part F verdict `OPTION_SIGNED_INTENT_IS_SINGLE_EXACT_FILL`):
-///   - `quantity1e8` is the EXACT fill quantity — not a maximum. Each
-///     nonce-consumed intent corresponds to exactly one on-chain execution
-///     of that exact quantity. No filled-quantity accumulator exists. GTC
-///     "remaining" semantics live entirely off-chain in the D.1 book. The
-///     backend proposes fresh signed intents for each matched partial fill.
+///  Frozen semantics (superseded by
+///  `ONCHAIN-SUBACCOUNT-OPTION-ORDER-LIFECYCLE-AND-NONCE-V2-PATCH`
+///  verdict `OPTION_ORDER_FILLED_QUANTITY_CANONICAL_ONCHAIN`):
+///   - `quantity1e8` is the SIGNED MAXIMUM fill quantity — an upper bound
+///     the signer authorises the engine to fill in aggregate. The engine
+///     stores canonical `filledQuantity1e8[orderId]` on chain and rejects
+///     any per-call `fillQuantity1e8` that would push cumulative filled
+///     past this maximum. GTC "remaining" state is authoritatively
+///     on chain.
 ///   - `pricePerContract1e8` is the EXACT executable premium per contract
 ///     in 1e8 quote-token units. The counterparty's signed order MUST agree.
 ///     `limitPricePerContract1e8` bounds the acceptable execution price
 ///     (buyer signs a maximum, seller signs a minimum).
+///   - The `nonce` field on the outer envelope is a signer-chosen ORDER
+///     nonce, not a sequential replay counter. It participates in the
+///     envelope digest (thus in the canonical `orderId`) AND in bulk
+///     cancellation via `minValidOrderNonceOf(subKey)` — an owner-managed
+///     monotonic cutoff. Individual per-order cancellation is available
+///     via `cancelSignedOrder(envelope)`.
 ///
-///  Time-in-force (Part O):
-///   - `TIF_GTC = 0`   — order is executable until `deadline`.
-///   - `TIF_IOC = 1`   — order is executable only in the current transaction
-///                       (backend proposes a match immediately or discards).
-///   - `TIF_FOK = 2`   — order is executable only as a complete fill of
-///                       `quantity1e8`. Under PF-2 this is always the case
-///                       (each intent IS an exact-fill), so FOK is
-///                       semantically identical to IOC in V1 with a stricter
-///                       compatibility check on the counterparty's TIF.
+///  Time-in-force (superseded by lifecycle patch — Part O):
+///   - `TIF_GTC = 0`   — order is executable until `deadline`. Cumulative
+///                       on-chain `filledQuantity1e8[orderId]` may be
+///                       incremented across multiple executions until it
+///                       reaches `quantity1e8` (fully filled) or the
+///                       owner cancels the order.
+///   - `TIF_IOC = 1`   — the order MAY be executed at most once. Any
+///                       successful fill (partial or full) TERMINALLY
+///                       invalidates the order for the future — the engine
+///                       records it as cancelled after the fill regardless
+///                       of remaining signed quantity.
+///   - `TIF_FOK = 2`   — the order MUST be executed exactly once, exactly
+///                       fully. The per-call `fillQuantity1e8` MUST equal
+///                       `quantity1e8` AND `filledQuantity1e8[orderId]`
+///                       MUST be zero before the call. Any partial-fill
+///                       attempt reverts atomically.
 ///   - `TIF_POST_ONLY = 3` — order is executable only in the MAKER role.
 ///                       The engine enforces role via a signed `role`
 ///                       field (see below); a POST_ONLY order signed with
@@ -103,7 +119,7 @@ library OptionOrderTypes {
     struct OptionOrder {
         uint256 seriesId; // canonical OptionProductRegistry series id
         uint8 side; // SIDE_LONG (buyer) or SIDE_SHORT (seller)
-        uint128 quantity1e8; // EXACT fill quantity — not a maximum
+        uint128 quantity1e8; // SIGNED MAXIMUM fill quantity (post-patch)
         uint128 pricePerContract1e8; // agreed execution premium per contract, 1e8
         uint128 limitPricePerContract1e8; // buyer max / seller min, 1e8
         address premiumToken; // MUST equal series.settlementAsset

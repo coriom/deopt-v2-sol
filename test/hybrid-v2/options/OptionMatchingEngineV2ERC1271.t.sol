@@ -89,7 +89,7 @@ contract OptionMatchingEngineV2ERC1271 is OptionMatchingEngineV2TestBase {
         uint256[] memory ids = new uint256[](1);
         ids[0] = 1;
 
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
 
         bytes32 walletSk = registry.subKeyOf(address(aliceWallet), 1);
         PositionTypes.OptionPosition memory pos = ledger.positionOf(walletSk, 1);
@@ -145,6 +145,6 @@ contract OptionMatchingEngineV2ERC1271 is OptionMatchingEngineV2TestBase {
 
         uint256[] memory ids = new uint256[](0);
         vm.expectRevert();
-        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, ids, ids);
+        engine.executeMatch(bEnv, bSig, bOrder, sEnv, sSig, sOrder, 1e8, ids, ids);
     }
 }
