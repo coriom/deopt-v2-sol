@@ -52,14 +52,21 @@ contract OptionEngineHandler is Test {
     bytes32 public trackedBuyerOrderId;
     bytes32 public trackedSellerOrderId;
 
+    // "Shadow" tracked order that no action ever touches — proves order
+    // independence + no cross-order lifecycle mutation (ORDER-LIFE-I3/I4).
+    IntentHash.SignedActionEnvelope public shadowBuyerEnv;
+    bytes32 public shadowBuyerOrderId;
+
     // Ghost mirrors.
     uint128 public constant TRACKED_ORDER_MAX_QTY = 20e8; // 20 contracts
     uint128 public ghostBuyerFilled;
     uint128 public ghostSellerFilled;
+    uint128 public ghostBuyerFilledAtCancellation;
     uint256 public ghostFillCount;
     uint256 public ghostAlicePremiumPaid;
     uint256 public ghostBobPremiumReceived;
     uint256 public ghostAliceMinValidNonceMax; // ever-highest min-valid-nonce for alice
+    uint256 public ghostAliceOwnerEpochMax; // ever-highest owner-epoch for alice
     bool public ghostBuyerCancelled;
 
     constructor(
@@ -144,6 +151,34 @@ contract OptionEngineHandler is Test {
         trackedSellerSig = abi.encodePacked(rS, sS, vS);
         trackedBuyerOrderId = bDigest;
         trackedSellerOrderId = sDigest;
+
+        // Shadow buyer envelope — signed but NEVER interacted with.
+        OptionOrderTypes.OptionOrder memory shadowOrder = OptionOrderTypes.OptionOrder({
+            seriesId: 1,
+            side: OptionOrderTypes.SIDE_LONG,
+            quantity1e8: TRACKED_ORDER_MAX_QTY,
+            pricePerContract1e8: 100e8,
+            limitPricePerContract1e8: 500e8,
+            premiumToken: address(usdc),
+            timeInForce: OptionOrderTypes.TIF_GTC,
+            role: OptionOrderTypes.ROLE_TAKER,
+            salt: bytes32("shadow-buyer")
+        });
+        shadowBuyerEnv = IntentHash.SignedActionEnvelope({
+            owner: alice,
+            subaccountId: 1,
+            subKey: registry.subKeyOf(alice, 1),
+            signer: alice,
+            engine: address(engine),
+            action: OptionOrderTypes.ACTION_OPTION_ORDER,
+            architectureVersion: 1,
+            nonce: 99, // distinct from trackedBuyer nonce 1
+            deadline: block.timestamp + 30 days,
+            ownerRecoveryEpoch: 0,
+            subaccountRecoveryEpoch: 0,
+            payloadHash: OptionOrderTypes.hashOrder(shadowOrder)
+        });
+        shadowBuyerOrderId = engine.hashSignedActionEnvelopeDigest(shadowBuyerEnv);
     }
 
     /// @dev Attempt a partial fill against the persistent tracked pair.
@@ -188,6 +223,18 @@ contract OptionEngineHandler is Test {
         vm.prank(alice);
         try engine.cancelSignedOrder(trackedBuyerEnv) {
             ghostBuyerCancelled = true;
+            ghostBuyerFilledAtCancellation = ghostBuyerFilled;
+        } catch {}
+    }
+
+    /// @dev Attempt to advance alice's owner recovery epoch. Any epoch change
+    ///      invalidates every signed envelope with a stale epoch pair; the
+    ///      canonical `filledQuantity1e8` mapping and cancellation flags are
+    ///      NEVER cleared as a consequence.
+    function attemptAdvanceAliceOwnerEpoch() external {
+        vm.prank(alice);
+        try engine.advanceMyOwnerRecoveryEpoch() {
+            ghostAliceOwnerEpochMax++;
         } catch {}
     }
 
@@ -324,10 +371,11 @@ contract OptionMatchingEngineV2InvariantTest is StdInvariant, Test {
             new OptionEngineHandler(engine, ledger, vault, registry, usdc, marginEngine, alice, alicePk, bob, bobPk);
 
         targetContract(address(handler));
-        bytes4[] memory selectors = new bytes4[](3);
+        bytes4[] memory selectors = new bytes4[](4);
         selectors[0] = handler.attemptPartialFill.selector;
         selectors[1] = handler.attemptCancelTrackedBuyer.selector;
         selectors[2] = handler.attemptAdvanceAliceMinNonce.selector;
+        selectors[3] = handler.attemptAdvanceAliceOwnerEpoch.selector;
         targetSelector(FuzzSelector({addr: address(handler), selectors: selectors}));
     }
 
@@ -375,9 +423,17 @@ contract OptionMatchingEngineV2InvariantTest is StdInvariant, Test {
         assertEq(address(engine.RISK_MODULE()), address(vault.RISK_MODULE()));
     }
 
-    /// OPTION-EXEC-I16: recovery epochs never mutated by execution or lifecycle mutations.
+    /// OPTION-EXEC-I16: recovery epochs are ONLY mutated by the canonical
+    ///                 owner-path primitives on `ReplayAndEpochController`.
+    ///                 No `executeMatch`, `cancelSignedOrder`, or
+    ///                 `advanceMinValidOrderNonce` call may advance an owner
+    ///                 or subaccount recovery epoch. Bob (not touched by any
+    ///                 handler epoch action) always sits at zero;
+    ///                 subaccount-recovery epochs (also not touched) stay at
+    ///                 zero for both. Alice's owner epoch is bounded by the
+    ///                 ghost mirror of `attemptAdvanceAliceOwnerEpoch`.
     function invariant_I16_epochsUnchanged() public view {
-        assertEq(engine.ownerRecoveryEpoch(alice), 0);
+        assertEq(engine.ownerRecoveryEpoch(alice), handler.ghostAliceOwnerEpochMax());
         assertEq(engine.ownerRecoveryEpoch(bob), 0);
         assertEq(engine.subaccountRecoveryEpoch(registry.subKeyOf(alice, 1)), 0);
         assertEq(engine.subaccountRecoveryEpoch(registry.subKeyOf(bob, 1)), 0);
@@ -411,6 +467,36 @@ contract OptionMatchingEngineV2InvariantTest is StdInvariant, Test {
     function invariant_I20_cancellationTerminal() public view {
         if (handler.ghostBuyerCancelled()) {
             assertTrue(engine.isOrderCancelled(handler.trackedBuyerOrderId()));
+            // Filled quantity does not advance after cancellation.
+            assertEq(
+                uint256(engine.filledQuantityOf(handler.trackedBuyerOrderId())),
+                uint256(handler.ghostBuyerFilledAtCancellation())
+            );
         }
+    }
+
+    /// ORDER-LIFE-I3: shadow order (never touched by any handler action) has
+    ///                zero filled quantity, is not cancelled, and its
+    ///                min-valid-nonce cutoff cannot force it below its own nonce.
+    function invariant_I3_shadowOrderIndependent() public view {
+        assertEq(uint256(engine.filledQuantityOf(handler.shadowBuyerOrderId())), 0);
+        assertFalse(engine.isOrderCancelled(handler.shadowBuyerOrderId()));
+    }
+
+    /// ORDER-LIFE-I12: recovery-epoch changes invalidate stale orders without
+    ///                 deleting historical fill state. Even after arbitrarily many
+    ///                 owner-epoch advances, `filledQuantityOf(trackedBuyer)`
+    ///                 remains at the ghost value.
+    function invariant_I12_epochAdvanceDoesNotClearFillHistory() public view {
+        assertEq(uint256(engine.filledQuantityOf(handler.trackedBuyerOrderId())), uint256(handler.ghostBuyerFilled()));
+    }
+
+    /// ORDER-LIFE-I13: no governance/guardian function rewrites lifecycle state.
+    ///                 Neither owner-recovery-epoch advances nor pause/unpause
+    ///                 (which only guardian/governance may do) can alter filled
+    ///                 quantity, cancellation flag, or min-valid-nonce.
+    function invariant_I13_noGovernanceGuardianLifecycleRewrite() public view {
+        assertEq(uint256(engine.filledQuantityOf(handler.trackedBuyerOrderId())), uint256(handler.ghostBuyerFilled()));
+        assertEq(uint256(engine.filledQuantityOf(handler.shadowBuyerOrderId())), 0);
     }
 }
