@@ -6,6 +6,24 @@ Authorization: `PRODUCT_OWNER_AUTHORIZES_WITH_NON_BLOCKING_CONDITIONS`
 Work package: `WP-08B` — Signed Options matching and atomic execution engine
 Date: 2026-07-29
 
+## Superseded — 2026-07-29 (`ONCHAIN-SUBACCOUNT-OPTION-ORDER-LIFECYCLE-AND-NONCE-V2-PATCH`)
+
+`OPTION_SIGNED_INTENT_IS_SINGLE_EXACT_FILL` (PF-2) is SUPERSEDED by
+`OPTION_ORDER_FILLED_QUANTITY_CANONICAL_ONCHAIN` (PF-N). The engine now
+stores canonical `filledQuantity1e8[orderId]` on chain, supports reusable
+partial-fill GTC, individual owner cancellation, per-subaccount monotonic
+min-valid-nonce bulk cancellation, IOC terminal invalidation after any fill,
+and FOK atomic full-fill-from-zero enforcement. Sequential per-signer nonces
+inherited from `ReplayAndEpochController` are BYPASSED for option orders —
+they are preserved on the abstract for future engines that need them.
+
+`executeMatch` gained a required `uint128 fillQuantity1e8` argument. The
+`QuantityDisagreement` error was removed (buyer and seller may sign
+different quantity maxes; the engine fills `min(buyerRemaining,
+sellerRemaining)`).
+
+Full contract: `ONCHAIN_SUBACCOUNT_OPTION_ORDER_LIFECYCLE_AND_NONCE_V2_PATCH.md`.
+
 > `EXPERIMENTAL — NOT SECURITY APPROVED`
 > Base Sepolia only. No mainnet. No real user funds. No production
 > claim. Human + external security review remains required at future gates.
