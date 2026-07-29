@@ -126,6 +126,22 @@ abstract contract CollateralVaultV2 is CollateralVaultV2Core {
     /// @notice Emitted on every pause/unpause of one of the V2-B flags.
     event PauseFlagChanged(bytes32 indexed flag, bool paused, address indexed by, uint16 eventVersion);
 
+    /// @notice Emitted on every successful atomic Options premium transfer
+    ///         between two subKeys (possibly of different owners).
+    /// @dev The primitive moves canonical entitlement only — no ERC-20 token
+    ///      call is issued. Payer's accounted balance decreases by `amount`;
+    ///      receiver's accounted balance increases by `amount`;
+    ///      `_totalAccounted[token]` is UNCHANGED. Reconstructible in isolation
+    ///      from this event alone (no dependency on any other event).
+    event OptionPremiumTransferred(
+        bytes32 indexed payerSubKey,
+        bytes32 indexed receiverSubKey,
+        address indexed token,
+        uint256 amount,
+        address engine,
+        uint16 eventVersion
+    );
+
     /*//////////////////////////////////////////////////////////////
                                 ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -172,6 +188,20 @@ abstract contract CollateralVaultV2 is CollateralVaultV2Core {
     ///         `_requireOrphanedReleaseProof` hook reported that unresolved
     ///         obligations still back the reservation.
     error UnresolvedOrphanedObligation(bytes32 subKey, address token, address engine, uint256 amount);
+
+    /// @notice `applyOptionPremiumTransfer` refused because payer and receiver
+    ///         resolve to the same canonical subKey — self-trade prevention.
+    error OptionPremiumSelfTransfer(bytes32 subKey);
+
+    /// @notice `applyOptionPremiumTransfer` refused because either the payer
+    ///         or the receiver subKey is not registered in the canonical registry.
+    error OptionPremiumUnknownSubaccount(bytes32 subKey);
+
+    /// @notice `applyOptionPremiumTransfer` refused because the premium token
+    ///         is not part of the canonical collateral universe (never enabled
+    ///         even once). Distinct from `TokenNotSupported` which fires for
+    ///         a token that was disabled but is still in the universe.
+    error OptionPremiumUnknownToken(address token);
 
     /*//////////////////////////////////////////////////////////////
                               MODIFIERS
@@ -303,6 +333,94 @@ abstract contract CollateralVaultV2 is CollateralVaultV2Core {
         _totalLocked[subKey][token] -= amount;
 
         emit CollateralUnlocked(subKey, token, msg.sender, amount, Versions.EVENT_VERSION);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                    CAPABILITY-GATED OPTION PREMIUM
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Atomically transfer `amount` of canonical `token` entitlement
+    ///         from `payerSubKey` to `receiverSubKey`. The payer and receiver
+    ///         MAY belong to different owners.
+    /// @dev
+    ///  Capability: `CAP_APPLY_OPTIONS_PREMIUM`. NARROWLY-SCOPED cross-owner
+    ///  premium primitive introduced by
+    ///  `ONCHAIN-SUBACCOUNT-OPTION-MATCHING-ENGINE-V2-V1` (WP-08B). Rejects:
+    ///   - zero amount (`AmountZero`);
+    ///   - either subKey zero (`SubKeyRequired`);
+    ///   - either subKey not registered (`OptionPremiumUnknownSubaccount`);
+    ///   - `payerSubKey == receiverSubKey` (`OptionPremiumSelfTransfer`) —
+    ///     self-trade is impossible through this primitive;
+    ///   - token not in the canonical collateral universe
+    ///     (`OptionPremiumUnknownToken`) — the token MUST have been enabled
+    ///     at least once via `addSupportedToken`. This is DISTINCT from the
+    ///     current deposit-enablement flag: a token that has been temporarily
+    ///     disabled for new deposits can still route premium (its balance
+    ///     remains part of the canonical liquidation universe);
+    ///   - payer's available balance (balance - totalLocked) < amount
+    ///     (`InsufficientAvailableCollateral`) — locked collateral cannot be
+    ///     used to pay premium;
+    ///   - corrupted lock invariant (`CorruptedLockInvariant`).
+    ///
+    ///  Effect (all under `nonReentrant`):
+    ///   - `_balanceOf[payerSubKey][token] -= amount`.
+    ///   - `_balanceOf[receiverSubKey][token] += amount`.
+    ///   - `_totalAccounted[token]` unchanged (debit == credit).
+    ///   - Payer's reservations untouched (`_lockedByEngine` / `_totalLocked`
+    ///     unchanged). Debit is drawn ONLY from AVAILABLE balance.
+    ///   - Emits `OptionPremiumTransferred(payer, receiver, token, amount,
+    ///     caller, eventVersion)`.
+    ///
+    ///  No ERC-20 transfer call. No physical vault balance movement. The
+    ///  primitive represents an on-book entitlement swap and inherits the
+    ///  canonical solvency guarantee `Σ balanceOf[*] == totalAccounted[token]
+    ///  <= physicalBalance[token]`.
+    ///
+    ///  Isolation:
+    ///   - The caller's own reservations (via `applyLock`) are NEVER touched
+    ///     by this primitive.
+    ///   - Any other engine's reservations on either subKey are NEVER touched.
+    ///   - `_activeSeriesCount`, position rows, and every economic slot
+    ///     outside `_balanceOf` are untouched.
+    ///
+    ///  Downstream:
+    ///   - The OptionMatchingEngineV2 pairs this call with a per-fill
+    ///     `applyLock` on the seller's margin obligation. A failure of the
+    ///     downstream margin check reverts BOTH operations atomically (Solidity
+    ///     transaction atomicity).
+    function applyOptionPremiumTransfer(bytes32 payerSubKey, bytes32 receiverSubKey, address token, uint256 amount)
+        external
+        nonReentrant
+    {
+        _requireCapability(Capabilities.CAP_APPLY_OPTIONS_PREMIUM);
+        if (amount == 0) revert AmountZero();
+        if (payerSubKey == bytes32(0) || receiverSubKey == bytes32(0)) revert SubKeyRequired();
+        if (payerSubKey == receiverSubKey) revert OptionPremiumSelfTransfer(payerSubKey);
+        // Both subKeys MUST be registered — protects against fabricated subKeys.
+        if (REGISTRY.ownerOf(payerSubKey) == address(0)) {
+            revert OptionPremiumUnknownSubaccount(payerSubKey);
+        }
+        if (REGISTRY.ownerOf(receiverSubKey) == address(0)) {
+            revert OptionPremiumUnknownSubaccount(receiverSubKey);
+        }
+        // Token MUST have entered the canonical universe at least once — the
+        // append-only membership flag matches the frozen liquidation-completeness
+        // universe rule.
+        if (!_knownCollateralToken[token]) revert OptionPremiumUnknownToken(token);
+
+        uint256 balance = _balanceOf[payerSubKey][token];
+        uint256 locked = _totalLocked[payerSubKey][token];
+        if (locked > balance) revert CorruptedLockInvariant(payerSubKey, token);
+        uint256 available = balance - locked;
+        if (available < amount) revert InsufficientAvailableCollateral(amount, available);
+
+        // Effects — atomic entitlement swap.
+        unchecked {
+            _balanceOf[payerSubKey][token] = balance - amount;
+            _balanceOf[receiverSubKey][token] += amount;
+        }
+
+        emit OptionPremiumTransferred(payerSubKey, receiverSubKey, token, amount, msg.sender, Versions.EVENT_VERSION);
     }
 
     /*//////////////////////////////////////////////////////////////

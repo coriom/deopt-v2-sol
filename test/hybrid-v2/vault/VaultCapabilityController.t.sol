@@ -174,7 +174,10 @@ contract VaultCapabilityControllerTest is Test {
     }
 
     function test_setEngineCapability_revertsForReservedBit() external {
-        uint256 reserved = 1 << 15;
+        // Bumped from bit 15 → bit 16 by
+        // `ONCHAIN-SUBACCOUNT-OPTION-MATCHING-ENGINE-V2-V1` (WP-08B) — bit 15
+        // is now `CAP_APPLY_OPTIONS_PREMIUM`.
+        uint256 reserved = 1 << 16;
         vm.prank(GOVERNANCE);
         vm.expectRevert(abi.encodeWithSelector(VaultCapabilityController.InvalidCapabilityMask.selector, reserved));
         controller.setEngineCapability(ENGINE_A, reserved, true);
@@ -461,8 +464,8 @@ contract VaultCapabilityControllerTest is Test {
     }
 
     function testFuzz_invalidReservedMaskReverts(uint256 rawMask) external {
-        // Force at least one reserved bit.
-        uint256 mask = rawMask | (1 << 15);
+        // Force at least one reserved bit. Bumped from bit 15 → 16 by WP-08B.
+        uint256 mask = rawMask | (1 << 16);
         vm.prank(GOVERNANCE);
         vm.expectRevert(abi.encodeWithSelector(VaultCapabilityController.InvalidCapabilityMask.selector, mask));
         controller.setEngineCapability(ENGINE_A, mask, true);

@@ -1,0 +1,133 @@
+// SPDX-License-Identifier: BSL-1.1
+pragma solidity ^0.8.20;
+
+/// @title OptionOrderTypes
+/// @notice Canonical EIP-712 payload types for signed single-series Options
+///         orders consumed by `OptionMatchingEngineV2` (WP-08B).
+/// @dev
+///  Pure library. No storage. No behavior.
+///
+///  Design (Part D verdict `OPTION_ORDER_TYPED_DATA_MODEL_RESOLVED`):
+///   - The outer envelope is the FROZEN
+///     `IntentHash.SignedActionEnvelope` from WP-05, which binds:
+///       * owner + subaccountId + subKey (identity);
+///       * signer + engine (verifying contract);
+///       * architectureVersion (rejects cross-architecture replay);
+///       * nonce (sequential per-signer per-engine);
+///       * deadline (unix, non-zero);
+///       * ownerRecoveryEpoch + subaccountRecoveryEpoch (WP-05 replay state);
+///       * action (constant per order kind — see `ACTION_OPTION_ORDER`);
+///       * payloadHash = keccak256(abi.encode(OptionOrderPayload typehash + fields)).
+///   - The inner payload is the `OptionOrder` struct below. Both counterparties
+///     sign an outer envelope whose `payloadHash` binds their own OptionOrder.
+///   - `abi.encode` is used exclusively — never `abi.encodePacked` — so
+///     ambiguous byte-boundary collisions between `bytes32` fields are
+///     structurally impossible.
+///
+///  Frozen semantics (Part F verdict `OPTION_SIGNED_INTENT_IS_SINGLE_EXACT_FILL`):
+///   - `quantity1e8` is the EXACT fill quantity — not a maximum. Each
+///     nonce-consumed intent corresponds to exactly one on-chain execution
+///     of that exact quantity. No filled-quantity accumulator exists. GTC
+///     "remaining" semantics live entirely off-chain in the D.1 book. The
+///     backend proposes fresh signed intents for each matched partial fill.
+///   - `pricePerContract1e8` is the EXACT executable premium per contract
+///     in 1e8 quote-token units. The counterparty's signed order MUST agree.
+///     `limitPricePerContract1e8` bounds the acceptable execution price
+///     (buyer signs a maximum, seller signs a minimum).
+///
+///  Time-in-force (Part O):
+///   - `TIF_GTC = 0`   — order is executable until `deadline`.
+///   - `TIF_IOC = 1`   — order is executable only in the current transaction
+///                       (backend proposes a match immediately or discards).
+///   - `TIF_FOK = 2`   — order is executable only as a complete fill of
+///                       `quantity1e8`. Under PF-2 this is always the case
+///                       (each intent IS an exact-fill), so FOK is
+///                       semantically identical to IOC in V1 with a stricter
+///                       compatibility check on the counterparty's TIF.
+///   - `TIF_POST_ONLY = 3` — order is executable only in the MAKER role.
+///                       The engine enforces role via a signed `role`
+///                       field (see below); a POST_ONLY order signed with
+///                       `role != ROLE_MAKER` reverts pre-consumption.
+///
+///  Role attribution (Part N + Part O + Part V test 26):
+///   - Each order signs an explicit `role` field: `ROLE_MAKER = 0` or
+///     `ROLE_TAKER = 1`. The engine enforces that ONE side is maker and the
+///     OTHER is taker (never both maker, never both taker). Post-only only
+///     accepts orders whose signed role equals `ROLE_MAKER`.
+///
+///  Side (Part N):
+///   - `SIDE_LONG = 0` (buyer) — matches
+///     `OptionsPositionsLedger.SIDE_LONG`.
+///   - `SIDE_SHORT = 1` (seller) — matches
+///     `OptionsPositionsLedger.SIDE_SHORT`.
+///   Every matched pair MUST have opposite sides.
+///
+///  Non-signed metadata:
+///   - `salt` — allows a signer to distinguish otherwise-identical intents.
+///     Bound into `payloadHash` so different salts produce different
+///     intent hashes.
+library OptionOrderTypes {
+    /// @notice Frozen action tag emitted in the WP-05 IntentConsumed event
+    ///         when this engine consumes an option-order intent.
+    bytes32 internal constant ACTION_OPTION_ORDER = keccak256("OPTION_ORDER_MATCH_V1");
+
+    // --- Side encoding (matches OptionsPositionsLedger). ---
+    uint8 internal constant SIDE_LONG = 0;
+    uint8 internal constant SIDE_SHORT = 1;
+
+    // --- Role encoding. ---
+    uint8 internal constant ROLE_MAKER = 0;
+    uint8 internal constant ROLE_TAKER = 1;
+
+    // --- Time-in-force encoding. ---
+    uint8 internal constant TIF_GTC = 0;
+    uint8 internal constant TIF_IOC = 1;
+    uint8 internal constant TIF_FOK = 2;
+    uint8 internal constant TIF_POST_ONLY = 3;
+
+    /// @notice EIP-712 typehash string for the `OptionOrder` payload.
+    /// @dev Field order and names are FROZEN. Every field is a fixed-size
+    ///      primitive so `abi.encode` produces a length-stable pre-image.
+    string internal constant OPTION_ORDER_TYPE = "OptionOrder(" "uint256 seriesId," "uint8 side," "uint128 quantity1e8,"
+        "uint128 pricePerContract1e8," "uint128 limitPricePerContract1e8," "address premiumToken," "uint8 timeInForce,"
+        "uint8 role," "bytes32 salt" ")";
+
+    /// @notice Precomputed EIP-712 typehash for the `OptionOrder` payload.
+    bytes32 internal constant OPTION_ORDER_TYPEHASH = keccak256(bytes(OPTION_ORDER_TYPE));
+
+    /// @notice Canonical payload struct signed by ONE counterparty of an Options match.
+    /// @dev Both counterparties independently sign an outer envelope whose
+    ///      `payloadHash = keccak256(abi.encode(<their OptionOrder>))`. The engine
+    ///      cross-validates the two payloads for compatibility (opposite sides,
+    ///      same series + premium token, compatible price + quantity + TIF + role).
+    struct OptionOrder {
+        uint256 seriesId; // canonical OptionProductRegistry series id
+        uint8 side; // SIDE_LONG (buyer) or SIDE_SHORT (seller)
+        uint128 quantity1e8; // EXACT fill quantity — not a maximum
+        uint128 pricePerContract1e8; // agreed execution premium per contract, 1e8
+        uint128 limitPricePerContract1e8; // buyer max / seller min, 1e8
+        address premiumToken; // MUST equal series.settlementAsset
+        uint8 timeInForce; // TIF_*
+        uint8 role; // ROLE_MAKER or ROLE_TAKER
+        bytes32 salt; // signer-controlled uniqueness field
+    }
+
+    /// @notice EIP-712 struct hash of an `OptionOrder` payload. Bound into the
+    ///         outer envelope's `payloadHash`.
+    function hashOrder(OptionOrder memory order) internal pure returns (bytes32 h) {
+        h = keccak256(
+            abi.encode(
+                OPTION_ORDER_TYPEHASH,
+                order.seriesId,
+                order.side,
+                order.quantity1e8,
+                order.pricePerContract1e8,
+                order.limitPricePerContract1e8,
+                order.premiumToken,
+                order.timeInForce,
+                order.role,
+                order.salt
+            )
+        );
+    }
+}

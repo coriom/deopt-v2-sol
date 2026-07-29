@@ -75,20 +75,22 @@ contract CapabilitiesTest is Test {
         assertEq(Capabilities.CAP_RECOVERY_ACTIVATE, uint256(1) << 14, "bit 14");
     }
 
-    /// @dev HIGHEST_ASSIGNED_BIT bookkeeping.
+    /// @dev HIGHEST_ASSIGNED_BIT bookkeeping. Bumped to 15 by
+    ///      `ONCHAIN-SUBACCOUNT-OPTION-MATCHING-ENGINE-V2-V1` (WP-08B) when
+    ///      `CAP_APPLY_OPTIONS_PREMIUM = 1 << 15` was introduced.
     function test_highestAssignedBitMatchesHighestConstant() external pure {
-        assertEq(Capabilities.HIGHEST_ASSIGNED_BIT, uint8(14), "highest bit index must be 14");
+        assertEq(Capabilities.HIGHEST_ASSIGNED_BIT, uint8(15), "highest bit index must be 15");
         assertEq(
-            Capabilities.CAP_RECOVERY_ACTIVATE,
+            Capabilities.CAP_APPLY_OPTIONS_PREMIUM,
             uint256(1) << Capabilities.HIGHEST_ASSIGNED_BIT,
             "highest cap must sit at HIGHEST_ASSIGNED_BIT"
         );
     }
 
-    /// @dev ALL_CAPABILITIES bitmap: bits 0..14 set, bits 15..255 clear.
+    /// @dev ALL_CAPABILITIES bitmap: bits 0..15 set, bits 16..255 clear.
     function test_allCapabilitiesBitmap() external pure {
-        assertEq(Capabilities.ALL_CAPABILITIES, (uint256(1) << 15) - 1, "ALL_CAPABILITIES must set bits 0..14");
-        assertEq(Capabilities.ALL_CAPABILITIES & (uint256(1) << 15), 0, "bit 15 must remain reserved (unset)");
+        assertEq(Capabilities.ALL_CAPABILITIES, (uint256(1) << 16) - 1, "ALL_CAPABILITIES must set bits 0..15");
+        assertEq(Capabilities.ALL_CAPABILITIES & (uint256(1) << 16), 0, "bit 16 must remain reserved (unset)");
         assertEq(Capabilities.ALL_CAPABILITIES & (uint256(1) << 255), 0, "bit 255 must remain reserved (unset)");
     }
 
@@ -110,6 +112,7 @@ contract CapabilitiesTest is Test {
         assertEq(mask & Capabilities.CAP_EXECUTE_INTERNAL_TRANSFER, Capabilities.CAP_EXECUTE_INTERNAL_TRANSFER);
         assertEq(mask & Capabilities.CAP_CONSUME_REPLAY_NONCE, Capabilities.CAP_CONSUME_REPLAY_NONCE);
         assertEq(mask & Capabilities.CAP_RECOVERY_ACTIVATE, Capabilities.CAP_RECOVERY_ACTIVATE);
+        assertEq(mask & Capabilities.CAP_APPLY_OPTIONS_PREMIUM, Capabilities.CAP_APPLY_OPTIONS_PREMIUM);
     }
 
     /* -------------------------- internal helpers -------------------------- */

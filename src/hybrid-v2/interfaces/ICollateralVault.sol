@@ -84,6 +84,17 @@ interface ICollateralVault {
     ///      credits, negative debits. Reverts if debit would underflow available.
     function applySettlementCreditDebit(bytes32 subKey, address token, int256 delta) external;
 
+    /// @notice Atomically transfer `amount` of canonical `token` entitlement
+    ///         from `payerSubKey` to `receiverSubKey` for Options premium
+    ///         accounting. Payer and receiver MAY belong to different owners.
+    /// @dev Caller MUST hold `Capabilities.CAP_APPLY_OPTIONS_PREMIUM`. Rejects
+    ///      self-transfer, unregistered subaccounts, unknown collateral tokens,
+    ///      and insufficient AVAILABLE payer balance (locked collateral is NOT
+    ///      spendable). `_totalAccounted[token]` is UNCHANGED (entitlement swap
+    ///      only — no ERC-20 transfer).
+    function applyOptionPremiumTransfer(bytes32 payerSubKey, bytes32 receiverSubKey, address token, uint256 amount)
+        external;
+
     /*//////////////////////////////////////////////////////////////
                                  VIEWS
     //////////////////////////////////////////////////////////////*/
@@ -270,6 +281,18 @@ interface ICollateralVault {
     ///         `index` is the insertion position in the bounded universe.
     event CollateralTokenEnteredUniverse(address indexed token, uint256 index, uint16 eventVersion);
 
+    /// @notice Emitted on every successful atomic Options premium transfer
+    ///         between two subKeys (possibly of different owners) via
+    ///         `applyOptionPremiumTransfer`.
+    event OptionPremiumTransferred(
+        bytes32 indexed payerSubKey,
+        bytes32 indexed receiverSubKey,
+        address indexed token,
+        uint256 amount,
+        address engine,
+        uint16 eventVersion
+    );
+
     event PauseFlagChanged(bytes32 indexed flag, bool paused, address indexed by, uint16 eventVersion);
 
     event BadDebtSocialized(bytes32 indexed subKey, address indexed token, uint256 residual, uint16 eventVersion);
@@ -307,4 +330,16 @@ interface ICollateralVault {
 
     /// @notice `collateralTokenAt(index)` called with an out-of-bounds index.
     error CollateralUniverseIndexOutOfBounds(uint256 index, uint256 count);
+
+    /// @notice `applyOptionPremiumTransfer` refused because payer and receiver
+    ///         resolve to the same canonical subKey.
+    error OptionPremiumSelfTransfer(bytes32 subKey);
+
+    /// @notice `applyOptionPremiumTransfer` refused because either the payer
+    ///         or the receiver subKey is not registered in the canonical Registry.
+    error OptionPremiumUnknownSubaccount(bytes32 subKey);
+
+    /// @notice `applyOptionPremiumTransfer` refused because the premium token
+    ///         has never entered the canonical collateral universe.
+    error OptionPremiumUnknownToken(address token);
 }

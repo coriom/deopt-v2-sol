@@ -66,12 +66,24 @@ library Capabilities {
     ///      Introduced by escape-hatch spec 15.
     uint256 internal constant CAP_RECOVERY_ACTIVATE = 1 << 14;
 
+    /// @notice Permits the caller to atomically transfer Options premium value between
+    ///         two subKeys of possibly-different owners, in the frozen QUOTE_TOKEN
+    ///         numeraire, without moving physical token custody.
+    /// @dev Introduced by `ONCHAIN-SUBACCOUNT-OPTION-MATCHING-ENGINE-V2-V1` (WP-08B).
+    ///      Enforcement lives in
+    ///      `ICollateralVault.applyOptionPremiumTransfer(payerSubKey, receiverSubKey, token, amount)`.
+    ///      NARROWLY-SCOPED — the primitive rejects same-subKey, zero amounts,
+    ///      unavailable-balance payer, and unknown collateral tokens. It is the
+    ///      SOLE Vault path through which a matching engine may move Options
+    ///      premium value across owners in V1.
+    uint256 internal constant CAP_APPLY_OPTIONS_PREMIUM = 1 << 15;
+
     /// @notice The highest currently-assigned capability bit index.
     /// @dev Downstream tooling MAY use this to iterate assigned bits.
     ///      Reserved bits above this index are for future capabilities.
-    uint8 internal constant HIGHEST_ASSIGNED_BIT = 14;
+    uint8 internal constant HIGHEST_ASSIGNED_BIT = 15;
 
     /// @notice Bitmask of every capability currently declared.
-    /// @dev Sum of all CAP_* constants above (bits 0..14 set, bits 15..255 zero).
-    uint256 internal constant ALL_CAPABILITIES = (1 << 15) - 1;
+    /// @dev Sum of all CAP_* constants above (bits 0..15 set, bits 16..255 zero).
+    uint256 internal constant ALL_CAPABILITIES = (1 << 16) - 1;
 }

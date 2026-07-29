@@ -152,8 +152,9 @@ contract VaultCapabilityControllerInvariants is StdInvariant, Test {
             // Empty mask always false.
             assertFalse(controller.hasCapabilities(engine, 0));
 
-            // Reserved-bit mask always false.
-            assertFalse(controller.hasCapabilities(engine, 1 << 15));
+            // Reserved-bit mask always false. Bumped from bit 15 → bit 16 by
+            // `ONCHAIN-SUBACCOUNT-OPTION-MATCHING-ENGINE-V2-V1` (WP-08B).
+            assertFalse(controller.hasCapabilities(engine, 1 << 16));
 
             // Every currently-present bit taken alone must satisfy the check.
             for (uint8 b = 0; b <= Capabilities.HIGHEST_ASSIGNED_BIT; b++) {
