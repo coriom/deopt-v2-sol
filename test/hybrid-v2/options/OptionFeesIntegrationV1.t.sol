@@ -227,9 +227,8 @@ contract OptionFeesIntegrationV1 is OptionMatchingEngineV2TestBase {
         bytes32 aliceSk = _sk(alice, 1);
         bytes32 bobSk = _sk(bob, 1);
         bytes32 protocolSk = vault.protocolFeeVaultSubKey();
-        uint256 totalUser =
-            vault.balanceOf(aliceSk, address(usdc)) + vault.balanceOf(bobSk, address(usdc))
-                + vault.balanceOf(protocolSk, address(usdc));
+        uint256 totalUser = vault.balanceOf(aliceSk, address(usdc)) + vault.balanceOf(bobSk, address(usdc))
+            + vault.balanceOf(protocolSk, address(usdc));
         assertEq(totalUser, 20_000e6);
     }
 

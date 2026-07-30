@@ -128,6 +128,18 @@ interface ICollateralVault {
     /// @notice `true` iff `initializeProtocolSubaccounts` has been called.
     function protocolSubaccountsInitialized() external view returns (bool);
 
+    /// @notice Governance one-shot init of the canonical
+    ///         `IEscapeController` reference. Introduced by WP-10A.
+    /// @dev Vault mutation primitives fail closed against the controller's
+    ///      `isRiskIncreasingOperationAllowed` view once initialised.
+    function initializeEscapeController(address controller) external;
+
+    /// @notice Canonical escape-controller reference. Zero when uninitialised.
+    function escapeController() external view returns (address);
+
+    /// @notice `true` iff `initializeEscapeController` has been called.
+    function escapeControllerInitialized() external view returns (bool);
+
     /*//////////////////////////////////////////////////////////////
                                  VIEWS
     //////////////////////////////////////////////////////////////*/

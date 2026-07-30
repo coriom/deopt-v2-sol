@@ -299,4 +299,9 @@ interface IOptionMatchingEngine {
     ///         the fill's premium basis. Applied per side independently;
     ///         rebates (zero positive fee) are never affected.
     error PositiveFeeRateExceedsSignedMaximum(uint128 feeAmount1e8, uint128 maxAllowed1e8, uint32 signedMaxPpm);
+
+    /// @notice `executeMatch` was called with either side of the match
+    ///         resident in a recovery-mode state that forbids new
+    ///         risk-increasing execution. Introduced by WP-10A.
+    error RecoveryActiveForSubaccount(bytes32 subKey);
 }

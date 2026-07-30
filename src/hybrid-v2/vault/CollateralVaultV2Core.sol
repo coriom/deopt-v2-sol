@@ -6,6 +6,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import {VaultCapabilityController} from "./VaultCapabilityController.sol";
+import {IEscapeController} from "../interfaces/IEscapeController.sol";
 import {ISubaccountRegistry} from "../interfaces/ISubaccountRegistry.sol";
 import {Versions} from "../libraries/Versions.sol";
 
@@ -121,6 +122,13 @@ abstract contract CollateralVaultV2Core is VaultCapabilityController, Reentrancy
     /// @dev Set to true on the first successful call to
     ///      `initializeProtocolSubaccounts`; no further calls succeed.
     bool internal _protocolSubaccountsInitialized;
+
+    /// @dev Canonical `IEscapeController` reference consulted by
+    ///      risk-increasing mutation primitives to gate recovery-mode
+    ///      restrictions. Zero when the controller has not been
+    ///      initialised (deployment window). Set ONCE via
+    ///      `initializeEscapeController`. Introduced by WP-10A.
+    address internal _escapeController;
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
@@ -344,7 +352,9 @@ abstract contract CollateralVaultV2Core is VaultCapabilityController, Reentrancy
         address insuranceFundOwner,
         uint32 insuranceFundSubaccountId
     ) external onlyGovernance {
-        if (_protocolSubaccountsInitialized) revert ProtocolSubaccountsAlreadyInitialized();
+        if (_protocolSubaccountsInitialized) {
+            revert ProtocolSubaccountsAlreadyInitialized();
+        }
         if (protocolFeeOwner == address(0) || rebateBudgetOwner == address(0) || insuranceFundOwner == address(0)) {
             revert InvalidOwner();
         }
@@ -358,10 +368,7 @@ abstract contract CollateralVaultV2Core is VaultCapabilityController, Reentrancy
         _protocolSubaccountsInitialized = true;
 
         emit ProtocolSubaccountsInitialized(
-            _protocolFeeVaultSubKey,
-            _rebateBudgetSubKey,
-            _insuranceFundSubKey,
-            Versions.EVENT_VERSION
+            _protocolFeeVaultSubKey, _rebateBudgetSubKey, _insuranceFundSubKey, Versions.EVENT_VERSION
         );
     }
 
@@ -393,14 +400,56 @@ abstract contract CollateralVaultV2Core is VaultCapabilityController, Reentrancy
     ///         subaccounts. Consumed by indexers to bind on-chain fee /
     ///         rebate / insurance-fund flows to their canonical subKeys.
     event ProtocolSubaccountsInitialized(
-        bytes32 protocolFeeSubKey,
-        bytes32 rebateBudgetSubKey,
-        bytes32 insuranceFundSubKey,
-        uint16 eventVersion
+        bytes32 protocolFeeSubKey, bytes32 rebateBudgetSubKey, bytes32 insuranceFundSubKey, uint16 eventVersion
     );
 
     /// @notice `initializeProtocolSubaccounts` was called a second time.
     error ProtocolSubaccountsAlreadyInitialized();
+
+    /*//////////////////////////////////////////////////////////////
+                GOVERNANCE — ESCAPE CONTROLLER BINDING (WP-10A)
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice One-shot governance initialisation of the canonical
+    ///         `IEscapeController` reference consulted by risk-increasing
+    ///         mutation primitives. Introduced by
+    ///         `ONCHAIN-SUBACCOUNT-ESCAPE-CONTROLLER-V1` (WP-10A).
+    /// @dev Recovery-mode restrictions are permissive while the
+    ///      controller reference is zero — this is the deployment window
+    ///      before governance wires the two contracts together. Once
+    ///      set, the value is IMMUTABLE for the life of the Vault; any
+    ///      re-init reverts `EscapeControllerAlreadyInitialized`.
+    function initializeEscapeController(address controller) external onlyGovernance {
+        if (_escapeController != address(0)) {
+            revert EscapeControllerAlreadyInitialized();
+        }
+        if (controller == address(0)) revert InvalidEscapeController();
+        _escapeController = controller;
+        emit EscapeControllerInitialized(controller, Versions.EVENT_VERSION);
+    }
+
+    /// @notice Canonical `IEscapeController` reference. Zero when
+    ///         `initializeEscapeController` has not yet run.
+    function escapeController() external view returns (address) {
+        return _escapeController;
+    }
+
+    /// @notice `true` iff `initializeEscapeController` has been called
+    ///         (write-once).
+    function escapeControllerInitialized() external view returns (bool) {
+        return _escapeController != address(0);
+    }
+
+    /// @notice Emitted on the successful one-shot escape controller
+    ///         initialisation. Consumed by indexers to bind recovery-mode
+    ///         state to the deployed vault.
+    event EscapeControllerInitialized(address controller, uint16 eventVersion);
+
+    /// @notice `initializeEscapeController` was called a second time.
+    error EscapeControllerAlreadyInitialized();
+
+    /// @notice `initializeEscapeController` was called with the zero address.
+    error InvalidEscapeController();
 
     /*//////////////////////////////////////////////////////////////
                                  VIEWS
@@ -529,4 +578,21 @@ abstract contract CollateralVaultV2Core is VaultCapabilityController, Reentrancy
 
         emit Deposit(subKey, owner, subaccountId, token, amount, payer, Versions.EVENT_VERSION);
     }
+
+    /// @dev Recovery-mode gate consulted by every risk-increasing
+    ///      mutation primitive. Permissive when the controller has not
+    ///      been initialised (deployment window). Once initialised, any
+    ///      subaccount NOT in a `NORMAL` or `CANCELLED` state fails
+    ///      closed. Introduced by WP-10A.
+    function _requireNoActiveRecoveryOn(bytes32 subKey) internal view {
+        address controller = _escapeController;
+        if (controller == address(0)) return;
+        if (!IEscapeController(controller).isRiskIncreasingOperationAllowed(subKey)) {
+            revert RecoveryActiveForSubaccount(subKey);
+        }
+    }
+
+    /// @notice Attempted a risk-increasing mutation while the subaccount
+    ///         is in a recovery state that forbids it.
+    error RecoveryActiveForSubaccount(bytes32 subKey);
 }

@@ -741,7 +741,7 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
                 premiumToken: address(usdc),
                 timeInForce: OptionOrderTypes.TIF_GTC,
                 role: OptionOrderTypes.ROLE_TAKER,
-            maxPositiveFeePpm: 100_000,
+                maxPositiveFeePpm: 100_000,
                 salt: bytes32(i)
             });
             OptionOrderTypes.OptionOrder memory sOrder = OptionOrderTypes.OptionOrder({
@@ -753,7 +753,7 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
                 premiumToken: address(usdc),
                 timeInForce: OptionOrderTypes.TIF_GTC,
                 role: OptionOrderTypes.ROLE_MAKER,
-            maxPositiveFeePpm: 100_000,
+                maxPositiveFeePpm: 100_000,
                 salt: bytes32(i + 100)
             });
             IntentHash.SignedActionEnvelope memory bEnv =

@@ -81,6 +81,19 @@ interface IEscapeController {
     /// @notice Timestamp at which `activateRecovery(subaccountId)` becomes eligible for permissionless callers.
     function activationEligibleAt(bytes32 subKey) external view returns (uint64);
 
+    /// @notice `true` iff the target subaccount MAY execute a new
+    ///         risk-increasing operation (state is `NORMAL` or
+    ///         `CANCELLED`). Consumed by the Vault and Options engine
+    ///         boundaries to fail closed during recovery. Introduced by
+    ///         WP-10A.
+    function isRiskIncreasingOperationAllowed(bytes32 subKey) external view returns (bool);
+
+    /// @notice `true` iff the finalizer boundary conditions are met.
+    ///         WP-10A ALWAYS returns `false` because objective proof of
+    ///         resolved obligations is unavailable — that lives in
+    ///         WP-10B `RecoveryFinalizer`.
+    function isFinalizationReady(bytes32 subKey) external view returns (bool);
+
     /*//////////////////////////////////////////////////////////////
                                  PAUSE
     //////////////////////////////////////////////////////////////*/

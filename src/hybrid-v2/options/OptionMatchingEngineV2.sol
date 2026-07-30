@@ -12,6 +12,7 @@ import {Versions} from "../libraries/Versions.sol";
 import {IOptionMatchingEngine} from "../interfaces/IOptionMatchingEngine.sol";
 import {IOptionExecutionFeeHook} from "../interfaces/IOptionExecutionFeeHook.sol";
 import {ICollateralVault} from "../interfaces/ICollateralVault.sol";
+import {IEscapeController} from "../interfaces/IEscapeController.sol";
 import {IOptionsPositionsLedger} from "../interfaces/IOptionsPositionsLedger.sol";
 import {IMarginEngine} from "../interfaces/IMarginEngine.sol";
 import {IRiskModule} from "../interfaces/IRiskModule.sol";
@@ -363,13 +364,13 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
 
         _requireCompatibleOrders(buyerOrder, sellerOrder, buyerEnvelope.subKey, sellerEnvelope.subKey);
         _requireSeriesTradeable(buyerOrder.seriesId, buyerOrder.premiumToken);
+        _requireBothSidesNotInRecovery(buyerEnvelope.subKey, sellerEnvelope.subKey);
 
         // Fee quotes (per-fill). Rebate is now allowed and applied via
         // the Vault primitives introduced by
         // `ONCHAIN-SUBACCOUNT-FEES-MANAGER-V2-INTEGRATION-V1`.
-        (s.buyerFee, s.sellerFee, s.buyerRebate, s.sellerRebate) = _quoteFeesAndRebates(
-            buyerEnvelope.subKey, sellerEnvelope.subKey, buyerOrder, fillQuantity1e8
-        );
+        (s.buyerFee, s.sellerFee, s.buyerRebate, s.sellerRebate) =
+            _quoteFeesAndRebates(buyerEnvelope.subKey, sellerEnvelope.subKey, buyerOrder, fillQuantity1e8);
 
         // Signed positive-fee-cap enforcement. Charged AMOUNT (1e8) must not
         // exceed the per-side maximum implied by the signer's cap ppm.
@@ -787,9 +788,7 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
         // is at LEAST the honestly-requested amount.
         uint256 maxFee1e8 = (premiumBasis1e8 * uint256(order.maxPositiveFeePpm) + 999_999) / 1_000_000;
         if (uint256(feeAmount1e8) > maxFee1e8) {
-            revert PositiveFeeRateExceedsSignedMaximum(
-                feeAmount1e8, uint128(maxFee1e8), order.maxPositiveFeePpm
-            );
+            revert PositiveFeeRateExceedsSignedMaximum(feeAmount1e8, uint128(maxFee1e8), order.maxPositiveFeePpm);
         }
     }
 
@@ -894,6 +893,23 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
         } else {
             uint256 divisor = 10 ** (18 - uint256(QUOTE_DECIMALS));
             native = (value1e18 + divisor - 1) / divisor;
+        }
+    }
+
+    /// @dev Fail-closed recovery-mode guard applied to `executeMatch`
+    ///      before any lifecycle or ledger mutation. Reads the
+    ///      canonical `IEscapeController` reference from the Vault so
+    ///      that engine and Vault share a single source of truth.
+    ///      Introduced by WP-10A.
+    function _requireBothSidesNotInRecovery(bytes32 buyerSubKey, bytes32 sellerSubKey) internal view {
+        address controller = ICollateralVault(address(VAULT)).escapeController();
+        if (controller == address(0)) return;
+        IEscapeController ctrl = IEscapeController(controller);
+        if (!ctrl.isRiskIncreasingOperationAllowed(buyerSubKey)) {
+            revert RecoveryActiveForSubaccount(buyerSubKey);
+        }
+        if (!ctrl.isRiskIncreasingOperationAllowed(sellerSubKey)) {
+            revert RecoveryActiveForSubaccount(sellerSubKey);
         }
     }
 }

@@ -103,7 +103,9 @@ contract OptionExecutionFeeAdapterV2 is IOptionExecutionFeeHook {
             isMaker,
             premiumToken,
             basisNative
-        ) returns (IFeesManagerV2.FeeQuote memory quote) {
+        ) returns (
+            IFeesManagerV2.FeeQuote memory quote
+        ) {
             if (quote.product != IFeesManagerV2.ProductKind.OPTION) return (0, 0, false);
             if (quote.settlementAsset != premiumToken) return (0, 0, false);
             if (quote.isMaker != isMaker) return (0, 0, false);

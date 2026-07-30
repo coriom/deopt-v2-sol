@@ -329,6 +329,7 @@ abstract contract CollateralVaultV2 is CollateralVaultV2Core {
         _requireCapability(Capabilities.CAP_LOCK_COLLATERAL);
         if (subKey == bytes32(0)) revert SubKeyRequired();
         if (amount == 0) revert AmountZero();
+        _requireNoActiveRecoveryOn(subKey);
 
         uint256 balance = _balanceOf[subKey][token];
         uint256 locked = _totalLocked[subKey][token];
@@ -428,6 +429,10 @@ abstract contract CollateralVaultV2 is CollateralVaultV2Core {
         if (REGISTRY.ownerOf(receiverSubKey) == address(0)) {
             revert OptionPremiumUnknownSubaccount(receiverSubKey);
         }
+        // Both sides gated by recovery mode — a match involving a recovering
+        // subaccount fails closed regardless of engine-level checks (Part J).
+        _requireNoActiveRecoveryOn(payerSubKey);
+        _requireNoActiveRecoveryOn(receiverSubKey);
         // Token MUST have entered the canonical universe at least once — the
         // append-only membership flag matches the frozen liquidation-completeness
         // universe rule.
@@ -489,6 +494,7 @@ abstract contract CollateralVaultV2 is CollateralVaultV2Core {
         if (REGISTRY.ownerOf(traderSubKey) == address(0)) {
             revert OptionPremiumUnknownSubaccount(traderSubKey);
         }
+        _requireNoActiveRecoveryOn(traderSubKey);
         if (!_knownCollateralToken[token]) revert OptionPremiumUnknownToken(token);
 
         uint256 balance = _balanceOf[traderSubKey][token];
@@ -532,6 +538,7 @@ abstract contract CollateralVaultV2 is CollateralVaultV2Core {
         if (REGISTRY.ownerOf(traderSubKey) == address(0)) {
             revert OptionPremiumUnknownSubaccount(traderSubKey);
         }
+        _requireNoActiveRecoveryOn(traderSubKey);
         if (!_knownCollateralToken[token]) revert OptionPremiumUnknownToken(token);
 
         uint256 balance = _balanceOf[budgetSubKey][token];
@@ -622,6 +629,11 @@ abstract contract CollateralVaultV2 is CollateralVaultV2Core {
         if (!REGISTRY.existsOf(owner, subaccountId)) revert SubaccountNotFound(owner, subaccountId);
 
         bytes32 subKey = REGISTRY.subKeyOf(owner, subaccountId);
+        // Standard withdrawal blocked when the subaccount is in recovery
+        // mode. The escape-hatch design routes recovery withdrawals through
+        // `IEscapeController.escapeWithdraw` (WP-10B), never through the
+        // standard path (Part I).
+        _requireNoActiveRecoveryOn(subKey);
 
         uint256 balance = _balanceOf[subKey][token];
         uint256 locked = _totalLocked[subKey][token];
@@ -678,6 +690,10 @@ abstract contract CollateralVaultV2 is CollateralVaultV2Core {
 
         bytes32 fromSubKey = REGISTRY.subKeyOf(owner, fromSubaccountId);
         bytes32 toSubKey = REGISTRY.subKeyOf(owner, toSubaccountId);
+        // Outbound side blocked when the source is in recovery mode. The
+        // destination side is allowed to receive (Part I — internal
+        // transfer IN remains permitted).
+        _requireNoActiveRecoveryOn(fromSubKey);
 
         uint256 fromBalance = _balanceOf[fromSubKey][token];
         uint256 fromLocked = _totalLocked[fromSubKey][token];
