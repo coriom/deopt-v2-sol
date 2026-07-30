@@ -84,8 +84,12 @@ pragma solidity ^0.8.20;
 ///     intent hashes.
 library OptionOrderTypes {
     /// @notice Frozen action tag emitted in the WP-05 IntentConsumed event
-    ///         when this engine consumes an option-order intent.
-    bytes32 internal constant ACTION_OPTION_ORDER = keccak256("OPTION_ORDER_MATCH_V1");
+    ///         when this engine consumes an option-order intent. Bumped from
+    ///         `OPTION_ORDER_MATCH_V1` to `OPTION_ORDER_MATCH_V2` by
+    ///         `ONCHAIN-SUBACCOUNT-FEES-MANAGER-V2-INTEGRATION-V1` to reflect
+    ///         the introduction of the signed `maxPositiveFeePpm` fee cap.
+    ///         Old pre-cap signatures cannot re-enter this engine.
+    bytes32 internal constant ACTION_OPTION_ORDER = keccak256("OPTION_ORDER_MATCH_V2");
 
     // --- Side encoding (matches OptionsPositionsLedger). ---
     uint8 internal constant SIDE_LONG = 0;
@@ -101,15 +105,36 @@ library OptionOrderTypes {
     uint8 internal constant TIF_FOK = 2;
     uint8 internal constant TIF_POST_ONLY = 3;
 
-    /// @notice EIP-712 typehash string for the `OptionOrder` payload.
+    /// @notice EIP-712 typehash string for the `OptionOrder` payload —
+    ///         POST-FEE-CAP shape.
     /// @dev Field order and names are FROZEN. Every field is a fixed-size
     ///      primitive so `abi.encode` produces a length-stable pre-image.
+    ///      `maxPositiveFeePpm` was added by
+    ///      `ONCHAIN-SUBACCOUNT-FEES-MANAGER-V2-INTEGRATION-V1` as a
+    ///      product-owner safety decision — every reusable Options order
+    ///      MUST bind an upper bound on the positive protocol-fee rate its
+    ///      side is willing to pay. Actual applied ppm > `maxPositiveFeePpm`
+    ///      reverts at execution time; a zero cap accepts only zero-or-
+    ///      negative (rebate) fee ppm. Changing the fee schedule can never
+    ///      raise the fee above the signed cap.
+    ///
+    ///      This is a HARD EIP-712 type supersession: old pre-cap signatures
+    ///      cannot re-enter the engine because both the typehash AND the
+    ///      envelope `action` tag have changed.
     string internal constant OPTION_ORDER_TYPE = "OptionOrder(" "uint256 seriesId," "uint8 side," "uint128 quantity1e8,"
         "uint128 pricePerContract1e8," "uint128 limitPricePerContract1e8," "address premiumToken," "uint8 timeInForce,"
-        "uint8 role," "bytes32 salt" ")";
+        "uint8 role," "uint32 maxPositiveFeePpm," "bytes32 salt" ")";
 
     /// @notice Precomputed EIP-712 typehash for the `OptionOrder` payload.
     bytes32 internal constant OPTION_ORDER_TYPEHASH = keccak256(bytes(OPTION_ORDER_TYPE));
+
+    /// @notice Maximum permissible signed `maxPositiveFeePpm` value.
+    /// @dev Ppm is out of `1_000_000`. Signing a cap above the ppm
+    ///      denominator would be nonsensical — a cap of `1_000_000` already
+    ///      means "willing to pay 100% of premium as fee". The engine
+    ///      still rejects any actual applied ppm > `1_000_000` per the fee
+    ///      adapter's own bounds.
+    uint32 internal constant MAX_POSITIVE_FEE_PPM_CAP = 1_000_000;
 
     /// @notice Canonical payload struct signed by ONE counterparty of an Options match.
     /// @dev Both counterparties independently sign an outer envelope whose
@@ -125,6 +150,7 @@ library OptionOrderTypes {
         address premiumToken; // MUST equal series.settlementAsset
         uint8 timeInForce; // TIF_*
         uint8 role; // ROLE_MAKER or ROLE_TAKER
+        uint32 maxPositiveFeePpm; // upper bound on positive fee ppm (signed)
         bytes32 salt; // signer-controlled uniqueness field
     }
 
@@ -142,6 +168,7 @@ library OptionOrderTypes {
                 order.premiumToken,
                 order.timeInForce,
                 order.role,
+                order.maxPositiveFeePpm,
                 order.salt
             )
         );

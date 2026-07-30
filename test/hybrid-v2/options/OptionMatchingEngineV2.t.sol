@@ -44,6 +44,10 @@ abstract contract OptionMatchingEngineV2TestBase is Test {
 
     address internal governance = address(0xA1);
     address internal guardian = address(0xA2);
+    // WP-09 protocol subaccount owners (deployment-fixed identities).
+    address internal protocolFeeOwner = address(0xF001);
+    address internal rebateBudgetOwner = address(0xF002);
+    address internal insuranceFundOwner = address(0xF003);
 
     // EOA owners with known private keys via foundry `makeAddrAndKey`.
     address internal alice;
@@ -99,6 +103,9 @@ abstract contract OptionMatchingEngineV2TestBase is Test {
         vault.setEngineCapability(address(engine), Capabilities.CAP_LOCK_COLLATERAL, true);
         vault.setEngineCapability(address(engine), Capabilities.CAP_UNLOCK_OWN_RESERVATION, true);
         vault.setEngineCapability(address(engine), Capabilities.CAP_APPLY_OPTIONS_PREMIUM, true);
+        vault.setEngineCapability(address(engine), Capabilities.CAP_APPLY_FEE, true);
+        vault.setEngineCapability(address(engine), Capabilities.CAP_APPLY_REBATE, true);
+        vault.initializeProtocolSubaccounts(protocolFeeOwner, 1, rebateBudgetOwner, 1, insuranceFundOwner, 1);
         vm.stopPrank();
 
         // Register both counterparties.
@@ -107,6 +114,12 @@ abstract contract OptionMatchingEngineV2TestBase is Test {
         vm.prank(bob);
         registry.registerNext();
         vm.prank(carol);
+        registry.registerNext();
+        vm.prank(protocolFeeOwner);
+        registry.registerNext();
+        vm.prank(rebateBudgetOwner);
+        registry.registerNext();
+        vm.prank(insuranceFundOwner);
         registry.registerNext();
 
         // Underlying + option risk config for a WETH-like underlying settled in USDC.
@@ -214,6 +227,7 @@ abstract contract OptionMatchingEngineV2TestBase is Test {
             premiumToken: address(usdc),
             timeInForce: OptionOrderTypes.TIF_GTC,
             role: OptionOrderTypes.ROLE_TAKER,
+            maxPositiveFeePpm: 100_000,
             salt: bytes32("buyer-salt")
         });
         sOrder = OptionOrderTypes.OptionOrder({
@@ -225,6 +239,7 @@ abstract contract OptionMatchingEngineV2TestBase is Test {
             premiumToken: address(usdc),
             timeInForce: OptionOrderTypes.TIF_GTC,
             role: OptionOrderTypes.ROLE_MAKER,
+            maxPositiveFeePpm: 100_000,
             salt: bytes32("seller-salt")
         });
         bytes32 bHash = OptionOrderTypes.hashOrder(bOrder);

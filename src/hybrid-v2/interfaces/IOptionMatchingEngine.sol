@@ -290,4 +290,13 @@ interface IOptionMatchingEngine {
     /// @notice `advanceMinValidOrderNonce` was called with a value that would
     ///         not strictly advance the current cutoff.
     error MinValidOrderNonceNotAdvancing(bytes32 subKey, uint256 current, uint256 provided);
+
+    /*/////// WP-09 signed positive-fee-cap enforcement error ///////*/
+
+    /// @notice The actual positive fee amount returned by the fee hook
+    ///         exceeds the per-side maximum implied by the order's signed
+    ///         `maxPositiveFeePpm`. The signed cap is denominated in ppm of
+    ///         the fill's premium basis. Applied per side independently;
+    ///         rebates (zero positive fee) are never affected.
+    error PositiveFeeRateExceedsSignedMaximum(uint128 feeAmount1e8, uint128 maxAllowed1e8, uint32 signedMaxPpm);
 }

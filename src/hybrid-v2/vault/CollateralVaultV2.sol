@@ -203,6 +203,31 @@ abstract contract CollateralVaultV2 is CollateralVaultV2Core {
     ///         a token that was disabled but is still in the universe.
     error OptionPremiumUnknownToken(address token);
 
+    /// @notice `applyOptionFeeCharge` or `applyOptionRebate` refused because
+    ///         `initializeProtocolSubaccounts` has not yet been called by
+    ///         governance.
+    error ProtocolSubaccountsNotInitialized();
+
+    /// @notice Emitted on every successful `applyOptionFeeCharge`.
+    event OptionFeeCharged(
+        bytes32 indexed traderSubKey,
+        bytes32 indexed protocolFeeSubKey,
+        address indexed token,
+        uint256 amount,
+        address engine,
+        uint16 eventVersion
+    );
+
+    /// @notice Emitted on every successful `applyOptionRebate`.
+    event OptionRebatePaid(
+        bytes32 indexed rebateBudgetSubKey,
+        bytes32 indexed traderSubKey,
+        address indexed token,
+        uint256 amount,
+        address engine,
+        uint16 eventVersion
+    );
+
     /*//////////////////////////////////////////////////////////////
                               MODIFIERS
     //////////////////////////////////////////////////////////////*/
@@ -421,6 +446,106 @@ abstract contract CollateralVaultV2 is CollateralVaultV2Core {
         }
 
         emit OptionPremiumTransferred(payerSubKey, receiverSubKey, token, amount, msg.sender, Versions.EVENT_VERSION);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+              CAPABILITY-GATED OPTION FEE + REBATE PATH (WP-09)
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Debit an Options positive fee from `traderSubKey` and credit
+    ///         the canonical protocol-fee subKey.
+    /// @dev
+    ///  Capability: `CAP_APPLY_FEE`. NARROWLY-SCOPED — the recipient is
+    ///  fixed to `_protocolFeeVaultSubKey` (governance-initialised once,
+    ///  never mutable per execution). Introduced by
+    ///  `ONCHAIN-SUBACCOUNT-FEES-MANAGER-V2-INTEGRATION-V1` (WP-09).
+    ///
+    ///  Rejects:
+    ///   - zero amount → `AmountZero`;
+    ///   - `traderSubKey == bytes32(0)` → `SubKeyRequired`;
+    ///   - `traderSubKey` not registered → `OptionPremiumUnknownSubaccount`
+    ///     (reused for identical semantics);
+    ///   - protocol subaccounts not initialised → `ProtocolSubaccountsNotInitialized`;
+    ///   - trader == protocol fee subKey → `OptionPremiumSelfTransfer`;
+    ///   - token not in the canonical collateral universe → `OptionPremiumUnknownToken`;
+    ///   - trader's AVAILABLE balance (balance − totalLocked) < amount →
+    ///     `InsufficientAvailableCollateral`;
+    ///   - corrupted lock invariant → `CorruptedLockInvariant`.
+    ///
+    ///  Effect (all under `nonReentrant`):
+    ///   - `_balanceOf[traderSubKey][token] -= amount`.
+    ///   - `_balanceOf[protocolFeeSubKey][token] += amount`.
+    ///   - `_totalAccounted[token]` unchanged (debit == credit).
+    ///   - Trader's reservations untouched.
+    ///   - Emits `OptionFeeCharged(trader, protocolFeeSubKey, token, amount,
+    ///     caller, eventVersion)`.
+    function applyOptionFeeCharge(bytes32 traderSubKey, address token, uint256 amount) external nonReentrant {
+        _requireCapability(Capabilities.CAP_APPLY_FEE);
+        if (amount == 0) revert AmountZero();
+        if (traderSubKey == bytes32(0)) revert SubKeyRequired();
+        if (!_protocolSubaccountsInitialized) revert ProtocolSubaccountsNotInitialized();
+        bytes32 protocolSubKey = _protocolFeeVaultSubKey;
+        if (traderSubKey == protocolSubKey) revert OptionPremiumSelfTransfer(traderSubKey);
+        if (REGISTRY.ownerOf(traderSubKey) == address(0)) {
+            revert OptionPremiumUnknownSubaccount(traderSubKey);
+        }
+        if (!_knownCollateralToken[token]) revert OptionPremiumUnknownToken(token);
+
+        uint256 balance = _balanceOf[traderSubKey][token];
+        uint256 locked = _totalLocked[traderSubKey][token];
+        if (locked > balance) revert CorruptedLockInvariant(traderSubKey, token);
+        uint256 available = balance - locked;
+        if (available < amount) revert InsufficientAvailableCollateral(amount, available);
+
+        unchecked {
+            _balanceOf[traderSubKey][token] = balance - amount;
+            _balanceOf[protocolSubKey][token] += amount;
+        }
+
+        emit OptionFeeCharged(traderSubKey, protocolSubKey, token, amount, msg.sender, Versions.EVENT_VERSION);
+    }
+
+    /// @notice Credit an Options maker rebate to `traderSubKey`, debiting
+    ///         the canonical rebate-budget subKey.
+    /// @dev
+    ///  Capability: `CAP_APPLY_REBATE`. Rebate is bounded by the AVAILABLE
+    ///  balance of the rebate-budget subKey — no rebate ever exceeds the
+    ///  budget. Rejects:
+    ///   - zero amount → `AmountZero`;
+    ///   - `traderSubKey == bytes32(0)` → `SubKeyRequired`;
+    ///   - protocol subaccounts not initialised → `ProtocolSubaccountsNotInitialized`;
+    ///   - `traderSubKey` not registered → `OptionPremiumUnknownSubaccount`;
+    ///   - trader == rebate-budget subKey → `OptionPremiumSelfTransfer`;
+    ///   - token not in the canonical collateral universe → `OptionPremiumUnknownToken`;
+    ///   - rebate-budget's AVAILABLE balance < amount → `InsufficientAvailableCollateral`;
+    ///   - corrupted lock invariant → `CorruptedLockInvariant`.
+    ///
+    ///  Emits `OptionRebatePaid(rebateBudgetSubKey, trader, token, amount,
+    ///  caller, eventVersion)`. Reservations untouched.
+    function applyOptionRebate(bytes32 traderSubKey, address token, uint256 amount) external nonReentrant {
+        _requireCapability(Capabilities.CAP_APPLY_REBATE);
+        if (amount == 0) revert AmountZero();
+        if (traderSubKey == bytes32(0)) revert SubKeyRequired();
+        if (!_protocolSubaccountsInitialized) revert ProtocolSubaccountsNotInitialized();
+        bytes32 budgetSubKey = _rebateBudgetSubKey;
+        if (traderSubKey == budgetSubKey) revert OptionPremiumSelfTransfer(traderSubKey);
+        if (REGISTRY.ownerOf(traderSubKey) == address(0)) {
+            revert OptionPremiumUnknownSubaccount(traderSubKey);
+        }
+        if (!_knownCollateralToken[token]) revert OptionPremiumUnknownToken(token);
+
+        uint256 balance = _balanceOf[budgetSubKey][token];
+        uint256 locked = _totalLocked[budgetSubKey][token];
+        if (locked > balance) revert CorruptedLockInvariant(budgetSubKey, token);
+        uint256 available = balance - locked;
+        if (available < amount) revert InsufficientAvailableCollateral(amount, available);
+
+        unchecked {
+            _balanceOf[budgetSubKey][token] = balance - amount;
+            _balanceOf[traderSubKey][token] += amount;
+        }
+
+        emit OptionRebatePaid(budgetSubKey, traderSubKey, token, amount, msg.sender, Versions.EVENT_VERSION);
     }
 
     /*//////////////////////////////////////////////////////////////

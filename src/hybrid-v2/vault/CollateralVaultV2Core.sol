@@ -104,6 +104,24 @@ abstract contract CollateralVaultV2Core is VaultCapabilityController, Reentrancy
     ///      current deposit enablement. Once true, never becomes false.
     mapping(address => bool) internal _knownCollateralToken;
 
+    /// @dev Well-known internal subKey for the protocol fee vault.
+    ///      Governance-initialised ONCE via `initializeProtocolSubaccounts`
+    ///      and read-only afterwards. Introduced by WP-09.
+    bytes32 internal _protocolFeeVaultSubKey;
+
+    /// @dev Well-known internal subKey for the rebate-budget account. Debited
+    ///      when the Options execution adapter pays a maker rebate to a
+    ///      trader. Governance-initialised ONCE and read-only afterwards.
+    bytes32 internal _rebateBudgetSubKey;
+
+    /// @dev Well-known internal subKey for the insurance fund. Reserved for
+    ///      future liquidation flows. Governance-initialised ONCE.
+    bytes32 internal _insuranceFundSubKey;
+
+    /// @dev Set to true on the first successful call to
+    ///      `initializeProtocolSubaccounts`; no further calls succeed.
+    bool internal _protocolSubaccountsInitialized;
+
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
     //////////////////////////////////////////////////////////////*/
@@ -302,6 +320,87 @@ abstract contract CollateralVaultV2Core is VaultCapabilityController, Reentrancy
 
         _pullAndCredit(REGISTRY.subKeyOf(owner, subaccountId), owner, subaccountId, msg.sender, token, amount);
     }
+
+    /*//////////////////////////////////////////////////////////////
+                GOVERNANCE — WELL-KNOWN INTERNAL SUBACCOUNTS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice One-shot governance initialisation of the well-known
+    ///         protocol-fee, rebate-budget and insurance-fund subKeys.
+    /// @dev Introduced by
+    ///      `ONCHAIN-SUBACCOUNT-FEES-MANAGER-V2-INTEGRATION-V1` (WP-09).
+    ///      MUST be called EXACTLY ONCE before the OptionExecutionFeeAdapter
+    ///      is granted `CAP_APPLY_FEE` / `CAP_APPLY_REBATE`. Every subKey is
+    ///      derived from a `(owner, subaccountId)` pair the governance actor
+    ///      controls at deployment. Subaccount id must be non-zero for each.
+    ///      Registration in the canonical registry is NOT enforced here —
+    ///      the fee/rebate primitives themselves will fail closed if either
+    ///      side is not registered when they are first used.
+    function initializeProtocolSubaccounts(
+        address protocolFeeOwner,
+        uint32 protocolFeeSubaccountId,
+        address rebateBudgetOwner,
+        uint32 rebateBudgetSubaccountId,
+        address insuranceFundOwner,
+        uint32 insuranceFundSubaccountId
+    ) external onlyGovernance {
+        if (_protocolSubaccountsInitialized) revert ProtocolSubaccountsAlreadyInitialized();
+        if (protocolFeeOwner == address(0) || rebateBudgetOwner == address(0) || insuranceFundOwner == address(0)) {
+            revert InvalidOwner();
+        }
+        if (protocolFeeSubaccountId == 0 || rebateBudgetSubaccountId == 0 || insuranceFundSubaccountId == 0) {
+            revert InvalidSubaccountId();
+        }
+
+        _protocolFeeVaultSubKey = REGISTRY.subKeyOf(protocolFeeOwner, protocolFeeSubaccountId);
+        _rebateBudgetSubKey = REGISTRY.subKeyOf(rebateBudgetOwner, rebateBudgetSubaccountId);
+        _insuranceFundSubKey = REGISTRY.subKeyOf(insuranceFundOwner, insuranceFundSubaccountId);
+        _protocolSubaccountsInitialized = true;
+
+        emit ProtocolSubaccountsInitialized(
+            _protocolFeeVaultSubKey,
+            _rebateBudgetSubKey,
+            _insuranceFundSubKey,
+            Versions.EVENT_VERSION
+        );
+    }
+
+    /// @notice Canonical protocol fee subKey. Zero until
+    ///         `initializeProtocolSubaccounts` has been called.
+    function protocolFeeVaultSubKey() external view returns (bytes32) {
+        return _protocolFeeVaultSubKey;
+    }
+
+    /// @notice Canonical rebate-budget subKey. Zero until
+    ///         `initializeProtocolSubaccounts` has been called.
+    function rebateBudgetSubKey() external view returns (bytes32) {
+        return _rebateBudgetSubKey;
+    }
+
+    /// @notice Canonical insurance-fund subKey. Zero until
+    ///         `initializeProtocolSubaccounts` has been called.
+    function insuranceFundSubKey() external view returns (bytes32) {
+        return _insuranceFundSubKey;
+    }
+
+    /// @notice `true` iff `initializeProtocolSubaccounts` has been called
+    ///         (write-once).
+    function protocolSubaccountsInitialized() external view returns (bool) {
+        return _protocolSubaccountsInitialized;
+    }
+
+    /// @notice Emitted on the successful one-shot init of the protocol
+    ///         subaccounts. Consumed by indexers to bind on-chain fee /
+    ///         rebate / insurance-fund flows to their canonical subKeys.
+    event ProtocolSubaccountsInitialized(
+        bytes32 protocolFeeSubKey,
+        bytes32 rebateBudgetSubKey,
+        bytes32 insuranceFundSubKey,
+        uint16 eventVersion
+    );
+
+    /// @notice `initializeProtocolSubaccounts` was called a second time.
+    error ProtocolSubaccountsAlreadyInitialized();
 
     /*//////////////////////////////////////////////////////////////
                                  VIEWS

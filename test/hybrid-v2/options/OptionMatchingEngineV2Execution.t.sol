@@ -426,6 +426,7 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
             premiumToken: address(usdc),
             timeInForce: OptionOrderTypes.TIF_GTC,
             role: OptionOrderTypes.ROLE_TAKER,
+            maxPositiveFeePpm: 100_000,
             salt: bytes32("b-gtc")
         });
         OptionOrderTypes.OptionOrder memory sOrder = OptionOrderTypes.OptionOrder({
@@ -437,6 +438,7 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
             premiumToken: address(usdc),
             timeInForce: OptionOrderTypes.TIF_GTC,
             role: OptionOrderTypes.ROLE_MAKER,
+            maxPositiveFeePpm: 100_000,
             salt: bytes32("s-gtc")
         });
         IntentHash.SignedActionEnvelope memory bEnv =
@@ -523,6 +525,7 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
             premiumToken: address(usdc),
             timeInForce: OptionOrderTypes.TIF_IOC,
             role: OptionOrderTypes.ROLE_TAKER,
+            maxPositiveFeePpm: 100_000,
             salt: bytes32("b-ioc")
         });
         OptionOrderTypes.OptionOrder memory sOrder = OptionOrderTypes.OptionOrder({
@@ -534,6 +537,7 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
             premiumToken: address(usdc),
             timeInForce: OptionOrderTypes.TIF_GTC,
             role: OptionOrderTypes.ROLE_MAKER,
+            maxPositiveFeePpm: 100_000,
             salt: bytes32("s-gtc")
         });
         IntentHash.SignedActionEnvelope memory bEnv =
@@ -566,6 +570,7 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
             premiumToken: address(usdc),
             timeInForce: OptionOrderTypes.TIF_FOK,
             role: OptionOrderTypes.ROLE_TAKER,
+            maxPositiveFeePpm: 100_000,
             salt: bytes32("b-fok")
         });
         OptionOrderTypes.OptionOrder memory sOrder = OptionOrderTypes.OptionOrder({
@@ -577,6 +582,7 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
             premiumToken: address(usdc),
             timeInForce: OptionOrderTypes.TIF_GTC,
             role: OptionOrderTypes.ROLE_MAKER,
+            maxPositiveFeePpm: 100_000,
             salt: bytes32("s-gtc-fok")
         });
         IntentHash.SignedActionEnvelope memory bEnv =
@@ -612,6 +618,7 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
             premiumToken: address(usdc),
             timeInForce: OptionOrderTypes.TIF_FOK,
             role: OptionOrderTypes.ROLE_TAKER,
+            maxPositiveFeePpm: 100_000,
             salt: bytes32("b-fok-ok")
         });
         OptionOrderTypes.OptionOrder memory sOrder = OptionOrderTypes.OptionOrder({
@@ -623,6 +630,7 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
             premiumToken: address(usdc),
             timeInForce: OptionOrderTypes.TIF_GTC,
             role: OptionOrderTypes.ROLE_MAKER,
+            maxPositiveFeePpm: 100_000,
             salt: bytes32("s-gtc-fok-ok")
         });
         IntentHash.SignedActionEnvelope memory bEnv =
@@ -733,6 +741,7 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
                 premiumToken: address(usdc),
                 timeInForce: OptionOrderTypes.TIF_GTC,
                 role: OptionOrderTypes.ROLE_TAKER,
+            maxPositiveFeePpm: 100_000,
                 salt: bytes32(i)
             });
             OptionOrderTypes.OptionOrder memory sOrder = OptionOrderTypes.OptionOrder({
@@ -744,6 +753,7 @@ contract OptionMatchingEngineV2Execution is OptionMatchingEngineV2TestBase {
                 premiumToken: address(usdc),
                 timeInForce: OptionOrderTypes.TIF_GTC,
                 role: OptionOrderTypes.ROLE_MAKER,
+            maxPositiveFeePpm: 100_000,
                 salt: bytes32(i + 100)
             });
             IntentHash.SignedActionEnvelope memory bEnv =

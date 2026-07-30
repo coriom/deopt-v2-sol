@@ -46,6 +46,7 @@ contract OptionOrderLifecycleValidationClosure is OptionMatchingEngineV2TestBase
             premiumToken: address(usdc),
             timeInForce: tif,
             role: role,
+            maxPositiveFeePpm: 100_000,
             salt: salt
         });
     }
@@ -65,6 +66,7 @@ contract OptionOrderLifecycleValidationClosure is OptionMatchingEngineV2TestBase
             premiumToken: address(usdc),
             timeInForce: tif,
             role: role,
+            maxPositiveFeePpm: 100_000,
             salt: salt
         });
     }

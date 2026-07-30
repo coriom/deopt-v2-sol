@@ -337,6 +337,8 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
         uint128 sellerFilledAfter;
         uint128 buyerFee;
         uint128 sellerFee;
+        uint128 buyerRebate;
+        uint128 sellerRebate;
         uint256 totalPremiumNative;
         bytes32 executionId;
     }
@@ -362,8 +364,17 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
         _requireCompatibleOrders(buyerOrder, sellerOrder, buyerEnvelope.subKey, sellerEnvelope.subKey);
         _requireSeriesTradeable(buyerOrder.seriesId, buyerOrder.premiumToken);
 
-        (s.buyerFee, s.sellerFee) =
-            _quoteBothFees(buyerEnvelope.subKey, sellerEnvelope.subKey, buyerOrder, fillQuantity1e8);
+        // Fee quotes (per-fill). Rebate is now allowed and applied via
+        // the Vault primitives introduced by
+        // `ONCHAIN-SUBACCOUNT-FEES-MANAGER-V2-INTEGRATION-V1`.
+        (s.buyerFee, s.sellerFee, s.buyerRebate, s.sellerRebate) = _quoteFeesAndRebates(
+            buyerEnvelope.subKey, sellerEnvelope.subKey, buyerOrder, fillQuantity1e8
+        );
+
+        // Signed positive-fee-cap enforcement. Charged AMOUNT (1e8) must not
+        // exceed the per-side maximum implied by the signer's cap ppm.
+        _requirePositiveFeeCapHonoured(buyerOrder, fillQuantity1e8, s.buyerFee);
+        _requirePositiveFeeCapHonoured(sellerOrder, fillQuantity1e8, s.sellerFee);
 
         _advanceLifecycleAndEmit(buyerEnvelope, buyerOrder, sellerEnvelope, sellerOrder, fillQuantity1e8, s);
 
@@ -381,6 +392,20 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
                     buyerEnvelope.subKey, sellerEnvelope.subKey, buyerOrder.premiumToken, s.totalPremiumNative
                 );
         }
+
+        // Apply positive fees + rebates through the frozen Vault primitives.
+        // Positive fees debit the trader's AVAILABLE balance and credit the
+        // canonical protocol-fee subKey. Rebates debit the canonical
+        // rebate-budget subKey and credit the trader.
+        _applyFeesAndRebates(
+            buyerEnvelope.subKey,
+            sellerEnvelope.subKey,
+            buyerOrder.premiumToken,
+            s.buyerFee,
+            s.sellerFee,
+            s.buyerRebate,
+            s.sellerRebate
+        );
 
         _syncSellerReservation(sellerEnvelope.subKey, sellerActiveSeriesIds, buyerOrder.premiumToken);
 
@@ -713,14 +738,18 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
         if (s.expiry <= block.timestamp) revert InvalidSeries(seriesId);
     }
 
-    function _quoteBothFees(
+    /// @dev Query the fee hook for both sides. A side MAY receive a positive
+    ///      fee (`feeAmount1e8 > 0, rebateAmount1e8 == 0`) OR a rebate
+    ///      (`feeAmount1e8 == 0, rebateAmount1e8 > 0`) — but NEVER both. Any
+    ///      hook returning both non-zero fails the execution closed via
+    ///      `FeeHookRejected`. A hook returning `ok == false` also fails
+    ///      closed. Rebates are now permitted (post-WP-09).
+    function _quoteFeesAndRebates(
         bytes32 buyerSubKey,
         bytes32 sellerSubKey,
         OptionOrderTypes.OptionOrder calldata buyerOrder,
         uint128 fillQuantity1e8
-    ) internal view returns (uint128 buyerFee, uint128 sellerFee) {
-        uint128 buyerRebate;
-        uint128 sellerRebate;
+    ) internal view returns (uint128 buyerFee, uint128 sellerFee, uint128 buyerRebate, uint128 sellerRebate) {
         bool okBuyer;
         bool okSeller;
         (buyerFee, buyerRebate, okBuyer) = FEE_HOOK.quoteExecutionFee(
@@ -737,8 +766,85 @@ contract OptionMatchingEngineV2 is IOptionMatchingEngine, ReplayAndEpochControll
             buyerOrder.pricePerContract1e8,
             OptionOrderTypes.ROLE_MAKER
         );
-        if (!okBuyer || buyerRebate != 0) revert FeeHookRejected(buyerSubKey);
-        if (!okSeller || sellerRebate != 0) revert FeeHookRejected(sellerSubKey);
+        if (!okBuyer) revert FeeHookRejected(buyerSubKey);
+        if (!okSeller) revert FeeHookRejected(sellerSubKey);
+        if (buyerFee > 0 && buyerRebate > 0) revert FeeHookRejected(buyerSubKey);
+        if (sellerFee > 0 && sellerRebate > 0) revert FeeHookRejected(sellerSubKey);
+    }
+
+    /// @dev Signed-cap enforcement. `feeAmount1e8` MUST be ≤
+    ///      `ceil(premiumBasis1e8 * order.maxPositiveFeePpm / 1_000_000)`.
+    ///      Applied on each side independently. Rebates (i.e. zero fee) are
+    ///      never affected by this cap.
+    function _requirePositiveFeeCapHonoured(
+        OptionOrderTypes.OptionOrder calldata order,
+        uint128 fillQuantity1e8,
+        uint128 feeAmount1e8
+    ) internal pure {
+        if (feeAmount1e8 == 0) return; // rebate-only or exact-zero — the cap is trivially satisfied
+        uint256 premiumBasis1e8 = (uint256(fillQuantity1e8) * uint256(order.pricePerContract1e8)) / 1e8;
+        // ceil(premiumBasis1e8 * maxPpm / 1_000_000) — round UP so the cap
+        // is at LEAST the honestly-requested amount.
+        uint256 maxFee1e8 = (premiumBasis1e8 * uint256(order.maxPositiveFeePpm) + 999_999) / 1_000_000;
+        if (uint256(feeAmount1e8) > maxFee1e8) {
+            revert PositiveFeeRateExceedsSignedMaximum(
+                feeAmount1e8, uint128(maxFee1e8), order.maxPositiveFeePpm
+            );
+        }
+    }
+
+    /// @dev Apply fees + rebates via the Vault primitives. Each side's fee
+    ///      is charged first (positive-fee-cap already enforced), then its
+    ///      rebate is credited. Amounts are scaled from 1e8 to native
+    ///      QUOTE_TOKEN units — fees round UP against the trader (protects
+    ///      the protocol) and rebates round DOWN (protects the budget).
+    function _applyFeesAndRebates(
+        bytes32 buyerSubKey,
+        bytes32 sellerSubKey,
+        address token,
+        uint128 buyerFee1e8,
+        uint128 sellerFee1e8,
+        uint128 buyerRebate1e8,
+        uint128 sellerRebate1e8
+    ) internal {
+        if (buyerFee1e8 > 0) {
+            uint256 amount = _scale1e8ToNativeCeil(uint256(buyerFee1e8));
+            if (amount > 0) ICollateralVault(address(VAULT)).applyOptionFeeCharge(buyerSubKey, token, amount);
+        }
+        if (sellerFee1e8 > 0) {
+            uint256 amount = _scale1e8ToNativeCeil(uint256(sellerFee1e8));
+            if (amount > 0) ICollateralVault(address(VAULT)).applyOptionFeeCharge(sellerSubKey, token, amount);
+        }
+        if (buyerRebate1e8 > 0) {
+            uint256 amount = _scale1e8ToNativeFloor(uint256(buyerRebate1e8));
+            if (amount > 0) ICollateralVault(address(VAULT)).applyOptionRebate(buyerSubKey, token, amount);
+        }
+        if (sellerRebate1e8 > 0) {
+            uint256 amount = _scale1e8ToNativeFloor(uint256(sellerRebate1e8));
+            if (amount > 0) ICollateralVault(address(VAULT)).applyOptionRebate(sellerSubKey, token, amount);
+        }
+    }
+
+    /// @dev 1e8 → native, rounded UP (against trader for fees).
+    function _scale1e8ToNativeCeil(uint256 amount1e8) internal view returns (uint256) {
+        if (amount1e8 == 0) return 0;
+        if (QUOTE_DECIMALS <= 8) {
+            uint256 divisor = 10 ** (8 - uint256(QUOTE_DECIMALS));
+            return (amount1e8 + divisor - 1) / divisor;
+        }
+        uint256 mult = 10 ** (uint256(QUOTE_DECIMALS) - 8);
+        return amount1e8 * mult;
+    }
+
+    /// @dev 1e8 → native, rounded DOWN (against trader for rebates — protects budget).
+    function _scale1e8ToNativeFloor(uint256 amount1e8) internal view returns (uint256) {
+        if (amount1e8 == 0) return 0;
+        if (QUOTE_DECIMALS <= 8) {
+            uint256 divisor = 10 ** (8 - uint256(QUOTE_DECIMALS));
+            return amount1e8 / divisor;
+        }
+        uint256 mult = 10 ** (uint256(QUOTE_DECIMALS) - 8);
+        return amount1e8 * mult;
     }
 
     /// @dev `totalPremium_native = fillQuantity1e8 * pricePerContract1e8 / 1e8`

@@ -46,6 +46,7 @@ contract OptionMatchingEngineV2ERC1271 is OptionMatchingEngineV2TestBase {
             premiumToken: address(usdc),
             timeInForce: OptionOrderTypes.TIF_GTC,
             role: OptionOrderTypes.ROLE_TAKER,
+            maxPositiveFeePpm: 100_000,
             salt: bytes32("b")
         });
         // Seller = smart-contract wallet with alice as internal signer.
@@ -58,6 +59,7 @@ contract OptionMatchingEngineV2ERC1271 is OptionMatchingEngineV2TestBase {
             premiumToken: address(usdc),
             timeInForce: OptionOrderTypes.TIF_GTC,
             role: OptionOrderTypes.ROLE_MAKER,
+            maxPositiveFeePpm: 100_000,
             salt: bytes32("s")
         });
 
@@ -109,6 +111,7 @@ contract OptionMatchingEngineV2ERC1271 is OptionMatchingEngineV2TestBase {
             premiumToken: address(usdc),
             timeInForce: OptionOrderTypes.TIF_GTC,
             role: OptionOrderTypes.ROLE_TAKER,
+            maxPositiveFeePpm: 100_000,
             salt: bytes32("b")
         });
         OptionOrderTypes.OptionOrder memory sOrder = OptionOrderTypes.OptionOrder({
@@ -120,6 +123,7 @@ contract OptionMatchingEngineV2ERC1271 is OptionMatchingEngineV2TestBase {
             premiumToken: address(usdc),
             timeInForce: OptionOrderTypes.TIF_GTC,
             role: OptionOrderTypes.ROLE_MAKER,
+            maxPositiveFeePpm: 100_000,
             salt: bytes32("s")
         });
         IntentHash.SignedActionEnvelope memory bEnv =

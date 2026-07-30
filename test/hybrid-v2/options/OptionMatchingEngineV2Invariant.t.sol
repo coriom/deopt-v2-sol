@@ -102,6 +102,7 @@ contract OptionEngineHandler is Test {
             premiumToken: address(usdc),
             timeInForce: OptionOrderTypes.TIF_GTC,
             role: OptionOrderTypes.ROLE_TAKER,
+            maxPositiveFeePpm: 100_000,
             salt: bytes32("tracked-buyer")
         });
         trackedSellerOrder = OptionOrderTypes.OptionOrder({
@@ -113,6 +114,7 @@ contract OptionEngineHandler is Test {
             premiumToken: address(usdc),
             timeInForce: OptionOrderTypes.TIF_GTC,
             role: OptionOrderTypes.ROLE_MAKER,
+            maxPositiveFeePpm: 100_000,
             salt: bytes32("tracked-seller")
         });
         trackedBuyerEnv = IntentHash.SignedActionEnvelope({
@@ -162,6 +164,7 @@ contract OptionEngineHandler is Test {
             premiumToken: address(usdc),
             timeInForce: OptionOrderTypes.TIF_GTC,
             role: OptionOrderTypes.ROLE_TAKER,
+            maxPositiveFeePpm: 100_000,
             salt: bytes32("shadow-buyer")
         });
         shadowBuyerEnv = IntentHash.SignedActionEnvelope({
@@ -268,6 +271,9 @@ contract OptionMatchingEngineV2InvariantTest is StdInvariant, Test {
     address internal bob;
     uint256 internal bobPk;
     address internal carol; // sibling — must remain untouched
+    address internal protocolFeeOwner = address(0xF001);
+    address internal rebateBudgetOwner = address(0xF002);
+    address internal insuranceFundOwner = address(0xF003);
 
     OptionEngineHandler internal handler;
 
@@ -310,6 +316,9 @@ contract OptionMatchingEngineV2InvariantTest is StdInvariant, Test {
         vault.setEngineCapability(address(engine), Capabilities.CAP_LOCK_COLLATERAL, true);
         vault.setEngineCapability(address(engine), Capabilities.CAP_UNLOCK_OWN_RESERVATION, true);
         vault.setEngineCapability(address(engine), Capabilities.CAP_APPLY_OPTIONS_PREMIUM, true);
+        vault.setEngineCapability(address(engine), Capabilities.CAP_APPLY_FEE, true);
+        vault.setEngineCapability(address(engine), Capabilities.CAP_APPLY_REBATE, true);
+        vault.initializeProtocolSubaccounts(protocolFeeOwner, 1, rebateBudgetOwner, 1, insuranceFundOwner, 1);
         vm.stopPrank();
 
         vm.prank(alice);
@@ -317,6 +326,12 @@ contract OptionMatchingEngineV2InvariantTest is StdInvariant, Test {
         vm.prank(bob);
         registry.registerNext();
         vm.prank(carol);
+        registry.registerNext();
+        vm.prank(protocolFeeOwner);
+        registry.registerNext();
+        vm.prank(rebateBudgetOwner);
+        registry.registerNext();
+        vm.prank(insuranceFundOwner);
         registry.registerNext();
 
         provider.setUnderlying(

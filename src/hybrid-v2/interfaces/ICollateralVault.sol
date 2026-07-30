@@ -95,6 +95,39 @@ interface ICollateralVault {
     function applyOptionPremiumTransfer(bytes32 payerSubKey, bytes32 receiverSubKey, address token, uint256 amount)
         external;
 
+    /// @notice Debit an Options positive fee from `traderSubKey` and credit the
+    ///         canonical protocol-fee subKey.
+    /// @dev Caller MUST hold `Capabilities.CAP_APPLY_FEE`. Recipient is fixed
+    ///      to the governance-initialised `protocolFeeVaultSubKey()`. Rejects
+    ///      unregistered trader, self-transfer, unknown token, insufficient
+    ///      AVAILABLE trader balance, corrupted lock. Introduced by WP-09.
+    function applyOptionFeeCharge(bytes32 traderSubKey, address token, uint256 amount) external;
+
+    /// @notice Credit an Options maker rebate to `traderSubKey`, debiting
+    ///         the canonical rebate-budget subKey.
+    /// @dev Caller MUST hold `Capabilities.CAP_APPLY_REBATE`. Source is fixed
+    ///      to the governance-initialised `rebateBudgetSubKey()`. Rebate is
+    ///      bounded by the AVAILABLE balance of the rebate-budget subKey — no
+    ///      rebate ever exceeds the canonical budget. Introduced by WP-09.
+    function applyOptionRebate(bytes32 traderSubKey, address token, uint256 amount) external;
+
+    /// @notice Governance one-shot init of the well-known protocol subaccounts.
+    /// @dev Introduced by WP-09. See `CollateralVaultV2Core.initializeProtocolSubaccounts`.
+    function initializeProtocolSubaccounts(
+        address protocolFeeOwner,
+        uint32 protocolFeeSubaccountId,
+        address rebateBudgetOwner,
+        uint32 rebateBudgetSubaccountId,
+        address insuranceFundOwner,
+        uint32 insuranceFundSubaccountId
+    ) external;
+
+    /// @notice Well-known internal subKey for the canonical rebate budget.
+    function rebateBudgetSubKey() external view returns (bytes32);
+
+    /// @notice `true` iff `initializeProtocolSubaccounts` has been called.
+    function protocolSubaccountsInitialized() external view returns (bool);
+
     /*//////////////////////////////////////////////////////////////
                                  VIEWS
     //////////////////////////////////////////////////////////////*/
