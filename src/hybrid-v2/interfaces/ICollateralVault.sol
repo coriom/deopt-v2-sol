@@ -140,6 +140,26 @@ interface ICollateralVault {
     /// @notice `true` iff `initializeEscapeController` has been called.
     function escapeControllerInitialized() external view returns (bool);
 
+    /// @notice Governance one-shot init of the canonical
+    ///         `RecoveryFinalizer` — the sole caller permitted to invoke
+    ///         `applyRecoveryFinalization`. Introduced by WP-10B.
+    function initializeRecoveryFinalizer(address finalizer) external;
+
+    /// @notice Canonical `RecoveryFinalizer` reference. Zero when uninitialised.
+    function recoveryFinalizer() external view returns (address);
+
+    /// @notice `true` iff `initializeRecoveryFinalizer` has been called.
+    function recoveryFinalizerInitialized() external view returns (bool);
+
+    /// @notice Debit the full canonical balance of `(subKey, token)` and
+    ///         transfer it to `Registry.ownerOf(subKey)`. Callable only
+    ///         by the initialised `RecoveryFinalizer`. Introduced by WP-10B.
+    /// @return recipient The canonical owner receiving the transfer.
+    /// @return amount The amount debited (zero if the balance was zero).
+    function applyRecoveryFinalization(bytes32 subKey, address token)
+        external
+        returns (address recipient, uint256 amount);
+
     /*//////////////////////////////////////////////////////////////
                                  VIEWS
     //////////////////////////////////////////////////////////////*/

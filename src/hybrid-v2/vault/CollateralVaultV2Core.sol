@@ -8,6 +8,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {VaultCapabilityController} from "./VaultCapabilityController.sol";
 import {IEscapeController} from "../interfaces/IEscapeController.sol";
 import {ISubaccountRegistry} from "../interfaces/ISubaccountRegistry.sol";
+import {RecoveryState} from "../libraries/RecoveryTypes.sol";
 import {Versions} from "../libraries/Versions.sol";
 
 /// @title CollateralVaultV2Core
@@ -129,6 +130,13 @@ abstract contract CollateralVaultV2Core is VaultCapabilityController, Reentrancy
     ///      initialised (deployment window). Set ONCE via
     ///      `initializeEscapeController`. Introduced by WP-10A.
     address internal _escapeController;
+
+    /// @dev Canonical `RecoveryFinalizer` reference. The single address
+    ///      permitted to call the narrow `applyRecoveryFinalization`
+    ///      primitive that debits a recovering subaccount's balance to
+    ///      the canonical owner. Set ONCE via
+    ///      `initializeRecoveryFinalizer`. Introduced by WP-10B.
+    address internal _recoveryFinalizer;
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
@@ -452,6 +460,41 @@ abstract contract CollateralVaultV2Core is VaultCapabilityController, Reentrancy
     error InvalidEscapeController();
 
     /*//////////////////////////////////////////////////////////////
+                GOVERNANCE — RECOVERY-FINALIZER BINDING (WP-10B)
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice One-shot governance initialisation of the canonical
+    ///         `RecoveryFinalizer` reference — the ONLY caller
+    ///         permitted to invoke `applyRecoveryFinalization`.
+    /// @dev Immutable-like once set. Introduced by WP-10B.
+    function initializeRecoveryFinalizer(address finalizer) external onlyGovernance {
+        if (_recoveryFinalizer != address(0)) revert RecoveryFinalizerAlreadyInitialized();
+        if (finalizer == address(0)) revert InvalidRecoveryFinalizer();
+        _recoveryFinalizer = finalizer;
+        emit RecoveryFinalizerInitialized(finalizer, Versions.EVENT_VERSION);
+    }
+
+    /// @notice Canonical `RecoveryFinalizer` reference. Zero when
+    ///         uninitialised.
+    function recoveryFinalizer() external view returns (address) {
+        return _recoveryFinalizer;
+    }
+
+    /// @notice `true` iff `initializeRecoveryFinalizer` has been called.
+    function recoveryFinalizerInitialized() external view returns (bool) {
+        return _recoveryFinalizer != address(0);
+    }
+
+    /// @notice Emitted on the successful one-shot recovery-finalizer init.
+    event RecoveryFinalizerInitialized(address finalizer, uint16 eventVersion);
+
+    /// @notice `initializeRecoveryFinalizer` was called a second time.
+    error RecoveryFinalizerAlreadyInitialized();
+
+    /// @notice `initializeRecoveryFinalizer` was called with the zero address.
+    error InvalidRecoveryFinalizer();
+
+    /*//////////////////////////////////////////////////////////////
                                  VIEWS
     //////////////////////////////////////////////////////////////*/
 
@@ -566,6 +609,7 @@ abstract contract CollateralVaultV2Core is VaultCapabilityController, Reentrancy
         address token,
         uint256 amount
     ) internal {
+        _requireNotFinalized(subKey);
         uint256 balanceBefore = IERC20(token).balanceOf(address(this));
         IERC20(token).safeTransferFrom(payer, address(this), amount);
         uint256 balanceAfter = IERC20(token).balanceOf(address(this));
@@ -592,7 +636,25 @@ abstract contract CollateralVaultV2Core is VaultCapabilityController, Reentrancy
         }
     }
 
+    /// @dev Finalized-account gate. Rejects deposits and any credit
+    ///      into a subaccount that has already been finalized
+    ///      (`RECOVERED`). Distinct from `_requireNoActiveRecoveryOn`
+    ///      which also blocks during `PENDING`/`ACTIVE`; deposits are
+    ///      explicitly allowed during those states (design 04 permits
+    ///      collateral top-up during recovery). Introduced by WP-10B.
+    function _requireNotFinalized(bytes32 subKey) internal view {
+        address controller = _escapeController;
+        if (controller == address(0)) return;
+        if (IEscapeController(controller).recoveryStateOf(subKey) == RecoveryState.RECOVERED) {
+            revert SubaccountFinalized(subKey);
+        }
+    }
+
     /// @notice Attempted a risk-increasing mutation while the subaccount
     ///         is in a recovery state that forbids it.
     error RecoveryActiveForSubaccount(bytes32 subKey);
+
+    /// @notice Attempted to credit / deposit into a finalized
+    ///         (`RECOVERED`) subaccount. Introduced by WP-10B.
+    error SubaccountFinalized(bytes32 subKey);
 }

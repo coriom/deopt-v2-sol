@@ -88,11 +88,28 @@ interface IEscapeController {
     ///         WP-10A.
     function isRiskIncreasingOperationAllowed(bytes32 subKey) external view returns (bool);
 
-    /// @notice `true` iff the finalizer boundary conditions are met.
-    ///         WP-10A ALWAYS returns `false` because objective proof of
-    ///         resolved obligations is unavailable — that lives in
-    ///         WP-10B `RecoveryFinalizer`.
+    /// @notice `true` iff the target subaccount is currently in a state
+    ///         from which the `RecoveryFinalizer` may transition it to
+    ///         `RECOVERED`. Introduced by WP-10A; consumed by WP-10B.
     function isFinalizationReady(bytes32 subKey) external view returns (bool);
+
+    /// @notice Timestamp at which the target subaccount was moved to
+    ///         `RECOVERED`. Zero when never finalized. Introduced by WP-10B.
+    function finalizedAt(bytes32 subKey) external view returns (uint64);
+
+    /// @notice Canonical `RecoveryFinalizer` address. Zero until governance
+    ///         initialises it. Introduced by WP-10B.
+    function recoveryFinalizer() external view returns (address);
+
+    /// @notice Governance one-shot init of the `RecoveryFinalizer`
+    ///         authorised to advance `RECOVERY_ACTIVE → RECOVERED`.
+    ///         Introduced by WP-10B.
+    function initializeRecoveryFinalizer(address finalizer) external;
+
+    /// @notice Advance a subaccount from `RECOVERY_ACTIVE` to
+    ///         `RECOVERED`. Only the initialised `RecoveryFinalizer` may call.
+    ///         Introduced by WP-10B.
+    function markFinalized(bytes32 subKey) external;
 
     /*//////////////////////////////////////////////////////////////
                                  PAUSE

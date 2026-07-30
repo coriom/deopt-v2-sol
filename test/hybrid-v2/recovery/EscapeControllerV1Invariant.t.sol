@@ -113,13 +113,18 @@ contract EscapeControllerV1Invariants is StdInvariant, Test {
         }
     }
 
-    /// @notice ESCAPE-I12 — finalization readiness is ALWAYS false in
-    ///         WP-10A regardless of state / delay elapsed.
-    function invariant_I12_finalizationAlwaysFalseInWP10A() external view {
+    /// @notice ESCAPE-I12 — finalization-readiness view mirrors the
+    ///         state-machine predicate: `true` iff state is
+    ///         `RECOVERY_ACTIVE`. Deferred obligation proofs are
+    ///         enforced by `RecoveryFinalizerV1` itself, not this view
+    ///         (updated by WP-10B).
+    function invariant_I12_finalizationReadyIffActive() external view {
         for (uint256 i = 0; i < handler.actorCount(); i++) {
             address actor = handler.actorAt(i);
             bytes32 subKey = registry.subKeyOf(actor, 1);
-            assertFalse(controller.isFinalizationReady(subKey));
+            bool ready = controller.isFinalizationReady(subKey);
+            bool active = controller.recoveryStateOf(subKey) == RecoveryState.RECOVERY_ACTIVE;
+            assertEq(ready, active);
         }
     }
 

@@ -115,6 +115,16 @@ contract EscapeControllerV1 is IEscapeController {
     mapping(address => uint256) private _ownerRecoveryEpoch;
     uint64 private _recoveryPausedUntil;
 
+    /// @dev Canonical `RecoveryFinalizer` deployment (WP-10B). Zero until
+    ///      `initializeRecoveryFinalizer` runs. Only that address may call
+    ///      `markFinalized(subKey)` to advance a subaccount from
+    ///      `RECOVERY_ACTIVE` to `RECOVERED`.
+    address private _recoveryFinalizer;
+
+    /// @notice Timestamp at which `markFinalized` moved the target subKey
+    ///         to `RECOVERED`. Zero when never finalized.
+    mapping(bytes32 => uint64) private _finalizedAt;
+
     /*//////////////////////////////////////////////////////////////
                               LOCAL ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -150,6 +160,20 @@ contract EscapeControllerV1 is IEscapeController {
     /// @notice Final recovery withdrawal / reservation is out of scope for WP-10A.
     ///         `WP-10B RecoveryFinalizer` owns the implementation.
     error RecoveryFinalizationNotYetImplemented();
+
+    /// @notice `initializeRecoveryFinalizer` called a second time. Introduced by WP-10B.
+    error RecoveryFinalizerAlreadyInitialized();
+
+    /// @notice `initializeRecoveryFinalizer` called with the zero address.
+    error InvalidRecoveryFinalizer();
+
+    /// @notice `markFinalized` called by a caller other than the authorised
+    ///         `RecoveryFinalizer`. Introduced by WP-10B.
+    error OnlyRecoveryFinalizer();
+
+    /// @notice `markFinalized` called for a subKey whose current state does
+    ///         not permit the `RECOVERY_ACTIVE → RECOVERED` transition.
+    error CannotFinalizeFromState(RecoveryState currentState);
 
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
@@ -423,25 +447,62 @@ contract EscapeControllerV1 is IEscapeController {
     ///         Engine to gate risk-increasing operations.
     /// @param subKey Canonical subaccount identifier.
     /// @return allowed `true` when the subaccount is in `NORMAL` or
-    ///         `CANCELLED` state (both permit new risk).
+    ///         `CANCELLED` state (both permit new risk). `RECOVERED`
+    ///         subaccounts are PERMANENTLY closed and never allowed.
     function isRiskIncreasingOperationAllowed(bytes32 subKey) external view returns (bool allowed) {
         RecoveryState s = _recoveryState[subKey];
         allowed = (s == RecoveryState.NORMAL || s == RecoveryState.CANCELLED);
     }
 
-    /// @notice WP-10B finalizer boundary — returns `true` only when the
-    ///         controller has entered `RECOVERY_ACTIVE` and no
-    ///         additional obligations remain. WP-10A ALWAYS returns
-    ///         `false` because objective proof of resolved obligations
-    ///         is unavailable here — the `RecoveryFinalizer` owns it.
-    function isFinalizationReady(
-        bytes32 /*subKey*/
-    )
-        external
-        pure
-        returns (bool)
-    {
-        return false;
+    /// @notice WP-10B finalizer boundary — returns `true` iff the
+    ///         subaccount is in `RECOVERY_ACTIVE`. Objective proofs of
+    ///         zero-position, zero-reservation, and remaining
+    ///         obligations are enforced by the concrete
+    ///         `RecoveryFinalizerV1` itself, not this view.
+    function isFinalizationReady(bytes32 subKey) external view returns (bool) {
+        return _recoveryState[subKey] == RecoveryState.RECOVERY_ACTIVE;
+    }
+
+    /// @notice Timestamp at which the target subaccount transitioned to
+    ///         `RECOVERED` (via `markFinalized`). Zero when never
+    ///         finalized. Introduced by WP-10B.
+    function finalizedAt(bytes32 subKey) external view returns (uint64) {
+        return _finalizedAt[subKey];
+    }
+
+    /// @notice Canonical `RecoveryFinalizer` deployment. Zero until
+    ///         `initializeRecoveryFinalizer` has been called. Introduced by WP-10B.
+    function recoveryFinalizer() external view returns (address) {
+        return _recoveryFinalizer;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                    RECOVERY-FINALIZER BINDING (WP-10B)
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice One-shot governance init of the canonical
+    ///         `RecoveryFinalizer` deployment authorised to transition
+    ///         a subaccount to `RECOVERED`. Once set, immutable for the
+    ///         life of the controller.
+    function initializeRecoveryFinalizer(address finalizer) external onlyGovernance {
+        if (_recoveryFinalizer != address(0)) revert RecoveryFinalizerAlreadyInitialized();
+        if (finalizer == address(0)) revert InvalidRecoveryFinalizer();
+        _recoveryFinalizer = finalizer;
+    }
+
+    /// @notice Transition `subKey` from `RECOVERY_ACTIVE` to `RECOVERED`.
+    /// @dev Callable ONLY by the initialised `RecoveryFinalizer`. This
+    ///      is the authority boundary consumed by WP-10B — objective
+    ///      proofs (zero positions, zero reservations) are enforced by
+    ///      the finalizer BEFORE it calls this primitive. The controller
+    ///      is only responsible for the state-machine invariant that
+    ///      the current state IS `RECOVERY_ACTIVE`.
+    function markFinalized(bytes32 subKey) external {
+        if (msg.sender != _recoveryFinalizer) revert OnlyRecoveryFinalizer();
+        RecoveryState current = _recoveryState[subKey];
+        if (current != RecoveryState.RECOVERY_ACTIVE) revert CannotFinalizeFromState(current);
+        _recoveryState[subKey] = RecoveryState.RECOVERED;
+        _finalizedAt[subKey] = uint64(block.timestamp);
     }
 
     /*//////////////////////////////////////////////////////////////

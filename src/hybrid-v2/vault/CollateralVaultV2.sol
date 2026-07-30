@@ -431,8 +431,12 @@ abstract contract CollateralVaultV2 is CollateralVaultV2Core {
         }
         // Both sides gated by recovery mode — a match involving a recovering
         // subaccount fails closed regardless of engine-level checks (Part J).
+        // Post-finalization credit is additionally blocked to preserve
+        // FINALIZED_SUBACCOUNT_PERMANENTLY_ECONOMICALLY_CLOSED.
         _requireNoActiveRecoveryOn(payerSubKey);
         _requireNoActiveRecoveryOn(receiverSubKey);
+        _requireNotFinalized(payerSubKey);
+        _requireNotFinalized(receiverSubKey);
         // Token MUST have entered the canonical universe at least once — the
         // append-only membership flag matches the frozen liquidation-completeness
         // universe rule.
@@ -554,6 +558,97 @@ abstract contract CollateralVaultV2 is CollateralVaultV2Core {
 
         emit OptionRebatePaid(budgetSubKey, traderSubKey, token, amount, msg.sender, Versions.EVENT_VERSION);
     }
+
+    /*//////////////////////////////////////////////////////////////
+                    RECOVERY FINALIZATION PRIMITIVE (WP-10B)
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Debit the FULL canonical balance of `(subKey, token)` and
+    ///         transfer to the canonical owner of `subKey`. Narrow
+    ///         recovery-only primitive consumed by the initialised
+    ///         `RecoveryFinalizer` during the atomic finalization
+    ///         transition. Introduced by WP-10B.
+    /// @dev
+    ///  Preconditions (ALL must hold):
+    ///   - caller MUST equal `_recoveryFinalizer` (governance-set once);
+    ///   - `token` MUST be in the canonical collateral universe
+    ///     (may be disabled — recovery must still exit stranded balances);
+    ///   - `subKey` MUST be non-zero and registered (`Registry.ownerOf`
+    ///     resolves an owner);
+    ///   - reservations on `(subKey, token)` MUST be exactly zero — the
+    ///     finalizer enforces this proof up-front; this primitive
+    ///     re-checks defensively (VAULT-B-I4 style);
+    ///   - the withdrawal path MUST NOT be blocked by owner withdrawal
+    ///     pause — recovery finalization is INTENTIONALLY not gated by
+    ///     the general `withdrawalsPaused` flag (design 04 pause matrix).
+    ///
+    ///  Effects:
+    ///   - reads canonical `_balanceOf[subKey][token]`;
+    ///   - if zero: no-op (returns zero, emits no event);
+    ///   - if non-zero: debits the exact amount, decrements
+    ///     `_totalAccounted[token]` by the same amount, SafeERC20-transfers
+    ///     to the canonical owner. Physical delta verified equals the
+    ///     debited amount (fee-on-transfer tokens are rejected).
+    ///
+    ///  Returns the withdrawn amount for the caller's per-token event.
+    ///
+    ///  Never touches the recovery state machine (that mutation is
+    ///  owned by `IEscapeController.markFinalized`). Never touches
+    ///  reservations, positions, or protocol-fee balances. Never accepts
+    ///  a caller-supplied recipient — the recipient is ALWAYS the
+    ///  canonical owner resolved from the Registry.
+    function applyRecoveryFinalization(bytes32 subKey, address token)
+        external
+        nonReentrant
+        returns (address recipient, uint256 amount)
+    {
+        if (msg.sender != _recoveryFinalizer) revert OnlyRecoveryFinalizer();
+        if (subKey == bytes32(0)) revert SubKeyRequired();
+        if (token == address(0)) revert InvalidToken();
+        recipient = REGISTRY.ownerOf(subKey);
+        if (recipient == address(0)) revert OptionPremiumUnknownSubaccount(subKey);
+        if (!_knownCollateralToken[token]) revert OptionPremiumUnknownToken(token);
+        // Defensive re-check — the finalizer already proved zero
+        // aggregate lock, but this primitive re-verifies to preserve
+        // VAULT-B-I4 without relying on caller behaviour.
+        uint256 locked = _totalLocked[subKey][token];
+        if (locked != 0) revert RecoveryFinalizationReservationRemains(subKey, token, locked);
+
+        amount = _balanceOf[subKey][token];
+        if (amount == 0) return (recipient, 0);
+
+        _balanceOf[subKey][token] = 0;
+        _totalAccounted[token] -= amount;
+
+        uint256 physicalBefore = IERC20(token).balanceOf(address(this));
+        IERC20(token).safeTransfer(recipient, amount);
+        uint256 physicalAfter = IERC20(token).balanceOf(address(this));
+        uint256 outflow = physicalBefore - physicalAfter;
+        if (outflow != amount) revert InvalidTokenBalanceDelta(amount, outflow);
+
+        emit RecoveryFinalizationWithdrawn(subKey, recipient, token, amount, msg.sender, Versions.EVENT_VERSION);
+    }
+
+    /// @notice `applyRecoveryFinalization` called by any address other
+    ///         than the authorised `RecoveryFinalizer`.
+    error OnlyRecoveryFinalizer();
+
+    /// @notice `applyRecoveryFinalization` refused because the reservation
+    ///         invariant is not met. Defensive; the finalizer must
+    ///         verify zero reservations up-front.
+    error RecoveryFinalizationReservationRemains(bytes32 subKey, address token, uint256 remainingLocked);
+
+    /// @notice Emitted once per canonical token during recovery
+    ///         finalization. `recipient` is the canonical owner
+    ///         resolved from the Registry. Reconstructible.
+    event RecoveryFinalizationWithdrawn(
+        bytes32 indexed subKey,
+        address indexed recipient,
+        address indexed token,
+        uint256 amount,
+        address caller,
+        uint16 eventVersion
+    );
 
     /*//////////////////////////////////////////////////////////////
                      GOVERNANCE ORPHANED-LOCK RELEASE
@@ -691,9 +786,11 @@ abstract contract CollateralVaultV2 is CollateralVaultV2Core {
         bytes32 fromSubKey = REGISTRY.subKeyOf(owner, fromSubaccountId);
         bytes32 toSubKey = REGISTRY.subKeyOf(owner, toSubaccountId);
         // Outbound side blocked when the source is in recovery mode. The
-        // destination side is allowed to receive (Part I — internal
-        // transfer IN remains permitted).
+        // destination is only blocked when already finalized — a
+        // permanently closed subaccount MUST NOT accept new credits
+        // (Part K).
         _requireNoActiveRecoveryOn(fromSubKey);
+        _requireNotFinalized(toSubKey);
 
         uint256 fromBalance = _balanceOf[fromSubKey][token];
         uint256 fromLocked = _totalLocked[fromSubKey][token];
