@@ -169,9 +169,21 @@ contract PerpEngineTest is Test {
                 closeFactorBps: 5_000, priceSpreadBps: 100, minImprovementBps: 50, oracleMaxDelay: 60
             }),
             PerpMarketRegistry.FundingConfig({
-                isEnabled: false, fundingInterval: 0, maxFundingRateBps: 0, maxSkewFundingBps: 0, oracleClampBps: 0
+                isEnabled: false,
+                fundingInterval: 0,
+                maxFundingRateBps: 0,
+                maxSkewFundingBps: 0,
+                oracleClampBps: 0,
+                impactMidMaxDelay: 0
             })
         );
+
+        // Configure the per-market execution-price deviation guard (fail-closed by default).
+        // These pre-existing tests exercise trades across a wide historical price grid without
+        // updating the oracle mark between trades. Use the loosest bound (100%) here so they
+        // remain price-dynamic; dedicated tests in test/perp/PerpEngineExecutionPriceGuard.t.sol
+        // cover tight-band behavior.
+        registry.setMaxExecutionDeviationBps(marketId, 10_000);
 
         engine.setMatchingEngine(MATCHING_ENGINE);
         engine.setRiskModule(address(riskModule));

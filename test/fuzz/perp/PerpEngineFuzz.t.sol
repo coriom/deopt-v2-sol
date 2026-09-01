@@ -146,9 +146,18 @@ contract PerpEngineFuzzTest is Test, PerpEngineTypes {
                 closeFactorBps: 5_000, priceSpreadBps: 100, minImprovementBps: 50, oracleMaxDelay: 60
             }),
             PerpMarketRegistry.FundingConfig({
-                isEnabled: false, fundingInterval: 0, maxFundingRateBps: 0, maxSkewFundingBps: 0, oracleClampBps: 0
+                isEnabled: false,
+                fundingInterval: 0,
+                maxFundingRateBps: 0,
+                maxSkewFundingBps: 0,
+                oracleClampBps: 0,
+                impactMidMaxDelay: 0
             })
         );
+
+        // Configure the per-market execution-price deviation guard (fail-closed by default).
+        // Wide 100% band so the random fuzz price grid does not systematically bounce off the guard.
+        registry.setMaxExecutionDeviationBps(marketId, 10_000);
 
         engine.setMatchingEngine(MATCHING_ENGINE);
         engine.setRiskModule(address(riskModule));
@@ -451,7 +460,11 @@ contract PerpEngineFuzzTest is Test, PerpEngineTypes {
     }
 
     function _priceFromSeed(uint256 seed) internal pure returns (uint256 executionPrice1e8) {
-        return bound(seed, 500, 5_000) * PRICE_SCALE;
+        // Bounded to stay within the execution-price deviation guard around the oracle mark
+        // (setUp() pins the oracle at 2_000). Original range was [500, 5_000] (up to 150%
+        // deviation), which is incompatible with a fail-closed guard. This fuzzer targets
+        // position/OI accounting invariants, not the guard itself.
+        return bound(seed, 1_500, 3_500) * PRICE_SCALE;
     }
 
     function _applyTradeRef(Position memory buyerPos, Position memory sellerPos, uint128 sizeDelta1e8, uint256 price1e8)

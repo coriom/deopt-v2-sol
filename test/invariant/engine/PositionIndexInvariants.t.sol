@@ -488,7 +488,8 @@ contract InvariantMarginRiskModule is IRiskModule {
                         fundingInterval: 0,
                         maxFundingRateBps: 0,
                         maxSkewFundingBps: 0,
-                        oracleClampBps: 0
+                        oracleClampBps: 0,
+                        impactMidMaxDelay: 0
                     })
                 )
             );
@@ -514,10 +515,17 @@ contract InvariantMarginRiskModule is IRiskModule {
                         fundingInterval: 0,
                         maxFundingRateBps: 0,
                         maxSkewFundingBps: 0,
-                        oracleClampBps: 0
+                        oracleClampBps: 0,
+                        impactMidMaxDelay: 0
                     })
                 )
             );
+
+            // Configure the per-market execution-price deviation guard for both perp markets
+            // (fail-closed by default). Wide 100% band for the invariant sweep.
+            for (uint256 mi = 0; mi < marketIds.length; ++mi) {
+                perpRegistry.setMaxExecutionDeviationBps(marketIds[mi], 10_000);
+            }
 
             perpEngine.setMatchingEngine(MATCHING_ENGINE);
             perpEngine.setRiskModule(address(perpRiskModule));

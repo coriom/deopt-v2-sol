@@ -184,17 +184,32 @@ contract OracleFailureFlowTest is Test {
                 closeFactorBps: 5_000, priceSpreadBps: 100, minImprovementBps: 50, oracleMaxDelay: 60
             }),
             PerpMarketRegistry.FundingConfig({
-                isEnabled: false, fundingInterval: 0, maxFundingRateBps: 0, maxSkewFundingBps: 0, oracleClampBps: 0
+                isEnabled: false,
+                fundingInterval: 0,
+                maxFundingRateBps: 0,
+                maxSkewFundingBps: 0,
+                oracleClampBps: 0,
+                impactMidMaxDelay: 0
             })
         );
+
+        // Configure the per-market execution-price deviation guard (fail-closed by default).
+        // Wide 100% band to preserve pre-existing test behavior; this test targets oracle
+        // failure paths (stale/zero/future), not the deviation guard itself.
+        registry.setMaxExecutionDeviationBps(marketId, 10_000);
 
         engine.setMatchingEngine(MATCHING_ENGINE);
         engine.setRiskModule(address(riskModule));
         engine.setInsuranceFund(address(insuranceFund));
 
         router.setMaxOracleDelay(600);
-        router.setFeed(address(weth), address(usdc), primarySource, IPriceSource(address(0)), 60, 100, true);
+        // Post OracleRouter hardening: active feeds require BOTH a non-zero secondary source
+        // AND a non-zero maxDeviationBps. Passing both here (previously solo-primary).
+        router.setFeed(address(weth), address(usdc), primarySource, secondarySource, 60, 100, true);
         vm.stopPrank();
+
+        // Seed the secondary so it matches the primary in setUp; individual tests may override.
+        secondarySource.setResponse(uint256(ENTRY_PRICE), block.timestamp, false);
 
         primarySource.setResponse(uint256(ENTRY_PRICE), block.timestamp, false);
         _setHealthyRisk(TRADER);
@@ -205,7 +220,9 @@ contract OracleFailureFlowTest is Test {
     }
 
     function testStaleOraclePriceCausesProtectedLiquidationPathToRevert() external {
+        // Both sources stale => Router surfaces `StalePrice`.
         primarySource.setResponse(uint256(ENTRY_PRICE), block.timestamp - 61, false);
+        secondarySource.setResponse(uint256(ENTRY_PRICE), block.timestamp - 61, false);
 
         vm.prank(LIQUIDATOR);
         vm.expectRevert(OracleRouter.StalePrice.selector);
@@ -213,7 +230,9 @@ contract OracleFailureFlowTest is Test {
     }
 
     function testZeroOraclePriceIsRejected() external {
+        // Both sources return zero price => neither raw-usable => `NoSource`.
         primarySource.setResponse(0, block.timestamp, false);
+        secondarySource.setResponse(0, block.timestamp, false);
 
         vm.expectRevert(OracleRouter.NoSource.selector);
         router.getPrice(address(weth), address(usdc));
@@ -225,7 +244,9 @@ contract OracleFailureFlowTest is Test {
     }
 
     function testFutureTimestampOracleUpdateIsRejected() external {
+        // Both sources dated in the future => Router surfaces `FutureTimestamp`.
         primarySource.setResponse(uint256(ENTRY_PRICE), block.timestamp + 1, false);
+        secondarySource.setResponse(uint256(ENTRY_PRICE), block.timestamp + 1, false);
 
         vm.prank(LIQUIDATOR);
         vm.expectRevert(OracleRouter.FutureTimestamp.selector);
@@ -233,7 +254,9 @@ contract OracleFailureFlowTest is Test {
     }
 
     function testUnavailableOraclePathCausesProtectedOperationToFailSafely() external {
+        // Both sources revert on read => neither raw-usable => `NoSource`.
         primarySource.setResponse(0, 0, true);
+        secondarySource.setResponse(0, 0, true);
 
         vm.prank(LIQUIDATOR);
         vm.expectRevert(OracleRouter.NoSource.selector);

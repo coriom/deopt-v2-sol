@@ -252,6 +252,33 @@ abstract contract PerpEngineTypes {
     error FundingParamsInvalid();
     error FundingIntervalNotElapsed();
 
+    /// @notice Raised when a non-source caller invokes the impact-mid writer.
+    /// @dev See `PerpEngineStorage.onlyImpactMidSource` and
+    ///      `PerpEngineTrading.updateImpactMid` for PERPS-FUNDING-V2 context.
+    error NotImpactMidSource();
+
+    /// @notice Raised when governance attempts to set `impactMidSource` to zero.
+    error InvalidImpactMidSource();
+
+    /// @notice Reserved for future explicit staleness enforcement paths.
+    /// @dev The current freshness check (`_tryGetImpactMid1e8`) fails-CLOSED to a
+    ///      0 rate rather than reverting, so this error is not raised on the
+    ///      hot path today. It remains defined for future keeper-hardening
+    ///      surfaces that MAY want to revert.
+    error ImpactMidStale();
+
+    /// @notice Raised when the execution-price deviation guard cannot fetch a safe oracle mark.
+    /// @dev Fail-closed: covers both `!ok` and zero-price returns from `_tryGetMarkPrice1e8`.
+    error OracleUnavailableForExecutionGuard();
+
+    /// @notice Raised when the matching-engine-provided execution price deviates beyond the
+    /// governance-configured per-market bound relative to the oracle mark/index.
+    error ExecutionPriceOutOfBand();
+
+    /// @notice Raised when a market has no governance-configured execution-price deviation guard.
+    /// @dev Fail-closed: markets are non-tradable until `setMaxExecutionDeviationBps` is called.
+    error ExecutionDeviationGuardNotConfigured();
+
     error WithdrawTooLarge();
     error WithdrawWouldBreachMargin();
 

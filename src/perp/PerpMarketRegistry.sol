@@ -42,9 +42,35 @@ contract PerpMarketRegistry {
     uint32 public constant MIN_INITIAL_MARGIN_BPS = 1;
     uint32 public constant MIN_MAINTENANCE_MARGIN_BPS = 1;
 
+    /// @notice Upper bound for the keeper-published impact-mid freshness gate (seconds).
+    /// @dev
+    ///  When `FundingConfig.isEnabled=true`, `impactMidMaxDelay` MUST be in the
+    ///  range (0, MAX_IMPACT_MID_MAX_DELAY]. When funding is disabled the field
+    ///  MUST be 0 (validator enforces both invariants). One-hour ceiling matches
+    ///  `MAX_LIQUIDATION_ORACLE_DELAY` and is deliberately conservative — a
+    ///  looser value would let a lagging keeper drive stale premium accrual.
+    uint32 public constant MAX_IMPACT_MID_MAX_DELAY = 3600;
+
     uint32 public constant MAX_LIQUIDATION_ORACLE_DELAY = 3600;
     uint32 public constant MIN_CLOSE_FACTOR_BPS = 1;
     uint32 public constant MAX_CLOSE_FACTOR_BPS = 10_000;
+
+    /// @notice Hard upper bound for per-market execution-price deviation guard.
+    /// @dev
+    ///  Governance-controlled per-market cap for `abs(executionPrice - oracleMark) / oracleMark`.
+    ///  The hard on-chain cap is 100% (`BPS`, i.e. 10_000 bps), matching the existing convention
+    ///  for other per-market ratios (e.g. `liquidationPenaltyBps`, `maxFundingRateBps`) that are
+    ///  bounded by `BPS`. Governance is expected to configure a much tighter value at launch
+    ///  (the recommended production default is ~500 bps / 5%, aligned with typical
+    ///  `OracleRouter.maxDeviationBps` values).
+    ///
+    ///  A market that has not been configured (value 0) is treated as fail-closed by the engine
+    ///  (`applyTrade` will revert). To enable trading, governance MUST explicitly set a bound
+    ///  in the range [MIN_EXECUTION_DEVIATION_BPS, MAX_EXECUTION_DEVIATION_BPS].
+    uint16 public constant MAX_EXECUTION_DEVIATION_BPS = 10_000;
+    uint16 public constant MIN_EXECUTION_DEVIATION_BPS = 1;
+    /// @notice Off-chain recommended default; not enforced on-chain (see MAX_EXECUTION_DEVIATION_BPS).
+    uint16 public constant RECOMMENDED_EXECUTION_DEVIATION_BPS = 500;
 
     /*//////////////////////////////////////////////////////////////
                                 TYPES
@@ -88,6 +114,13 @@ contract PerpMarketRegistry {
         uint32 maxFundingRateBps; // abs cap per interval
         uint32 maxSkewFundingBps; // extra model cap for skew-based funding
         uint32 oracleClampBps; // clamp mark/index divergence
+        /// @notice PERPS-FUNDING-V2 keeper impact-mid freshness gate, in seconds.
+        /// @dev
+        ///  When `isEnabled=false` this MUST be 0 (no keeper channel is used).
+        ///  When `isEnabled=true` this MUST be in the range (0, MAX_IMPACT_MID_MAX_DELAY].
+        ///  See `PerpEngineStorage._tryGetImpactMid1e8` for how the freshness gate
+        ///  is applied by the engine at funding-rate time.
+        uint32 impactMidMaxDelay;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -107,6 +140,9 @@ contract PerpMarketRegistry {
     error InvalidRiskConfig();
     error InvalidLiquidationConfig();
     error InvalidFundingConfig();
+
+    /// @notice Governance provided a `maxExecutionDeviationBps` outside `[MIN, MAX]`.
+    error InvalidExecutionDeviationBps();
 
     error CreationPaused();
     error ConfigPausedError();
@@ -171,10 +207,19 @@ contract PerpMarketRegistry {
         uint32 fundingInterval,
         uint32 maxFundingRateBps,
         uint32 maxSkewFundingBps,
-        uint32 oracleClampBps
+        uint32 oracleClampBps,
+        uint32 impactMidMaxDelay
     );
 
     event MarketMetadataSet(uint256 indexed marketId, bytes32 metadata);
+
+    /// @notice Emitted when governance updates the execution-price deviation guard for a market.
+    /// @dev
+    ///  The engine uses `maxExecutionDeviationBps` to bound `abs(executionPrice - oracleMark) / oracleMark`
+    ///  at trade time. A value of 0 means "unconfigured" and MUST cause the engine to fail-closed
+    ///  (revert on `applyTrade`). Governance is expected to explicitly configure a non-zero
+    ///  value before enabling perpetual trading.
+    event MaxExecutionDeviationBpsSet(uint256 indexed marketId, uint16 oldBps, uint16 newBps);
 
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
@@ -190,6 +235,14 @@ contract PerpMarketRegistry {
 
     mapping(bytes32 => uint256) public marketIdByKey;
     mapping(uint256 => bytes32) public marketMetadata;
+
+    /// @notice Per-market execution-price deviation guard, in basis points.
+    /// @dev
+    ///  Bound applied by the engine at trade time:
+    ///     abs(execution_price - oracle_mark_price) * BPS <= oracle_mark_price * bound
+    ///  A value of 0 means "unconfigured" and the engine MUST fail-closed (revert).
+    ///  Valid governance-configured range: [MIN_EXECUTION_DEVIATION_BPS, MAX_EXECUTION_DEVIATION_BPS].
+    mapping(uint256 => uint16) private _maxExecutionDeviationBps;
 
     address public owner;
     address public pendingOwner;
@@ -436,7 +489,8 @@ contract PerpMarketRegistry {
             cfg.fundingInterval,
             cfg.maxFundingRateBps,
             cfg.maxSkewFundingBps,
-            cfg.oracleClampBps
+            cfg.oracleClampBps,
+            cfg.impactMidMaxDelay
         );
     }
 
@@ -444,6 +498,34 @@ contract PerpMarketRegistry {
         if (!_markets[marketId].exists) revert UnknownMarket();
         marketMetadata[marketId] = metadata;
         emit MarketMetadataSet(marketId, metadata);
+    }
+
+    /// @notice Sets the per-market execution-price deviation guard used by the engine at trade time.
+    /// @dev
+    ///  Governance-controlled. Mirrors the access/pause convention used for other risk parameters
+    ///  (`onlyOwner` + `whenConfigNotPaused`).
+    ///
+    ///  Bound applied by the engine:
+    ///     abs(executionPrice - oracleMark) * BPS <= oracleMark * bps
+    ///
+    ///  A value of 0 means "unconfigured / disabled" and MUST cause the engine to revert with
+    ///  `OracleUnavailableForExecutionGuard` (or equivalent fail-closed error). This is the initial
+    ///  state for every market, so PERPS remain non-tradable until governance sets an explicit bound.
+    ///
+    ///  Valid non-zero range: [MIN_EXECUTION_DEVIATION_BPS, MAX_EXECUTION_DEVIATION_BPS].
+    ///  The conservative cap (5% by default) matches the deviation bounds used by the oracle router.
+    function setMaxExecutionDeviationBps(uint256 marketId, uint16 bps) external onlyOwner whenConfigNotPaused {
+        if (!_markets[marketId].exists) revert UnknownMarket();
+        if (bps != 0) {
+            if (bps < MIN_EXECUTION_DEVIATION_BPS || bps > MAX_EXECUTION_DEVIATION_BPS) {
+                revert InvalidExecutionDeviationBps();
+            }
+        }
+
+        uint16 oldBps = _maxExecutionDeviationBps[marketId];
+        _maxExecutionDeviationBps[marketId] = bps;
+
+        emit MaxExecutionDeviationBpsSet(marketId, oldBps, bps);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -516,7 +598,8 @@ contract PerpMarketRegistry {
             fundingCfg.fundingInterval,
             fundingCfg.maxFundingRateBps,
             fundingCfg.maxSkewFundingBps,
-            fundingCfg.oracleClampBps
+            fundingCfg.oracleClampBps,
+            fundingCfg.impactMidMaxDelay
         );
     }
 
@@ -564,6 +647,13 @@ contract PerpMarketRegistry {
     function getFundingConfig(uint256 marketId) external view returns (FundingConfig memory cfg) {
         if (!_markets[marketId].exists) revert UnknownMarket();
         return _fundingConfigs[marketId];
+    }
+
+    /// @notice Returns the per-market execution-price deviation guard, in basis points.
+    /// @dev A returned value of 0 means "unconfigured": engines MUST treat this as fail-closed.
+    function getMaxExecutionDeviationBps(uint256 marketId) external view returns (uint16) {
+        if (!_markets[marketId].exists) revert UnknownMarket();
+        return _maxExecutionDeviationBps[marketId];
     }
 
     function getMarketConfigs(uint256 marketId)
@@ -706,6 +796,10 @@ contract PerpMarketRegistry {
             if (cfg.maxFundingRateBps != 0) revert InvalidFundingConfig();
             if (cfg.maxSkewFundingBps != 0) revert InvalidFundingConfig();
             if (cfg.oracleClampBps != 0) revert InvalidFundingConfig();
+            // PERPS-FUNDING-V2: keeper freshness gate is only meaningful when
+            // funding is enabled. Zero-out when disabled so misconfigurations
+            // cannot silently persist an obsolete gate value.
+            if (cfg.impactMidMaxDelay != 0) revert InvalidFundingConfig();
             return;
         }
 
@@ -716,6 +810,12 @@ contract PerpMarketRegistry {
         if (cfg.maxFundingRateBps > BPS) revert InvalidFundingConfig();
         if (cfg.maxSkewFundingBps > BPS) revert InvalidFundingConfig();
         if (cfg.oracleClampBps > MAX_CLAMP_BPS) revert InvalidFundingConfig();
+
+        // PERPS-FUNDING-V2: when funding is enabled the keeper freshness gate
+        // MUST be positive and bounded. `0` would disable staleness enforcement
+        // (see `_tryGetImpactMid1e8`) which is a production footgun.
+        if (cfg.impactMidMaxDelay == 0) revert InvalidFundingConfig();
+        if (cfg.impactMidMaxDelay > MAX_IMPACT_MID_MAX_DELAY) revert InvalidFundingConfig();
     }
 
     function _isCreationPaused() internal view returns (bool) {

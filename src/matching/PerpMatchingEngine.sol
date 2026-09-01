@@ -64,6 +64,18 @@ contract PerpMatchingEngine is ReentrancyGuard, EIP712 {
     error OwnershipTransferNotInitiated();
     error EngineNotSet();
 
+    /// @notice Reverts when `executionPrice1e8` exceeds the buyer's signed
+    ///         `maxExecutionPrice1e8` bound (V2 PerpTrade user-price bounds —
+    ///         PERPS-PRICING-AND-EXECUTION-SAFETY-CORE-V1). Only triggered
+    ///         when the buyer's bound is non-zero.
+    error BuyerBoundExceeded();
+
+    /// @notice Reverts when `executionPrice1e8` is below the seller's signed
+    ///         `minExecutionPrice1e8` bound (V2 PerpTrade user-price bounds —
+    ///         PERPS-PRICING-AND-EXECUTION-SAFETY-CORE-V1). Only triggered
+    ///         when the seller's bound is non-zero.
+    error SellerBoundViolated();
+
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
     //////////////////////////////////////////////////////////////*/
@@ -78,10 +90,46 @@ contract PerpMatchingEngine is ReentrancyGuard, EIP712 {
     bool public paused;
     mapping(address => uint256) public nonces;
 
+    /// @notice EIP-712 typehash for the signed PerpTrade payload —
+    ///         V2 shape (PERPS-PRICING-AND-EXECUTION-SAFETY-CORE-V1).
+    /// @dev
+    ///  V1 → V2 typehash supersession: two new fields were inserted between
+    ///  `executionPrice1e8` and `buyerIsMaker` to let counterparties sign
+    ///  INCLUSIVE user-side price bounds instead of an exact executable
+    ///  price:
+    ///    - `maxExecutionPrice1e8` — buyer's max acceptable exec price
+    ///                              (`0` = strict: exec MUST equal
+    ///                              `executionPrice1e8`, legacy shape).
+    ///    - `minExecutionPrice1e8` — seller's min acceptable exec price
+    ///                              (`0` = strict, symmetric with buyer).
+    ///  Both bounds set to `0` is BACKWARDS-COMPATIBLE behaviour: both
+    ///  counterparties still sign the exact `executionPrice1e8`, matching
+    ///  the pre-V2 limit-order equivalence semantics. Non-zero on either
+    ///  side activates the corresponding inclusive bound check inside
+    ///  {_executeSingle}.
+    ///
+    ///  This is a HARD EIP-712 type supersession: because the typehash
+    ///  string differs from V1, the resulting `TRADE_TYPEHASH` digest is
+    ///  different and every EIP-712 signature produced against the V1
+    ///  typehash is REJECTED at signature verification time — the digest
+    ///  no longer matches. This is the intended replay-safety property.
+    ///  Pre-upgrade off-chain signatures cannot be replayed against the V2
+    ///  engine. The domain separator's `version` string is intentionally
+    ///  left at `"1"` — mirrors the precedent in
+    ///  {OptionOrderTypes} (see `OPTION_ORDER_TYPE` /
+    ///  `ACTION_OPTION_ORDER = "OPTION_ORDER_MATCH_V2"` at
+    ///  `src/hybrid-v2/options/OptionOrderTypes.sol:108-121`), where a V1
+    ///  → V2 payload supersession is expressed by bumping the typehash
+    ///  content, not the domain version.
     bytes32 public constant TRADE_TYPEHASH = keccak256(
-        "PerpTrade(bytes32 intentId,address buyer,address seller,uint256 marketId,uint128 sizeDelta1e8,uint128 executionPrice1e8,bool buyerIsMaker,uint256 buyerNonce,uint256 sellerNonce,uint256 deadline)"
+        "PerpTrade(bytes32 intentId,address buyer,address seller,uint256 marketId,uint128 sizeDelta1e8,uint128 executionPrice1e8,uint128 maxExecutionPrice1e8,uint128 minExecutionPrice1e8,bool buyerIsMaker,uint256 buyerNonce,uint256 sellerNonce,uint256 deadline)"
     );
 
+    /// @notice Canonical V2 PerpTrade payload signed by both counterparties.
+    /// @dev Field order MUST match {TRADE_TYPEHASH} exactly.
+    ///      `maxExecutionPrice1e8` / `minExecutionPrice1e8` semantics are
+    ///      documented on {TRADE_TYPEHASH}. Setting both to `0` reproduces
+    ///      the V1 strict-price signing shape.
     struct PerpTrade {
         bytes32 intentId;
         address buyer;
@@ -89,6 +137,8 @@ contract PerpMatchingEngine is ReentrancyGuard, EIP712 {
         uint256 marketId;
         uint128 sizeDelta1e8;
         uint128 executionPrice1e8;
+        uint128 maxExecutionPrice1e8;
+        uint128 minExecutionPrice1e8;
         bool buyerIsMaker;
         uint256 buyerNonce;
         uint256 sellerNonce;
@@ -256,6 +306,8 @@ contract PerpMatchingEngine is ReentrancyGuard, EIP712 {
                 t.marketId,
                 t.sizeDelta1e8,
                 t.executionPrice1e8,
+                t.maxExecutionPrice1e8,
+                t.minExecutionPrice1e8,
                 t.buyerIsMaker,
                 t.buyerNonce,
                 t.sellerNonce,
@@ -345,6 +397,21 @@ contract PerpMatchingEngine is ReentrancyGuard, EIP712 {
 
         if (!_verify(t.buyer, digest, buyerSig)) revert InvalidSignature();
         if (!_verify(t.seller, digest, sellerSig)) revert InvalidSignature();
+
+        // V2 user-side inclusive execution-price bounds
+        // (PERPS-PRICING-AND-EXECUTION-SAFETY-CORE-V1). A bound of `0`
+        // preserves the V1 strict-price semantics (both sides signed the
+        // exact `executionPrice1e8`, so no additional check is needed
+        // beyond signature match). A non-zero bound activates an inclusive
+        // check on the corresponding side. Both bounds are enforced only
+        // AFTER signature verification succeeds, so the check operates on
+        // consented, authenticated values.
+        if (t.maxExecutionPrice1e8 != 0 && t.executionPrice1e8 > t.maxExecutionPrice1e8) {
+            revert BuyerBoundExceeded();
+        }
+        if (t.minExecutionPrice1e8 != 0 && t.executionPrice1e8 < t.minExecutionPrice1e8) {
+            revert SellerBoundViolated();
+        }
 
         _consumeNonces(t);
 

@@ -870,6 +870,7 @@ abstract contract RiskGovernorQueue is RiskGovernorAdmin {
         uint32 maxFundingRateBps,
         uint32 maxSkewFundingBps,
         uint32 oracleClampBps,
+        uint32 impactMidMaxDelay,
         uint256 eta
     ) external returns (bytes32) {
         IPerpMarketRegistryGov.FundingConfig memory cfg = IPerpMarketRegistryGov.FundingConfig({
@@ -877,7 +878,8 @@ abstract contract RiskGovernorQueue is RiskGovernorAdmin {
             fundingInterval: fundingInterval,
             maxFundingRateBps: maxFundingRateBps,
             maxSkewFundingBps: maxSkewFundingBps,
-            oracleClampBps: oracleClampBps
+            oracleClampBps: oracleClampBps,
+            impactMidMaxDelay: impactMidMaxDelay
         });
 
         bytes memory data = abi.encodeCall(IPerpMarketRegistryGov.setFundingConfig, (marketId, cfg));

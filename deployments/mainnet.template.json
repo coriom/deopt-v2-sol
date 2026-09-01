@@ -288,7 +288,9 @@
       "fundingIntervalSeconds": 3600,
       "maxFundingRateBps": 75,
       "maxSkewFundingBps": "TODO_REPLACE_ETH_PERP_MAX_SKEW_FUNDING_BPS",
-      "oracleClampBps": "TODO_REPLACE_ETH_PERP_ORACLE_CLAMP_BPS"
+      "oracleClampBps": "TODO_REPLACE_ETH_PERP_ORACLE_CLAMP_BPS",
+      "impactMidMaxDelay": "TODO_REPLACE_ETH_PERP_IMPACT_MID_MAX_DELAY",
+      "maxExecutionDeviationBps": "TODO_REPLACE_ETH_PERP_MAX_EXECUTION_DEVIATION_BPS"
     },
     {
       "symbol": "BTC-PERP",
@@ -313,7 +315,9 @@
       "fundingIntervalSeconds": 3600,
       "maxFundingRateBps": 50,
       "maxSkewFundingBps": "TODO_REPLACE_BTC_PERP_MAX_SKEW_FUNDING_BPS",
-      "oracleClampBps": "TODO_REPLACE_BTC_PERP_ORACLE_CLAMP_BPS"
+      "oracleClampBps": "TODO_REPLACE_BTC_PERP_ORACLE_CLAMP_BPS",
+      "impactMidMaxDelay": "TODO_REPLACE_BTC_PERP_IMPACT_MID_MAX_DELAY",
+      "maxExecutionDeviationBps": "TODO_REPLACE_BTC_PERP_MAX_EXECUTION_DEVIATION_BPS"
     }
   ],
   "launchSafetyControls": {

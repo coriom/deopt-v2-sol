@@ -281,9 +281,18 @@ contract BadDebtRepaymentFlowTest is Test {
                 closeFactorBps: 5_000, priceSpreadBps: 100, minImprovementBps: 50, oracleMaxDelay: 60
             }),
             PerpMarketRegistry.FundingConfig({
-                isEnabled: false, fundingInterval: 0, maxFundingRateBps: 0, maxSkewFundingBps: 0, oracleClampBps: 0
+                isEnabled: false,
+                fundingInterval: 0,
+                maxFundingRateBps: 0,
+                maxSkewFundingBps: 0,
+                oracleClampBps: 0,
+                impactMidMaxDelay: 0
             })
         );
+
+        // Configure the per-market execution-price deviation guard (fail-closed by default).
+        // Wide 100% band to preserve pre-existing scenario behavior.
+        registry.setMaxExecutionDeviationBps(marketId, 10_000);
 
         engine.setMatchingEngine(MATCHING_ENGINE);
         engine.setRiskModule(address(riskModule));

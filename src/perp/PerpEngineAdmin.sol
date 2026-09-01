@@ -165,6 +165,21 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
         emit MatchingEngineSet(matchingEngine_);
     }
 
+    /// @notice Governance setter for the trusted impact-mid keeper address.
+    /// @dev
+    ///  PERPS-FUNDING-V2: only `impactMidSource` may call
+    ///  `PerpEngineTrading.updateImpactMid`. The keeper publishes the off-chain
+    ///  orderbook TWAP mid used by the funding premium computation. Zero-address
+    ///  is rejected — to disable the keeper channel governance MUST rotate to a
+    ///  no-op EOA (or leave `FundingConfig.isEnabled=false`, which short-circuits
+    ///  before any keeper read).
+    function setImpactMidSource(address source) external onlyOwner {
+        if (source == address(0)) revert InvalidImpactMidSource();
+        address old = impactMidSource;
+        impactMidSource = source;
+        emit ImpactMidSourceSet(old, source);
+    }
+
     function setOracle(address oracle_) external onlyOwner {
         if (oracle_ == address(0)) revert ZeroAddress();
         _oracle = IOracle(oracle_);

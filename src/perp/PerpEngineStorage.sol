@@ -157,6 +157,36 @@ abstract contract PerpEngineStorage is PerpEngineTypes {
     uint32 public liquidationOracleMaxDelay = 60;
 
     /*//////////////////////////////////////////////////////////////
+                        FUNDING V2 IMPACT-MID ORACLE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Off-chain impact-mid sample used by PERPS-FUNDING-V2 premium math.
+    /// @dev
+    ///  Populated by a trusted keeper via `updateImpactMid`. The keeper walks the
+    ///  DeOpt orderbook up to a market-configured notional depth off-chain and
+    ///  publishes the resulting TWAP mid here. The on-chain side stores the
+    ///  latest sample and enforces a per-market freshness gate — NO orderbook-
+    ///  derived math ever happens on-chain.
+    struct ImpactMidSample {
+        uint128 mid1e8;
+        uint64 updatedAt;
+        // 8 bytes padding — future TWAP window size / weight fields
+    }
+
+    /// @notice Address permitted to publish impact-mid samples for funding math.
+    /// @dev
+    ///  PERPS-FUNDING-V2: the impact-mid TWAP is produced OFF-CHAIN by a trusted
+    ///  keeper walking the DeOpt orderbook up to a market-configured notional
+    ///  depth. The on-chain side stores the latest sample and enforces a
+    ///  freshness gate; NO orderbook-derived math happens on-chain.
+    address public impactMidSource;
+
+    mapping(uint256 => ImpactMidSample) internal _impactMidSamples;
+
+    event ImpactMidSourceSet(address indexed oldSource, address indexed newSource);
+    event ImpactMidUpdated(uint256 indexed marketId, uint128 mid1e8, uint64 updatedAt);
+
+    /*//////////////////////////////////////////////////////////////
                                 MODIFIERS
     //////////////////////////////////////////////////////////////*/
 
@@ -197,6 +227,14 @@ abstract contract PerpEngineStorage is PerpEngineTypes {
 
     modifier whenCollateralOpsNotPaused() {
         _requireCollateralOpsNotPaused();
+        _;
+    }
+
+    /// @notice Restricts a call to the configured impact-mid keeper source.
+    /// @dev Used by `PerpEngineTrading.updateImpactMid` to gate the funding-V2
+    ///      keeper writer surface. Governance controls `impactMidSource`.
+    modifier onlyImpactMidSource() {
+        if (msg.sender != impactMidSource) revert NotImpactMidSource();
         _;
     }
 
@@ -927,6 +965,20 @@ abstract contract PerpEngineStorage is PerpEngineTypes {
                         INTERNAL ORACLE HELPERS
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Returns the market mark price, in 1e8. Reverts if the oracle has no usable price.
+    /// @dev
+    ///  V1 policy: risk mark == index (oracle spot). This function returns the raw oracle price
+    ///  for `(m.underlying, m.settlementAsset)`. It is used by:
+    ///   - unrealized PnL,
+    ///   - initial and maintenance margin (via `IPerpRiskModule`),
+    ///   - liquidation triggering + liquidation execution price,
+    ///   - the execution-price deviation guard in `PerpEngineTrading.applyTrade`.
+    ///
+    ///  Using a raw orderbook midpoint here would be manipulable on a thin launch market, so V1
+    ///  intentionally anchors the risk mark to the oracle index. When PERPS-FUNDING-V2 introduces
+    ///  a distinct mark = index + bounded/smoothed premium, `_getMarkPrice1e8` will diverge from
+    ///  the risk-mark path; the alias `PerpEngineViews.getRiskMarkPrice1e8` is the stable surface
+    ///  for downstream consumers to bind against.
     function _getMarkPrice1e8(uint256 marketId) internal view returns (uint256 price1e8) {
         PerpMarketRegistry.Market memory m = _requireMarketExists(marketId);
         IOracle o = _marketOracle(m);
@@ -956,6 +1008,50 @@ abstract contract PerpEngineStorage is PerpEngineTypes {
         } catch {
             return (0, false);
         }
+    }
+
+    /// @notice Returns the market index price used by funding math, in 1e8.
+    /// @dev
+    ///  V1 policy: index == oracle spot == risk mark. Structurally identical to
+    ///  `_tryGetMarkPrice1e8` today; the SEMANTIC distinction exists so
+    ///  PERPS-FUNDING-V2's premium computation binds against a stable identifier
+    ///  (`index`) rather than the mark surface (which may diverge later — see
+    ///  `getRiskMarkPrice1e8` doc in PerpEngineViews).
+    ///
+    ///  Do NOT collapse the two callers back into one call — the distinction is
+    ///  intentional. The funding computation reads:
+    ///
+    ///    premium = (marketRef - index) / index
+    ///
+    ///  where `index` MUST come through this alias (stable) and `marketRef`
+    ///  comes from the keeper-published impact-mid TWAP. Merging index and mark
+    ///  reintroduces the exact 0-rate bug this alias was created to fix.
+    function _tryGetIndexPrice1e8(uint256 marketId) internal view returns (uint256 price1e8, bool ok) {
+        return _tryGetMarkPrice1e8(marketId);
+    }
+
+    /// @notice Returns the latest keeper-published impact-mid sample, gated by freshness.
+    /// @dev
+    ///  Returns `(0, false)` when no sample has ever been published for `marketId`,
+    ///  or when the sample is older than `maxDelaySeconds`.
+    ///
+    ///  `maxDelaySeconds == 0` means "no staleness gate" (accept any non-zero
+    ///  sample — testing-only convenience; production configs MUST set > 0,
+    ///  which is enforced at governance time via `_validateFundingConfig`).
+    ///
+    ///  The caller (`_fundingRatePerInterval1e18`) fail-CLOSES to a 0 rate when
+    ///  no fresh sample is available, so a keeper outage does NOT brick trading.
+    function _tryGetImpactMid1e8(uint256 marketId, uint32 maxDelaySeconds)
+        internal
+        view
+        returns (uint256 mid1e8, bool ok)
+    {
+        ImpactMidSample memory s = _impactMidSamples[marketId];
+        if (s.mid1e8 == 0) return (0, false);
+        if (maxDelaySeconds != 0 && block.timestamp > uint256(s.updatedAt) + uint256(maxDelaySeconds)) {
+            return (0, false);
+        }
+        return (uint256(s.mid1e8), true);
     }
 
     /// @notice Mark price for the liquidation path with optional freshness enforcement.

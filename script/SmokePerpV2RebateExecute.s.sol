@@ -384,6 +384,10 @@ contract SmokePerpV2RebateExecute is Script {
             marketId: inputs.marketId,
             sizeDelta1e8: inputs.size1e8,
             executionPrice1e8: inputs.price1e8,
+            // V2 PerpTrade user-price bounds — strict legacy shape:
+            // both parties sign the exact `executionPrice1e8`.
+            maxExecutionPrice1e8: 0,
+            minExecutionPrice1e8: 0,
             buyerIsMaker: inputs.buyerIsMaker,
             buyerNonce: matching.nonces(buyer),
             sellerNonce: matching.nonces(seller),

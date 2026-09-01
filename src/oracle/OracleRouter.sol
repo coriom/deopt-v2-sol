@@ -129,6 +129,14 @@ contract OracleRouter is IOracle {
     error OraclePaused();
     error ConfigPausedError();
 
+    /// @notice Raised when activating a feed with a missing secondary source or a zero deviation bound.
+    /// @dev
+    ///  A solo-primary active feed silently bypasses the dual-source deviation check inside
+    ///  `_readConfiguredFeed`. Governance MUST configure BOTH a non-zero `secondarySource` AND a
+    ///  non-zero `maxDeviationBps` before flipping `isActive` to true (via `setFeed` OR
+    ///  `setFeedStatus`). Deactivating a solo-primary feed is still allowed.
+    error SecondarySourceRequired();
+
     error OwnershipTransferNotInitiated();
 
     /*//////////////////////////////////////////////////////////////
@@ -304,6 +312,12 @@ contract OracleRouter is IOracle {
             if (address(primarySource) == address(0) && address(secondarySource) == address(0)) {
                 revert NoSource();
             }
+            // Fail-closed dual-source invariant: an active feed must have BOTH sources AND a
+            // non-zero deviation bound, otherwise `_readConfiguredFeed` degenerates to a single
+            // trusted source with no cross-check.
+            if (address(secondarySource) == address(0) || maxDeviationBps == 0) {
+                revert SecondarySourceRequired();
+            }
         }
 
         bytes32 key = _pairKey(baseAsset, quoteAsset);
@@ -334,6 +348,11 @@ contract OracleRouter is IOracle {
         if (isActive) {
             if (address(cfg.primarySource) == address(0) && address(cfg.secondarySource) == address(0)) {
                 revert NoSource();
+            }
+            // Re-validate the dual-source invariant on every reactivation: prevents flipping a
+            // solo-primary feed back to active without a paired secondary + non-zero deviation.
+            if (address(cfg.secondarySource) == address(0) || cfg.maxDeviationBps == 0) {
+                revert SecondarySourceRequired();
             }
         }
 

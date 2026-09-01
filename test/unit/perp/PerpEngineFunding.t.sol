@@ -89,6 +89,10 @@ contract PerpEngineFundingTest is Test {
     uint128 internal constant ONE = 1e8;
     uint32 internal constant FUNDING_INTERVAL = 1 hours;
     uint32 internal constant DEFAULT_FUNDING_CAP_BPS = 5_000;
+    /// @dev PERPS-FUNDING-V2 impact-mid keeper freshness gate used by these
+    ///      tests. Set to `MAX_IMPACT_MID_MAX_DELAY` (1 hour) so a sample
+    ///      published immediately after each `vm.warp` is still fresh.
+    uint32 internal constant DEFAULT_IMPACT_MID_MAX_DELAY = 3600;
 
     uint128 internal constant PRICE_2K = 2_000 * 1e8;
     uint128 internal constant PRICE_2010 = 2_010 * 1e8;
@@ -105,6 +109,8 @@ contract PerpEngineFundingTest is Test {
     address internal constant MATCHING_ENGINE = address(0xBEEF);
     address internal constant ALICE = address(0xA1);
     address internal constant BOB = address(0xB2);
+    /// @dev PERPS-FUNDING-V2 off-chain keeper source used by these tests.
+    address internal constant IMPACT_MID_SOURCE = address(0xC1EE);
 
     CollateralVault internal vault;
     PerpMarketRegistry internal registry;
@@ -153,11 +159,20 @@ contract PerpEngineFundingTest is Test {
                 fundingInterval: FUNDING_INTERVAL,
                 maxFundingRateBps: DEFAULT_FUNDING_CAP_BPS,
                 maxSkewFundingBps: 0,
-                oracleClampBps: 0
+                oracleClampBps: 0,
+                impactMidMaxDelay: DEFAULT_IMPACT_MID_MAX_DELAY
             })
         );
+        // Configure the per-market execution-price deviation guard (fail-closed by default).
+        // Wide 100% band to preserve pre-existing test behavior; new dedicated tests exercise
+        // tight bands separately (see test/perp/PerpEngineExecutionPriceGuard.t.sol).
+        registry.setMaxExecutionDeviationBps(marketId, 10_000);
+
         engine.setMatchingEngine(MATCHING_ENGINE);
         engine.setRiskModule(address(riskModule));
+        // PERPS-FUNDING-V2: wire the trusted keeper source so `updateImpactMid`
+        // can publish samples used by the funding premium computation.
+        engine.setImpactMidSource(IMPACT_MID_SOURCE);
         vm.stopPrank();
 
         _setHealthyRisk(ALICE);
@@ -186,7 +201,12 @@ contract PerpEngineFundingTest is Test {
         registry.setFundingConfig(
             marketId,
             PerpMarketRegistry.FundingConfig({
-                isEnabled: false, fundingInterval: 0, maxFundingRateBps: 0, maxSkewFundingBps: 0, oracleClampBps: 0
+                isEnabled: false,
+                fundingInterval: 0,
+                maxFundingRateBps: 0,
+                maxSkewFundingBps: 0,
+                oracleClampBps: 0,
+                impactMidMaxDelay: 0
             })
         );
 
@@ -249,7 +269,8 @@ contract PerpEngineFundingTest is Test {
                 fundingInterval: FUNDING_INTERVAL,
                 maxFundingRateBps: DEFAULT_FUNDING_CAP_BPS,
                 maxSkewFundingBps: 0,
-                oracleClampBps: 75
+                oracleClampBps: 75,
+                impactMidMaxDelay: DEFAULT_IMPACT_MID_MAX_DELAY
             })
         );
 
@@ -275,7 +296,8 @@ contract PerpEngineFundingTest is Test {
                 fundingInterval: FUNDING_INTERVAL,
                 maxFundingRateBps: 50,
                 maxSkewFundingBps: 0,
-                oracleClampBps: 0
+                oracleClampBps: 0,
+                impactMidMaxDelay: DEFAULT_IMPACT_MID_MAX_DELAY
             })
         );
 
@@ -293,6 +315,9 @@ contract PerpEngineFundingTest is Test {
     }
 
     function testAccruedFundingOnAnOpenPositionIsReflectedCorrectlyAfterFundingUpdate() external {
+        // Mock the oracle to return `PRICE_2K` before the trade so the execution-price
+        // deviation guard (`_enforceExecutionPriceGuard`) has a fresh reference.
+        _mockSafePrices(PRICE_2K, PRICE_2K);
         _trade(ALICE, BOB, 2 * ONE, PRICE_2K);
 
         vm.warp(block.timestamp + FUNDING_INTERVAL);
@@ -318,14 +343,24 @@ contract PerpEngineFundingTest is Test {
         );
     }
 
-    function _mockSafePrices(uint128 markPrice1e8, uint128 indexPrice1e8) internal {
+    /// @dev PERPS-FUNDING-V2 test helper.
+    ///  - `marketRefPrice1e8` is published to the engine via `updateImpactMid`
+    ///    and used as the "market reference" (impact-mid) in the funding
+    ///    premium formula.
+    ///  - `indexPrice1e8` is mocked on the oracle and used as the "index" side.
+    ///
+    ///  The function name preserves compatibility with the pre-V2 test signature
+    ///  (which used to feed two return values into a double-read of the oracle)
+    ///  but the semantics now match the fixed funding math: distinct source per
+    ///  price side (keeper vs oracle).
+    function _mockSafePrices(uint128 marketRefPrice1e8, uint128 indexPrice1e8) internal {
         bytes memory callData = abi.encodeWithSignature("getPriceSafe(address,address)", address(weth), address(usdc));
+        vm.mockCall(address(oracle), callData, abi.encode(uint256(indexPrice1e8), block.timestamp, true));
 
-        bytes[] memory returnData = new bytes[](2);
-        returnData[0] = abi.encode(uint256(markPrice1e8), block.timestamp, true);
-        returnData[1] = abi.encode(uint256(indexPrice1e8), block.timestamp, true);
-
-        vm.mockCalls(address(oracle), callData, returnData);
+        if (marketRefPrice1e8 != 0) {
+            vm.prank(IMPACT_MID_SOURCE);
+            engine.updateImpactMid(marketId, marketRefPrice1e8);
+        }
     }
 
     function _deposit(address user, uint256 amount) internal {

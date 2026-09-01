@@ -206,20 +206,80 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
                             FUNDING: CORE LOGIC
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice PERPS-FUNDING-V2 keeper writer for the impact-mid TWAP sample.
+    /// @dev
+    ///  Access control: only `impactMidSource` (governance-configured) may call.
+    ///  Fail-closed pre-conditions:
+    ///   - reverts if funding is globally paused (mirrors `updateFunding`)
+    ///   - reverts if `marketId` does not exist
+    ///   - reverts if `mid1e8 == 0` (never accept a zeroed sample; a real keeper
+    ///     that cannot compute a mid MUST simply not call this function so the
+    ///     freshness gate lapses and funding accrues 0 for this interval)
+    ///
+    ///  Note: this writer does NOT itself compute funding — it only persists
+    ///  the latest sample + timestamp. `_fundingRatePerInterval1e18` reads it
+    ///  through `_tryGetImpactMid1e8(marketId, impactMidMaxDelay)` and applies
+    ///  the freshness gate at read time.
+    function updateImpactMid(uint256 marketId, uint128 mid1e8)
+        external
+        onlyImpactMidSource
+        whenFundingNotPaused
+    {
+        _requireMarketExists(marketId);
+        if (mid1e8 == 0) revert OraclePriceUnavailable();
+        uint64 nowTs = uint64(block.timestamp);
+        _impactMidSamples[marketId] = ImpactMidSample({mid1e8: mid1e8, updatedAt: nowTs});
+        emit ImpactMidUpdated(marketId, mid1e8, nowTs);
+    }
+
+    /// @notice Computes the per-interval funding rate for `marketId`, in 1e18.
+    /// @dev
+    ///  V2 formula:
+    ///    premium = (impactMid - index) / index
+    ///    rate    = clamp(deadband(premium), -cap, +cap)
+    ///
+    ///  Direction convention:
+    ///   - impactMid > index  =>  positive rate  =>  longs pay shorts
+    ///   - impactMid < index  =>  negative rate  =>  shorts pay longs
+    ///
+    ///  Fail-closed policy:
+    ///   - `isEnabled == false`      => 0, no oracle call
+    ///   - keeper never seeded       => 0 (no revert; keeper outage MUST NOT
+    ///                                    brick trading — `applyTrade` invokes
+    ///                                    `updateFunding` which calls this)
+    ///   - keeper sample stale       => 0 (same rationale)
+    ///   - index oracle unavailable  => REVERT (`OraclePriceUnavailable`);
+    ///                                    the index feed is required
+    ///                                    infrastructure, not a keeper channel
+    ///
+    ///  The dual read (`_tryGetIndexPrice1e8` + `_tryGetImpactMid1e8`) is the
+    ///  fix for the pre-V2 bug where both sides of the premium came from the
+    ///  same oracle call, forcing the premium to 0. Do NOT merge them.
     function _fundingRatePerInterval1e18(uint256 marketId) internal view returns (int256 rate1e18) {
         PerpMarketRegistry.FundingConfig memory fcfg = _getFundingConfig(marketId);
         if (!fcfg.isEnabled) return 0;
 
-        (uint256 markPrice1e8, bool okMark) = _tryGetMarkPrice1e8(marketId);
-        (uint256 indexPrice1e8, bool okIndex) = _tryGetMarkPrice1e8(marketId);
+        // Index: oracle spot (V1 policy: index == risk mark).
+        (uint256 index1e8, bool okIndex) = _tryGetIndexPrice1e8(marketId);
+        if (!okIndex || index1e8 == 0) revert OraclePriceUnavailable();
 
-        if (!okMark || !okIndex || markPrice1e8 == 0 || indexPrice1e8 == 0) revert OraclePriceUnavailable();
-        if (markPrice1e8 == indexPrice1e8) return 0;
+        // Market reference: keeper-published impact-mid TWAP with freshness gate.
+        // If no fresh sample, funding is 0 for this interval — fail-CLOSED to a
+        // no-op (NOT a revert), so a keeper outage does not brick trading;
+        // longs and shorts simply accrue no funding until the keeper resumes.
+        (uint256 marketRef1e8, bool okMarket) = _tryGetImpactMid1e8(marketId, fcfg.impactMidMaxDelay);
+        if (!okMarket || marketRef1e8 == 0) return 0;
 
-        bool positive = markPrice1e8 > indexPrice1e8;
-        uint256 diff = positive ? markPrice1e8 - indexPrice1e8 : indexPrice1e8 - markPrice1e8;
-        rate1e18 = _toInt256(_mulDivFloor(diff, uint256(FUNDING_SCALE_1E18), indexPrice1e8));
+        if (marketRef1e8 == index1e8) return 0;
 
+        // Premium = (marketRef - index) / index, signed by direction.
+        bool positive = marketRef1e8 > index1e8;
+        uint256 diff = positive ? marketRef1e8 - index1e8 : index1e8 - marketRef1e8;
+        rate1e18 = _toInt256(_mulDivFloor(diff, uint256(FUNDING_SCALE_1E18), index1e8));
+
+        // Deadband — preserve existing semantics: strictly-positive premiums
+        // below the deadband threshold are treated as 0. Threshold applies to
+        // the absolute premium; sign is re-applied after the cap.
         if (fcfg.oracleClampBps != 0) {
             int256 deadband1e18 =
                 _toInt256(_mulDivFloor(uint256(fcfg.oracleClampBps), uint256(FUNDING_SCALE_1E18), BPS));
@@ -227,6 +287,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
             rate1e18 -= deadband1e18;
         }
 
+        // Cap.
         uint256 capAbs = _mulDivFloor(uint256(fcfg.maxFundingRateBps), uint256(FUNDING_SCALE_1E18), BPS);
         if (uint256(rate1e18) > capAbs) rate1e18 = _toInt256(capAbs);
         if (!positive) rate1e18 = -rate1e18;
@@ -429,6 +490,41 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
     }
 
     /*//////////////////////////////////////////////////////////////
+                    EXECUTION PRICE DEVIATION GUARD
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Fail-closed execution-price deviation guard.
+    /// @dev
+    ///  Enforces:
+    ///     abs(executionPrice1e8 - oracleMark1e8) * BPS <= oracleMark1e8 * boundBps
+    ///
+    ///  The reference price is the oracle mark/index (NEVER a last-trade or book-derived value).
+    ///  Behavior:
+    ///   - No configured bound (bound == 0)         => revert `ExecutionDeviationGuardNotConfigured`
+    ///   - Oracle unusable (!ok OR price == 0)       => revert `OracleUnavailableForExecutionGuard`
+    ///   - Execution price outside band              => revert `ExecutionPriceOutOfBand`
+    ///
+    ///  V1 note: `_tryGetMarkPrice1e8` == index price (see PerpEngineViews.getRiskMarkPrice1e8 doc).
+    ///  When PERPS-FUNDING-V2 introduces a distinct mark = index + bounded premium, the reference
+    ///  used by this guard MUST remain the index price (or a bounded oracle mark). Do NOT switch
+    ///  to book-derived data.
+    function _enforceExecutionPriceGuard(uint256 marketId, uint256 executionPrice1e8) internal view {
+        uint16 boundBps = _marketRegistry.getMaxExecutionDeviationBps(marketId);
+        if (boundBps == 0) revert ExecutionDeviationGuardNotConfigured();
+
+        (uint256 reference1e8, bool ok) = _tryGetMarkPrice1e8(marketId);
+        if (!ok || reference1e8 == 0) revert OracleUnavailableForExecutionGuard();
+
+        uint256 diff =
+            executionPrice1e8 > reference1e8 ? executionPrice1e8 - reference1e8 : reference1e8 - executionPrice1e8;
+
+        // abs(execution - reference) * BPS <= reference * boundBps
+        uint256 lhs = _mulChecked(diff, BPS);
+        uint256 rhs = _mulChecked(reference1e8, uint256(boundBps));
+        if (lhs > rhs) revert ExecutionPriceOutOfBand();
+    }
+
+    /*//////////////////////////////////////////////////////////////
                                 TRADING
     //////////////////////////////////////////////////////////////*/
 
@@ -443,6 +539,13 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
 
         PerpMarketRegistry.RiskConfig memory rcfg = _getRiskConfig(t.marketId);
         _requireSettlementAssetConfigured(m.settlementAsset);
+
+        // Execution-price deviation guard.
+        // Bounds the matching-engine-provided execution price against a fresh oracle mark/index
+        // for the market. Fail-closed: reverts if the oracle is unavailable/zero, if the market
+        // has no governance-configured bound, or if the execution price sits outside the band.
+        // MUST run before any position mutation or cashflow.
+        _enforceExecutionPriceGuard(t.marketId, uint256(t.executionPrice1e8));
 
         updateFunding(t.marketId);
         int256 currentFunding = _marketStates[t.marketId].cumulativeFundingRate1e18;

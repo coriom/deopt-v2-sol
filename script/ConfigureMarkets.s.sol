@@ -81,6 +81,8 @@ contract ConfigureMarkets is Script {
         uint32 maxFundingRateBps;
         uint32 maxSkewFundingBps;
         uint32 oracleClampBps;
+        uint32 impactMidMaxDelay;
+        uint16 maxExecutionDeviationBps;
     }
 
     function run() external {
@@ -274,9 +276,28 @@ contract ConfigureMarkets is Script {
         );
         params.oracleClampBps =
             _toUint32(_envUint(string.concat(prefix, "_ORACLE_CLAMP_BPS")), string.concat(prefix, "_ORACLE_CLAMP_BPS"));
+        params.impactMidMaxDelay = _toUint32(
+            _envUint(string.concat(prefix, "_IMPACT_MID_MAX_DELAY")),
+            string.concat(prefix, "_IMPACT_MID_MAX_DELAY")
+        );
+        params.maxExecutionDeviationBps = _toUint16(
+            _envUint(string.concat(prefix, "_MAX_EXECUTION_DEVIATION_BPS")),
+            string.concat(prefix, "_MAX_EXECUTION_DEVIATION_BPS")
+        );
 
         if (params.oracle != address(0)) _requireContract(string.concat(prefix, "_ORACLE"), params.oracle);
         if (params.engineActivationState > 2) revert(string.concat(prefix, " activation state invalid"));
+        if (params.maxExecutionDeviationBps == 0) revert(string.concat(prefix, " exec deviation zero"));
+        if (params.maxExecutionDeviationBps > BPS) revert(string.concat(prefix, " exec deviation > bps"));
+
+        // PERPS-FUNDING-V2 invariant: when funding is OFF, the keeper freshness
+        // gate MUST be 0 (no keeper channel is active); when funding is ON, the
+        // gate MUST be positive (production configs cannot disable staleness).
+        if (!params.fundingEnabled) {
+            if (params.impactMidMaxDelay != 0) revert(string.concat(prefix, " impactMidMaxDelay must be 0 when funding disabled"));
+        } else {
+            if (params.impactMidMaxDelay == 0) revert(string.concat(prefix, " impactMidMaxDelay must be > 0 when funding enabled"));
+        }
     }
 
     function _configureFeed(OracleRouter router, address underlying, address baseToken, FeedParams memory params)
@@ -382,7 +403,8 @@ contract ConfigureMarkets is Script {
             fundingInterval: params.fundingInterval,
             maxFundingRateBps: params.maxFundingRateBps,
             maxSkewFundingBps: params.maxSkewFundingBps,
-            oracleClampBps: params.oracleClampBps
+            oracleClampBps: params.oracleClampBps,
+            impactMidMaxDelay: params.impactMidMaxDelay
         });
 
         bytes32 key = registry.computeMarketKey(underlying, settlementAsset, symbol);
@@ -399,6 +421,7 @@ contract ConfigureMarkets is Script {
         }
 
         registry.setMarketStatus(marketId, params.registryActive, params.closeOnly);
+        registry.setMaxExecutionDeviationBps(marketId, params.maxExecutionDeviationBps);
         engine.setLaunchOpenInterestCap(marketId, params.launchOpenInterestCap1e8);
         engine.setMarketActivationState(marketId, _toUint8(params.engineActivationState, "market activation state"));
     }

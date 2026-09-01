@@ -228,6 +228,7 @@ interface IPerpMarketRegistryGov {
         uint32 maxFundingRateBps;
         uint32 maxSkewFundingBps;
         uint32 oracleClampBps;
+        uint32 impactMidMaxDelay;
     }
 
     function setGuardian(address guardian_) external;

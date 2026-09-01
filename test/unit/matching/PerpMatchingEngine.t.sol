@@ -126,7 +126,7 @@ contract PerpMatchingEngineTest is Test {
         assertEq(
             matchingEngine.TRADE_TYPEHASH(),
             keccak256(
-                "PerpTrade(bytes32 intentId,address buyer,address seller,uint256 marketId,uint128 sizeDelta1e8,uint128 executionPrice1e8,bool buyerIsMaker,uint256 buyerNonce,uint256 sellerNonce,uint256 deadline)"
+                "PerpTrade(bytes32 intentId,address buyer,address seller,uint256 marketId,uint128 sizeDelta1e8,uint128 executionPrice1e8,uint128 maxExecutionPrice1e8,uint128 minExecutionPrice1e8,bool buyerIsMaker,uint256 buyerNonce,uint256 sellerNonce,uint256 deadline)"
             )
         );
     }
@@ -143,6 +143,10 @@ contract PerpMatchingEngineTest is Test {
             marketId: 7,
             sizeDelta1e8: 2e8,
             executionPrice1e8: 2_000e8,
+            // Strict legacy shape: both bounds `0` reproduces V1 signing
+            // (both parties sign the exact `executionPrice1e8`).
+            maxExecutionPrice1e8: 0,
+            minExecutionPrice1e8: 0,
             buyerIsMaker: true,
             buyerNonce: 0,
             sellerNonce: 0,
