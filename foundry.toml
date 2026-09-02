@@ -10,4 +10,12 @@ via_ir = true
 bytecode_hash = "none"
 cbor_metadata = false
 
+# PERPS-CLOSED-TEST-E2E-V1 Part A — allow `DeployPerpsE2E.s.sol` to write
+# its ephemeral address manifest under the operator-provided
+# `PERPS_E2E_MANIFEST_PATH` (defaults to `/tmp/*_perps_e2e_manifest.json`).
+# Scoped read-write to /tmp only; no impact on production deploy scripts.
+fs_permissions = [
+    { access = "read-write", path = "/tmp" },
+]
+
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
