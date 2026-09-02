@@ -346,6 +346,37 @@ contract PerpEngineExecutionPriceGuardTest is Test {
         );
     }
 
+    /// @notice Primary-only unsafe oracle attack — framed variant.
+    /// When the OracleRouter is configured with ONLY a primary source
+    /// (no secondary + no deviation cross-check), `getPriceSafe` MUST
+    /// return `ok=false` for the router to remain safe. Our engine
+    /// mock represents this observable boundary directly (`ok=false`).
+    /// This test names the scenario per the milestone's Part K
+    /// attack matrix (scenario 10 — "primary-only unsafe oracle").
+    /// The dual-source invariant is enforced by
+    /// `OracleRouter.setFeed` (see `test/oracle/OracleRouterDualSourceInvariant.t.sol`);
+    /// this test proves the ENGINE's downstream fail-closure holds
+    /// even if a solo-primary feed somehow slipped through.
+    function testPrimaryOnlyUnsafeOracleAttackRevertsAtEngineGuard() external {
+        // Simulate router returning ok=false — the observable behaviour
+        // for a solo-primary active feed (dual-source invariant broken
+        // upstream or bypassed).
+        oracle.setPrice(address(weth), address(usdc), ORACLE_MARK_1E8, block.timestamp, false);
+
+        vm.prank(MATCHING_ENGINE);
+        vm.expectRevert(PerpEngineTypes.OracleUnavailableForExecutionGuard.selector);
+        engine.applyTrade(
+            IPerpEngineTrade.Trade({
+                buyer: ALICE,
+                seller: BOB,
+                marketId: marketId,
+                sizeDelta1e8: ONE,
+                executionPrice1e8: uint128(PRICE_AT_MARK_1E8),
+                buyerIsMaker: false
+            })
+        );
+    }
+
     /*//////////////////////////////////////////////////////////////
                     ORACLE STALENESS PROPAGATED
     //////////////////////////////////////////////////////////////*/

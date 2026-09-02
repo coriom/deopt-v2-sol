@@ -560,6 +560,70 @@ contract PerpEngineFundingV2Test is Test {
     }
 
     /*//////////////////////////////////////////////////////////////
+                    RUNTIME — RESTART + DUPLICATE WRITE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Solidity storage IS the "process state" for funding —
+    /// there is no ephemeral cache to lose across process restarts.
+    /// This test pins the invariant explicitly: after seeding the
+    /// impact-mid sample and warping past the interval, funding accrues
+    /// even when the FIRST call for the market since deploy is the one
+    /// that observes the sample. Behaviour matches a hot-restart where
+    /// the keeper resumes publishing after downtime.
+    function testFundingResumesAfterKeeperGapWithoutInMemoryState() external {
+        // 1. First `updateFunding` seeds `lastFundingTimestamp` and
+        //    returns 0 (no elapsed interval yet).
+        engine.updateFunding(marketId);
+        vm.warp(block.timestamp + FUNDING_INTERVAL);
+
+        // 2. Keeper publishes a fresh sample.
+        _mockIndex(PRICE_2K);
+        _publishImpactMid(PRICE_2020);
+
+        // 3. Second `updateFunding` picks it up and produces a non-zero
+        //    delta. Storage is the only carrier — no in-memory state
+        //    would survive a restart, but Solidity storage does.
+        (int256 delta,) = engine.updateFunding(marketId);
+        assertGt(delta, 0, "funding must resume after keeper gap");
+        assertEq(delta, DELTA_POSITIVE_PREMIUM_1PCT);
+    }
+
+    /// @notice Two `updateImpactMid` calls in the SAME block for the
+    /// same market → the last write wins (single-slot overwrite; no
+    /// dedup, no queueing). Pins the semantics so a keeper double-tick
+    /// (idempotent by design in the off-chain worker) cannot corrupt
+    /// on-chain state.
+    function testDuplicateImpactMidUpdateSameBlockLastWriteWins() external {
+        // Seed lastFundingTimestamp — the first call always returns 0
+        // by design; the interval delta emerges only from the SECOND
+        // call after warping.
+        engine.updateFunding(marketId);
+
+        // Both writes at the same timestamp. Second write overwrites
+        // the first (single-slot semantics, no queueing / dedup).
+        vm.prank(IMPACT_MID_SOURCE);
+        engine.updateImpactMid(marketId, PRICE_2010);
+        vm.prank(IMPACT_MID_SOURCE);
+        engine.updateImpactMid(marketId, PRICE_2020);
+
+        // Advance past the interval, mock index, and read the funding
+        // rate — it MUST reflect the second write (PRICE_2020 → 1%
+        // premium → +1e16) NOT the first (PRICE_2010 → 0.5% premium →
+        // a different, smaller magnitude). With `oracleClampBps=0`
+        // both would produce non-zero deltas, so the assertion is
+        // magnitude-specific.
+        vm.warp(block.timestamp + FUNDING_INTERVAL);
+        _mockIndex(PRICE_2K);
+        (int256 delta,) = engine.updateFunding(marketId);
+        assertGt(delta, 0, "second write must survive");
+        assertEq(
+            delta,
+            DELTA_POSITIVE_PREMIUM_1PCT,
+            "delta must match the 1% premium of the second write, not the 0.5% of the first"
+        );
+    }
+
+    /*//////////////////////////////////////////////////////////////
                             HELPERS
     //////////////////////////////////////////////////////////////*/
 
