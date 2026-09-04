@@ -350,4 +350,51 @@ i. **Distribute the frontend build.** Build with
 
 ---
 
+## Fork Validation Harness Usage
+
+Added in `PERPS_CLOSED_TEST_HARDENING_V1` Part G — the closed-test E2E
+harness (`deopt-v2-backend/tests/perps_closed_test_e2e_harness.rs`)
+accepts an optional Base Sepolia fork mode that spawns Anvil with
+`--fork-url` so the operator can validate compatibility with the actual
+Base Sepolia environment BEFORE any provisioning transaction is
+authorized.
+
+### Env vars (all optional)
+
+- `PERPS_E2E_FORK_URL` — Base Sepolia RPC URL. When set, the harness
+  spawns Anvil in fork mode; unset → vanilla behaviour (byte-identical
+  to pre-Part-G).
+- `PERPS_E2E_FORK_ETH_USDC_PRIMARY` — real Chainlink or Pyth ETH/USD
+  adapter address deployed on Base Sepolia (if the operator has one
+  wired). Enables the harness to call `getPriceSafe` against a real
+  feed inside the fork.
+- `PERPS_E2E_FORK_ETH_USDC_SECONDARY` — same for the secondary source
+  (required for the `OracleRouter.setFeed` dual-source invariant).
+
+### Verdicts (emitted by `part_g_fork_base_sepolia_smoke`)
+
+- `PERPS_BASE_SEPOLIA_FORK_RUNTIME_VALIDATED` — fork mode exercised
+  end-to-end with real oracle adapters returning fresh prices.
+- `PERPS_BASE_SEPOLIA_FORK_WAITING_FOR_OPERATOR_ORACLE_CONFIG` —
+  operator input (fork URL, oracle addresses) unavailable. NOT a
+  milestone failure; the spec explicitly allows this outcome.
+
+### Run
+
+```bash
+export PATH="$HOME/.foundry/bin:$PATH"
+export PERPS_CLOSED_TEST_E2E_PG_URL=postgres://user:pass@host/db
+export PERPS_E2E_FORK_URL=https://<your-base-sepolia-rpc-endpoint>
+# optional (only if real oracle addresses are provisioned):
+# export PERPS_E2E_FORK_ETH_USDC_PRIMARY=0x…
+# export PERPS_E2E_FORK_ETH_USDC_SECONDARY=0x…
+cargo test --test perps_closed_test_e2e_harness part_g_fork -- --nocapture
+```
+
+Do NOT broadcast on Base Sepolia via the fork harness — the fork is a
+local Anvil that reads state from the RPC but never sends transactions
+to the real network.
+
+---
+
 PERPS_BASE_SEPOLIA_CLOSED_TEST_READY_FOR_OPERATOR_PROVISIONING

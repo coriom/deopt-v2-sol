@@ -9,6 +9,7 @@ import {IPriceSource} from "../src/oracle/IPriceSource.sol";
 import {OracleRouter} from "../src/oracle/OracleRouter.sol";
 import {PerpMarketRegistry} from "../src/perp/PerpMarketRegistry.sol";
 import {PerpMatchingEngine} from "../src/matching/PerpMatchingEngine.sol";
+import {MockImpactMidSink} from "../src/testnet/MockImpactMidSink.sol";
 
 /// @title _PerpsE2EMockERC20
 /// @notice Script-local ERC-20 mock. Kept inside this file so the E2E
@@ -96,6 +97,7 @@ contract DeployPerpsE2E is Script {
         address perpMarketRegistry;
         address perpMatchingEngine;
         address perpEnginePlaceholder;
+        address mockImpactMidSink;
         uint256 initialPrice1e8;
         uint256 marketId;
         bytes32 marketSymbol;
@@ -152,6 +154,14 @@ contract DeployPerpsE2E is Script {
         out.perpMatchingEngine =
             address(new PerpMatchingEngine(out.deployer, out.perpEnginePlaceholder));
 
+        // 6. PERPS-CLOSED-TEST-HARDENING-V1 Part E — mock impact-mid sink.
+        //    Byte-compatible surface with `PerpEngine.setImpactMidSource` +
+        //    `PerpEngine.updateImpactMid` so the backend's
+        //    `LocalAnvilPublisher` can broadcast against a real anvil-side
+        //    contract without deploying a full `PerpEngine` topology.
+        //    Local-anvil-only; never touched on Base Sepolia or mainnet.
+        out.mockImpactMidSink = address(new MockImpactMidSink());
+
         vm.stopBroadcast();
 
         _writeManifest(out);
@@ -190,8 +200,9 @@ contract DeployPerpsE2E is Script {
         vm.serializeAddress(root, "secondarySource", d.secondarySource);
         vm.serializeAddress(root, "oracleRouter", d.oracleRouter);
         vm.serializeAddress(root, "perpMarketRegistry", d.perpMarketRegistry);
+        vm.serializeAddress(root, "perpMatchingEngine", d.perpMatchingEngine);
         string memory json =
-            vm.serializeAddress(root, "perpMatchingEngine", d.perpMatchingEngine);
+            vm.serializeAddress(root, "mockImpactMidSink", d.mockImpactMidSink);
         vm.writeJson(json, path);
     }
 
@@ -206,6 +217,7 @@ contract DeployPerpsE2E is Script {
         console2.log("oracleRouter", d.oracleRouter);
         console2.log("perpMarketRegistry", d.perpMarketRegistry);
         console2.log("perpMatchingEngine", d.perpMatchingEngine);
+        console2.log("mockImpactMidSink", d.mockImpactMidSink);
         console2.log("initialPrice1e8", d.initialPrice1e8);
     }
 }
