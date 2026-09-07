@@ -74,10 +74,13 @@ contract BaseSepoliaInfraBroadcastPreview is Script {
     uint32 internal constant NEW_PER_FEED_MAX_DELAY = 1500;
     uint32 internal constant NEW_GLOBAL_MAX_ORACLE_DELAY = 1500;
 
-    // Cross-source deviation ceiling. 1000 bps = 10 %. Observed live BTC deviation
-    // Chainlink vs Pyth < 0.1 %. This is generous, matching the shape used for the
-    // existing mock-feed configuration (see manifest.oracles.feeds[*].max_deviation_bps).
-    uint16 internal constant NEW_MAX_DEVIATION_BPS = 1000;
+    // Cross-source deviation ceiling. 100 bps = 1 %. Matches the canonical value
+    // used in the OracleRouter dual-source invariant test fixture
+    // (test/oracle/OracleRouterDualSourceInvariant.t.sol:33 -- `DEV_BPS = 100`).
+    // Observed live BTC/ETH Chainlink vs Pyth deviation ~0.01-0.03 % at capture,
+    // so this leaves >=30x safety margin against normal operation while still
+    // failing closed on a >1 % divergence.
+    uint16 internal constant NEW_MAX_DEVIATION_BPS = 100;
 
     // Timelock queue eta: the operator must set this to some value >= block.timestamp + minDelay
     // at queue time. This preview picks minDelay + 3600s to allow block-time drift.
@@ -154,11 +157,24 @@ contract BaseSepoliaInfraBroadcastPreview is Script {
         console2.log("  isExecutor[deployer]:", pme.isExecutor(DEPLOYER));
 
         ProtocolTimelock tl = ProtocolTimelock(payable(PROTOCOL_TIMELOCK));
+        address tlOwner = tl.owner();
         console2.log("ProtocolTimelock      :", PROTOCOL_TIMELOCK);
-        console2.log("  owner               :", tl.owner());
+        console2.log("  owner               :", tlOwner);
         console2.log("  guardian            :", tl.guardian());
         console2.log("  minDelay (s)        :", tl.minDelay());
         console2.log("  queuePaused         :", tl.queuePaused());
+        console2.log("  proposers[owner]    :", tl.proposers(tlOwner));
+        console2.log("  executors[owner]    :", tl.executors(tlOwner));
+        console2.log("  proposers[deployer] :", tl.proposers(DEPLOYER));
+        console2.log("  executors[deployer] :", tl.executors(DEPLOYER));
+
+        // Hard asserts on the role map so any drift breaks the preview loudly.
+        require(tl.proposers(tlOwner), "timelock owner missing PROPOSER role");
+        require(tl.executors(tlOwner), "timelock owner missing EXECUTOR role");
+        require(!tl.proposers(DEPLOYER), "deployer has PROPOSER role -- broadcast plan wrong");
+        require(!tl.executors(DEPLOYER), "deployer has EXECUTOR role -- broadcast plan wrong");
+        require(tl.minDelay() >= 86400, "timelock minDelay < 24h -- eta computation wrong");
+        require(!tl.queuePaused(), "timelock queueing paused -- cannot queue TX-05/06/07");
         console2.log("");
     }
 
@@ -235,42 +251,38 @@ contract BaseSepoliaInfraBroadcastPreview is Script {
         console2.log("timelock min  :", ProtocolTimelock(payable(PROTOCOL_TIMELOCK)).minDelay());
         console2.log("");
 
-        // Print calldata for each of the 3 timelock-wrapped router calls.
-        _printRouterTimelockOp(
-            "TX-05",
-            "setMaxOracleDelay(1500)",
-            abi.encodeWithSelector(OracleRouter.setMaxOracleDelay.selector, NEW_GLOBAL_MAX_ORACLE_DELAY)
+        // Print calldata for the 3 timelock QUEUE ops (TX-05, TX-06, TX-07) then the
+        // matching 3 EXECUTE ops (TX-08, TX-09, TX-10). Queue and execute for the same
+        // router call share the same inner calldata + eta and thus the same operation hash.
+        bytes memory dataSetDelay =
+            abi.encodeWithSelector(OracleRouter.setMaxOracleDelay.selector, NEW_GLOBAL_MAX_ORACLE_DELAY);
+        bytes memory dataSetFeedEth = abi.encodeWithSelector(
+            OracleRouter.setFeed.selector,
+            ETH_MWETH,
+            COLLATERAL_MUSDC,
+            IPriceSource(chEth),
+            IPriceSource(pyEth),
+            NEW_PER_FEED_MAX_DELAY,
+            NEW_MAX_DEVIATION_BPS,
+            true
+        );
+        bytes memory dataSetFeedBtc = abi.encodeWithSelector(
+            OracleRouter.setFeed.selector,
+            BTC_MWBTC,
+            COLLATERAL_MUSDC,
+            IPriceSource(chBtc),
+            IPriceSource(pyBtc),
+            NEW_PER_FEED_MAX_DELAY,
+            NEW_MAX_DEVIATION_BPS,
+            true
         );
 
-        _printRouterTimelockOp(
-            "TX-06",
-            "setFeed(mWETH,mUSDC,chEth,pyEth,1500,1000,true)",
-            abi.encodeWithSelector(
-                OracleRouter.setFeed.selector,
-                ETH_MWETH,
-                COLLATERAL_MUSDC,
-                IPriceSource(chEth),
-                IPriceSource(pyEth),
-                NEW_PER_FEED_MAX_DELAY,
-                NEW_MAX_DEVIATION_BPS,
-                true
-            )
-        );
-
-        _printRouterTimelockOp(
-            "TX-07",
-            "setFeed(mWBTC,mUSDC,chBtc,pyBtc,1500,1000,true)",
-            abi.encodeWithSelector(
-                OracleRouter.setFeed.selector,
-                BTC_MWBTC,
-                COLLATERAL_MUSDC,
-                IPriceSource(chBtc),
-                IPriceSource(pyBtc),
-                NEW_PER_FEED_MAX_DELAY,
-                NEW_MAX_DEVIATION_BPS,
-                true
-            )
-        );
+        _printTimelockQueue("TX-05", "queue setMaxOracleDelay(1500)", dataSetDelay);
+        _printTimelockQueue("TX-06", "queue setFeed(mWETH,mUSDC,chEth,pyEth,1500,100,true)", dataSetFeedEth);
+        _printTimelockQueue("TX-07", "queue setFeed(mWBTC,mUSDC,chBtc,pyBtc,1500,100,true)", dataSetFeedBtc);
+        _printTimelockExecute("TX-08", "execute setMaxOracleDelay(1500)", dataSetDelay);
+        _printTimelockExecute("TX-09", "execute setFeed(mWETH,mUSDC,chEth,pyEth,1500,100,true)", dataSetFeedEth);
+        _printTimelockExecute("TX-10", "execute setFeed(mWBTC,mUSDC,chBtc,pyBtc,1500,100,true)", dataSetFeedBtc);
 
         // Now simulate the *effect*: prank as the timelock (owner) and apply the changes.
         console2.log("--- phase B simulate: prank timelock and apply state change ---");
@@ -280,7 +292,7 @@ contract BaseSepoliaInfraBroadcastPreview is Script {
         vm.startPrank(PROTOCOL_TIMELOCK);
         uint256 g0 = gasleft();
         router.setMaxOracleDelay(NEW_GLOBAL_MAX_ORACLE_DELAY);
-        console2.log("TX-05 effect gas (target=router)  :", g0 - gasleft());
+        console2.log("TX-08 (execute) inner gas         :", g0 - gasleft());
 
         g0 = gasleft();
         router.setFeed(
@@ -292,7 +304,7 @@ contract BaseSepoliaInfraBroadcastPreview is Script {
             NEW_MAX_DEVIATION_BPS,
             true
         );
-        console2.log("TX-06 effect gas (target=router)  :", g0 - gasleft());
+        console2.log("TX-09 (execute) inner gas         :", g0 - gasleft());
 
         g0 = gasleft();
         router.setFeed(
@@ -304,7 +316,7 @@ contract BaseSepoliaInfraBroadcastPreview is Script {
             NEW_MAX_DEVIATION_BPS,
             true
         );
-        console2.log("TX-07 effect gas (target=router)  :", g0 - gasleft());
+        console2.log("TX-10 (execute) inner gas         :", g0 - gasleft());
         vm.stopPrank();
         console2.log("");
 
@@ -336,24 +348,41 @@ contract BaseSepoliaInfraBroadcastPreview is Script {
         console2.log("");
     }
 
-    function _printRouterTimelockOp(string memory tag, string memory sig, bytes memory data) internal view {
-        uint256 eta = block.timestamp + ProtocolTimelock(payable(PROTOCOL_TIMELOCK)).minDelay() + ETA_SAFETY_MARGIN;
+    function _computeEta() internal view returns (uint256) {
+        return block.timestamp + ProtocolTimelock(payable(PROTOCOL_TIMELOCK)).minDelay() + ETA_SAFETY_MARGIN;
+    }
+
+    function _printTimelockQueue(string memory tag, string memory sig, bytes memory data) internal view {
+        uint256 eta = _computeEta();
         bytes32 opHash = ProtocolTimelock(payable(PROTOCOL_TIMELOCK)).hashOperationBytes(ORACLE_ROUTER, 0, data, eta);
         bytes memory queueCd =
             abi.encodeWithSelector(ProtocolTimelock.queueTransaction.selector, ORACLE_ROUTER, uint256(0), data, eta);
-        bytes memory execCd =
-            abi.encodeWithSelector(ProtocolTimelock.executeTransaction.selector, ORACLE_ROUTER, uint256(0), data, eta);
 
         console2.log(tag, sig);
-        console2.log("       target (via TL)      :", ORACLE_ROUTER);
+        console2.log("       to (timelock)        :", PROTOCOL_TIMELOCK);
+        console2.log("       target (inner)       :", ORACLE_ROUTER);
         console2.log("       value                : 0");
         console2.log("       eta (unix)           :", eta);
         console2.log("       operation hash       :");
         console2.logBytes32(opHash);
-        console2.log("       router-level calldata:");
+        console2.log("       inner calldata       :");
         console2.logBytes(data);
         console2.log("       queueTransaction cd  :");
         console2.logBytes(queueCd);
+        console2.log("");
+    }
+
+    function _printTimelockExecute(string memory tag, string memory sig, bytes memory data) internal view {
+        uint256 eta = _computeEta();
+        bytes32 opHash = ProtocolTimelock(payable(PROTOCOL_TIMELOCK)).hashOperationBytes(ORACLE_ROUTER, 0, data, eta);
+        bytes memory execCd =
+            abi.encodeWithSelector(ProtocolTimelock.executeTransaction.selector, ORACLE_ROUTER, uint256(0), data, eta);
+
+        console2.log(tag, sig);
+        console2.log("       to (timelock)        :", PROTOCOL_TIMELOCK);
+        console2.log("       target (inner)       :", ORACLE_ROUTER);
+        console2.log("       matches op hash      :");
+        console2.logBytes32(opHash);
         console2.log("       executeTransaction cd:");
         console2.logBytes(execCd);
         console2.log("");
@@ -377,14 +406,14 @@ contract BaseSepoliaInfraBroadcastPreview is Script {
         bytes memory addCd = abi.encodeWithSelector(PerpMatchingEngine.setExecutor.selector, newExec, true);
         bytes memory revokeCd = abi.encodeWithSelector(PerpMatchingEngine.setExecutor.selector, DEPLOYER, false);
 
-        console2.log("TX-08  setExecutor(newExecutor, true)");
+        console2.log("TX-11  setExecutor(newExecutor, true)");
         console2.log("       target               :", PERP_MATCHING_ENGINE);
         console2.log("       new executor         :", newExec);
         console2.log("       sender (must be)     :", DEPLOYER, " (PME owner)");
         console2.log("       calldata             :");
         console2.logBytes(addCd);
 
-        console2.log("TX-09  setExecutor(deployer, false)   [revoke deployer executor role]");
+        console2.log("TX-12  setExecutor(deployer, false)   [revoke deployer executor role]");
         console2.log("       target               :", PERP_MATCHING_ENGINE);
         console2.log("       calldata             :");
         console2.logBytes(revokeCd);
@@ -393,10 +422,10 @@ contract BaseSepoliaInfraBroadcastPreview is Script {
         vm.startPrank(DEPLOYER);
         uint256 g0 = gasleft();
         pme.setExecutor(newExec, true);
-        console2.log("TX-08 effect gas               :", g0 - gasleft());
+        console2.log("TX-11 effect gas               :", g0 - gasleft());
         g0 = gasleft();
         pme.setExecutor(DEPLOYER, false);
-        console2.log("TX-09 effect gas               :", g0 - gasleft());
+        console2.log("TX-12 effect gas               :", g0 - gasleft());
         vm.stopPrank();
 
         console2.log("--- phase C verify: executor set ---");
@@ -422,7 +451,7 @@ contract BaseSepoliaInfraBroadcastPreview is Script {
         console2.log("PERPS_BASE_SEPOLIA_INFRA_BROADCAST_PACKAGE_READY (simulation only)");
         console2.log("=================================================================");
         console2.log("");
-        console2.log("NEXT STEP: user must explicitly authorize broadcasting TX-01..TX-09");
+        console2.log("NEXT STEP: user must explicitly authorize broadcasting TX-01..TX-12");
         console2.log("This script did NOT broadcast. No state changed. See");
         console2.log("BASE_SEPOLIA_INFRA_BROADCAST_V1.md for the operator-facing manifest.");
     }
