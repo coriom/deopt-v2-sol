@@ -1,5 +1,25 @@
 # DEOPT_WETH_COLLATERAL_BASE_SEPOLIA_ACTIVATION_MANIFEST_V1
 
+---
+
+## ⛔ DEFERRED — DESIGN DOCUMENTATION ONLY
+
+Base Sepolia WETH closed-test activation is **DEFERRED** per
+`DEOPT_WETH_BASE_SEPOLIA_CLOSED_TEST_DEFERRAL_V1.md`
+(verdict: `DEOPT_WETH_BASE_SEPOLIA_CLOSED_TEST_BLOCKED_BY_IMMUTABLE_VAULT_GATING`).
+
+The 18-transaction sequence described here is **NOT AUTHORIZED for
+broadcast**. The deployed CollateralVault has no per-caller allowlist
+and is immutable; executing the sequence would open WETH deposit +
+margin usage to every EOA on Base Sepolia, not just the intended
+closed-test cohort.
+
+This document is retained as historical design + audit reference. WETH
+closed-test coverage lives on local Anvil
+(`DEOPT_WETH_COLLATERAL_LIVE_ANVIL_CLOSURE_V1_COMPLETE`).
+
+---
+
 Design + fork-validated activation manifest. **No broadcast. No
 Base Sepolia state change. WETH remains disabled at end.**
 

@@ -1,5 +1,39 @@
 # DEOPT_WETH_BASE_SEPOLIA_CLOSED_TEST_ACTIVATION_MANIFEST_FINAL
 
+---
+
+## ⛔ NOT AUTHORIZED — SUPERSEDED BY DEFERRAL
+
+**Status**: `DEOPT_WETH_BASE_SEPOLIA_CLOSED_TEST_BLOCKED_BY_IMMUTABLE_VAULT_GATING`
+
+The 18 transactions (`WETH-TX-01` through `WETH-TX-18`) frozen in this
+document are **NOT AUTHORIZED for broadcast** under any circumstance.
+
+Milestone `DEOPT_WETH_BASE_SEPOLIA_CLOSED_TEST_RELEASE_CLOSURE_V1`
+Part B audit determined that executing WETH-TX-03..07 would open WETH
+collateral deposit + margin usage to every EOA on Base Sepolia — not
+just the intended closed-test cohort — because the deployed
+CollateralVault at `0x00340C360353a5AB784c5Bc5c44322A6AF0625D3` has
+no per-caller allowlist and is immutable (no upgrade hook).
+
+Base Sepolia WETH activation is **DEFERRED**. Closed-test coverage
+continues on local Anvil (`DEOPT_WETH_COLLATERAL_LIVE_ANVIL_CLOSURE_V1_COMPLETE`).
+
+**The authorization sentence template at the bottom of this document
+is REVOKED.** Issuing that sentence verbatim in any future directive
+does NOT authorize broadcast; the deferral supersedes it.
+
+See `DEOPT_WETH_BASE_SEPOLIA_CLOSED_TEST_DEFERRAL_V1.md` for the full
+decision record, rationale, and future Vault V1.1 launch-control
+design guidance.
+
+The material below is retained as **historical design documentation
+only** — every technical detail (addresses, calldata, risk parameters,
+fork-sim numbers) remains accurate as an audit artefact but describes
+work that will not be executed.
+
+---
+
 Freeze of the exact package required to activate WETH as a second
 collateral **ONLY** for Base Sepolia (chain 84532) closed-test users.
 
