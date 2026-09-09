@@ -7,30 +7,27 @@ import {IPriceSource} from "../src/oracle/IPriceSource.sol";
 import {OracleRouter} from "../src/oracle/OracleRouter.sol";
 import {ProtocolTimelock} from "../src/gouvernance/ProtocolTimelock.sol";
 
-/// @notice PERPS_BASE_SEPOLIA_INFRA_BROADCAST_MANIFEST_FINAL - TX-05..07.
+/// @notice DEPRECATED - This script assumes the timelock proposer is an EOA
+/// with a Foundry keystore. The actual proposer is `OPS_MULTISIG`
+/// (0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46), a Gnosis Safe v1.4.1 2-of-3
+/// multisig. `forge script --broadcast --keystore` is NOT the correct
+/// governance signing path.
 ///
-///         Queues the 3 ProtocolTimelock operations (setMaxOracleDelay + two
-///         setFeed) that were designed in the frozen manifest. Does NOT
-///         execute them (execute is TX-08..10, only permitted after >= 24h
-///         + a separate authorization).
+/// **Do NOT use this script to broadcast TX-05..07.** Use the Safe queue
+/// package instead:
 ///
-///         Preconditions:
-///           - TX-01..04 have already broadcast successfully.
-///           - CH_ETH / CH_BTC / PY_ETH / PY_BTC env vars are set to the
-///             deployed adapter addresses (see TX-01..04 output).
-///           - Sender key matches the ProtocolTimelock proposer:
-///             0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46
+///     * `script/DerivePerpsInfraSafeQueuePackage.s.sol` (Layout A / B)
+///     * `PERPS_BASE_SEPOLIA_SAFE_QUEUE_PACKAGE_V1.md` (operator runbook)
 ///
-///         Invocation (must be run by the operator with the timelock proposer key):
-///           CH_ETH=0x... CH_BTC=0x... PY_ETH=0x... PY_BTC=0x... \
-///           forge script script/BroadcastPerpsInfraTx05to07.s.sol \
-///             --rpc-url https://sepolia.base.org \
-///             --broadcast \
-///             --sender 0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46 \
-///             --keystore <path-to-tl-proposer-keystore>
+/// Retained in-tree only as historical reference (matches the original
+/// PERPS_BASE_SEPOLIA_INFRA_BROADCAST_MANIFEST_FINAL @ sol 5f93e199 sender
+/// wiring, before governance discovery revealed the Safe topology).
 ///
-///         Broadcast artefact:
-///           broadcast/BroadcastPerpsInfraTx05to07.s.sol/84532/run-latest.json
+/// This script would revert on-chain immediately: the `tx.origin ==
+/// EXPECTED_TL_SIGNER` guard requires a signature from an address that has
+/// no ordinary private key (the Safe is a contract address, not an EOA).
+/// The comment sections below use "signer" loosely - it is the Safe address,
+/// not a single-key signer.
 contract BroadcastPerpsInfraTx05to07 is Script {
     uint256 internal constant BASE_SEPOLIA_CHAIN_ID = 84532;
 
