@@ -31,6 +31,7 @@ import {PerpEngineTypes} from "../../../src/perp/PerpEngineTypes.sol";
 import {PerpMarketRegistry} from "../../../src/perp/PerpMarketRegistry.sol";
 import {IPerpRiskModule} from "../../../src/perp/PerpEngineStorage.sol";
 import {IPerpEngineTrade} from "../../../src/matching/IPerpEngineTrade.sol";
+import {PerpClearingAccountV2} from "../../../src/perp/PerpClearingAccountV2.sol";
 
 // Local mocks (independent from the deterministic-test file to avoid a
 // bytecode-shared class hierarchy that could smuggle V2 formulas in).
@@ -165,7 +166,7 @@ contract PerpEngineV2FuzzTest is Test {
     address internal constant BOB = address(0xB2);
     address internal constant CAROL = address(0xC3);
     address internal constant DAVE = address(0xD4);
-    address internal constant CLEARING = address(0xC1EA);
+    address internal constant CLEARING_FUNDER = address(0xF00D);
 
     CollateralVault internal vault;
     PerpMarketRegistry internal registry;
@@ -174,6 +175,8 @@ contract PerpEngineV2FuzzTest is Test {
     MockRiskV2Fuzz internal risk;
     MockERC20V2Fuzz internal usdc;
     MockERC20V2Fuzz internal weth;
+    PerpClearingAccountV2 internal clearing;
+    address internal CLEARING;
 
     uint256 internal marketId;
     uint128 internal maxPositionSize1e8;
@@ -225,18 +228,27 @@ contract PerpEngineV2FuzzTest is Test {
         registry.setMaxExecutionDeviationBps(marketId, 10_000); // 100% band
         engine.setMatchingEngine(MATCHING);
         engine.setRiskModule(address(risk));
-        engine.setClearingAccount(CLEARING);
         vm.stopPrank();
+
+        // Deploy hardened clearing contract and designate.
+        clearing = new PerpClearingAccountV2(address(vault));
+        CLEARING = address(clearing);
+        vm.prank(OWNER);
+        engine.setClearingAccount(CLEARING);
 
         oracle.setPrice(address(weth), address(usdc), 2_000 * PRICE_SCALE, block.timestamp, true);
 
         // Deposit generous vault balances so we don't hit vault-limit reverts.
         uint256 mint = 1_000_000_000_000 * BASE_UNIT; // 1e18 native units
-        address[6] memory people = [ALICE, BOB, CAROL, DAVE, CLEARING, address(0xE1)];
-        for (uint256 i; i < people.length; i++) {
-            _healthy(people[i]);
-            _deposit(people[i], mint);
+        address[5] memory traders = [ALICE, BOB, CAROL, DAVE, address(0xE1)];
+        for (uint256 i; i < traders.length; i++) {
+            _healthy(traders[i]);
+            _deposit(traders[i], mint);
         }
+
+        // Fund clearing via the canonical `fundClearing` path.
+        _healthy(CLEARING);
+        _fundClearing(mint);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -546,6 +558,14 @@ contract PerpEngineV2FuzzTest is Test {
         vm.startPrank(u);
         usdc.approve(address(vault), a);
         vault.deposit(address(usdc), a);
+        vm.stopPrank();
+    }
+
+    function _fundClearing(uint256 amount) internal {
+        usdc.mint(CLEARING_FUNDER, amount);
+        vm.startPrank(CLEARING_FUNDER);
+        usdc.approve(address(clearing), amount);
+        clearing.fundClearing(address(usdc), amount);
         vm.stopPrank();
     }
 }

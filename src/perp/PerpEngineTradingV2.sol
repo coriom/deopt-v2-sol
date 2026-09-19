@@ -87,8 +87,22 @@ abstract contract PerpEngineTradingV2 is PerpEngineViews, IPerpEngineTrade {
                           V2 ADMIN
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Designates the settlement-clearing account.
+    /// @dev
+    ///   PERPS_V2_CLEARING_ACCOUNT_CONTRACT_V1 §6:
+    ///   The clearing identity MUST be a contract (code.length > 0). This
+    ///   rules out EOA clearing designations that could drain themselves
+    ///   via `Vault.withdraw` or `Vault.transferFromInternalAccount`. In
+    ///   production, the intended identity is `PerpClearingAccountV2`
+    ///   whose surface is deposit-only.
+    ///
+    ///   The check is enforced at set-time only. Solidity 0.8.30 removes
+    ///   SELFDESTRUCT's ability to reduce code.length in normal
+    ///   deployments, so a positive check here is durable for the life
+    ///   of the engine's clearing binding.
     function setClearingAccount(address newClearing) external onlyOwner {
         if (newClearing == address(0)) revert ZeroAddress();
+        if (newClearing.code.length == 0) revert ClearingAccountInvalid();
         if (newClearing == owner) revert ClearingAccountInvalid();
         if (newClearing == address(this)) revert ClearingAccountInvalid();
         if (newClearing == matchingEngine) revert ClearingAccountInvalid();

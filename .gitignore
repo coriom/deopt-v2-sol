@@ -42,6 +42,7 @@ docs/
 docs/*
 !docs/OPTION_ONCHAIN_EXECUTION_DESIGN.md
 !docs/PERPS_V2_SOLIDITY_FIX_AND_TESTS_V1.md
+!docs/PERPS_V2_CLEARING_ACCOUNT_CONTRACT_V1.md
 !docs/architecture/
 docs/architecture/*
 !docs/architecture/CONTRACT_SIZE_REDUCTION_PLAN.md

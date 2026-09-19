@@ -20,6 +20,7 @@ import {PerpEngineTypes} from "../../src/perp/PerpEngineTypes.sol";
 import {PerpMarketRegistry} from "../../src/perp/PerpMarketRegistry.sol";
 import {IPerpRiskModule} from "../../src/perp/PerpEngineStorage.sol";
 import {IPerpEngineTrade} from "../../src/matching/IPerpEngineTrade.sol";
+import {PerpClearingAccountV2} from "../../src/perp/PerpClearingAccountV2.sol";
 
 // ---------------- Local mock harness (mirrors V1 test scaffolding). ----------------
 
@@ -166,7 +167,6 @@ contract PerpEngineV2CashflowTest is Test {
     address internal constant BOB = address(0xB2);
     address internal constant CAROL = address(0xC3);
     address internal constant DAVE = address(0xD4);
-    address internal constant CLEARING = address(0xC1EA);
     address internal constant CLEARING_FUNDER = address(0xF00D);
 
     CollateralVault internal vault;
@@ -174,6 +174,8 @@ contract PerpEngineV2CashflowTest is Test {
     PerpEngineV2 internal engine;
     MockOracleV2 internal oracle;
     MockRiskV2 internal risk;
+    PerpClearingAccountV2 internal clearing;
+    address internal CLEARING;
 
     MockERC20V2 internal usdc;
     MockERC20V2 internal weth;
@@ -230,10 +232,14 @@ contract PerpEngineV2CashflowTest is Test {
 
         engine.setMatchingEngine(MATCHING);
         engine.setRiskModule(address(risk));
-
-        // V2-specific: designate + fund clearing account.
-        engine.setClearingAccount(CLEARING);
         vm.stopPrank();
+
+        // V2-specific: deploy the hardened clearing contract + designate it.
+        clearing = new PerpClearingAccountV2(address(vault));
+        CLEARING = address(clearing);
+
+        vm.prank(OWNER);
+        engine.setClearingAccount(CLEARING);
 
         oracle.setPrice(address(weth), address(usdc), 2_000 * PRICE_SCALE, block.timestamp, true);
 
@@ -800,22 +806,24 @@ contract PerpEngineV2CashflowTest is Test {
     }
 
     function _fundClearing(uint256 amount) internal {
-        // Fund clearing by having a helper deposit tokens on its own
-        // vault balance-line, then having the engine push it via
-        // internal transfer... simpler: have the CLEARING_FUNDER
-        // deposit and then push via ordinary vault admin path.
-        //
-        // For test simplicity: mint mUSDC to CLEARING directly and have
-        // CLEARING deposit it as its own vault balance.
-        usdc.mint(CLEARING, amount);
-        vm.startPrank(CLEARING);
-        usdc.approve(address(vault), amount);
-        vault.deposit(address(usdc), amount);
+        // Canonical funding path — CLEARING_FUNDER approves the clearing
+        // contract, which pulls the ERC20 in and calls `Vault.deposit`
+        // internally so the Vault credits itself (msg.sender = clearing).
+        usdc.mint(CLEARING_FUNDER, amount);
+        vm.startPrank(CLEARING_FUNDER);
+        usdc.approve(address(clearing), amount);
+        clearing.fundClearing(address(usdc), amount);
         vm.stopPrank();
     }
 
     function _drainClearingToZero() internal {
-        // Withdraw clearing's entire vault balance to a burn address.
+        // TEST-ONLY setup helper. Uses `vm.prank` to impersonate the
+        // clearing contract as `msg.sender` and call `Vault.withdraw`.
+        // In production the clearing contract has NO code path that
+        // calls `Vault.withdraw`; this drain is only reachable through
+        // the foundry cheatcode. Adversarial tests in
+        // `test/perp/PerpClearingAccountV2Security.t.sol` verify that
+        // no non-cheatcode caller can drain the clearing balance.
         uint256 bal = vault.balances(CLEARING, address(usdc));
         if (bal == 0) return;
         vm.prank(CLEARING);
