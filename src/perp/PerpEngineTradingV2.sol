@@ -59,6 +59,46 @@ abstract contract PerpEngineTradingV2 is PerpEngineViews, IPerpEngineTrade {
     address public clearingAccount;
 
     /*//////////////////////////////////////////////////////////////
+                    V2 ONE-TIME MIGRATION STATE
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Migration lifecycle for a fresh V2 deployment.
+    /// @dev
+    ///   `OPEN` (initial, uint8(0)):
+    ///     - operator may call `adminSeedPosition`, `adminSeedMarketFunding`,
+    ///       and `adminSeedResidualBadDebt` under `onlyOwner`;
+    ///     - `applyTrade` and `liquidate` revert with `MigrationNotSealed`
+    ///       (V2 is not a partial-live engine during migration).
+    ///   `SEALED` (irreversible, uint8(1)):
+    ///     - all admin-seed paths revert with `MigrationSealed`;
+    ///     - normal trading paths are enabled;
+    ///     - `migrationSnapshotHash` is stored as an on-chain
+    ///       commitment to the exact off-chain V1 snapshot the seeding
+    ///       reproduced.
+    ///
+    /// See docs/PERPS_V2_MIGRATION_SEED_HOOK_V1.md.
+    enum MigrationState {
+        OPEN,
+        SEALED
+    }
+
+    /// @notice Current migration lifecycle. Solidity default = OPEN (uint8(0)).
+    MigrationState public migrationState;
+
+    /// @notice keccak256 commitment to the off-chain V1 snapshot manifest
+    ///         that this migration reproduces. Set exactly once at `sealMigration`.
+    bytes32 public migrationSnapshotHash;
+
+    /// @dev tracks trader/market pairs already seeded to reject duplicate writes.
+    mapping(address => mapping(uint256 => bool)) internal _positionSeeded;
+
+    /// @dev tracks markets whose funding state has been seeded to reject duplicate writes.
+    mapping(uint256 => bool) internal _marketFundingSeeded;
+
+    /// @dev tracks traders whose residual bad debt has been seeded to reject duplicate writes.
+    mapping(address => bool) internal _residualBadDebtSeeded;
+
+    /*//////////////////////////////////////////////////////////////
                           V2-SPECIFIC EVENTS
     //////////////////////////////////////////////////////////////*/
 
@@ -73,6 +113,30 @@ abstract contract PerpEngineTradingV2 is PerpEngineViews, IPerpEngineTrade {
         int256 sellerRealizedNative
     );
 
+    /// @notice Migration seed for a single (trader, market) canonical position.
+    /// @dev All fields are the exact V1 snapshot values; V2 does NOT recompute
+    ///      or normalize any of them.
+    event MigrationPositionSeeded(
+        address indexed trader,
+        uint256 indexed marketId,
+        int256 size1e8,
+        int256 openNotional1e8,
+        int256 lastCumulativeFundingRate1e18
+    );
+
+    /// @notice Migration seed for a per-market cumulative-funding baseline.
+    event MigrationMarketFundingSeeded(
+        uint256 indexed marketId,
+        int256 cumulativeFundingRate1e18,
+        uint64 lastFundingTimestamp
+    );
+
+    /// @notice Migration seed for a trader's residual bad-debt carryover.
+    event MigrationResidualBadDebtSeeded(address indexed trader, uint256 amountBase);
+
+    /// @notice Migration sealed — irreversible transition to normal trading.
+    event MigrationSealed(bytes32 snapshotHash, address indexed sealer);
+
     /*//////////////////////////////////////////////////////////////
                           V2-SPECIFIC ERRORS
     //////////////////////////////////////////////////////////////*/
@@ -82,6 +146,18 @@ abstract contract PerpEngineTradingV2 is PerpEngineViews, IPerpEngineTrade {
     error ClearingLiquidityInsufficient(
         address settlementAsset, address clearing, uint256 required, uint256 available
     );
+
+    error MigrationNotSealed();
+    error MigrationAlreadySealed();
+    error MigrationPositionAlreadySeeded(address trader, uint256 marketId);
+    error MigrationMarketFundingAlreadySeeded(uint256 marketId);
+    error MigrationResidualBadDebtAlreadySeeded(address trader);
+    error MigrationSnapshotHashZero();
+    error MigrationInvalidSize();
+    error MigrationInvalidBasisSign();
+    error MigrationClearingNotConfigured();
+    error MigrationMatchingEngineNotConfigured();
+    error MigrationRiskModuleNotConfigured();
 
     /*//////////////////////////////////////////////////////////////
                           V2 ADMIN
@@ -111,6 +187,158 @@ abstract contract PerpEngineTradingV2 is PerpEngineViews, IPerpEngineTrade {
         address old = clearingAccount;
         clearingAccount = newClearing;
         emit ClearingAccountSet(old, newClearing);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                V2 ONE-TIME MIGRATION: MODIFIERS + ADMIN
+    //////////////////////////////////////////////////////////////*/
+
+    modifier onlyMigrationOpen() {
+        if (migrationState != MigrationState.OPEN) revert MigrationAlreadySealed();
+        _;
+    }
+
+    modifier onlyMigrationSealed() {
+        if (migrationState != MigrationState.SEALED) revert MigrationNotSealed();
+        _;
+    }
+
+    /// @notice Seeds one (trader, marketId) canonical position from a V1
+    ///         snapshot. onlyOwner + onlyMigrationOpen. Duplicates rejected.
+    /// @dev
+    ///   Writes:
+    ///     - `_positions[trader][marketId]` (exact V1 fields)
+    ///     - `traderMarkets[trader]` / `traderMarketIndexPlus1[trader][marketId]`
+    ///       (via existing `_syncPositionIndexing` helper)
+    ///     - `totalAbsLongSize1e8[trader]` / `totalAbsShortSize1e8[trader]`
+    ///       (via existing `_updateMarketOpenInterest` — which also writes
+    ///        `_marketStates[marketId].longOpenInterest1e8` and
+    ///        `.shortOpenInterest1e8`, so per-market OI is reconstructed
+    ///        deterministically from the seeded positions themselves)
+    ///
+    ///   Emits `MigrationPositionSeeded`. Does NOT emit `TradeExecuted`
+    ///   (migration is not a trade).
+    ///
+    ///   Reverts:
+    ///     - `MigrationSealed` if called after `sealMigration`;
+    ///     - `NotAuthorized` if caller != owner;
+    ///     - `ZeroAddress` on trader == address(0);
+    ///     - `InvalidMarket` if market registry does not know `marketId`;
+    ///     - `MigrationInvalidSize` if `size1e8 == 0` (zero positions are
+    ///        never migrated — they are simply absent);
+    ///     - `MigrationInvalidBasisSign` if `openNotional1e8` sign is
+    ///        inconsistent with `size1e8` sign (long has +basis, short
+    ///        has -basis);
+    ///     - `MigrationPositionAlreadySeeded` on duplicate.
+    function adminSeedPosition(
+        address trader,
+        uint256 marketId,
+        int256 size1e8,
+        int256 openNotional1e8,
+        int256 lastCumulativeFundingRate1e18
+    ) external onlyOwner onlyMigrationOpen {
+        if (trader == address(0)) revert ZeroAddress();
+        _requireMarketExists(marketId);
+        if (size1e8 == 0) revert MigrationInvalidSize();
+
+        // Entry-basis invariant: sign(openNotional) == sign(size).
+        if (size1e8 > 0 && openNotional1e8 <= 0) revert MigrationInvalidBasisSign();
+        if (size1e8 < 0 && openNotional1e8 >= 0) revert MigrationInvalidBasisSign();
+
+        if (_positionSeeded[trader][marketId]) {
+            revert MigrationPositionAlreadySeeded(trader, marketId);
+        }
+        _positionSeeded[trader][marketId] = true;
+
+        _positions[trader][marketId] = Position({
+            size1e8: size1e8,
+            openNotional1e8: openNotional1e8,
+            lastCumulativeFundingRate1e18: lastCumulativeFundingRate1e18
+        });
+
+        _syncPositionIndexing(trader, marketId, 0, size1e8);
+        _updateMarketOpenInterest(marketId, 0, size1e8);
+
+        emit MigrationPositionSeeded(
+            trader, marketId, size1e8, openNotional1e8, lastCumulativeFundingRate1e18
+        );
+    }
+
+    /// @notice Seeds a market's cumulative-funding baseline and last-update
+    ///         timestamp. onlyOwner + onlyMigrationOpen. Duplicates rejected.
+    /// @dev Preserves Strategy A (exact snapshot). Any accrued-but-unrealized
+    ///      funding on migrated positions is exactly `Σ position_size *
+    ///      (market.cumulative - position.checkpoint)` — identical to V1.
+    ///      Not required if the market's funding was disabled in V1 and
+    ///      cumulative/timestamp are both zero.
+    function adminSeedMarketFunding(
+        uint256 marketId,
+        int256 cumulativeFundingRate1e18,
+        uint64 lastFundingTimestamp
+    ) external onlyOwner onlyMigrationOpen {
+        _requireMarketExists(marketId);
+        if (_marketFundingSeeded[marketId]) revert MigrationMarketFundingAlreadySeeded(marketId);
+        _marketFundingSeeded[marketId] = true;
+
+        MarketState storage s = _marketStates[marketId];
+        s.cumulativeFundingRate1e18 = cumulativeFundingRate1e18;
+        s.lastFundingTimestamp = lastFundingTimestamp;
+
+        emit MigrationMarketFundingSeeded(marketId, cumulativeFundingRate1e18, lastFundingTimestamp);
+    }
+
+    /// @notice Seeds a trader's residual bad-debt carryover. onlyOwner +
+    ///         onlyMigrationOpen. Duplicates rejected. Not used for the
+    ///         current A/B closed-test state (bad debt is zero).
+    function adminSeedResidualBadDebt(address trader, uint256 amountBase)
+        external
+        onlyOwner
+        onlyMigrationOpen
+    {
+        if (trader == address(0)) revert ZeroAddress();
+        if (_residualBadDebtSeeded[trader]) revert MigrationResidualBadDebtAlreadySeeded(trader);
+        _residualBadDebtSeeded[trader] = true;
+
+        // Reuse existing V1 helper — updates per-trader bookkeeping AND
+        // aggregate `totalResidualBadDebtBase` deterministically.
+        if (amountBase != 0) {
+            _recordResidualBadDebt(trader, amountBase);
+        }
+
+        emit MigrationResidualBadDebtSeeded(trader, amountBase);
+    }
+
+    /// @notice Irreversibly seals the migration lifecycle. Enables normal
+    ///         trading. Emits the on-chain commitment `snapshotHash` to
+    ///         the off-chain V1 manifest that seeding reproduced.
+    /// @dev
+    ///   Consistency preconditions checked at seal time (§10):
+    ///     - clearing account is set (mutual-close settlement requires it);
+    ///     - matching engine is set (applyTrade caller gate);
+    ///     - risk module is set (post-trade risk enforcement);
+    ///     - snapshotHash is non-zero (accidental empty-hash guard).
+    ///
+    ///   NOT checked here (out of scope of engine state):
+    ///     - CollateralVault authorization of this engine (a vault-owner
+    ///       operation);
+    ///     - clearing floor liquidity (operator's off-chain solvency policy);
+    ///     - snapshotHash matches any off-chain-computed value (verified
+    ///       by auditors via the off-chain manifest, not on-chain).
+    ///
+    ///   OI consistency is guaranteed by construction: `adminSeedPosition`
+    ///   updates `_marketStates.long/shortOpenInterest1e8` via the same
+    ///   `_updateMarketOpenInterest` helper that normal trading uses, so
+    ///   at seal `market OI == Σ |size| by side` for every seeded market.
+    function sealMigration(bytes32 snapshotHash) external onlyOwner onlyMigrationOpen {
+        if (snapshotHash == bytes32(0)) revert MigrationSnapshotHashZero();
+        if (clearingAccount == address(0)) revert MigrationClearingNotConfigured();
+        if (matchingEngine == address(0)) revert MigrationMatchingEngineNotConfigured();
+        if (address(_riskModule) == address(0)) revert MigrationRiskModuleNotConfigured();
+
+        migrationSnapshotHash = snapshotHash;
+        migrationState = MigrationState.SEALED;
+
+        emit MigrationSealed(snapshotHash, msg.sender);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -411,6 +639,7 @@ abstract contract PerpEngineTradingV2 is PerpEngineViews, IPerpEngineTrade {
 
     function updateFunding(uint256 marketId)
         public
+        onlyMigrationSealed
         whenFundingNotPaused
         returns (int256 fundingRateDelta1e18, int256 nextCumulativeFundingRate1e18)
     {
@@ -708,7 +937,14 @@ abstract contract PerpEngineTradingV2 is PerpEngineViews, IPerpEngineTrade {
                                 TRADING
     //////////////////////////////////////////////////////////////*/
 
-    function applyTrade(Trade calldata t) external override onlyMatchingEngine whenTradingNotPaused nonReentrant {
+    function applyTrade(Trade calldata t)
+        external
+        override
+        onlyMigrationSealed
+        onlyMatchingEngine
+        whenTradingNotPaused
+        nonReentrant
+    {
         if (t.buyer == address(0) || t.seller == address(0) || t.buyer == t.seller) revert InvalidTrade();
         if (t.sizeDelta1e8 == 0) revert SizeZero();
         if (t.executionPrice1e8 == 0) revert PriceZero();
@@ -815,6 +1051,7 @@ abstract contract PerpEngineTradingV2 is PerpEngineViews, IPerpEngineTrade {
     /// @param requestedCloseSize1e8 Requested clip. If 0, engine uses max clip under close factor.
     function liquidate(address trader, uint256 marketId, uint128 requestedCloseSize1e8)
         external
+        onlyMigrationSealed
         whenLiquidationNotPaused
         nonReentrant
     {

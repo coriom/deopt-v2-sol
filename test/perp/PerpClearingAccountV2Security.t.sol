@@ -217,6 +217,8 @@ contract PerpClearingAccountV2SecurityTest is Test {
         engine.setMatchingEngine(MATCHING);
         engine.setRiskModule(address(risk));
         engine.setClearingAccount(address(clearing));
+        // Seal migration so the ordinary trading path is usable in tests.
+        engine.sealMigration(bytes32(uint256(0xC01D5EA3)));
         vm.stopPrank();
 
         oracle.setPrice(address(weth), address(usdc), 2_000 * PRICE_SCALE, block.timestamp, true);
@@ -341,6 +343,7 @@ contract PerpClearingAccountV2SecurityTest is Test {
         rogue.setMatchingEngine(MATCHING);
         rogue.setRiskModule(address(risk));
         rogue.setClearingAccount(address(clearing));
+        rogue.sealMigration(bytes32(uint256(0xC01D5EA4)));
         vm.stopPrank();
 
         // Open on rogue (no vault mutation for fresh open).

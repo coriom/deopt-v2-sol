@@ -241,6 +241,12 @@ contract PerpEngineV2CashflowTest is Test {
         vm.prank(OWNER);
         engine.setClearingAccount(CLEARING);
 
+        // These tests exercise the ordinary trading path (post-migration).
+        // Seal migration with a dummy snapshot hash. Migration correctness
+        // itself is exercised in test/perp/PerpEngineV2Migration.t.sol.
+        vm.prank(OWNER);
+        engine.sealMigration(bytes32(uint256(0xC01D5EA1)));
+
         oracle.setPrice(address(weth), address(usdc), 2_000 * PRICE_SCALE, block.timestamp, true);
 
         _setHealthyRisk(ALICE);
@@ -725,8 +731,10 @@ contract PerpEngineV2CashflowTest is Test {
                         CLEARING ADMIN GATES
     //////////////////////////////////////////////////////////////*/
 
-    function testClearing_MustBeSetBeforeAnyRealizedTrade() external {
-        // Fresh deployment: clearing NOT set.
+    function testClearing_MustBeSetBeforeSeal() external {
+        // Fresh deployment: clearing NOT set. Attempting to seal must
+        // revert -- this is the structural safeguard that ClearingAccountNotSet
+        // remains unreachable at runtime (post-migration).
         PerpEngineV2 fresh = new PerpEngineV2(OWNER, address(registry), address(vault), address(oracle));
 
         vm.startPrank(OWNER);
@@ -735,8 +743,14 @@ contract PerpEngineV2CashflowTest is Test {
         fresh.setRiskModule(address(risk));
         vm.stopPrank();
 
-        // Opening trade produces zero realized on both sides -> OK.
+        // Cannot seal without clearing.
+        vm.prank(OWNER);
+        vm.expectRevert(PerpEngineTradingV2.MigrationClearingNotConfigured.selector);
+        fresh.sealMigration(bytes32(uint256(1)));
+
+        // Cannot trade before seal even if we tried.
         vm.prank(MATCHING);
+        vm.expectRevert(PerpEngineTradingV2.MigrationNotSealed.selector);
         fresh.applyTrade(
             IPerpEngineTrade.Trade({
                 buyer: ALICE,
@@ -744,20 +758,6 @@ contract PerpEngineV2CashflowTest is Test {
                 marketId: marketId,
                 sizeDelta1e8: ONE,
                 executionPrice1e8: uint128(2_000 * PRICE_SCALE),
-                buyerIsMaker: false
-            })
-        );
-
-        // Mutual close would produce nonzero realized -> revert (clearing not set).
-        vm.prank(MATCHING);
-        vm.expectRevert(PerpEngineTradingV2.ClearingAccountNotSet.selector);
-        fresh.applyTrade(
-            IPerpEngineTrade.Trade({
-                buyer: BOB,
-                seller: ALICE,
-                marketId: marketId,
-                sizeDelta1e8: ONE,
-                executionPrice1e8: uint128(2_100 * PRICE_SCALE),
                 buyerIsMaker: false
             })
         );

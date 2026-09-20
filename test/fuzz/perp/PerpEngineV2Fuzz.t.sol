@@ -233,8 +233,11 @@ contract PerpEngineV2FuzzTest is Test {
         // Deploy hardened clearing contract and designate.
         clearing = new PerpClearingAccountV2(address(vault));
         CLEARING = address(clearing);
-        vm.prank(OWNER);
+        vm.startPrank(OWNER);
         engine.setClearingAccount(CLEARING);
+        // Seal migration (fuzz tests exercise ordinary trading path).
+        engine.sealMigration(bytes32(uint256(0xC01D5EA2)));
+        vm.stopPrank();
 
         oracle.setPrice(address(weth), address(usdc), 2_000 * PRICE_SCALE, block.timestamp, true);
 
