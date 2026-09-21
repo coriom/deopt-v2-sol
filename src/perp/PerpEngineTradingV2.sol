@@ -664,31 +664,6 @@ abstract contract PerpEngineTradingV2 is PerpEngineViews, IPerpEngineTrade {
                         FEES / RISK / CASHFLOW HELPERS
     //////////////////////////////////////////////////////////////*/
 
-    function _chargeTradingFee(
-        address trader,
-        bool isMaker,
-        address settlementAsset,
-        uint256 marketId,
-        uint256 notionalNative,
-        address recipient
-    ) internal {
-        IFeesManager fm = feesManager;
-        if (address(fm) == address(0)) return;
-
-        if (recipient == address(0)) revert FeesManagerNotSet();
-        if (recipient == trader) revert InvalidTrade();
-
-        IFeesManager.FeeQuote memory q = fm.quoteFee(trader, isMaker, notionalNative, notionalNative);
-
-        uint256 fee = q.appliedFee;
-        if (fee == 0) return;
-
-        _collateralVault.transferBetweenAccounts(settlementAsset, trader, recipient, fee);
-
-        emit CollateralWithdrawn(trader, settlementAsset, fee, 0);
-        marketId;
-    }
-
     function _chargeTradingFeeV2(
         address trader,
         address counterparty,
@@ -1017,22 +992,20 @@ abstract contract PerpEngineTradingV2 is PerpEngineViews, IPerpEngineTrade {
 
         _enforceMaxOpenInterest(t.marketId, uint256(rcfg.maxOpenInterest1e8));
 
-        if (useFeesManagerV2 || address(feesManager) != address(0)) {
+        // PERPS_V2_ENGINE_SIZE_REDUCTION_A_SAFE_TRIM_V1 §1 — V2 charges
+        // trading fees exclusively through FeesManagerV2. V1 continues on
+        // its dedicated V1 PerpEngine deployment; V2 never falls back to
+        // the legacy `IFeesManager` path. Legacy `feesManager` storage
+        // and its `setFeesManager(...)` admin surface are retained
+        // (inherited from `PerpEngineStorage`/`PerpEngineAdmin`) for
+        // storage-layout + ABI stability, but the trade path no longer
+        // reads them — removes ~760 bytes of runtime bytecode.
+        if (useFeesManagerV2) {
             uint256 notionalNative = _value1e8ToSettlementNative(
                 m.settlementAsset, _mulDivFloor(uint256(t.sizeDelta1e8), uint256(t.executionPrice1e8), PRICE_1E8)
             );
-
-            if (useFeesManagerV2) {
-                _chargeTradingFeeV2(t.buyer, t.seller, t.buyerIsMaker, m.settlementAsset, notionalNative);
-                _chargeTradingFeeV2(t.seller, t.buyer, !t.buyerIsMaker, m.settlementAsset, notionalNative);
-            } else {
-                address recipient = _resolvedFeeRecipient();
-                if (recipient == address(0)) revert FeesManagerNotSet();
-                if (recipient == t.buyer || recipient == t.seller) revert InvalidTrade();
-
-                _chargeTradingFee(t.buyer, t.buyerIsMaker, m.settlementAsset, t.marketId, notionalNative, recipient);
-                _chargeTradingFee(t.seller, !t.buyerIsMaker, m.settlementAsset, t.marketId, notionalNative, recipient);
-            }
+            _chargeTradingFeeV2(t.buyer, t.seller, t.buyerIsMaker, m.settlementAsset, notionalNative);
+            _chargeTradingFeeV2(t.seller, t.buyer, !t.buyerIsMaker, m.settlementAsset, notionalNative);
         }
 
         emit TradeExecuted(t.buyer, t.seller, t.marketId, t.sizeDelta1e8, t.executionPrice1e8, t.buyerIsMaker);
