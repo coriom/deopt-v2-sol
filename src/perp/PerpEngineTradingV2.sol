@@ -8,14 +8,7 @@ import "../matching/IPerpEngineTrade.sol";
 import "../liquidation/ICollateralSeizer.sol";
 import "./PerpEngineViews.sol";
 import {PerpEngineSeizureLib} from "./PerpEngineSeizureLib.sol";
-
-// PERPS_V2_SOLIDITY_FIX_AND_TESTS_V1
-// Bad-debt backstop interface (reused from V1 semantics).
-interface IInsuranceFundPerpBackstopV2 {
-    function coverVaultShortfall(address token, address toAccount, uint256 requestedAmount)
-        external
-        returns (uint256 paidAmount);
-}
+import {PerpEngineLiquidationLib} from "./PerpEngineLiquidationLib.sol";
 
 /// @title PerpEngineTradingV2
 /// @notice V2 perp trading entrypoint. Replaces V1's peer-to-peer realized
@@ -372,96 +365,6 @@ abstract contract PerpEngineTradingV2 is PerpEngineViews, IPerpEngineTrade {
         returns (uint256 paidBase)
     {
         return PerpEngineSeizureLib.trySeizeViaPlan(_collateralSeizer, _collateralVault, trader, liquidator, targetBase);
-    }
-
-    function _seizePenaltyToLiquidator(address trader, address liquidator, address settlementAsset, uint256 penaltyBase)
-        internal
-        returns (uint256 paidPenaltyBase)
-    {
-        if (penaltyBase == 0) return 0;
-
-        paidPenaltyBase = _trySeizeViaPlan(trader, liquidator, penaltyBase);
-        if (paidPenaltyBase >= penaltyBase) {
-            return penaltyBase;
-        }
-
-        uint256 remainingBase = penaltyBase - paidPenaltyBase;
-
-        _syncVaultBestEffort(trader, settlementAsset);
-
-        uint256 penaltyNative = _penaltySettlementNative(settlementAsset, remainingBase);
-        if (penaltyNative == 0) return paidPenaltyBase;
-
-        uint256 traderBal = _collateralVault.balances(trader, settlementAsset);
-        uint256 paidNative = penaltyNative <= traderBal ? penaltyNative : traderBal;
-        if (paidNative == 0) return paidPenaltyBase;
-
-        _collateralVault.transferBetweenAccounts(settlementAsset, trader, liquidator, paidNative);
-
-        if (settlementAsset == _baseToken()) {
-            return paidPenaltyBase + paidNative;
-        }
-
-        uint256 extraBase = _settlementNativeToBase(settlementAsset, paidNative);
-        paidPenaltyBase += extraBase;
-
-        if (paidPenaltyBase > penaltyBase) {
-            paidPenaltyBase = penaltyBase;
-        }
-    }
-
-    function _tryCoverShortfallWithInsurance(address liquidator, uint256 requestedBase)
-        internal
-        returns (uint256 paidBase)
-    {
-        if (requestedBase == 0) return 0;
-        _requireInsuranceFund();
-
-        address baseToken = _baseToken();
-
-        try IInsuranceFundPerpBackstopV2(insuranceFund)
-            .coverVaultShortfall(baseToken, liquidator, requestedBase) returns (
-            uint256 paid
-        ) {
-            paidBase = paid <= requestedBase ? paid : requestedBase;
-        } catch {
-            revert InsuranceFundCoverageFailed();
-        }
-    }
-
-    function _resolveLiquidationShortfall(
-        address liquidator,
-        address trader,
-        uint256 marketId,
-        uint256 penaltyTargetBase,
-        uint256 seizedPenaltyBase
-    ) internal returns (LiquidationResolution memory res) {
-        res.penaltyTargetBase = penaltyTargetBase;
-        res.seizedPenaltyBase = seizedPenaltyBase;
-
-        uint256 remainingAfterSeizureBase = _remainingShortfall(penaltyTargetBase, seizedPenaltyBase);
-
-        if (remainingAfterSeizureBase != 0) {
-            emit LiquidationShortfall(
-                liquidator, trader, marketId, penaltyTargetBase, seizedPenaltyBase, remainingAfterSeizureBase
-            );
-
-            uint256 insurancePaidBase = _tryCoverShortfallWithInsurance(liquidator, remainingAfterSeizureBase);
-            res.insurancePaidBase = insurancePaidBase;
-
-            if (insurancePaidBase != 0) {
-                emit LiquidationInsuranceCoverage(
-                    liquidator, trader, marketId, remainingAfterSeizureBase, insurancePaidBase
-                );
-            }
-
-            uint256 residualShortfallBase = _remainingShortfall(remainingAfterSeizureBase, insurancePaidBase);
-            res.residualShortfallBase = residualShortfallBase;
-
-            if (residualShortfallBase != 0) {
-                emit LiquidationBadDebtRecorded(liquidator, trader, marketId, residualShortfallBase);
-            }
-        }
     }
 
     function _routeIncomingCashflowWithDebtFirst(
@@ -1099,10 +1002,28 @@ abstract contract PerpEngineTradingV2 is PerpEngineViews, IPerpEngineTrade {
         uint256 closedNotionalBase = _settlementAmount1e8ToBase(m.settlementAsset, closedNotional1e8);
         uint256 penaltyBase = _liquidationPenaltyBaseValue(closedNotionalBase, penaltyBps);
 
-        uint256 seizedPenaltyBase = _seizePenaltyToLiquidator(trader, liquidator, m.settlementAsset, penaltyBase);
+        // PERPS_V2_ENGINE_SIZE_REDUCTION_B_COLD_PATH_EXTRACT_V1 §5-§9 —
+        // cold-path seize + shortfall resolution delegated to
+        // `PerpEngineLiquidationLib` (external library, DELEGATECALL).
+        // Storage writes (positions, market OI, residual bad debt) remain
+        // in this engine wrapper; the library only orchestrates external
+        // Vault + insurance-fund calls under the engine's storage context.
+        uint256 seizedPenaltyBase = PerpEngineLiquidationLib.seizePenaltyToLiquidator(
+            PerpEngineLiquidationLib.SeizeCtx({
+                vault: _collateralVault,
+                seizer: _collateralSeizer,
+                oracle: _oracle,
+                baseToken: _baseToken(),
+                settlementAsset: m.settlementAsset
+            }),
+            trader,
+            liquidator,
+            penaltyBase
+        );
 
-        LiquidationResolution memory resolution =
-            _resolveLiquidationShortfall(liquidator, trader, marketId, penaltyBase, seizedPenaltyBase);
+        LiquidationResolution memory resolution = PerpEngineLiquidationLib.resolveShortfall(
+            insuranceFund, _baseToken(), liquidator, trader, marketId, penaltyBase, seizedPenaltyBase
+        );
 
         if (resolution.residualShortfallBase != 0) {
             _recordResidualBadDebt(trader, resolution.residualShortfallBase);
