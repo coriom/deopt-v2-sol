@@ -353,11 +353,15 @@ contract PerpEngineV2LiquidationTest is Test {
     }
 
     function _mockImprovingRisk(address t) internal {
+        // PERPS_V2_ENGINE_SIZE_REDUCTION_C_FINAL_IMPLEMENTATION_V1 §10 —
+        // the refactored `liquidate()` wrapper reads the trader's risk state
+        // exactly twice (once for `traderBefore`, once for `traderAfter`
+        // after cashflow settlement), deduplicating the pre-refactor redundant
+        // read done by the now-inlined `_isTraderLiquidatable` predicate.
         bytes memory sel = abi.encodeWithSelector(IPerpRiskModule.computeAccountRisk.selector, t);
-        bytes[] memory rets = new bytes[](3);
+        bytes[] memory rets = new bytes[](2);
         rets[0] = abi.encode(IPerpRiskModule.AccountRisk(LIQUIDATABLE_EQUITY, LIQUIDATABLE_MM, 0));
-        rets[1] = abi.encode(IPerpRiskModule.AccountRisk(LIQUIDATABLE_EQUITY, LIQUIDATABLE_MM, 0));
-        rets[2] = abi.encode(IPerpRiskModule.AccountRisk(IMPROVED_EQUITY, IMPROVED_MM, 0));
+        rets[1] = abi.encode(IPerpRiskModule.AccountRisk(IMPROVED_EQUITY, IMPROVED_MM, 0));
         vm.mockCalls(address(risk), sel, rets);
     }
 }

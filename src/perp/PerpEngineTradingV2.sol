@@ -727,55 +727,6 @@ abstract contract PerpEngineTradingV2 is PerpEngineViews, IPerpEngineTrade {
         r = _riskModule.computeAccountRisk(trader);
     }
 
-    function _isTraderLiquidatable(address trader) internal view returns (bool) {
-        IPerpRiskModule.AccountRisk memory r = _marginState(trader);
-        if (r.maintenanceMarginBase == 0) return false;
-        if (r.equityBase <= 0) return true;
-        return _marginRatioBpsFromState(r.equityBase, r.maintenanceMarginBase) < BPS;
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                            LIQUIDATION HELPERS
-    //////////////////////////////////////////////////////////////*/
-
-    function _liquidationClip(
-        address trader,
-        uint256 marketId,
-        uint128 requestedCloseSize1e8,
-        uint256 liqPrice1e8,
-        int256 currentFunding1e18,
-        uint256 closeFactorBps
-    ) internal view returns (Position memory newPos, int256 realizedPnl1e8, uint128 executedCloseSize1e8) {
-        Position memory oldPos = _positions[trader][marketId];
-        if (oldPos.size1e8 == 0) revert LiquidationNothingToDo();
-
-        executedCloseSize1e8 = _boundedLiquidationSize1e8(oldPos.size1e8, requestedCloseSize1e8, closeFactorBps);
-        if (executedCloseSize1e8 == 0) revert LiquidationNothingToDo();
-
-        int256 deltaForTrader =
-            oldPos.size1e8 > 0 ? -_toInt256(uint256(executedCloseSize1e8)) : _toInt256(uint256(executedCloseSize1e8));
-
-        (newPos, realizedPnl1e8) = _computeNextPosition(oldPos, deltaForTrader, liqPrice1e8, currentFunding1e18);
-    }
-
-    function _applyLiquidationLegToLiquidator(
-        address liquidator,
-        uint256 marketId,
-        uint128 sizeClosed1e8,
-        uint256 liqPrice1e8,
-        int256 currentFunding1e18,
-        bool traderWasLong
-    ) internal view returns (Position memory newLiqPos) {
-        Position memory oldLiqPos = _positions[liquidator][marketId];
-        int256 deltaForLiquidator =
-            traderWasLong ? _toInt256(uint256(sizeClosed1e8)) : -_toInt256(uint256(sizeClosed1e8));
-
-        int256 ignoredRealized;
-        (newLiqPos, ignoredRealized) =
-            _computeNextPosition(oldLiqPos, deltaForLiquidator, liqPrice1e8, currentFunding1e18);
-        ignoredRealized;
-    }
-
     /*//////////////////////////////////////////////////////////////
                     EXECUTION PRICE DEVIATION GUARD
     //////////////////////////////////////////////////////////////*/
@@ -931,6 +882,18 @@ abstract contract PerpEngineTradingV2 is PerpEngineViews, IPerpEngineTrade {
         whenLiquidationNotPaused
         nonReentrant
     {
+        // PERPS_V2_ENGINE_SIZE_REDUCTION_C_FINAL_IMPLEMENTATION_V1 §5-§10 —
+        // full cold-path liquidation orchestration delegated to
+        // `PerpEngineLiquidationLib` (existing external library, DELEGATECALL).
+        // The engine wrapper below still performs:
+        //   - modifier gating (sealed, pause, reentrancy);
+        //   - basic caller / market / config validation;
+        //   - hot-path helpers `updateFunding`, `_applyRealizedCashflow`,
+        //     `_syncPositionIndexing`, `_updateMarketOpenInterest`,
+        //     `_recordResidualBadDebt`, `_enforcePostTradeRisk` — these stay
+        //     single-source per §8.
+        // The library performs the pure clip+leg math, the vault-facing seize
+        // + shortfall + insurance calls, and emits the 3 terminal events.
         if (trader == address(0)) revert ZeroAddress();
         if (trader == msg.sender) revert LiquidationSelfNotAllowed();
 
@@ -950,7 +913,7 @@ abstract contract PerpEngineTradingV2 is PerpEngineViews, IPerpEngineTrade {
         ) = _loadEffectiveLiquidationParams(marketId);
 
         IPerpRiskModule.AccountRisk memory traderBefore = _marginState(trader);
-        if (!_isTraderLiquidatable(trader)) revert NotLiquidatable();
+        if (!PerpEngineLiquidationLib.isTraderLiquidatable(traderBefore)) revert NotLiquidatable();
 
         updateFunding(marketId);
         int256 currentFunding = _marketStates[marketId].cumulativeFundingRate1e18;
@@ -960,55 +923,49 @@ abstract contract PerpEngineTradingV2 is PerpEngineViews, IPerpEngineTrade {
 
         uint256 markPrice1e8 = _liquidationMarkPrice1e8(marketId, oracleMaxDelay);
 
-        uint256 liqPrice1e8 = _liquidationPrice1e8FromMark(oldTraderPos.size1e8, markPrice1e8, priceSpreadBps);
-
-        Position memory newTraderPos;
-        int256 traderRealizedPnl1e8;
-        uint128 sizeClosed1e8;
-
-        (newTraderPos, traderRealizedPnl1e8, sizeClosed1e8) =
-            _liquidationClip(trader, marketId, requestedCloseSize1e8, liqPrice1e8, currentFunding, closeFactorBps);
-
-        if (sizeClosed1e8 == 0) revert LiquidationNothingToDo();
-
         address liquidator = msg.sender;
         Position memory oldLiqPos = _positions[liquidator][marketId];
-        bool traderWasLong = oldTraderPos.size1e8 > 0;
 
-        Position memory newLiqPos = _applyLiquidationLegToLiquidator(
-            liquidator, marketId, sizeClosed1e8, liqPrice1e8, currentFunding, traderWasLong
-        );
+        // Compute clip + liquidator leg + realized PnL via library (pure).
+        PerpEngineLiquidationLib.ClipAndLegResult memory clip = PerpEngineLiquidationLib
+            .computeClipAndLeg(
+                oldTraderPos,
+                oldLiqPos,
+                requestedCloseSize1e8,
+                markPrice1e8,
+                currentFunding,
+                closeFactorBps,
+                priceSpreadBps
+            );
 
-        if (_absInt256(newLiqPos.size1e8) > uint256(rcfg.maxPositionSize1e8)) {
+        if (_absInt256(clip.newLiqPos.size1e8) > uint256(rcfg.maxPositionSize1e8)) {
             revert LiquidatorWouldBreachMargin(liquidator);
         }
 
-        int256 liquidatorRealizedPnl1e8 = 0 - traderRealizedPnl1e8;
-        _applyRealizedCashflow(m.settlementAsset, liquidator, trader, liquidatorRealizedPnl1e8, traderRealizedPnl1e8);
+        // Cashflow settlement via canonical clearing-account primitive (engine).
+        _applyRealizedCashflow(
+            m.settlementAsset, liquidator, trader, 0 - clip.traderRealizedPnl1e8, clip.traderRealizedPnl1e8
+        );
 
-        _positions[trader][marketId] = newTraderPos;
-        _positions[liquidator][marketId] = newLiqPos;
+        // Canonical storage writes (engine).
+        _positions[trader][marketId] = clip.newTraderPos;
+        _positions[liquidator][marketId] = clip.newLiqPos;
 
-        _syncPositionIndexing(trader, marketId, oldTraderPos.size1e8, newTraderPos.size1e8);
-        _syncPositionIndexing(liquidator, marketId, oldLiqPos.size1e8, newLiqPos.size1e8);
+        _syncPositionIndexing(trader, marketId, oldTraderPos.size1e8, clip.newTraderPos.size1e8);
+        _syncPositionIndexing(liquidator, marketId, oldLiqPos.size1e8, clip.newLiqPos.size1e8);
 
-        _updateMarketOpenInterest(marketId, oldTraderPos.size1e8, newTraderPos.size1e8);
-        _updateMarketOpenInterest(marketId, oldLiqPos.size1e8, newLiqPos.size1e8);
+        _updateMarketOpenInterest(marketId, oldTraderPos.size1e8, clip.newTraderPos.size1e8);
+        _updateMarketOpenInterest(marketId, oldLiqPos.size1e8, clip.newLiqPos.size1e8);
 
         _enforceMaxOpenInterest(marketId, uint256(rcfg.maxOpenInterest1e8));
 
-        uint256 closedNotional1e8 = _mulDivFloor(uint256(sizeClosed1e8), liqPrice1e8, PRICE_1E8);
-
+        uint256 closedNotional1e8 = _mulDivFloor(uint256(clip.sizeClosed1e8), clip.liqPrice1e8, PRICE_1E8);
         uint256 closedNotionalBase = _settlementAmount1e8ToBase(m.settlementAsset, closedNotional1e8);
         uint256 penaltyBase = _liquidationPenaltyBaseValue(closedNotionalBase, penaltyBps);
 
-        // PERPS_V2_ENGINE_SIZE_REDUCTION_B_COLD_PATH_EXTRACT_V1 §5-§9 —
-        // cold-path seize + shortfall resolution delegated to
-        // `PerpEngineLiquidationLib` (external library, DELEGATECALL).
-        // Storage writes (positions, market OI, residual bad debt) remain
-        // in this engine wrapper; the library only orchestrates external
-        // Vault + insurance-fund calls under the engine's storage context.
-        uint256 seizedPenaltyBase = PerpEngineLiquidationLib.seizePenaltyToLiquidator(
+        // Consolidated cold-path finalization: seize + shortfall + improvement +
+        // 3 terminal events, all in ONE delegatecall boundary (§10 consolidation).
+        (LiquidationResolution memory resolution, bool improved) = PerpEngineLiquidationLib.finalizeLiquidation(
             PerpEngineLiquidationLib.SeizeCtx({
                 vault: _collateralVault,
                 seizer: _collateralSeizer,
@@ -1016,47 +973,25 @@ abstract contract PerpEngineTradingV2 is PerpEngineViews, IPerpEngineTrade {
                 baseToken: _baseToken(),
                 settlementAsset: m.settlementAsset
             }),
-            trader,
+            insuranceFund,
             liquidator,
-            penaltyBase
-        );
-
-        LiquidationResolution memory resolution = PerpEngineLiquidationLib.resolveShortfall(
-            insuranceFund, _baseToken(), liquidator, trader, marketId, penaltyBase, seizedPenaltyBase
+            trader,
+            marketId,
+            clip.sizeClosed1e8,
+            clip.liqPrice1e8,
+            closedNotionalBase,
+            penaltyBase,
+            traderBefore,
+            _marginState(trader),
+            minImprovementBps
         );
 
         if (resolution.residualShortfallBase != 0) {
             _recordResidualBadDebt(trader, resolution.residualShortfallBase);
         }
 
-        IPerpRiskModule.AccountRisk memory traderAfter = _marginState(trader);
-        bool improved = _liquidationImproved(
-            traderBefore.equityBase,
-            traderBefore.maintenanceMarginBase,
-            traderAfter.equityBase,
-            traderAfter.maintenanceMarginBase,
-            minImprovementBps
-        );
         if (!improved) revert LiquidationNotImproving();
 
         _enforcePostTradeRisk(liquidator);
-
-        uint256 totalPenaltyPaidBase = resolution.seizedPenaltyBase + resolution.insurancePaidBase;
-
-        emit Liquidation(liquidator, trader, marketId, sizeClosed1e8, liqPrice1e8, totalPenaltyPaidBase);
-        emit LiquidationResolved(
-            liquidator,
-            trader,
-            marketId,
-            sizeClosed1e8,
-            liqPrice1e8,
-            closedNotionalBase,
-            penaltyBase,
-            resolution.seizedPenaltyBase,
-            resolution.insurancePaidBase,
-            resolution.residualShortfallBase,
-            totalPenaltyPaidBase
-        );
-        emit LiquidationPenaltyPaid(liquidator, trader, marketId, totalPenaltyPaidBase);
     }
 }
