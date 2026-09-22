@@ -79,7 +79,9 @@ abstract contract PerpEngineStorage is PerpEngineTypes {
     IOracle internal _oracle;
     IPerpRiskModule internal _riskModule;
     ICollateralSeizer internal _collateralSeizer;
-    IFeesManager public feesManager;
+    /// @dev V2 exposes only `feesManagerV2`; the legacy V1 pointer is kept in storage
+    ///      for backward compatibility but the public getter lives in the V1-only mixin.
+    IFeesManager internal _feesManager;
     IFeesManagerV2 public feesManagerV2;
 
     /// @notice If true, perp execution uses FeesManagerV2 instead of V1.
@@ -89,7 +91,8 @@ abstract contract PerpEngineStorage is PerpEngineTypes {
     address public insuranceFund;
 
     /// @notice Explicit fee recipient. Fallback may use insuranceFund.
-    address public feeRecipient;
+    /// @dev V1 exposes `feeRecipient()` via the V1-only mixin; V2 has no direct consumer.
+    address internal _feeRecipient;
 
     /// @notice Net position per trader per market.
     mapping(address => mapping(uint256 => Position)) internal _positions;
@@ -128,7 +131,8 @@ abstract contract PerpEngineStorage is PerpEngineTypes {
     uint256 public totalResidualBadDebtBase;
 
     /// @notice Legacy global pause.
-    bool public paused;
+    /// @dev V1 exposes `paused()` via the V1-only mixin; V2 uses only the granular flags below.
+    bool internal _paused;
 
     /// @notice Granular emergency flags.
     bool public tradingPaused;
@@ -137,24 +141,24 @@ abstract contract PerpEngineStorage is PerpEngineTypes {
     bool public collateralOpsPaused;
 
     /// @notice Legacy default close factor used only as fallback when market-specific config is unavailable.
-    /// @dev 5000 = 50%
-    uint256 public liquidationCloseFactorBps = 5000;
+    /// @dev 5000 = 50%. Public getter lives in the V1-only mixin.
+    uint256 internal _liquidationCloseFactorBps = 5000;
 
     /// @notice Legacy default liquidation penalty used only as fallback when market-specific config is unavailable.
-    /// @dev 500 = 5%
-    uint256 public liquidationPenaltyBps = 500;
+    /// @dev 500 = 5%. Public getter lives in the V1-only mixin.
+    uint256 internal _liquidationPenaltyBps = 500;
 
     /// @notice Legacy default liquidation spread used only as fallback when market-specific config is unavailable.
-    /// @dev 100 = 1%
-    uint256 public liquidationPriceSpreadBps = 100;
+    /// @dev 100 = 1%. Public getter lives in the V1-only mixin.
+    uint256 internal _liquidationPriceSpreadBps = 100;
 
     /// @notice Legacy default minimum required improvement used only as fallback when market-specific config is unavailable.
-    /// @dev In bps of margin ratio.
-    uint256 public minLiquidationImprovementBps = 50;
+    /// @dev In bps of margin ratio. Public getter lives in the V1-only mixin.
+    uint256 internal _minLiquidationImprovementBps = 50;
 
     /// @notice Legacy default liquidation oracle freshness used only as fallback when market-specific config is unavailable.
-    /// @dev In seconds. 0 disables staleness guard for the fallback path.
-    uint32 public liquidationOracleMaxDelay = 60;
+    /// @dev In seconds. 0 disables staleness guard for the fallback path. Public getter lives in the V1-only mixin.
+    uint32 internal _liquidationOracleMaxDelay = 60;
 
     /*//////////////////////////////////////////////////////////////
                         FUNDING V2 IMPACT-MID ORACLE
@@ -260,7 +264,7 @@ abstract contract PerpEngineStorage is PerpEngineTypes {
         _oracle = IOracle(oracle_);
         _nonReentrantAfter();
 
-        paused = false;
+        _paused = false;
         tradingPaused = false;
         liquidationPaused = false;
         fundingPaused = false;
@@ -278,23 +282,23 @@ abstract contract PerpEngineStorage is PerpEngineTypes {
     //////////////////////////////////////////////////////////////*/
 
     function _isAnyPauseActive() internal view returns (bool) {
-        return paused || tradingPaused || liquidationPaused || fundingPaused || collateralOpsPaused;
+        return _paused || tradingPaused || liquidationPaused || fundingPaused || collateralOpsPaused;
     }
 
     function _isTradingPaused() internal view returns (bool) {
-        return paused || tradingPaused;
+        return _paused || tradingPaused;
     }
 
     function _isLiquidationPaused() internal view returns (bool) {
-        return paused || liquidationPaused;
+        return _paused || liquidationPaused;
     }
 
     function _isFundingPaused() internal view returns (bool) {
-        return paused || fundingPaused;
+        return _paused || fundingPaused;
     }
 
     function _isCollateralOpsPaused() internal view returns (bool) {
-        return paused || collateralOpsPaused;
+        return _paused || collateralOpsPaused;
     }
 
     function _requireOwner() internal view {
@@ -388,7 +392,7 @@ abstract contract PerpEngineStorage is PerpEngineTypes {
     //////////////////////////////////////////////////////////////*/
 
     function _resolvedFeeRecipient() internal view returns (address recipient) {
-        recipient = feeRecipient;
+        recipient = _feeRecipient;
         if (recipient == address(0)) recipient = insuranceFund;
     }
 
@@ -400,7 +404,7 @@ abstract contract PerpEngineStorage is PerpEngineTypes {
     function _resolvedBadDebtRepaymentRecipient() internal view returns (address recipient) {
         recipient = insuranceFund;
         if (recipient == address(0)) {
-            recipient = feeRecipient;
+            recipient = _feeRecipient;
         }
     }
 
@@ -466,7 +470,7 @@ abstract contract PerpEngineStorage is PerpEngineTypes {
         try _marketRegistry.getLiquidationConfig(marketId) returns (PerpMarketRegistry.LiquidationConfig memory cfg) {
             if (cfg.closeFactorBps != 0) return uint256(cfg.closeFactorBps);
         } catch {}
-        return liquidationCloseFactorBps;
+        return _liquidationCloseFactorBps;
     }
 
     /// @notice Effective adverse price spread for one market.
@@ -475,7 +479,7 @@ abstract contract PerpEngineStorage is PerpEngineTypes {
         try _marketRegistry.getLiquidationConfig(marketId) returns (PerpMarketRegistry.LiquidationConfig memory cfg) {
             return uint256(cfg.priceSpreadBps);
         } catch {}
-        return liquidationPriceSpreadBps;
+        return _liquidationPriceSpreadBps;
     }
 
     /// @notice Effective minimum improvement requirement for one market.
@@ -483,7 +487,7 @@ abstract contract PerpEngineStorage is PerpEngineTypes {
         try _marketRegistry.getLiquidationConfig(marketId) returns (PerpMarketRegistry.LiquidationConfig memory cfg) {
             return uint256(cfg.minImprovementBps);
         } catch {}
-        return minLiquidationImprovementBps;
+        return _minLiquidationImprovementBps;
     }
 
     /// @notice Effective oracle freshness threshold for one market.
@@ -492,7 +496,7 @@ abstract contract PerpEngineStorage is PerpEngineTypes {
         try _marketRegistry.getLiquidationConfig(marketId) returns (PerpMarketRegistry.LiquidationConfig memory cfg) {
             return cfg.oracleMaxDelay;
         } catch {}
-        return liquidationOracleMaxDelay;
+        return _liquidationOracleMaxDelay;
     }
 
     /// @notice Effective liquidation penalty for one market.
@@ -500,7 +504,7 @@ abstract contract PerpEngineStorage is PerpEngineTypes {
     function _liquidationPenaltyBpsForMarket(uint256 marketId) internal view returns (uint256) {
         PerpMarketRegistry.RiskConfig memory cfg = _getRiskConfig(marketId);
         if (cfg.liquidationPenaltyBps != 0) return uint256(cfg.liquidationPenaltyBps);
-        return liquidationPenaltyBps;
+        return _liquidationPenaltyBps;
     }
 
     /// @notice Validates a liquidation policy bundle.

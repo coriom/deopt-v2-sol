@@ -107,27 +107,6 @@ abstract contract PerpEngineViews is PerpEngineAdmin {
         return _getMarkPrice1e8(marketId);
     }
 
-    /// @notice Returns the risk mark price used by margin / maintenance / liquidation logic, in 1e8.
-    /// @dev
-    ///  V1 policy: `getRiskMarkPrice1e8` is a direct alias for `getMarkPrice` (== oracle index/spot).
-    ///  This is the reference price the engine uses for unrealized PnL, initial and maintenance
-    ///  margin, liquidation trigger, liquidation execution price, and the
-    ///  execution-price deviation guard in `applyTrade`.
-    ///
-    ///  Intentional invariant for V1: risk mark == index. Using a raw orderbook midpoint would
-    ///  be manipulable on a thin launch market. The alias exists so downstream tooling and
-    ///  future consumers can already bind to the semantically stable "risk mark" surface today,
-    ///  and receive the correct value automatically once PERPS-FUNDING-V2 introduces a
-    ///  distinct mark = index + bounded/smoothed premium.
-    ///
-    ///  For margin / maintenance / liquidation, this "risk mark" is the reference to use.
-    ///  The (currently identical) `getMarkPrice` is what will diverge in V2.
-    ///
-    ///  This function is a pure view alias in V1: it does NOT change any consumer today.
-    function getRiskMarkPrice1e8(uint256 marketId) external view returns (uint256) {
-        return _getMarkPrice1e8(marketId);
-    }
-
     function getUnrealizedPnl(address trader, uint256 marketId) public view returns (int256) {
         return _positionUnrealizedPnl1e8(trader, marketId, _getMarkPrice1e8(marketId));
     }

@@ -175,7 +175,7 @@ abstract contract PerpEngineTradingV2 is PerpEngineViews, IPerpEngineTrade {
         if (newClearing == owner) revert ClearingAccountInvalid();
         if (newClearing == address(this)) revert ClearingAccountInvalid();
         if (newClearing == matchingEngine) revert ClearingAccountInvalid();
-        if (newClearing == feeRecipient) revert ClearingAccountInvalid();
+        if (newClearing == _feeRecipient) revert ClearingAccountInvalid();
 
         address old = clearingAccount;
         clearingAccount = newClearing;

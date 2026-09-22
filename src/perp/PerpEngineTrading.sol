@@ -6,7 +6,7 @@ import {IFeesManagerV2} from "../fees/IFeesManagerV2.sol";
 import {IOracle} from "../oracle/IOracle.sol";
 import "../matching/IPerpEngineTrade.sol";
 import "../liquidation/ICollateralSeizer.sol";
-import "./PerpEngineViews.sol";
+import "./PerpEngineV1Legacy.sol";
 import {PerpEngineSeizureLib} from "./PerpEngineSeizureLib.sol";
 
 interface IInsuranceFundPerpBackstop {
@@ -17,7 +17,7 @@ interface IInsuranceFundPerpBackstop {
 
 /// @title PerpEngineTrading
 /// @notice Matching-engine entrypoint for perpetual trades + liquidation logic.
-abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
+abstract contract PerpEngineTrading is PerpEngineV1Legacy, IPerpEngineTrade {
     /*//////////////////////////////////////////////////////////////
                             INTERNAL HELPERS
     //////////////////////////////////////////////////////////////*/
@@ -348,7 +348,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
         uint256 notionalNative,
         address recipient
     ) internal {
-        IFeesManager fm = feesManager;
+        IFeesManager fm = _feesManager;
         if (address(fm) == address(0)) return;
 
         if (recipient == address(0)) revert FeesManagerNotSet();
@@ -601,7 +601,7 @@ abstract contract PerpEngineTrading is PerpEngineViews, IPerpEngineTrade {
 
         _enforceMaxOpenInterest(t.marketId, uint256(rcfg.maxOpenInterest1e8));
 
-        if (useFeesManagerV2 || address(feesManager) != address(0)) {
+        if (useFeesManagerV2 || address(_feesManager) != address(0)) {
             uint256 notionalNative = _value1e8ToSettlementNative(
                 m.settlementAsset, _mulDivFloor(uint256(t.sizeDelta1e8), uint256(t.executionPrice1e8), PRICE_1E8)
             );

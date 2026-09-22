@@ -212,12 +212,6 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
         emit InsuranceFundSet(old, insuranceFund_);
     }
 
-    function setFeesManager(address feesManager_) external onlyOwner {
-        if (feesManager_ == address(0)) revert ZeroAddress();
-        feesManager = IFeesManager(feesManager_);
-        emit FeesManagerSet(feesManager_);
-    }
-
     /// @notice Set optional signed-ppm perp fee manager.
     /// @dev V1 remains active until `setUseFeesManagerV2(true)` is called.
     function setFeesManagerV2(address feesManagerV2_) external onlyOwner {
@@ -249,26 +243,6 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
                     LIQUIDATION FALLBACK DEFAULTS
     //////////////////////////////////////////////////////////////*/
 
-    /*//////////////////////////////////////////////////////////////
-                        LEGACY COMPATIBILITY ALIASES
-    //////////////////////////////////////////////////////////////*/
-
-    /// @dev Backward-compatible alias. Semantically this now sets fallback defaults.
-    function setLiquidationParams(
-        uint256 liquidationCloseFactorBps_,
-        uint256 liquidationPenaltyBps_,
-        uint256 liquidationPriceSpreadBps_,
-        uint256 minLiquidationImprovementBps_
-    ) external onlyOwner {
-        _setLiquidationFallbackParams(
-            liquidationCloseFactorBps_,
-            liquidationPenaltyBps_,
-            liquidationPriceSpreadBps_,
-            minLiquidationImprovementBps_,
-            liquidationOracleMaxDelay
-        );
-    }
-
     function _setLiquidationFallbackParams(
         uint256 closeFactorBps,
         uint256 penaltyBps,
@@ -280,100 +254,11 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
             closeFactorBps, penaltyBps, priceSpreadBps, minImprovementBps, uint256(oracleMaxDelay)
         );
 
-        liquidationCloseFactorBps = closeFactorBps;
-        liquidationPenaltyBps = penaltyBps;
-        liquidationPriceSpreadBps = priceSpreadBps;
-        minLiquidationImprovementBps = minImprovementBps;
-        liquidationOracleMaxDelay = oracleMaxDelay;
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                        BAD DEBT ADMIN SURFACE
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Manually records additional residual bad debt on an account.
-    /// @dev Emergency / governance tool. Prefer protocol-native liquidation path whenever possible.
-    function recordResidualBadDebt(address trader, uint256 amountBase) external onlyOwner {
-        if (trader == address(0)) revert ZeroAddress();
-        if (amountBase == 0) revert AmountZero();
-
-        _recordResidualBadDebt(trader, amountBase);
-    }
-
-    /// @notice Reduces residual bad debt on an account by up to `amountBase`.
-    /// @dev Returns the actual amount reduced.
-    function reduceResidualBadDebt(address trader, uint256 amountBase)
-        external
-        onlyOwner
-        returns (uint256 reducedBase)
-    {
-        if (trader == address(0)) revert ZeroAddress();
-        if (amountBase == 0) revert AmountZero();
-
-        reducedBase = _reduceResidualBadDebt(trader, amountBase);
-    }
-
-    /// @notice Clears all recorded residual bad debt for an account.
-    /// @dev Returns the amount cleared.
-    function clearResidualBadDebt(address trader) external onlyOwner returns (uint256 clearedBase) {
-        if (trader == address(0)) revert ZeroAddress();
-
-        clearedBase = _clearResidualBadDebt(trader);
-    }
-
-    /// @notice Repays residual bad debt in base-token units by moving vault collateral from `payer` to protocol recipient.
-    /// @dev
-    ///  - repayment asset is strictly the protocol base collateral token
-    ///  - recipient priority is defined in storage helper:
-    ///      1. insuranceFund
-    ///      2. feeRecipient
-    ///  - effective repayment is bounded by:
-    ///      * requestedAmountBase
-    ///      * outstanding debt
-    ///      * payer base-token vault balance
-    function repayResidualBadDebt(address payer, address trader, uint256 requestedAmountBase)
-        external
-        onlyOwner
-        returns (BadDebtRepayment memory repayment)
-    {
-        if (payer == address(0) || trader == address(0)) revert ZeroAddress();
-        if (requestedAmountBase == 0) revert AmountZero();
-
-        address recipient = _resolvedBadDebtRepaymentRecipient();
-        if (recipient == address(0)) revert InsuranceFundNotSet();
-
-        address baseToken = _baseCollateralToken();
-
-        _syncVaultBestEffort(payer, baseToken);
-        if (payer != recipient) {
-            _syncVaultBestEffort(recipient, baseToken);
-        }
-
-        repayment.requestedBase = requestedAmountBase;
-        repayment.outstandingBase = _residualBadDebtOf(trader);
-
-        if (repayment.outstandingBase == 0) {
-            emit ResidualBadDebtRepaid(payer, trader, recipient, requestedAmountBase, 0, 0);
-            return repayment;
-        }
-
-        uint256 payerBal = _collateralVault.balances(payer, baseToken);
-
-        uint256 cappedToDebt =
-            requestedAmountBase < repayment.outstandingBase ? requestedAmountBase : repayment.outstandingBase;
-
-        repayment.repaidBase = payerBal < cappedToDebt ? payerBal : cappedToDebt;
-
-        if (repayment.repaidBase != 0) {
-            _collateralVault.transferBetweenAccounts(baseToken, payer, recipient, repayment.repaidBase);
-            _reduceResidualBadDebt(trader, repayment.repaidBase);
-        }
-
-        repayment.remainingBase = _residualBadDebtOf(trader);
-
-        emit ResidualBadDebtRepaid(
-            payer, trader, recipient, requestedAmountBase, repayment.repaidBase, repayment.remainingBase
-        );
+        _liquidationCloseFactorBps = closeFactorBps;
+        _liquidationPenaltyBps = penaltyBps;
+        _liquidationPriceSpreadBps = priceSpreadBps;
+        _minLiquidationImprovementBps = minImprovementBps;
+        _liquidationOracleMaxDelay = oracleMaxDelay;
     }
 
     /*//////////////////////////////////////////////////////////////
