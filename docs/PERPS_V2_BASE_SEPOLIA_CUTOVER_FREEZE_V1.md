@@ -103,32 +103,94 @@ Backend HEAD `ad8dd7466aeba6963d28687e825fe4df58ef32ee` unchanged, worktree clea
 
 ## I. Quiescence gate — exact queries (executed at operator-side PG session)
 
+> **AMENDED by `PERPS_V2_BASE_SEPOLIA_QUIESCENCE_RUNBOOK_FIX_V1`.** The original §I predicates (3) and (4) referenced tables/columns that either do not exist (`reconciler_state`) or are deliberately not populated in the `.env.perps_closed_test_prepare_only.local` configuration (`indexed_perp_trades` with `INDEXER_ENABLED=false`). Predicates (1) and (2) counted `PROVEN_TEST_FIXTURE` rows as live operational state. Corrected predicates below use structural fixture identity (durable across future test-DB pollution) and defer indexer-related closure to a chain-authoritative invariant proof. See `docs/PERPS_V2_BASE_SEPOLIA_QUIESCENCE_RUNBOOK_FIX_V1.md` for the derivation.
+
 Because DB credentials for `.env.perps_closed_test_prepare_only.local` are held by the operator (not this session), the exact quiescence SQL is documented here for operator execution. Every predicate must return **0 rows** at the pinned `V1_QUIESCENCE_BLOCK`:
 
 ```sql
--- 1. no V1 intent that could still transition to on-chain execution
+-- 1. no REAL V1 intent that could still transition to on-chain execution
+--    (structural fixture exclusion: the durability test buyer/seller pair,
+--     hex-encoded output of addr(0x11) / addr(0x12) in
+--     tests/perps_broadcast_durability_pg_integration.rs)
 SELECT COUNT(*) FROM execution_intents
  WHERE protocol_version = 'perp_v1'
-   AND status IN ('pending','dry_run','calldata_ready','simulation_ok');
+   AND status IN ('pending','dry_run','calldata_ready','simulation_ok')
+   AND NOT (
+     buyer  = '0x1130415263748596a7b8c9daebfc0d1e2f405162'
+     AND seller = '0x1231435567798b9dafc1d3e5f7091b2d3f516375'
+   );
 
--- 2. no unresolved V1 broadcast
+-- 2. no unresolved REAL V1 broadcast
+--    (structural fixture exclusion: raw_tx_hex sentinels '0x02f8...deadbeef'
+--     and '0x02f8...cafe' are 13-17 bytes; real EIP-1559 envelopes are >= ~1500 bytes.
+--     LENGTH(raw_tx_hex) >= 20 is a durable structural boundary.)
 SELECT COUNT(*) FROM execution_intent_broadcasts
  WHERE protocol_version = 'perp_v1'
-   AND status IN ('prepared','submitted');
+   AND status IN ('prepared','submitted')
+   AND LENGTH(raw_tx_hex) >= 20;
 
--- 3. reconciler caught up (implementation-specific table name)
---    should be >= V1_QUIESCENCE_BLOCK once identified
-SELECT last_block_processed FROM reconciler_state WHERE component IN ('perp_v1','execution_v1');
+-- 3′. no REAL V1 broadcast in any non-terminal state
+--    (replacement for the defunct `reconciler_state` predicate.
+--     The reconciler is authoritative for broadcast lifecycle: a
+--     `confirmed` or `failed` row is terminal-observed on-chain; any other
+--     status is unresolved. Structural fixture exclusion via raw_tx length.)
+SELECT COUNT(*) FROM execution_intent_broadcasts
+ WHERE protocol_version = 'perp_v1'
+   AND status NOT IN ('confirmed','failed')
+   AND LENGTH(raw_tx_hex) >= 20;
 
--- 4. indexer caught up
-SELECT MAX(block_number) FROM indexed_perp_trades WHERE protocol_version = 'perp_v1';
+-- 4′. chain-authoritative closure (replacement for indexer-based predicate)
+--    Executed OFF-DB via `cast call` / raw JSON-RPC. Requires ALL of:
+--      * PME_V1.paused == true
+--      * V1_ENGINE.liquidationPaused == true
+--      * V1_ENGINE.marketState(1) == (1_001_002, 1_001_002, 0, 1_789_715_546)
+--      * V1_ENGINE.marketState(2) == (0, 0, 0, 0)
+--      * V1_ENGINE.totalResidualBadDebtBase() == 0
+--      * Σ per-trader getPositionSize(t,1) over the 6 known traders == 0
+--      * Σ |negative getPositionSize| == marketState(1).shortOI ≡ 1_001_002
+--      * Σ positive getPositionSize == marketState(1).longOI  ≡ 1_001_002
+--      * Σ PME_V1.nonces(t) over the 6 known traders == 8 (= 2 × 4 trades)
+--      * raw `eth_getLogs` V1_ENGINE.TradeExecuted over [V1_deploy_block, V1_QUIESCENCE_BLOCK]
+--        returns exactly 4 events with the correct topic0
+--        `0xa73bf9fa75c33ddc672c6fc71d4d4b4e5f85c018c8acc16855e94f564114ed60`
+--        whose buyer/seller union == the 6-trader set.
+--
+--    NOTE: `SELECT MAX(block_number) FROM indexed_perp_trades WHERE protocol_version='perp_v1'`
+--    was the original predicate. It has been RETIRED for this operational
+--    configuration because `INDEXER_ENABLED=false` (deliberate in the
+--    prepare-only rehearsal env). Do NOT fabricate/backfill V1 rows in
+--    `indexed_perp_trades` and do NOT advance `indexer_cursors` to
+--    satisfy the original predicate. See `PERPS_V2_BASE_SEPOLIA_QUIESCENCE_RUNBOOK_FIX_V1.md`.
 
 -- 5. no worker armed for a fresh V1 broadcast
-SELECT COUNT(*) FROM execution_intents
- WHERE protocol_version = 'perp_v1'
-   AND status = 'prepared'
-   AND perps_closed_test_broadcast_armed = true;
+--    (retained from original — the `perps_closed_test_broadcast_armed`
+--     column does not appear to be populated in the current schema; the
+--     predicate is defense-in-depth against a future arming column.)
+SELECT COUNT(*) FROM execution_intents i
+ JOIN (SELECT column_name FROM information_schema.columns
+        WHERE table_name='execution_intents'
+          AND column_name='perps_closed_test_broadcast_armed') c ON true
+ WHERE i.protocol_version = 'perp_v1'
+   AND i.status = 'prepared';
+--   (If the column does not exist, this join returns zero rows — safe.)
+
+-- 6. historical abandoned close remains Abandoned (invariant readback)
+SELECT status FROM execution_intents
+ WHERE intent_id = '7c6f413a-b219-4379-8f6e-a0f559d66ab6';
+-- Expected: 'abandoned'
+
+-- 7. four PERPS_V2_BASE_SEPOLIA_V1_DB_RETIREMENT_V1 intents remain Abandoned
+SELECT intent_id, status FROM execution_intents
+ WHERE intent_id IN (
+   '2ba078ec-c519-43d8-9760-7b9578f0cdd4',
+   '7929e57c-7861-44eb-a8f7-314fd5e6f707',
+   'd327cec8-b1e5-49e8-8c13-fd5920ff82d9',
+   '5c7e988a-3e19-46d2-abf3-3d3349e9a6e3'
+ );
+-- Expected: 4 rows, all status = 'abandoned'
 ```
+
+Predicates (1), (2), (3′) MUST return count = 0. Predicate (4′) is a compound off-DB check whose every clause must hold. Predicates (5)–(7) are invariant readbacks with fixed expected values.
 
 ## J. Quiescence counts / verdict (chain-side; DB side to be confirmed by operator)
 
@@ -156,14 +218,37 @@ Chain-side verdict: **V1_QUIESCENCE_READY** (chain-conditional). DB verdict pend
 
 ## K. Reconciler / indexer state
 
-Reconciler + indexer processes continue running (READ-ONLY paths). Because `EXECUTOR_REAL_BROADCAST_ENABLED=false`, they can only observe on-chain state, never write. Operator must confirm via §I query (3) + (4) that `last_block_processed / MAX(block_number)` are >= a candidate `V1_QUIESCENCE_BLOCK`.
+> **AMENDED by `PERPS_V2_BASE_SEPOLIA_QUIESCENCE_RUNBOOK_FIX_V1`.** The `.env.perps_closed_test_prepare_only.local` file sets `INDEXER_ENABLED=false` deliberately. `indexed_perp_trades` therefore has no V1 rows and its cursor (`(chain_id=84532, name='perp_matching_engine', last_indexed_block=41)`) is a local-Anvil relic. The `reconciler_state` table does not exist in the current schema. Chain observation for V1 quiescence has been re-based on raw JSON-RPC `eth_getLogs` + per-trader / market invariant closure (§I predicate (4′)).
+
+Neither the indexer nor a reconciler-state cursor is a required signal for this operation. Because `EXECUTOR_REAL_BROADCAST_ENABLED=false` at the backend and `PME_V1.paused=true` on-chain, no new V1 event can be emitted after the freeze, so a "cursor caught up to `V1_QUIESCENCE_BLOCK`" gate is redundant with the chain-authoritative closure (§I predicate 4′).
 
 ## L. `V1_QUIESCENCE` verdict
 
-**Chain-conditional: `V1_QUIESCENCE_READY`.**
-**DB-conditional: pending operator §I run.**
+> **AMENDED by `PERPS_V2_BASE_SEPOLIA_QUIESCENCE_RUNBOOK_FIX_V1`.** The rewritten `V1_QUIESCENCE_READY` gate requires ALL of:
+>
+> - `PME_V1.paused == true`
+> - `V1_ENGINE.liquidationPaused == true`
+> - backend `EXECUTOR_REAL_BROADCAST_ENABLED == false` (V1 real broadcasting disabled)
+> - §I predicate (1) real-V1-intent-non-terminal count == 0
+> - §I predicate (2) real-V1-broadcast-non-terminal count == 0 (specifically for `prepared`/`submitted`)
+> - §I predicate (3′) real-V1-broadcast in any non-terminal status count == 0
+> - §I predicate (6) `7c6f413a-b21…` remains `abandoned`
+> - §I predicate (7) the four `V1_DB_RETIREMENT_V1` intents remain `abandoned`
+> - §I predicate (4′) — full chain-authoritative closure:
+>   - raw `eth_getLogs` V1 TradeExecuted stream through `V1_QUIESCENCE_BLOCK` is complete
+>   - exactly 4 lifetime events, 6 unique traders
+>   - latest event block ≤ `V1_QUIESCENCE_BLOCK` (observed: 46_973_629)
+>   - `market_1.longOI == 1_001_002` and `market_1.shortOI == 1_001_002`
+>   - Σ per-trader `getPositionSize` over the 6 traders == 0 (net) and matches per-side OI exactly
+>   - `market_2 == (0, 0, 0, 0)`
+>   - `totalResidualBadDebtBase == 0`
+> - Vault: `isAuthorizedEngine(V1) == true`, `isAuthorizedEngine(V2) == false`
+> - V2: `migrationState == 0 (OPEN)`, `migrationSnapshotHash == 0x0`
+> - Timelock op `0xb42e46a90289c08aa36181e0be5f8350574a68b636bc84cb9a7aa7c83fed4fd0` remains `queued=true`, `ready=true`, `not executed`.
+>
+> **Chain-conditional PLUS DB-conditional verdict, evaluated live in `PERPS_V2_BASE_SEPOLIA_QUIESCENCE_RUNBOOK_FIX_V1`: `V1_QUIESCENCE_READY`.**
 
-Chain evidence is strong enough that even if DB shows lingering `prepared`/`submitted` V1 rows, those rows cannot progress on-chain (fail-closed at both chain and backend layers). But the runbook still requires clean DB predicates before pinning `SNAPSHOT_BLOCK`.
+Chain evidence alone remains fail-closed (PME_V1 paused + V1_ENGINE.liquidationPaused + backend broadcast disabled). The DB predicates now use durable structural fixture exclusion — see the runbook-fix milestone doc for the fixture-identity proof.
 
 ## M. `V1_QUIESCENCE_BLOCK`
 
