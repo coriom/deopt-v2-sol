@@ -166,7 +166,7 @@ Structural predicate agreement:
 
 ### 3.3 Chain-authoritative closure (§I predicate 4′)
 
-At current block `47_377_177` (freeze block + ~23k blocks, i.e. current HEAD):
+Post-scan chain state (fresh readback at block `47_396_195`, timestamp `1_790_560_678`, ~42k blocks past `V1_QUIESCENCE_BLOCK`):
 
 ```
 PME_V1.paused                     = true
@@ -201,15 +201,108 @@ Per-trader positions on market 1 (unchanged from freeze poststate):
 
 Raw `eth_getLogs V1_ENGINE.TradeExecuted` verification — the direct single-block query for tx `0xa6a6bb44b7dc71f77b86989933af4088f8685bbff178721e52d64c60119508e4` at block `46_973_629` returns exactly ONE event with topic0 `0xa73bf9fa75c33ddc672c6fc71d4d4b4e5f85c018c8acc16855e94f564114ed60`, `buyer=0xff287410852b9328437eac353720e5476bc5f837`, `seller=0x66858286feea78a05ea093673ea1535e0a52002d`, `marketId=1`. This is the most recent V1 trade and it is coincident with the confirmed backend broadcast row `81457da4-b17a`. The full-history bulk scan is documented in §3.4.
 
-### 3.4 Full raw-log scan (deferred verification)
+### 3.4 Full raw-log scan (completed by `PERPS_V2_BASE_SEPOLIA_QUIESCENCE_RAW_LOG_FINALIZATION_V1`)
 
-A parallel `eth_getLogs` scan across `[42_182_810, 47_354_399]` in 1000-block chunks (Alchemy's hard limit) was attempted twice against the operator-configured RPC endpoint. Both attempts stalled after ~600–4500 chunks due to silent rate-limit throttling on the free tier (no explicit `429` was returned — the socket-level backoff signature is consistent with Alchemy's "compute-unit-per-second" ceiling being reached). At the point of stall, the scan had discovered exactly `3` `TradeExecuted` events (consistent with the three earlier May-2026 trades whose backend broadcast rows do not exist because those trades were executed via `forge` script pre-backend-deployment) plus we independently verified the fourth event via single-block query at block `46_973_629`.
+> **Updated 2026-09-28.** The full raw `eth_getLogs` scan across `[42_182_810, 47_354_399]` in 1000-block chunks was completed against the operator-configured RPC endpoint by the follow-up finalization milestone. Two earlier attempts stalled under silent rate-limit throttling; a third attempt with 6 parallel workers, aggressive exponential backoff (max 30 s per retry, 15 retries), and durable output at `/home/corio/DEOPT/tmp/v1_raw_scan.out` completed in ≈19.3 min (5172 chunks, `~230 ms/chunk` amortized).
 
-**Total events found**: 3 (bulk scan, partial coverage) + 1 (targeted verification) = **4**.
+**Total events found: exactly 4** (matches the invariant proof in §3.3 and the memory expectation).
 
-The chain-authoritative invariant closure in §3.3 is a *strictly stronger* proof of trader-universe completeness than a full log scan, because the invariant `long_oi == Σ+ positions` is enforced by `PerpEngine.applyTrade` at every mutation and CANNOT be satisfied if any additional trader holds a nonzero position. The invariant closes the trader universe cryptographically. The full raw-log stream is documented as a reproducibility target for a future rerun with a paid RPC tier or a direct-node query; it is not a load-bearing gate for `V1_QUIESCENCE_READY` in this milestone.
+Complete decoded event stream (topic0 = `0xa73bf9fa75c33ddc672c6fc71d4d4b4e5f85c018c8acc16855e94f564114ed60`, i.e. `keccak256("TradeExecuted(address,address,uint256,uint128,uint128,bool)")`, all four events emitted by `V1_ENGINE = 0xc6c592100723fe0c66343a16e95ec34cc0c2141c`, all on `market_id = 1`):
 
-**Do NOT block `V1_QUIESCENCE_READY` on the full raw-log scan.**
+```
+[E1]
+  block          = 42_187_183
+  block_hash     = 0x0bddb5933972c66e584e60482cf7e38dfcb398bc1b193b8690871c9f16b51594
+  tx_hash        = 0x0bcb28f8f208c7b753787df21882842eac061eb4dd6754446073c74afdf0012e
+  log_index      = 32
+  buyer          = 0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34
+  seller         = 0x475fe397fa56884952d350aa9ee1c3946964bc0c
+  market_id      = 1
+  size1e8        = 1
+  price1e8       = 300_000_000_000
+  buyer_is_maker = false
+  topic0         = 0xa73bf9fa75c33ddc672c6fc71d4d4b4e5f85c018c8acc16855e94f564114ed60
+
+[E2]
+  block          = 42_188_599
+  block_hash     = 0xe7c1cc57f97f76b4f5c19b9831e03479f52b12a75a38b1e38418aa20db0fcc57
+  tx_hash        = 0x400acedf36381034ae37c983cc50e80d11a81587ca8065fbaef40293ff63a79a
+  log_index      = 197
+  buyer          = 0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34
+  seller         = 0x475fe397fa56884952d350aa9ee1c3946964bc0c
+  market_id      = 1
+  size1e8        = 1
+  price1e8       = 300_000_000_000
+  buyer_is_maker = false
+  topic0         = 0xa73bf9fa75c33ddc672c6fc71d4d4b4e5f85c018c8acc16855e94f564114ed60
+
+[E3]
+  block          = 42_196_090
+  block_hash     = 0x288a41aba89c7243af2331eff9fe7d4c9f416c54c3e307874b907aa5668d7ef0
+  tx_hash        = 0x5c15e9233d49729cf21058a89f49bc6fdf0f7295cda5a7f313c96556728aa394
+  log_index      = 160
+  buyer          = 0x290bd12c93e467bf51c51f5273d35bddb19e9274
+  seller         = 0x77ca9dd6ccce2d692fb23877a2db7178807b0020
+  market_id      = 1
+  size1e8        = 1_000
+  price1e8       = 300_000_000_000
+  buyer_is_maker = true
+  topic0         = 0xa73bf9fa75c33ddc672c6fc71d4d4b4e5f85c018c8acc16855e94f564114ed60
+
+[E4]
+  block          = 46_973_629
+  block_hash     = 0x06dba6c7fdac9d652480e458c2d9aa68726873e47320bfc7c5f1e0e8c637c28c
+  tx_hash        = 0xa6a6bb44b7dc71f77b86989933af4088f8685bbff178721e52d64c60119508e4
+  log_index      = 15
+  buyer          = 0xff287410852b9328437eac353720e5476bc5f837
+  seller         = 0x66858286feea78a05ea093673ea1535e0a52002d
+  market_id      = 1
+  size1e8        = 1_000_000
+  price1e8       = 246_831_000_000
+  buyer_is_maker = false
+  topic0         = 0xa73bf9fa75c33ddc672c6fc71d4d4b4e5f85c018c8acc16855e94f564114ed60
+  linked_backend_broadcast = 81457da4-b17a-41ca-9c08-e06921e7f215 (status=confirmed)
+```
+
+Derived from the complete event stream:
+
+```
+unique_traders (6):
+  0x290bd12c93e467bf51c51f5273d35bddb19e9274
+  0x475fe397fa56884952d350aa9ee1c3946964bc0c
+  0x66858286feea78a05ea093673ea1535e0a52002d
+  0x77ca9dd6ccce2d692fb23877a2db7178807b0020
+  0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34
+  0xff287410852b9328437eac353720e5476bc5f837
+
+expected PME nonces (buyer/seller appearances across events):
+  0x290bd12c…9274  n=1   [E3 buyer]
+  0x475fe397…bc0c  n=2   [E1 seller, E2 seller]
+  0x66858286…002d  n=1   [E4 seller]
+  0x77ca9dd6…0020  n=1   [E3 seller]
+  0x8b94a83d…9a34  n=2   [E1 buyer, E2 buyer]
+  0xff287410…f837  n=1   [E4 buyer]
+  Σ = 8 = 2 × 4 trades  ✓ matches PME_V1.nonces() on-chain readback exactly.
+
+aggregated net positions (buyer +size, seller −size, per event):
+  0x290bd12c…9274 : +1000
+  0x475fe397…bc0c : −2
+  0x66858286…002d : −1_000_000
+  0x77ca9dd6…0020 : −1_000
+  0x8b94a83d…9a34 : +2
+  0xff287410…f837 : +1_000_000
+  Σ = 0                                                    ✓
+  Σ (+) = 1_001_002 == marketState(1).longOI                ✓
+  Σ (|−|) = 1_001_002 == marketState(1).shortOI             ✓
+```
+
+Every derived value matches on-chain readback (§3.3) byte-for-byte. `market_2` has zero events → empty state confirmed by both raw log scan (no events with `market_id=2`) and `marketState(2)=(0,0,0,0)`. `totalResidualBadDebtBase()==0` (no bad-debt event stream ever emitted; also confirmed by the direct read).
+
+The full log stream is a *redundant* confirmation of the invariant closure — both prove the same thing (universe complete, 4 trades, 6 traders), but from independent sources (log stream vs. current state + `PerpEngine.applyTrade` invariant). Both agree.
+
+**Raw JSON dump**: `/home/corio/DEOPT/tmp/v1_raw_scan_events.json` (retained locally, not committed).
+
+**Scan methodology**: `eth_getLogs` with `topic0` filter on `V1_ENGINE`, 1000-block chunks (Alchemy's `eth_getLogs is limited to a 1,000 range` hard limit), 6 parallel worker threads via `concurrent.futures.ThreadPoolExecutor`, exponential backoff on HTTP 429 / 5xx (max 30 s per retry, 15 retries), automatic bisection on `-32614` range-limit errors. Total scan wall-clock: 1122 s across 5172 chunks. The 4 events arrive in the last third of the range (3 in blocks 42_187_183..42_196_090; 1 in block 46_973_629); the intermediate ~4.8M blocks contain zero V1_ENGINE.TradeExecuted events.
 
 ## 4. Fixture counts (invariant)
 
@@ -250,8 +343,10 @@ real perp_v1 broadcasts:
 
 ## 6. Chain freeze + Timelock readback
 
+Post-scan fresh readback (block `47_396_195`, timestamp `1_790_560_678`):
+
 ```
-block                          = 47_377_177
+block                          = 47_396_195
 PME_V1.paused                  = true
 V1_ENGINE.liquidationPaused    = true
 V1_ENGINE.tradingPaused        = false (unchanged; PME-side pause is authoritative)
@@ -263,9 +358,18 @@ ENGINE_V2.migrationState       = 0 (OPEN)
 ENGINE_V2.migrationSnapshotHash = 0x0
 Timelock op 0xb42e46a90289…4fd0:
    queuedTransactions          = true
-   eta (from ARM milestone)   = 1_790_475_748 (2026-09-27 02:22:28 UTC — past)
+   eta (from ARM milestone)    = 1_790_475_748 (2026-09-27 02:22:28 UTC)
+   now                         = 1_790_560_678 (2026-09-28 02:57:58 UTC — 23h34m past ETA)
    ready                       = true (block.timestamp > eta)
    executed                    = false
+
+Per-trader on-chain readback (unchanged from freeze poststate):
+  0x290bd12c…9274  size1e8=+1_000     pmeNonce=1
+  0x475fe397…bc0c  size1e8=−2         pmeNonce=2
+  0x66858286…002d  size1e8=−1_000_000 pmeNonce=1
+  0x77ca9dd6…0020  size1e8=−1_000     pmeNonce=1
+  0x8b94a83d…9a34  size1e8=+2         pmeNonce=2
+  0xff287410…f837  size1e8=+1_000_000 pmeNonce=1
 ```
 
 ## 7. Documented schema limitation
@@ -287,12 +391,13 @@ Backend repo:
 
 ## 9. Repository state / push status
 
-Sol repo pre-milestone HEAD: `3250463`. New commit made this milestone, pushed to `origin/main`.
-Backend repo HEAD: `ad8dd7466` unchanged; worktree clean.
+- Sol repo initial commit for this milestone: `d833ca2` (already pushed to `origin/main`; NOT amended).
+- Sol repo raw-log-finalization commit: NEW follow-up docs-only commit on top of `d833ca2` (this file amended).
+- Backend repo HEAD: `ad8dd7466` unchanged; worktree clean.
 
 ## 10. Final `V1_QUIESCENCE` verdict
 
-All corrected predicates pass:
+All corrected predicates pass, and the raw log stream is now complete + reconciled:
 
 ```
 [✓] PME_V1.paused == true
@@ -303,8 +408,9 @@ All corrected predicates pass:
 [✓] §I (3′) real_v1_broadcast_any_nonterminal == 0
 [✓] §I (6) 7c6f413a-b21… status == 'abandoned'
 [✓] §I (7) four V1_DB_RETIREMENT intents status == 'abandoned'
-[✓] §I (4′) raw-chain V1 history through V1_QUIESCENCE_BLOCK — 4 events, 6 traders (via targeted verification + invariant closure)
+[✓] §I (4′) raw-chain V1 history through V1_QUIESCENCE_BLOCK — full log-stream scan complete, 4 events, 6 traders
 [✓] Σ per-trader position == 0; long_oi == short_oi == 1_001_002
+[✓] Σ PME_V1.nonces over 6 traders == 8 == 2 × 4 trades (reconciled with event-derived expectation)
 [✓] market_2 empty
 [✓] totalResidualBadDebtBase == 0
 [✓] Vault.isAuthorizedEngine(V1) == true, (V2) == false
@@ -312,6 +418,10 @@ All corrected predicates pass:
 [✓] ENGINE_V2.migrationSnapshotHash == 0x0
 [✓] Timelock op 0xb42e46a9…4fd0 queued+ready+unexecuted
 ```
+
+# `V1_QUIESCENCE_READY_FINAL`
+
+**STOP.** Do NOT pin `SNAPSHOT_BLOCK`. Do NOT start `PERPS_V2_BASE_SEPOLIA_FINAL_SNAPSHOT_V1` automatically. Control returned to operator.
 
 ## Verdict
 
