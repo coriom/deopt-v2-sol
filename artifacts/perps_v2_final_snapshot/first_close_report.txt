@@ -1,0 +1,20 @@
+notional_native                     = 24683100 (24.683100)
+
+BUYER (long)  0xff287410852b9328437eac353720e5476bc5f837   maker=True
+  realized_pnl_1e8              = 0
+  realized_pnl_native           = 0 (+0.000000)
+  funding_1e8                   = 0
+  funding_native                = 0 (+0.000000)
+  fee_native                    = 1234
+  vault_delta_native            = -1234 (-0.001234)
+
+SELLER (short)  0x66858286feea78a05ea093673ea1535e0a52002d   maker=False
+  realized_pnl_1e8              = 0
+  realized_pnl_native           = 0 (+0.000000)
+  funding_1e8                   = 0
+  funding_native                = 0 (+0.000000)
+  fee_native                    = 7404
+  vault_delta_native            = -7404 (-0.007404)
+
+total_fee_native                    = 8638 (0.008638)
+clearing_vault_delta_native         = 0 (+0.000000)

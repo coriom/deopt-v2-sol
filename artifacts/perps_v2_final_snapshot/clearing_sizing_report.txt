@@ -1,0 +1,16 @@
+positions considered: 6
+  trader=0x290bd12c93e467bf51c51f5273d35bddb19e9274 mkt=1 size1e8=1000 notional_native=50000 worst_pnl_native=10000
+  trader=0x475fe397fa56884952d350aa9ee1c3946964bc0c mkt=1 size1e8=2 notional_native=100 worst_pnl_native=20
+  trader=0x66858286feea78a05ea093673ea1535e0a52002d mkt=1 size1e8=1000000 notional_native=50000000 worst_pnl_native=10000000
+  trader=0x77ca9dd6ccce2d692fb23877a2db7178807b0020 mkt=1 size1e8=1000 notional_native=50000 worst_pnl_native=10000
+  trader=0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34 mkt=1 size1e8=2 notional_native=100 worst_pnl_native=20
+  trader=0xff287410852b9328437eac353720e5476bc5f837 mkt=1 size1e8=1000000 notional_native=50000000 worst_pnl_native=10000000
+
+settlement_asset:               mUSDC
+settlement_decimals:            6
+worst_swing_bps:                2000
+slack_per_position_native:      100
+operational_minimum_native:     100000000   (100.000000 mUSDC)
+MINIMUM_REQUIRED_CLEARING:      100000000   (100.000000 mUSDC)
+OPERATIONAL_BUFFER (x9):        900000000   (900.000000 mUSDC)
+PROPOSED_CLEARING_SEED:         1000000000   (1000.000000 mUSDC)

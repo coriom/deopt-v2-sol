@@ -1,0 +1,21 @@
+{
+  "marketId": 1,
+  "settlementDecimals": 6,
+  "closeSize1e8": 1000000,
+  "buyer": {
+    "address": "0xff287410852b9328437eac353720e5476bc5f837",
+    "size1e8": 1000000,
+    "openNotional1e8": 2468310000,
+    "lastCumFundingRate1e18": 0
+  },
+  "seller": {
+    "address": "0x66858286feea78a05ea093673ea1535e0a52002d",
+    "size1e8": -1000000,
+    "openNotional1e8": -2468310000,
+    "lastCumFundingRate1e18": 0
+  },
+  "executionPrice1e8": 246831000000,
+  "cumFundingRate1e18": 0,
+  "buyerIsMaker": true,
+  "feeManagerV2": { "makerPpm": 50, "takerPpm": 300 }
+}

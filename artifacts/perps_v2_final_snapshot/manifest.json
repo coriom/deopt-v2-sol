@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "chainId": 84532,
+  "engineV1": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+  "pmeV1": "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+  "snapshotBlockNumber": 47354411,
+  "snapshotBlockHash": "0x78debf6044c4f0d1282f0b8c60d0bb41171844453118a092bca5946a9ce54c89",
+  "markets": [
+    {
+      "marketId": 1,
+      "cumulativeFundingRate1e18": 0,
+      "lastFundingTimestamp": 1789715546,
+      "longOI1e8": 1001002,
+      "shortOI1e8": 1001002
+    },
+    {
+      "marketId": 2,
+      "cumulativeFundingRate1e18": 0,
+      "lastFundingTimestamp": 0,
+      "longOI1e8": 0,
+      "shortOI1e8": 0
+    }
+  ],
+  "positions": [
+    {
+      "trader": "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "marketId": 1,
+      "size1e8": 1000,
+      "openNotional1e8": 3000000,
+      "lastCumulativeFundingRate1e18": 0
+    },
+    {
+      "trader": "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "marketId": 1,
+      "size1e8": -2,
+      "openNotional1e8": -6000,
+      "lastCumulativeFundingRate1e18": 0
+    },
+    {
+      "trader": "0x66858286feea78a05ea093673ea1535e0a52002d",
+      "marketId": 1,
+      "size1e8": -1000000,
+      "openNotional1e8": -2468310000,
+      "lastCumulativeFundingRate1e18": 0
+    },
+    {
+      "trader": "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "marketId": 1,
+      "size1e8": -1000,
+      "openNotional1e8": -3000000,
+      "lastCumulativeFundingRate1e18": 0
+    },
+    {
+      "trader": "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "marketId": 1,
+      "size1e8": 2,
+      "openNotional1e8": 6000,
+      "lastCumulativeFundingRate1e18": 0
+    },
+    {
+      "trader": "0xff287410852b9328437eac353720e5476bc5f837",
+      "marketId": 1,
+      "size1e8": 1000000,
+      "openNotional1e8": 2468310000,
+      "lastCumulativeFundingRate1e18": 0
+    }
+  ],
+  "residualBadDebt": [],
+  "pmeNonces": [
+    {
+      "trader": "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "nonce": 1
+    },
+    {
+      "trader": "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "nonce": 2
+    },
+    {
+      "trader": "0x66858286feea78a05ea093673ea1535e0a52002d",
+      "nonce": 1
+    },
+    {
+      "trader": "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "nonce": 1
+    },
+    {
+      "trader": "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "nonce": 2
+    },
+    {
+      "trader": "0xff287410852b9328437eac353720e5476bc5f837",
+      "nonce": 1
+    }
+  ],
+  "vaultBalances": [
+    {
+      "user": "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "token": "0x6eAe407f5640B006faC9965182e238582A3B412E",
+      "balance": 1503000053
+    },
+    {
+      "user": "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "token": "0x6eAe407f5640B006faC9965182e238582A3B412E",
+      "balance": 999999
+    },
+    {
+      "user": "0x66858286feea78a05ea093673ea1535e0a52002d",
+      "token": "0x6eAe407f5640B006faC9965182e238582A3B412E",
+      "balance": 9998765
+    },
+    {
+      "user": "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "token": "0x6eAe407f5640B006faC9965182e238582A3B412E",
+      "balance": 1500999893
+    },
+    {
+      "user": "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "token": "0x6eAe407f5640B006faC9965182e238582A3B412E",
+      "balance": 999999
+    },
+    {
+      "user": "0xff287410852b9328437eac353720e5476bc5f837",
+      "token": "0x6eAe407f5640B006faC9965182e238582A3B412E",
+      "balance": 9992595
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "settlementAsset": "mUSDC",
+  "settlementDecimals": 6,
+  "worstMarkAssumptionUsd1e18": {
+    "1": 5000000000000000000000,
+    "2": 200000000000000000000000
+  },
+  "worstPnlSwingBps": 2000,
+  "roundingSlackPerPositionNative": 100,
+  "operationalBufferMultiplier": 9,
+  "operationalMinimumNative": 100000000
+}
