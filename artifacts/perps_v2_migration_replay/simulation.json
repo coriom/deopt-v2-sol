@@ -1,0 +1,260 @@
+{
+  "kind": "isolated local Anvil fork; NOT public Base Sepolia",
+  "localRpc": "http://127.0.0.1:46617",
+  "forkBlock": 47457913,
+  "chainId": 84532,
+  "codeReplaced": false,
+  "storageEdited": false,
+  "mockedCalls": false,
+  "keystoreUnlocked": false,
+  "transactions": [
+    {
+      "ordinal": 1,
+      "nonce": 799,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "value": 0,
+      "signature": "adminSeedMarketFunding(uint256,int256,uint64)",
+      "selector": "0x2c96f1bc",
+      "decodedArgs": {
+        "marketId": 1,
+        "cumulativeFundingRate1e18": 0,
+        "lastFundingTimestamp": 1789715546
+      },
+      "calldataIdentical": true,
+      "gasEstimate": 93748,
+      "gasLimitWithMargin": 121873,
+      "localGasUsed": 93748,
+      "localReceiptStatus": 1,
+      "expectedEvent": "MigrationMarketFundingSeeded",
+      "eventVerified": true,
+      "postStateVerified": true,
+      "market1OI": [
+        0,
+        0
+      ],
+      "externalCalls": "Only STATICCALL to approved PMR",
+      "l1FeeAllowanceWei": 50057520472
+    },
+    {
+      "ordinal": 2,
+      "nonce": 800,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "value": 0,
+      "signature": "adminSeedMarketFunding(uint256,int256,uint64)",
+      "selector": "0x2c96f1bc",
+      "decodedArgs": {
+        "marketId": 2,
+        "cumulativeFundingRate1e18": 0,
+        "lastFundingTimestamp": 0
+      },
+      "calldataIdentical": true,
+      "gasEstimate": 74313,
+      "gasLimitWithMargin": 96607,
+      "localGasUsed": 73800,
+      "localReceiptStatus": 1,
+      "expectedEvent": "MigrationMarketFundingSeeded",
+      "eventVerified": true,
+      "postStateVerified": true,
+      "market1OI": [
+        0,
+        0
+      ],
+      "externalCalls": "Only STATICCALL to approved PMR",
+      "l1FeeAllowanceWei": 50057520472
+    },
+    {
+      "ordinal": 3,
+      "nonce": 801,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "value": 0,
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "selector": "0x0ef3a5f7",
+      "decodedArgs": {
+        "trader": "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        "marketId": 1,
+        "size1e8": 1000,
+        "openNotional1e8": 3000000,
+        "lastCumulativeFundingRate1e18": 0
+      },
+      "calldataIdentical": true,
+      "gasEstimate": 234177,
+      "gasLimitWithMargin": 304431,
+      "localGasUsed": 234177,
+      "localReceiptStatus": 1,
+      "expectedEvent": "MigrationPositionSeeded",
+      "eventVerified": true,
+      "postStateVerified": true,
+      "market1OI": [
+        1000,
+        0
+      ],
+      "externalCalls": "Only STATICCALL to approved PMR",
+      "l1FeeAllowanceWei": 50057520472
+    },
+    {
+      "ordinal": 4,
+      "nonce": 802,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "value": 0,
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "selector": "0x0ef3a5f7",
+      "decodedArgs": {
+        "trader": "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        "marketId": 1,
+        "size1e8": -2,
+        "openNotional1e8": -6000,
+        "lastCumulativeFundingRate1e18": 0
+      },
+      "calldataIdentical": true,
+      "gasEstimate": 235142,
+      "gasLimitWithMargin": 305685,
+      "localGasUsed": 235142,
+      "localReceiptStatus": 1,
+      "expectedEvent": "MigrationPositionSeeded",
+      "eventVerified": true,
+      "postStateVerified": true,
+      "market1OI": [
+        1000,
+        2
+      ],
+      "externalCalls": "Only STATICCALL to approved PMR",
+      "l1FeeAllowanceWei": 50057520472
+    },
+    {
+      "ordinal": 5,
+      "nonce": 803,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "value": 0,
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "selector": "0x0ef3a5f7",
+      "decodedArgs": {
+        "trader": "0x66858286feea78a05ea093673ea1535e0a52002d",
+        "marketId": 1,
+        "size1e8": -1000000,
+        "openNotional1e8": -2468310000,
+        "lastCumulativeFundingRate1e18": 0
+      },
+      "calldataIdentical": true,
+      "gasEstimate": 218030,
+      "gasLimitWithMargin": 283439,
+      "localGasUsed": 218030,
+      "localReceiptStatus": 1,
+      "expectedEvent": "MigrationPositionSeeded",
+      "eventVerified": true,
+      "postStateVerified": true,
+      "market1OI": [
+        1000,
+        1000002
+      ],
+      "externalCalls": "Only STATICCALL to approved PMR",
+      "l1FeeAllowanceWei": 50057520472
+    },
+    {
+      "ordinal": 6,
+      "nonce": 804,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "value": 0,
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "selector": "0x0ef3a5f7",
+      "decodedArgs": {
+        "trader": "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        "marketId": 1,
+        "size1e8": -1000,
+        "openNotional1e8": -3000000,
+        "lastCumulativeFundingRate1e18": 0
+      },
+      "calldataIdentical": true,
+      "gasEstimate": 218030,
+      "gasLimitWithMargin": 283439,
+      "localGasUsed": 218030,
+      "localReceiptStatus": 1,
+      "expectedEvent": "MigrationPositionSeeded",
+      "eventVerified": true,
+      "postStateVerified": true,
+      "market1OI": [
+        1000,
+        1001002
+      ],
+      "externalCalls": "Only STATICCALL to approved PMR",
+      "l1FeeAllowanceWei": 50057520472
+    },
+    {
+      "ordinal": 7,
+      "nonce": 805,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "value": 0,
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "selector": "0x0ef3a5f7",
+      "decodedArgs": {
+        "trader": "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        "marketId": 1,
+        "size1e8": 2,
+        "openNotional1e8": 6000,
+        "lastCumulativeFundingRate1e18": 0
+      },
+      "calldataIdentical": true,
+      "gasEstimate": 217053,
+      "gasLimitWithMargin": 282169,
+      "localGasUsed": 217053,
+      "localReceiptStatus": 1,
+      "expectedEvent": "MigrationPositionSeeded",
+      "eventVerified": true,
+      "postStateVerified": true,
+      "market1OI": [
+        1002,
+        1001002
+      ],
+      "externalCalls": "Only STATICCALL to approved PMR",
+      "l1FeeAllowanceWei": 50057520472
+    },
+    {
+      "ordinal": 8,
+      "nonce": 806,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "value": 0,
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "selector": "0x0ef3a5f7",
+      "decodedArgs": {
+        "trader": "0xff287410852b9328437eac353720e5476bc5f837",
+        "marketId": 1,
+        "size1e8": 1000000,
+        "openNotional1e8": 2468310000,
+        "lastCumulativeFundingRate1e18": 0
+      },
+      "calldataIdentical": true,
+      "gasEstimate": 217101,
+      "gasLimitWithMargin": 282232,
+      "localGasUsed": 217101,
+      "localReceiptStatus": 1,
+      "expectedEvent": "MigrationPositionSeeded",
+      "eventVerified": true,
+      "postStateVerified": true,
+      "market1OI": [
+        1001002,
+        1001002
+      ],
+      "externalCalls": "Only STATICCALL to approved PMR",
+      "l1FeeAllowanceWei": 50057520472
+    }
+  ],
+  "passed": true,
+  "finalOwnerNonce": 807,
+  "finalMigrationState": "OPEN",
+  "finalSnapshotHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "finalMarket1": [
+    1001002,
+    1001002,
+    0,
+    1789715546
+  ],
+  "finalMarket2": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "sharedDependenciesUnchanged": true,
+  "sumPositionSize": 0,
+  "totalResidualBadDebtBase": 0,
+  "localForkStopped": true
+}

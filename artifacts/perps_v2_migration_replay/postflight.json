@@ -1,0 +1,1333 @@
+{
+  "stage": "B_POSTFLIGHT",
+  "chainId": 84532,
+  "block": 47459089,
+  "blockHash": "0xb73d53d696d499768c6d06369cf5276f47cb3ff4d57205297c60e86c79d1625e",
+  "packageSha256": "bdcc5f48b4637822316752358e3c37324cf6e3aa85f86dc406b1e0f74bee5738",
+  "canonicalSnapshotHash": "0x039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d",
+  "transactions": [
+    {
+      "ordinal": 1,
+      "hash": "0x01d0068166d12a976a3e0ed0b71a413a46c27827193000d4f4f3a1806e9ce3d0",
+      "block": 47458723,
+      "blockHash": "0xfb20a54e4f2c91684f7c9406c0fe3b14e0910952a05e49c14e99e0b704c7389f",
+      "nonce": 799,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "signature": "adminSeedMarketFunding(uint256,int256,uint64)",
+      "args": {
+        "marketId": 1,
+        "cumulativeFundingRate1e18": 0,
+        "lastFundingTimestamp": 1789715546
+      },
+      "status": 1,
+      "gasUsed": 93748,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWei": 5955858635,
+      "eventVerified": true,
+      "stepStorageReadbackVerified": true
+    },
+    {
+      "ordinal": 2,
+      "hash": "0x69f5ee24443a1c9f05e879768ed125a356565e72b0eef510f76db6122d0d6075",
+      "block": 47458736,
+      "blockHash": "0x3fb076d2fb127bdfb67ba7a6ac5034812b0c5649203ed575437ae9ad99ec393a",
+      "nonce": 800,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "signature": "adminSeedMarketFunding(uint256,int256,uint64)",
+      "args": {
+        "marketId": 2,
+        "cumulativeFundingRate1e18": 0,
+        "lastFundingTimestamp": 0
+      },
+      "status": 1,
+      "gasUsed": 73800,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWei": 6224600196,
+      "eventVerified": true,
+      "stepStorageReadbackVerified": true
+    },
+    {
+      "ordinal": 3,
+      "hash": "0xfc3a8617aa2535ecf669db9585780f473d67a38867f963b25bf3c8e565a69e01",
+      "block": 47458749,
+      "blockHash": "0xee9f71e8dfb3d8f684dca5242e07eaf3a55a70efe0f5ded6438cfea80c28d996",
+      "nonce": 801,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "args": {
+        "trader": "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        "marketId": 1,
+        "size1e8": 1000,
+        "openNotional1e8": 3000000,
+        "lastCumulativeFundingRate1e18": 0
+      },
+      "status": 1,
+      "gasUsed": 234177,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWei": 6736135213,
+      "eventVerified": true,
+      "stepStorageReadbackVerified": true
+    },
+    {
+      "ordinal": 4,
+      "hash": "0x1f30189c1bb20423631c93b1b14f820b9784623d2751dc687a25491891a50695",
+      "block": 47458766,
+      "blockHash": "0x81bf2904ceaf4c836e81e049b878b4b704a229644052f5b84a668128908d136b",
+      "nonce": 802,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "args": {
+        "trader": "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        "marketId": 1,
+        "size1e8": -2,
+        "openNotional1e8": -6000,
+        "lastCumulativeFundingRate1e18": 0
+      },
+      "status": 1,
+      "gasUsed": 235142,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWei": 6397894502,
+      "eventVerified": true,
+      "stepStorageReadbackVerified": true
+    },
+    {
+      "ordinal": 5,
+      "hash": "0xdaa6e9aaf2a401d60413d4b56a0ad45947035f183627755a49fd96c8b182fbed",
+      "block": 47458784,
+      "blockHash": "0x4e27e8291b16b0b6730fcaa2266d468336228ee4ae49d3f629e1df9e93f933d7",
+      "nonce": 803,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "args": {
+        "trader": "0x66858286feea78a05ea093673ea1535e0a52002d",
+        "marketId": 1,
+        "size1e8": -1000000,
+        "openNotional1e8": -2468310000,
+        "lastCumulativeFundingRate1e18": 0
+      },
+      "status": 1,
+      "gasUsed": 218030,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWei": 6384604743,
+      "eventVerified": true,
+      "stepStorageReadbackVerified": true
+    },
+    {
+      "ordinal": 6,
+      "hash": "0x66c1a111198d81568ccc2a2f6604f4fb3595802a3d1d01c5f6341a5ad39a83e7",
+      "block": 47458805,
+      "blockHash": "0x40178cf4db429290877e9ec0dfaa260b1c48fca8a20c4aed5a8728dbead4fdaa",
+      "nonce": 804,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "args": {
+        "trader": "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        "marketId": 1,
+        "size1e8": -1000,
+        "openNotional1e8": -3000000,
+        "lastCumulativeFundingRate1e18": 0
+      },
+      "status": 1,
+      "gasUsed": 218030,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWei": 6225383141,
+      "eventVerified": true,
+      "stepStorageReadbackVerified": true
+    },
+    {
+      "ordinal": 7,
+      "hash": "0x753d2a9b8c031e99280c76a61f642d440fc92271bbd42a07399af97ef813173f",
+      "block": 47458822,
+      "blockHash": "0x754a6496fff60f21334c0081ec76a782337527a88691dbeb897604d9228fb6b9",
+      "nonce": 805,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "args": {
+        "trader": "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        "marketId": 1,
+        "size1e8": 2,
+        "openNotional1e8": 6000,
+        "lastCumulativeFundingRate1e18": 0
+      },
+      "status": 1,
+      "gasUsed": 217053,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWei": 6305288257,
+      "eventVerified": true,
+      "stepStorageReadbackVerified": true
+    },
+    {
+      "ordinal": 8,
+      "hash": "0xd595efa3c5d997bce502cc15b1eaa114d00dd7ea2eb0b0662bbbb92b6449c8e9",
+      "block": 47458840,
+      "blockHash": "0xf1a0646a95748eee8752202844c84bc3d440f01e00a97bef2a703b7f4a0454ef",
+      "nonce": 806,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "args": {
+        "trader": "0xff287410852b9328437eac353720e5476bc5f837",
+        "marketId": 1,
+        "size1e8": 1000000,
+        "openNotional1e8": 2468310000,
+        "lastCumulativeFundingRate1e18": 0
+      },
+      "status": 1,
+      "gasUsed": 217101,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWei": 6694451305,
+      "eventVerified": true,
+      "stepStorageReadbackVerified": true
+    }
+  ],
+  "receiptReconciliation": {
+    "initialZeroBlockHashOrdinals": [
+      2,
+      3,
+      5,
+      6
+    ],
+    "initialL1FeeChangedOrdinals": [
+      2,
+      3,
+      6
+    ],
+    "verification": "fresh receipt + transaction + canonical block inclusion; repeated against earlier reconciliation",
+    "safeHeadBlock": 47458993,
+    "safeHeadHash": "0xf615afe4a55a403f8d7f26398845ba33fbdbf26a0ddfae7bd4f59ff7a53a1b86",
+    "additionalPublicRpcChecks": "Unavailable: both public endpoints returned HTTP 403",
+    "originalJournalPreserved": true
+  },
+  "checks": [
+    {
+      "label": "NEW.owner()",
+      "value": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+      "passed": true
+    },
+    {
+      "label": "NEW.marketRegistry()",
+      "value": "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+      "passed": true
+    },
+    {
+      "label": "NEW.collateralVault()",
+      "value": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "passed": true
+    },
+    {
+      "label": "NEW.oracle()",
+      "value": "0xB416406F200B2Ef3D7a86A5D5877Ed41D9B1A581",
+      "passed": true
+    },
+    {
+      "label": "NEW.matchingEngine()",
+      "value": "0xF5FB81e447AF3A3E81951aC72D751dE3E9B8eee2",
+      "passed": true
+    },
+    {
+      "label": "NEW.riskModule()",
+      "value": "0x8C3d9F71cA59B908Fa200546A63ea62F9C932998",
+      "passed": true
+    },
+    {
+      "label": "NEW.clearingAccount()",
+      "value": "0x54d49c088DD27cFc82685b867c182b4bB4aC435c",
+      "passed": true
+    },
+    {
+      "label": "NEW.insuranceFund()",
+      "value": "0x009f38440F058d095b61E0E2ee7fAbDF05BE7500",
+      "passed": true
+    },
+    {
+      "label": "NEW.collateralSeizer()",
+      "value": "0x39F928b959cF58369E7C7a3B925e6cBfFA62B669",
+      "passed": true
+    },
+    {
+      "label": "NEW.feesManagerV2()",
+      "value": "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f",
+      "passed": true
+    },
+    {
+      "label": "NEW.useFeesManagerV2()",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "NEW.guardian()",
+      "value": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+      "passed": true
+    },
+    {
+      "label": "NEW.migrationState()",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "NEW.migrationSnapshotHash()",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalResidualBadDebtBase()",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "V1.PME.paused",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "V1.liquidationPaused",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "OLD.migrationState",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "OLD.snapshot",
+      "value": "0x039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d",
+      "passed": true
+    },
+    {
+      "label": "OLD.registry",
+      "value": "0xb4fcf45E57b93274441dEf8f0f68bd30f6D677eC",
+      "passed": true
+    },
+    {
+      "label": "Vault.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "Vault.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "Vault.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "Shared.perpEngine.0xF5FB81e447AF3A3E81951aC72D751dE3E9B8eee2",
+      "value": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "passed": true
+    },
+    {
+      "label": "Shared.perpEngine.0x8C3d9F71cA59B908Fa200546A63ea62F9C932998",
+      "value": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "passed": true
+    },
+    {
+      "label": "NEW.feeConsumer",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "NEW.backstopCaller",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "Clearing.balance",
+      "value": 1000000000,
+      "passed": true
+    },
+    {
+      "label": "NEW.market.1",
+      "value": [
+        1001002,
+        1001002,
+        0,
+        1789715546
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.market.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.1",
+      "value": [
+        1001002,
+        1001002,
+        0,
+        1789715546
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.market.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.1",
+      "value": [
+        1001002,
+        1001002,
+        0,
+        1789715546
+      ],
+      "passed": true
+    },
+    {
+      "label": "PMR.getMaxExecutionDeviationBps(uint256).1",
+      "value": 100,
+      "passed": true
+    },
+    {
+      "label": "PMR.marketExists(uint256).1",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "PMR.isMarketActive(uint256).1",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "NEW.market.2",
+      "value": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.market.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.2",
+      "value": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.market.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.2",
+      "value": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "PMR.getMaxExecutionDeviationBps(uint256).2",
+      "value": 100,
+      "passed": true
+    },
+    {
+      "label": "PMR.marketExists(uint256).2",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "PMR.isMarketActive(uint256).2",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "value": [
+        1000,
+        3000000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "value": [
+        1000,
+        3000000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x290bd12c93e467bf51c51f5273d35bddb19e9274.1",
+      "value": [
+        1000,
+        3000000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x290bd12c93e467bf51c51f5273d35bddb19e9274.2",
+      "value": [
+        0,
+        0,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.getTraderMarketsLength(address).0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsLongSize1e8(address).0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "value": 1000,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsShortSize1e8(address).0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "value": [
+        -2,
+        -6000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "value": [
+        -2,
+        -6000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x475fe397fa56884952d350aa9ee1c3946964bc0c.1",
+      "value": [
+        -2,
+        -6000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x475fe397fa56884952d350aa9ee1c3946964bc0c.2",
+      "value": [
+        0,
+        0,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.getTraderMarketsLength(address).0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsLongSize1e8(address).0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsShortSize1e8(address).0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "value": 2,
+      "passed": true
+    },
+    {
+      "label": "debt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x66858286feea78a05ea093673ea1535e0a52002d",
+      "value": [
+        -1000000,
+        -2468310000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x66858286feea78a05ea093673ea1535e0a52002d",
+      "value": [
+        -1000000,
+        -2468310000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x66858286feea78a05ea093673ea1535e0a52002d.1",
+      "value": [
+        -1000000,
+        -2468310000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x66858286feea78a05ea093673ea1535e0a52002d.2",
+      "value": [
+        0,
+        0,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.getTraderMarketsLength(address).0x66858286feea78a05ea093673ea1535e0a52002d",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsLongSize1e8(address).0x66858286feea78a05ea093673ea1535e0a52002d",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsShortSize1e8(address).0x66858286feea78a05ea093673ea1535e0a52002d",
+      "value": 1000000,
+      "passed": true
+    },
+    {
+      "label": "debt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x66858286feea78a05ea093673ea1535e0a52002d",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x66858286feea78a05ea093673ea1535e0a52002d",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15.0x66858286feea78a05ea093673ea1535e0a52002d",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "value": [
+        -1000,
+        -3000000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "value": [
+        -1000,
+        -3000000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x77ca9dd6ccce2d692fb23877a2db7178807b0020.1",
+      "value": [
+        -1000,
+        -3000000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x77ca9dd6ccce2d692fb23877a2db7178807b0020.2",
+      "value": [
+        0,
+        0,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.getTraderMarketsLength(address).0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsLongSize1e8(address).0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsShortSize1e8(address).0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "value": 1000,
+      "passed": true
+    },
+    {
+      "label": "debt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "value": [
+        2,
+        6000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "value": [
+        2,
+        6000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34.1",
+      "value": [
+        2,
+        6000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34.2",
+      "value": [
+        0,
+        0,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.getTraderMarketsLength(address).0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsLongSize1e8(address).0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "value": 2,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsShortSize1e8(address).0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0xff287410852b9328437eac353720e5476bc5f837",
+      "value": [
+        1000000,
+        2468310000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0xff287410852b9328437eac353720e5476bc5f837",
+      "value": [
+        1000000,
+        2468310000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0xff287410852b9328437eac353720e5476bc5f837.1",
+      "value": [
+        1000000,
+        2468310000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0xff287410852b9328437eac353720e5476bc5f837.2",
+      "value": [
+        0,
+        0,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.getTraderMarketsLength(address).0xff287410852b9328437eac353720e5476bc5f837",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsLongSize1e8(address).0xff287410852b9328437eac353720e5476bc5f837",
+      "value": 1000000,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsShortSize1e8(address).0xff287410852b9328437eac353720e5476bc5f837",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0xff287410852b9328437eac353720e5476bc5f837",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0xff287410852b9328437eac353720e5476bc5f837",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15.0xff287410852b9328437eac353720e5476bc5f837",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "totalDebt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "totalDebt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "V1.nonce.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "V1.nonce.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "value": 2,
+      "passed": true
+    },
+    {
+      "label": "V1.nonce.0x66858286feea78a05ea093673ea1535e0a52002d",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "V1.nonce.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "V1.nonce.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "value": 2,
+      "passed": true
+    },
+    {
+      "label": "V1.nonce.0xff287410852b9328437eac353720e5476bc5f837",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "canonical.vault.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "value": 1503000053,
+      "passed": true
+    },
+    {
+      "label": "canonical.vault.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "value": 999999,
+      "passed": true
+    },
+    {
+      "label": "canonical.vault.0x66858286feea78a05ea093673ea1535e0a52002d",
+      "value": 9998765,
+      "passed": true
+    },
+    {
+      "label": "canonical.vault.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "value": 1500999893,
+      "passed": true
+    },
+    {
+      "label": "canonical.vault.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "value": 999999,
+      "passed": true
+    },
+    {
+      "label": "canonical.vault.0xff287410852b9328437eac353720e5476bc5f837",
+      "value": 9992595,
+      "passed": true
+    }
+  ],
+  "marketReconciliation": [
+    {
+      "marketId": 1,
+      "manifest": [
+        1001002,
+        1001002,
+        0,
+        1789715546
+      ],
+      "v1": [
+        1001002,
+        1001002,
+        0,
+        1789715546
+      ],
+      "oldEngine": [
+        1001002,
+        1001002,
+        0,
+        1789715546
+      ],
+      "newEngine": [
+        1001002,
+        1001002,
+        0,
+        1789715546
+      ]
+    },
+    {
+      "marketId": 2,
+      "manifest": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "v1": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "oldEngine": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "newEngine": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "positionReconciliation": [
+    {
+      "trader": "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "marketId": 1,
+      "manifest": [
+        1000,
+        3000000,
+        0
+      ],
+      "v1": [
+        1000,
+        3000000,
+        0
+      ],
+      "oldEngine": [
+        1000,
+        3000000,
+        0
+      ],
+      "newEngine": [
+        1000,
+        3000000,
+        0
+      ],
+      "indexPlusOne": 1,
+      "traderMarkets": [
+        1
+      ],
+      "residualBadDebtBase": 0
+    },
+    {
+      "trader": "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "marketId": 1,
+      "manifest": [
+        -2,
+        -6000,
+        0
+      ],
+      "v1": [
+        -2,
+        -6000,
+        0
+      ],
+      "oldEngine": [
+        -2,
+        -6000,
+        0
+      ],
+      "newEngine": [
+        -2,
+        -6000,
+        0
+      ],
+      "indexPlusOne": 1,
+      "traderMarkets": [
+        1
+      ],
+      "residualBadDebtBase": 0
+    },
+    {
+      "trader": "0x66858286feea78a05ea093673ea1535e0a52002d",
+      "marketId": 1,
+      "manifest": [
+        -1000000,
+        -2468310000,
+        0
+      ],
+      "v1": [
+        -1000000,
+        -2468310000,
+        0
+      ],
+      "oldEngine": [
+        -1000000,
+        -2468310000,
+        0
+      ],
+      "newEngine": [
+        -1000000,
+        -2468310000,
+        0
+      ],
+      "indexPlusOne": 1,
+      "traderMarkets": [
+        1
+      ],
+      "residualBadDebtBase": 0
+    },
+    {
+      "trader": "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "marketId": 1,
+      "manifest": [
+        -1000,
+        -3000000,
+        0
+      ],
+      "v1": [
+        -1000,
+        -3000000,
+        0
+      ],
+      "oldEngine": [
+        -1000,
+        -3000000,
+        0
+      ],
+      "newEngine": [
+        -1000,
+        -3000000,
+        0
+      ],
+      "indexPlusOne": 1,
+      "traderMarkets": [
+        1
+      ],
+      "residualBadDebtBase": 0
+    },
+    {
+      "trader": "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "marketId": 1,
+      "manifest": [
+        2,
+        6000,
+        0
+      ],
+      "v1": [
+        2,
+        6000,
+        0
+      ],
+      "oldEngine": [
+        2,
+        6000,
+        0
+      ],
+      "newEngine": [
+        2,
+        6000,
+        0
+      ],
+      "indexPlusOne": 1,
+      "traderMarkets": [
+        1
+      ],
+      "residualBadDebtBase": 0
+    },
+    {
+      "trader": "0xff287410852b9328437eac353720e5476bc5f837",
+      "marketId": 1,
+      "manifest": [
+        1000000,
+        2468310000,
+        0
+      ],
+      "v1": [
+        1000000,
+        2468310000,
+        0
+      ],
+      "oldEngine": [
+        1000000,
+        2468310000,
+        0
+      ],
+      "newEngine": [
+        1000000,
+        2468310000,
+        0
+      ],
+      "indexPlusOne": 1,
+      "traderMarkets": [
+        1
+      ],
+      "residualBadDebtBase": 0
+    }
+  ],
+  "seedFlags": [
+    {
+      "label": "_marketFundingSeeded",
+      "keys": [
+        1
+      ],
+      "slot": "0xe39b43e4224876d80510ac9d8f190663bcce357e28a4aec26f3bf2e600bb40ec",
+      "value": 1
+    },
+    {
+      "label": "_marketFundingSeeded",
+      "keys": [
+        2
+      ],
+      "slot": "0x52978eb6718a0ed733b71dbb3c4781d6da146a41523832713c09679420d0cac5",
+      "value": 1
+    },
+    {
+      "label": "_positionSeeded",
+      "keys": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        1
+      ],
+      "slot": "0xb954dfa9a76b892e0c0709a47185a0d5aaa52a4579b2fd545f6a4707f512f879",
+      "value": 1
+    },
+    {
+      "label": "_residualBadDebtSeeded",
+      "keys": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274"
+      ],
+      "slot": "0x3385e528246aabed6f9dad3ab984c20b3855e6af9c2142deb1c6f9462b0af01c",
+      "value": 0
+    },
+    {
+      "label": "_positionSeeded",
+      "keys": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        1
+      ],
+      "slot": "0x89491d07f95130b0fcb8c835c39ff073c42076bbc35e33913fae72750faab22a",
+      "value": 1
+    },
+    {
+      "label": "_residualBadDebtSeeded",
+      "keys": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c"
+      ],
+      "slot": "0xa661b9e809ba71348bd61f4fb2453f8de57d929a673ca06fd09ad42cdffb7749",
+      "value": 0
+    },
+    {
+      "label": "_positionSeeded",
+      "keys": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d",
+        1
+      ],
+      "slot": "0xa5561e2d91db5d263a5a52b83de90775ec7e67a8ab20ed8456ec90cfa782bc40",
+      "value": 1
+    },
+    {
+      "label": "_residualBadDebtSeeded",
+      "keys": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d"
+      ],
+      "slot": "0x6ac6baea3eb65c812254ec27aef6803f96ba0fc53f809af66d136a72b6b8a65",
+      "value": 0
+    },
+    {
+      "label": "_positionSeeded",
+      "keys": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        1
+      ],
+      "slot": "0x5e7296c894b9ce5d18c072e0d118b0a62d8791cc5e73d0d46fc3cacb4d3c719c",
+      "value": 1
+    },
+    {
+      "label": "_residualBadDebtSeeded",
+      "keys": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020"
+      ],
+      "slot": "0x41d2f084fab5798a308ac4bf1ba9f53a200e419fa887653cb49b19e239d4ac80",
+      "value": 0
+    },
+    {
+      "label": "_positionSeeded",
+      "keys": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        1
+      ],
+      "slot": "0x460b51f0783adb7d7bda7cd00a08c17daf99726f5bce0afd5f0d24c7b1c9852e",
+      "value": 1
+    },
+    {
+      "label": "_residualBadDebtSeeded",
+      "keys": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34"
+      ],
+      "slot": "0x74f396a63ab4f4c46c987a0c0dce621bcaec7cdc973daa7a4fb2c5de35ae092e",
+      "value": 0
+    },
+    {
+      "label": "_positionSeeded",
+      "keys": [
+        "0xff287410852b9328437eac353720e5476bc5f837",
+        1
+      ],
+      "slot": "0x25ae4081686150c57937f90d26d7ed71f35d8e442676457debf3bb792636b92",
+      "value": 1
+    },
+    {
+      "label": "_residualBadDebtSeeded",
+      "keys": [
+        "0xff287410852b9328437eac353720e5476bc5f837"
+      ],
+      "slot": "0xd9faf7920695226a8c4e0799242b49d385aac6ac5bafe46e07ee934108e91bc0",
+      "value": 0
+    }
+  ],
+  "positionTotals": {
+    "netSize": 0,
+    "longOI": 1001002,
+    "shortOI": 1001002
+  },
+  "migrationState": "OPEN",
+  "migrationSnapshotHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "totalResidualBadDebtBase": 0,
+  "pmeV2Nonces": {
+    "0x290bd12c93e467bf51c51f5273d35bddb19e9274": 0,
+    "0x475fe397fa56884952d350aa9ee1c3946964bc0c": 0,
+    "0x66858286feea78a05ea093673ea1535e0a52002d": 0,
+    "0x77ca9dd6ccce2d692fb23877a2db7178807b0020": 0,
+    "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34": 0,
+    "0xff287410852b9328437eac353720e5476bc5f837": 0
+  },
+  "ownerNoncePre": 799,
+  "ownerNoncePost": 807,
+  "ownerPendingNoncePost": 807,
+  "safeNoncePre": 15,
+  "safeNoncePost": 15,
+  "executorNoncePre": 1,
+  "executorNoncePost": 1,
+  "ownerBalancePreWei": 1716274205898345,
+  "ownerBalancePostWei": 1707180795682353,
+  "ownerBalancePreETH": "0.001716274205898345",
+  "ownerBalancePostETH": "0.001707180795682353",
+  "ownerExpenditureWei": 9093410215992,
+  "totalGasUsed": 1507081,
+  "executionFeesWei": 9042486000000,
+  "l1FeesWei": 50924215992,
+  "runtime": {
+    "bytes": 24321,
+    "ethereumKeccak256": "0xc0ac9015866a36d0c9c25920387af78cb59cc24f66170728ade1a835d1211a2a",
+    "byteEqualFrozenArtifact": true
+  },
+  "eventAudit": {
+    "fromBlock": 47458583,
+    "toBlock": 47459089,
+    "fundingSeedEvents": 2,
+    "positionSeedEvents": 6,
+    "residualDebtSeedEvents": 0,
+    "sealEvents": 0,
+    "tradeEvents": 0,
+    "oldOrV1MigrationTradeEvents": 0
+  },
+  "writeAudit": {
+    "fromBlock": 47458712,
+    "toBlock": 47459089,
+    "ownerTransactionCount": 8,
+    "ownerTransactionHashes": [
+      "0x01d0068166d12a976a3e0ed0b71a413a46c27827193000d4f4f3a1806e9ce3d0",
+      "0x69f5ee24443a1c9f05e879768ed125a356565e72b0eef510f76db6122d0d6075",
+      "0xfc3a8617aa2535ecf669db9585780f473d67a38867f963b25bf3c8e565a69e01",
+      "0x1f30189c1bb20423631c93b1b14f820b9784623d2751dc687a25491891a50695",
+      "0xdaa6e9aaf2a401d60413d4b56a0ad45947035f183627755a49fd96c8b182fbed",
+      "0x66c1a111198d81568ccc2a2f6604f4fb3595802a3d1d01c5f6341a5ad39a83e7",
+      "0x753d2a9b8c031e99280c76a61f642d440fc92271bbd42a07399af97ef813173f",
+      "0xd595efa3c5d997bce502cc15b1eaa114d00dd7ea2eb0b0662bbbb92b6449c8e9"
+    ],
+    "ownerNonceDelta": 8,
+    "safeNonceDelta": 0,
+    "executorNonceDelta": 0,
+    "tokenEventsInAuthorizedReceipts": 0,
+    "deployments": 0,
+    "sharedDependencyWrites": 0,
+    "vaultAclWrites": 0,
+    "safeTimelockWrites": 0,
+    "sealWrites": 0,
+    "backendDbWrites": 0,
+    "trades": 0
+  },
+  "backend_runtime_state": "STOPPED",
+  "transaction_emission_capability": "NONE",
+  "backendProcesses": 0,
+  "port8080Listeners": 0,
+  "canonicalFileSha256": {
+    "manifest.json": "88707f092c2be05fb5e4b73454f880b84abc4a1a95199e4eeb9aeec024687ddd",
+    "manifest.cbor": "520897f586cb275fbe81d4d5acb30ce45632be4ce2574a0577bc302b339ed857",
+    "seed_calldata.json": "d92cf6abae899123d7d96009f36da3f8a715c04a7ee9ac6bf5dddc9c0b1cdb14"
+  },
+  "passwordFileAbsent": true,
+  "status": "PERPS_V2_BASE_SEPOLIA_MIGRATION_REPLAY_V1_COMPLETE"
+}

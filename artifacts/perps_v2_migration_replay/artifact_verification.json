@@ -1,0 +1,138 @@
+{
+  "snapshotHash": "0x039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d",
+  "jsonCborSemanticAgreement": true,
+  "canonicalFileSha256": {
+    "manifest.json": "88707f092c2be05fb5e4b73454f880b84abc4a1a95199e4eeb9aeec024687ddd",
+    "manifest.cbor": "520897f586cb275fbe81d4d5acb30ce45632be4ce2574a0577bc302b339ed857",
+    "seed_calldata.json": "d92cf6abae899123d7d96009f36da3f8a715c04a7ee9ac6bf5dddc9c0b1cdb14"
+  },
+  "recoveryPackageSha256": "bdcc5f48b4637822316752358e3c37324cf6e3aa85f86dc406b1e0f74bee5738",
+  "scope": "Source-bound manifest; no exclusive destination. Recovery freeze section L permits replacement Engine replay.",
+  "changes": "Top-level execution bindings added; each target changed OLD to NEW, value explicitly zero. All other step fields preserved.",
+  "transactions": [
+    {
+      "ordinal": 1,
+      "nonce": 799,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "value": 0,
+      "signature": "adminSeedMarketFunding(uint256,int256,uint64)",
+      "selector": "0x2c96f1bc",
+      "decodedArgs": {
+        "marketId": 1,
+        "cumulativeFundingRate1e18": 0,
+        "lastFundingTimestamp": 1789715546
+      },
+      "calldataIdentical": true
+    },
+    {
+      "ordinal": 2,
+      "nonce": 800,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "value": 0,
+      "signature": "adminSeedMarketFunding(uint256,int256,uint64)",
+      "selector": "0x2c96f1bc",
+      "decodedArgs": {
+        "marketId": 2,
+        "cumulativeFundingRate1e18": 0,
+        "lastFundingTimestamp": 0
+      },
+      "calldataIdentical": true
+    },
+    {
+      "ordinal": 3,
+      "nonce": 801,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "value": 0,
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "selector": "0x0ef3a5f7",
+      "decodedArgs": {
+        "trader": "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        "marketId": 1,
+        "size1e8": 1000,
+        "openNotional1e8": 3000000,
+        "lastCumulativeFundingRate1e18": 0
+      },
+      "calldataIdentical": true
+    },
+    {
+      "ordinal": 4,
+      "nonce": 802,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "value": 0,
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "selector": "0x0ef3a5f7",
+      "decodedArgs": {
+        "trader": "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        "marketId": 1,
+        "size1e8": -2,
+        "openNotional1e8": -6000,
+        "lastCumulativeFundingRate1e18": 0
+      },
+      "calldataIdentical": true
+    },
+    {
+      "ordinal": 5,
+      "nonce": 803,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "value": 0,
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "selector": "0x0ef3a5f7",
+      "decodedArgs": {
+        "trader": "0x66858286feea78a05ea093673ea1535e0a52002d",
+        "marketId": 1,
+        "size1e8": -1000000,
+        "openNotional1e8": -2468310000,
+        "lastCumulativeFundingRate1e18": 0
+      },
+      "calldataIdentical": true
+    },
+    {
+      "ordinal": 6,
+      "nonce": 804,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "value": 0,
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "selector": "0x0ef3a5f7",
+      "decodedArgs": {
+        "trader": "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        "marketId": 1,
+        "size1e8": -1000,
+        "openNotional1e8": -3000000,
+        "lastCumulativeFundingRate1e18": 0
+      },
+      "calldataIdentical": true
+    },
+    {
+      "ordinal": 7,
+      "nonce": 805,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "value": 0,
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "selector": "0x0ef3a5f7",
+      "decodedArgs": {
+        "trader": "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        "marketId": 1,
+        "size1e8": 2,
+        "openNotional1e8": 6000,
+        "lastCumulativeFundingRate1e18": 0
+      },
+      "calldataIdentical": true
+    },
+    {
+      "ordinal": 8,
+      "nonce": 806,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "value": 0,
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "selector": "0x0ef3a5f7",
+      "decodedArgs": {
+        "trader": "0xff287410852b9328437eac353720e5476bc5f837",
+        "marketId": 1,
+        "size1e8": 1000000,
+        "openNotional1e8": 2468310000,
+        "lastCumulativeFundingRate1e18": 0
+      },
+      "calldataIdentical": true
+    }
+  ]
+}

@@ -1,0 +1,618 @@
+{
+  "storage": [
+    {
+      "astId": 9454,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "owner",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_address"
+    },
+    {
+      "astId": 9456,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "pendingOwner",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_address"
+    },
+    {
+      "astId": 9459,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "matchingEngine",
+      "offset": 0,
+      "slot": "2",
+      "type": "t_address"
+    },
+    {
+      "astId": 9462,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "guardian",
+      "offset": 0,
+      "slot": "3",
+      "type": "t_address"
+    },
+    {
+      "astId": 9465,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "_marketRegistry",
+      "offset": 0,
+      "slot": "4",
+      "type": "t_contract(PerpMarketRegistry)19628"
+    },
+    {
+      "astId": 9468,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "_collateralVault",
+      "offset": 0,
+      "slot": "5",
+      "type": "t_contract(CollateralVault)913"
+    },
+    {
+      "astId": 9471,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "_oracle",
+      "offset": 0,
+      "slot": "6",
+      "type": "t_contract(IOracle)5321"
+    },
+    {
+      "astId": 9474,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "_riskModule",
+      "offset": 0,
+      "slot": "7",
+      "type": "t_contract(IPerpRiskModule)9397"
+    },
+    {
+      "astId": 9477,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "_collateralSeizer",
+      "offset": 0,
+      "slot": "8",
+      "type": "t_contract(ICollateralSeizer)5267"
+    },
+    {
+      "astId": 9481,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "_feesManager",
+      "offset": 0,
+      "slot": "9",
+      "type": "t_contract(IFeesManager)4865"
+    },
+    {
+      "astId": 9484,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "feesManagerV2",
+      "offset": 0,
+      "slot": "10",
+      "type": "t_contract(IFeesManagerV2)5225"
+    },
+    {
+      "astId": 9487,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "useFeesManagerV2",
+      "offset": 20,
+      "slot": "10",
+      "type": "t_bool"
+    },
+    {
+      "astId": 9490,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "insuranceFund",
+      "offset": 0,
+      "slot": "11",
+      "type": "t_address"
+    },
+    {
+      "astId": 9493,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "_feeRecipient",
+      "offset": 0,
+      "slot": "12",
+      "type": "t_address"
+    },
+    {
+      "astId": 9501,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "_positions",
+      "offset": 0,
+      "slot": "13",
+      "type": "t_mapping(t_address,t_mapping(t_uint256,t_struct(Position)15395_storage))"
+    },
+    {
+      "astId": 9507,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "_marketStates",
+      "offset": 0,
+      "slot": "14",
+      "type": "t_mapping(t_uint256,t_struct(MarketState)15405_storage)"
+    },
+    {
+      "astId": 9512,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "launchOpenInterestCap1e8",
+      "offset": 0,
+      "slot": "15",
+      "type": "t_mapping(t_uint256,t_uint256)"
+    },
+    {
+      "astId": 9517,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "marketEmergencyCloseOnly",
+      "offset": 0,
+      "slot": "16",
+      "type": "t_mapping(t_uint256,t_bool)"
+    },
+    {
+      "astId": 9522,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "marketActivationState",
+      "offset": 0,
+      "slot": "17",
+      "type": "t_mapping(t_uint256,t_uint8)"
+    },
+    {
+      "astId": 9528,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "traderMarkets",
+      "offset": 0,
+      "slot": "18",
+      "type": "t_mapping(t_address,t_array(t_uint256)dyn_storage)"
+    },
+    {
+      "astId": 9534,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "traderMarketIndexPlus1",
+      "offset": 0,
+      "slot": "19",
+      "type": "t_mapping(t_address,t_mapping(t_uint256,t_uint256))"
+    },
+    {
+      "astId": 9539,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "totalAbsLongSize1e8",
+      "offset": 0,
+      "slot": "20",
+      "type": "t_mapping(t_address,t_uint256)"
+    },
+    {
+      "astId": 9543,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "totalAbsShortSize1e8",
+      "offset": 0,
+      "slot": "21",
+      "type": "t_mapping(t_address,t_uint256)"
+    },
+    {
+      "astId": 9548,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "_residualBadDebtBase",
+      "offset": 0,
+      "slot": "22",
+      "type": "t_mapping(t_address,t_uint256)"
+    },
+    {
+      "astId": 9551,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "totalResidualBadDebtBase",
+      "offset": 0,
+      "slot": "23",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 9554,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "_paused",
+      "offset": 0,
+      "slot": "24",
+      "type": "t_bool"
+    },
+    {
+      "astId": 9557,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "tradingPaused",
+      "offset": 1,
+      "slot": "24",
+      "type": "t_bool"
+    },
+    {
+      "astId": 9559,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "liquidationPaused",
+      "offset": 2,
+      "slot": "24",
+      "type": "t_bool"
+    },
+    {
+      "astId": 9561,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "fundingPaused",
+      "offset": 3,
+      "slot": "24",
+      "type": "t_bool"
+    },
+    {
+      "astId": 9563,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "collateralOpsPaused",
+      "offset": 4,
+      "slot": "24",
+      "type": "t_bool"
+    },
+    {
+      "astId": 9567,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "_liquidationCloseFactorBps",
+      "offset": 0,
+      "slot": "25",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 9571,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "_liquidationPenaltyBps",
+      "offset": 0,
+      "slot": "26",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 9575,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "_liquidationPriceSpreadBps",
+      "offset": 0,
+      "slot": "27",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 9579,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "_minLiquidationImprovementBps",
+      "offset": 0,
+      "slot": "28",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 9583,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "_liquidationOracleMaxDelay",
+      "offset": 0,
+      "slot": "29",
+      "type": "t_uint32"
+    },
+    {
+      "astId": 9592,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "impactMidSource",
+      "offset": 4,
+      "slot": "29",
+      "type": "t_address"
+    },
+    {
+      "astId": 9597,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "_impactMidSamples",
+      "offset": 0,
+      "slot": "30",
+      "type": "t_mapping(t_uint256,t_struct(ImpactMidSample)9589_storage)"
+    },
+    {
+      "astId": 12656,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "clearingAccount",
+      "offset": 0,
+      "slot": "31",
+      "type": "t_address"
+    },
+    {
+      "astId": 12664,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "migrationState",
+      "offset": 20,
+      "slot": "31",
+      "type": "t_enum(MigrationState)12660"
+    },
+    {
+      "astId": 12667,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "migrationSnapshotHash",
+      "offset": 0,
+      "slot": "32",
+      "type": "t_bytes32"
+    },
+    {
+      "astId": 12674,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "_positionSeeded",
+      "offset": 0,
+      "slot": "33",
+      "type": "t_mapping(t_address,t_mapping(t_uint256,t_bool))"
+    },
+    {
+      "astId": 12679,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "_marketFundingSeeded",
+      "offset": 0,
+      "slot": "34",
+      "type": "t_mapping(t_uint256,t_bool)"
+    },
+    {
+      "astId": 12684,
+      "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+      "label": "_residualBadDebtSeeded",
+      "offset": 0,
+      "slot": "35",
+      "type": "t_mapping(t_address,t_bool)"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_array(t_uint256)dyn_storage": {
+      "base": "t_uint256",
+      "encoding": "dynamic_array",
+      "label": "uint256[]",
+      "numberOfBytes": "32"
+    },
+    "t_bool": {
+      "encoding": "inplace",
+      "label": "bool",
+      "numberOfBytes": "1"
+    },
+    "t_bytes32": {
+      "encoding": "inplace",
+      "label": "bytes32",
+      "numberOfBytes": "32"
+    },
+    "t_contract(CollateralVault)913": {
+      "encoding": "inplace",
+      "label": "contract CollateralVault",
+      "numberOfBytes": "20"
+    },
+    "t_contract(ICollateralSeizer)5267": {
+      "encoding": "inplace",
+      "label": "contract ICollateralSeizer",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IFeesManager)4865": {
+      "encoding": "inplace",
+      "label": "contract IFeesManager",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IFeesManagerV2)5225": {
+      "encoding": "inplace",
+      "label": "contract IFeesManagerV2",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IOracle)5321": {
+      "encoding": "inplace",
+      "label": "contract IOracle",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IPerpRiskModule)9397": {
+      "encoding": "inplace",
+      "label": "contract IPerpRiskModule",
+      "numberOfBytes": "20"
+    },
+    "t_contract(PerpMarketRegistry)19628": {
+      "encoding": "inplace",
+      "label": "contract PerpMarketRegistry",
+      "numberOfBytes": "20"
+    },
+    "t_enum(MigrationState)12660": {
+      "encoding": "inplace",
+      "label": "enum PerpEngineTradingV2.MigrationState",
+      "numberOfBytes": "1"
+    },
+    "t_int256": {
+      "encoding": "inplace",
+      "label": "int256",
+      "numberOfBytes": "32"
+    },
+    "t_mapping(t_address,t_array(t_uint256)dyn_storage)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => uint256[])",
+      "numberOfBytes": "32",
+      "value": "t_array(t_uint256)dyn_storage"
+    },
+    "t_mapping(t_address,t_bool)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => bool)",
+      "numberOfBytes": "32",
+      "value": "t_bool"
+    },
+    "t_mapping(t_address,t_mapping(t_uint256,t_bool))": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => mapping(uint256 => bool))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_uint256,t_bool)"
+    },
+    "t_mapping(t_address,t_mapping(t_uint256,t_struct(Position)15395_storage))": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => mapping(uint256 => struct PerpEngineTypes.Position))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_uint256,t_struct(Position)15395_storage)"
+    },
+    "t_mapping(t_address,t_mapping(t_uint256,t_uint256))": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => mapping(uint256 => uint256))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_uint256,t_uint256)"
+    },
+    "t_mapping(t_address,t_uint256)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => uint256)",
+      "numberOfBytes": "32",
+      "value": "t_uint256"
+    },
+    "t_mapping(t_uint256,t_bool)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => bool)",
+      "numberOfBytes": "32",
+      "value": "t_bool"
+    },
+    "t_mapping(t_uint256,t_struct(ImpactMidSample)9589_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => struct PerpEngineStorage.ImpactMidSample)",
+      "numberOfBytes": "32",
+      "value": "t_struct(ImpactMidSample)9589_storage"
+    },
+    "t_mapping(t_uint256,t_struct(MarketState)15405_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => struct PerpEngineTypes.MarketState)",
+      "numberOfBytes": "32",
+      "value": "t_struct(MarketState)15405_storage"
+    },
+    "t_mapping(t_uint256,t_struct(Position)15395_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => struct PerpEngineTypes.Position)",
+      "numberOfBytes": "32",
+      "value": "t_struct(Position)15395_storage"
+    },
+    "t_mapping(t_uint256,t_uint256)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => uint256)",
+      "numberOfBytes": "32",
+      "value": "t_uint256"
+    },
+    "t_mapping(t_uint256,t_uint8)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => uint8)",
+      "numberOfBytes": "32",
+      "value": "t_uint8"
+    },
+    "t_struct(ImpactMidSample)9589_storage": {
+      "encoding": "inplace",
+      "label": "struct PerpEngineStorage.ImpactMidSample",
+      "members": [
+        {
+          "astId": 9586,
+          "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+          "label": "mid1e8",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_uint128"
+        },
+        {
+          "astId": 9588,
+          "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+          "label": "updatedAt",
+          "offset": 16,
+          "slot": "0",
+          "type": "t_uint64"
+        }
+      ],
+      "numberOfBytes": "32"
+    },
+    "t_struct(MarketState)15405_storage": {
+      "encoding": "inplace",
+      "label": "struct PerpEngineTypes.MarketState",
+      "members": [
+        {
+          "astId": 15398,
+          "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+          "label": "longOpenInterest1e8",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 15400,
+          "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+          "label": "shortOpenInterest1e8",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 15402,
+          "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+          "label": "cumulativeFundingRate1e18",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_int256"
+        },
+        {
+          "astId": 15404,
+          "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+          "label": "lastFundingTimestamp",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_uint64"
+        }
+      ],
+      "numberOfBytes": "128"
+    },
+    "t_struct(Position)15395_storage": {
+      "encoding": "inplace",
+      "label": "struct PerpEngineTypes.Position",
+      "members": [
+        {
+          "astId": 15390,
+          "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+          "label": "size1e8",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_int256"
+        },
+        {
+          "astId": 15392,
+          "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+          "label": "openNotional1e8",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_int256"
+        },
+        {
+          "astId": 15394,
+          "contract": "src/perp/PerpEngineV2.sol:PerpEngineV2",
+          "label": "lastCumulativeFundingRate1e18",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_int256"
+        }
+      ],
+      "numberOfBytes": "96"
+    },
+    "t_uint128": {
+      "encoding": "inplace",
+      "label": "uint128",
+      "numberOfBytes": "16"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    },
+    "t_uint32": {
+      "encoding": "inplace",
+      "label": "uint32",
+      "numberOfBytes": "4"
+    },
+    "t_uint64": {
+      "encoding": "inplace",
+      "label": "uint64",
+      "numberOfBytes": "8"
+    },
+    "t_uint8": {
+      "encoding": "inplace",
+      "label": "uint8",
+      "numberOfBytes": "1"
+    }
+  }
+}

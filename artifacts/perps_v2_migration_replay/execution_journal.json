@@ -1,0 +1,546 @@
+{
+  "milestone": "PERPS_V2_BASE_SEPOLIA_MIGRATION_REPLAY_V1",
+  "chainId": 84532,
+  "packageSha256": "bdcc5f48b4637822316752358e3c37324cf6e3aa85f86dc406b1e0f74bee5738",
+  "status": "COMPLETE",
+  "successfulPrefix": 8,
+  "transactions": [
+    {
+      "ordinal": 1,
+      "nonce": 799,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "value": 0,
+      "signature": "adminSeedMarketFunding(uint256,int256,uint64)",
+      "args": {
+        "marketId": 1,
+        "cumulativeFundingRate1e18": 0,
+        "lastFundingTimestamp": 1789715546
+      },
+      "calldata": "0x2c96f1bc00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006aace45a",
+      "gasLimit": 121873,
+      "maxFeePerGasWei": 11000000,
+      "priorityFeePerGasWei": 1000000,
+      "preblock": 47458716,
+      "state": "VERIFIED",
+      "hash": "0x01d0068166d12a976a3e0ed0b71a413a46c27827193000d4f4f3a1806e9ce3d0",
+      "receiptStatus": 1,
+      "block": 47458723,
+      "blockHash": "0xfb20a54e4f2c91684f7c9406c0fe3b14e0910952a05e49c14e99e0b704c7389f",
+      "seedFlag": {
+        "label": "_marketFundingSeeded",
+        "keys": [
+          1
+        ],
+        "slot": "0xe39b43e4224876d80510ac9d8f190663bcce357e28a4aec26f3bf2e600bb40ec",
+        "value": 1
+      },
+      "marketReadback": [
+        0,
+        0,
+        0,
+        1789715546
+      ],
+      "event": {
+        "topics": [
+          "0x1c491ed4888600fe3668704e4c68b49ebbda49e2f9c7a2b33b8721b6fb05ea6e",
+          "0x0000000000000000000000000000000000000000000000000000000000000001"
+        ],
+        "data": "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006aace45a"
+      },
+      "eventName": "MigrationMarketFundingSeeded",
+      "gasUsed": 93748,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWei": 5955858635
+    },
+    {
+      "ordinal": 2,
+      "nonce": 800,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "value": 0,
+      "signature": "adminSeedMarketFunding(uint256,int256,uint64)",
+      "args": {
+        "marketId": 2,
+        "cumulativeFundingRate1e18": 0,
+        "lastFundingTimestamp": 0
+      },
+      "calldata": "0x2c96f1bc000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "gasLimit": 96607,
+      "maxFeePerGasWei": 11000000,
+      "priorityFeePerGasWei": 1000000,
+      "preblock": 47458728,
+      "state": "VERIFIED",
+      "hash": "0x69f5ee24443a1c9f05e879768ed125a356565e72b0eef510f76db6122d0d6075",
+      "receiptStatus": 1,
+      "block": 47458736,
+      "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "seedFlag": {
+        "label": "_marketFundingSeeded",
+        "keys": [
+          2
+        ],
+        "slot": "0x52978eb6718a0ed733b71dbb3c4781d6da146a41523832713c09679420d0cac5",
+        "value": 1
+      },
+      "marketReadback": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "event": {
+        "topics": [
+          "0x1c491ed4888600fe3668704e4c68b49ebbda49e2f9c7a2b33b8721b6fb05ea6e",
+          "0x0000000000000000000000000000000000000000000000000000000000000002"
+        ],
+        "data": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "eventName": "MigrationMarketFundingSeeded",
+      "gasUsed": 73800,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWei": 6981941078
+    },
+    {
+      "ordinal": 3,
+      "nonce": 801,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "value": 0,
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "args": {
+        "trader": "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        "marketId": 1,
+        "size1e8": 1000,
+        "openNotional1e8": 3000000,
+        "lastCumulativeFundingRate1e18": 0
+      },
+      "calldata": "0x0ef3a5f7000000000000000000000000290bd12c93e467bf51c51f5273d35bddb19e9274000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000003e800000000000000000000000000000000000000000000000000000000002dc6c00000000000000000000000000000000000000000000000000000000000000000",
+      "gasLimit": 304431,
+      "maxFeePerGasWei": 11000000,
+      "priorityFeePerGasWei": 1000000,
+      "preblock": 47458740,
+      "state": "VERIFIED",
+      "hash": "0xfc3a8617aa2535ecf669db9585780f473d67a38867f963b25bf3c8e565a69e01",
+      "receiptStatus": 1,
+      "block": 47458749,
+      "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "positionReadback": [
+        1000,
+        3000000,
+        0
+      ],
+      "seedFlag": {
+        "label": "_positionSeeded",
+        "keys": [
+          "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+          1
+        ],
+        "slot": "0xb954dfa9a76b892e0c0709a47185a0d5aaa52a4579b2fd545f6a4707f512f879",
+        "value": 1
+      },
+      "indexFlag": {
+        "label": "traderMarketIndexPlus1",
+        "keys": [
+          "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+          1
+        ],
+        "slot": "0x1914e8dfd484601326ba47de44b365738b621d2376d278036ec1380eb430b51",
+        "value": 1
+      },
+      "traderMarkets": [
+        32,
+        1,
+        1
+      ],
+      "traderLongExposure": 1000,
+      "traderShortExposure": 0,
+      "marketReadback": [
+        1000,
+        0,
+        0,
+        1789715546
+      ],
+      "event": {
+        "topics": [
+          "0x31deeaea91ad1475b92972702c8e5936e4f4d3ab559a2da71b2867f0ab8baea6",
+          "0x000000000000000000000000290bd12c93e467bf51c51f5273d35bddb19e9274",
+          "0x0000000000000000000000000000000000000000000000000000000000000001"
+        ],
+        "data": "0x00000000000000000000000000000000000000000000000000000000000003e800000000000000000000000000000000000000000000000000000000002dc6c00000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "eventName": "MigrationPositionSeeded",
+      "gasUsed": 234177,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWei": 16139642961
+    },
+    {
+      "ordinal": 4,
+      "nonce": 802,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "value": 0,
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "args": {
+        "trader": "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        "marketId": 1,
+        "size1e8": -2,
+        "openNotional1e8": -6000,
+        "lastCumulativeFundingRate1e18": 0
+      },
+      "calldata": "0x0ef3a5f7000000000000000000000000475fe397fa56884952d350aa9ee1c3946964bc0c0000000000000000000000000000000000000000000000000000000000000001fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe8900000000000000000000000000000000000000000000000000000000000000000",
+      "gasLimit": 305685,
+      "maxFeePerGasWei": 11000000,
+      "priorityFeePerGasWei": 1000000,
+      "preblock": 47458758,
+      "state": "VERIFIED",
+      "hash": "0x1f30189c1bb20423631c93b1b14f820b9784623d2751dc687a25491891a50695",
+      "receiptStatus": 1,
+      "block": 47458766,
+      "blockHash": "0x81bf2904ceaf4c836e81e049b878b4b704a229644052f5b84a668128908d136b",
+      "positionReadback": [
+        -2,
+        -6000,
+        0
+      ],
+      "seedFlag": {
+        "label": "_positionSeeded",
+        "keys": [
+          "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+          1
+        ],
+        "slot": "0x89491d07f95130b0fcb8c835c39ff073c42076bbc35e33913fae72750faab22a",
+        "value": 1
+      },
+      "indexFlag": {
+        "label": "traderMarketIndexPlus1",
+        "keys": [
+          "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+          1
+        ],
+        "slot": "0x789aed25f85609ac94a9ed0eb6eac8333d9a5dc1b78cc6fcbc681362dc2e23f5",
+        "value": 1
+      },
+      "traderMarkets": [
+        32,
+        1,
+        1
+      ],
+      "traderLongExposure": 0,
+      "traderShortExposure": 2,
+      "marketReadback": [
+        1000,
+        2,
+        0,
+        1789715546
+      ],
+      "event": {
+        "topics": [
+          "0x31deeaea91ad1475b92972702c8e5936e4f4d3ab559a2da71b2867f0ab8baea6",
+          "0x000000000000000000000000475fe397fa56884952d350aa9ee1c3946964bc0c",
+          "0x0000000000000000000000000000000000000000000000000000000000000001"
+        ],
+        "data": "0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe8900000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "eventName": "MigrationPositionSeeded",
+      "gasUsed": 235142,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWei": 6397894502
+    },
+    {
+      "ordinal": 5,
+      "nonce": 803,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "value": 0,
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "args": {
+        "trader": "0x66858286feea78a05ea093673ea1535e0a52002d",
+        "marketId": 1,
+        "size1e8": -1000000,
+        "openNotional1e8": -2468310000,
+        "lastCumulativeFundingRate1e18": 0
+      },
+      "calldata": "0x0ef3a5f700000000000000000000000066858286feea78a05ea093673ea1535e0a52002d0000000000000000000000000000000000000000000000000000000000000001fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0bdc0ffffffffffffffffffffffffffffffffffffffffffffffffffffffff6ce094100000000000000000000000000000000000000000000000000000000000000000",
+      "gasLimit": 283439,
+      "maxFeePerGasWei": 11000000,
+      "priorityFeePerGasWei": 1000000,
+      "preblock": 47458775,
+      "state": "VERIFIED",
+      "hash": "0xdaa6e9aaf2a401d60413d4b56a0ad45947035f183627755a49fd96c8b182fbed",
+      "receiptStatus": 1,
+      "block": 47458784,
+      "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "positionReadback": [
+        -1000000,
+        -2468310000,
+        0
+      ],
+      "seedFlag": {
+        "label": "_positionSeeded",
+        "keys": [
+          "0x66858286feea78a05ea093673ea1535e0a52002d",
+          1
+        ],
+        "slot": "0xa5561e2d91db5d263a5a52b83de90775ec7e67a8ab20ed8456ec90cfa782bc40",
+        "value": 1
+      },
+      "indexFlag": {
+        "label": "traderMarketIndexPlus1",
+        "keys": [
+          "0x66858286feea78a05ea093673ea1535e0a52002d",
+          1
+        ],
+        "slot": "0xe7bd1ee6762df74e3514256725c137803041be60935820f6d161d1f7f8afe4b3",
+        "value": 1
+      },
+      "traderMarkets": [
+        32,
+        1,
+        1
+      ],
+      "traderLongExposure": 0,
+      "traderShortExposure": 1000000,
+      "marketReadback": [
+        1000,
+        1000002,
+        0,
+        1789715546
+      ],
+      "event": {
+        "topics": [
+          "0x31deeaea91ad1475b92972702c8e5936e4f4d3ab559a2da71b2867f0ab8baea6",
+          "0x00000000000000000000000066858286feea78a05ea093673ea1535e0a52002d",
+          "0x0000000000000000000000000000000000000000000000000000000000000001"
+        ],
+        "data": "0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0bdc0ffffffffffffffffffffffffffffffffffffffffffffffffffffffff6ce094100000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "eventName": "MigrationPositionSeeded",
+      "gasUsed": 218030,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWei": 6384604743
+    },
+    {
+      "ordinal": 6,
+      "nonce": 804,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "value": 0,
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "args": {
+        "trader": "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        "marketId": 1,
+        "size1e8": -1000,
+        "openNotional1e8": -3000000,
+        "lastCumulativeFundingRate1e18": 0
+      },
+      "calldata": "0x0ef3a5f700000000000000000000000077ca9dd6ccce2d692fb23877a2db7178807b00200000000000000000000000000000000000000000000000000000000000000001fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc18ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd239400000000000000000000000000000000000000000000000000000000000000000",
+      "gasLimit": 283439,
+      "maxFeePerGasWei": 11000000,
+      "priorityFeePerGasWei": 1000000,
+      "preblock": 47458796,
+      "state": "VERIFIED",
+      "hash": "0x66c1a111198d81568ccc2a2f6604f4fb3595802a3d1d01c5f6341a5ad39a83e7",
+      "receiptStatus": 1,
+      "block": 47458805,
+      "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "positionReadback": [
+        -1000,
+        -3000000,
+        0
+      ],
+      "seedFlag": {
+        "label": "_positionSeeded",
+        "keys": [
+          "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+          1
+        ],
+        "slot": "0x5e7296c894b9ce5d18c072e0d118b0a62d8791cc5e73d0d46fc3cacb4d3c719c",
+        "value": 1
+      },
+      "indexFlag": {
+        "label": "traderMarketIndexPlus1",
+        "keys": [
+          "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+          1
+        ],
+        "slot": "0x8db25134a192c475c5ba15cf7b18ea77f6fa6c427591334ac5d21b5bd58c46d8",
+        "value": 1
+      },
+      "traderMarkets": [
+        32,
+        1,
+        1
+      ],
+      "traderLongExposure": 0,
+      "traderShortExposure": 1000,
+      "marketReadback": [
+        1000,
+        1001002,
+        0,
+        1789715546
+      ],
+      "event": {
+        "topics": [
+          "0x31deeaea91ad1475b92972702c8e5936e4f4d3ab559a2da71b2867f0ab8baea6",
+          "0x00000000000000000000000077ca9dd6ccce2d692fb23877a2db7178807b0020",
+          "0x0000000000000000000000000000000000000000000000000000000000000001"
+        ],
+        "data": "0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc18ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd239400000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "eventName": "MigrationPositionSeeded",
+      "gasUsed": 218030,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWei": 5902241331
+    },
+    {
+      "ordinal": 7,
+      "nonce": 805,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "value": 0,
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "args": {
+        "trader": "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        "marketId": 1,
+        "size1e8": 2,
+        "openNotional1e8": 6000,
+        "lastCumulativeFundingRate1e18": 0
+      },
+      "calldata": "0x0ef3a5f70000000000000000000000008b94a83d1ad3bd2337b1886e7962ca8e0bba9a340000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000017700000000000000000000000000000000000000000000000000000000000000000",
+      "gasLimit": 282169,
+      "maxFeePerGasWei": 11000000,
+      "priorityFeePerGasWei": 1000000,
+      "preblock": 47458814,
+      "state": "VERIFIED",
+      "hash": "0x753d2a9b8c031e99280c76a61f642d440fc92271bbd42a07399af97ef813173f",
+      "receiptStatus": 1,
+      "block": 47458822,
+      "blockHash": "0x754a6496fff60f21334c0081ec76a782337527a88691dbeb897604d9228fb6b9",
+      "positionReadback": [
+        2,
+        6000,
+        0
+      ],
+      "seedFlag": {
+        "label": "_positionSeeded",
+        "keys": [
+          "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+          1
+        ],
+        "slot": "0x460b51f0783adb7d7bda7cd00a08c17daf99726f5bce0afd5f0d24c7b1c9852e",
+        "value": 1
+      },
+      "indexFlag": {
+        "label": "traderMarketIndexPlus1",
+        "keys": [
+          "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+          1
+        ],
+        "slot": "0x40dec9df8488b9a962a9514a6684e7daf61a6342fa25742bffe53c23b4d370b9",
+        "value": 1
+      },
+      "traderMarkets": [
+        32,
+        1,
+        1
+      ],
+      "traderLongExposure": 2,
+      "traderShortExposure": 0,
+      "marketReadback": [
+        1002,
+        1001002,
+        0,
+        1789715546
+      ],
+      "event": {
+        "topics": [
+          "0x31deeaea91ad1475b92972702c8e5936e4f4d3ab559a2da71b2867f0ab8baea6",
+          "0x0000000000000000000000008b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+          "0x0000000000000000000000000000000000000000000000000000000000000001"
+        ],
+        "data": "0x000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000017700000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "eventName": "MigrationPositionSeeded",
+      "gasUsed": 217053,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWei": 6305288257
+    },
+    {
+      "ordinal": 8,
+      "nonce": 806,
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "value": 0,
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "args": {
+        "trader": "0xff287410852b9328437eac353720e5476bc5f837",
+        "marketId": 1,
+        "size1e8": 1000000,
+        "openNotional1e8": 2468310000,
+        "lastCumulativeFundingRate1e18": 0
+      },
+      "calldata": "0x0ef3a5f7000000000000000000000000ff287410852b9328437eac353720e5476bc5f837000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000f424000000000000000000000000000000000000000000000000000000000931f6bf00000000000000000000000000000000000000000000000000000000000000000",
+      "gasLimit": 282232,
+      "maxFeePerGasWei": 11000000,
+      "priorityFeePerGasWei": 1000000,
+      "preblock": 47458831,
+      "state": "VERIFIED",
+      "hash": "0xd595efa3c5d997bce502cc15b1eaa114d00dd7ea2eb0b0662bbbb92b6449c8e9",
+      "receiptStatus": 1,
+      "block": 47458840,
+      "blockHash": "0xf1a0646a95748eee8752202844c84bc3d440f01e00a97bef2a703b7f4a0454ef",
+      "positionReadback": [
+        1000000,
+        2468310000,
+        0
+      ],
+      "seedFlag": {
+        "label": "_positionSeeded",
+        "keys": [
+          "0xff287410852b9328437eac353720e5476bc5f837",
+          1
+        ],
+        "slot": "0x25ae4081686150c57937f90d26d7ed71f35d8e442676457debf3bb792636b92",
+        "value": 1
+      },
+      "indexFlag": {
+        "label": "traderMarketIndexPlus1",
+        "keys": [
+          "0xff287410852b9328437eac353720e5476bc5f837",
+          1
+        ],
+        "slot": "0x47a05237cdc7227c6fef405d4f58ff15fb8937ebbf2ceada628474d3206cfdc4",
+        "value": 1
+      },
+      "traderMarkets": [
+        32,
+        1,
+        1
+      ],
+      "traderLongExposure": 1000000,
+      "traderShortExposure": 0,
+      "marketReadback": [
+        1001002,
+        1001002,
+        0,
+        1789715546
+      ],
+      "event": {
+        "topics": [
+          "0x31deeaea91ad1475b92972702c8e5936e4f4d3ab559a2da71b2867f0ab8baea6",
+          "0x000000000000000000000000ff287410852b9328437eac353720e5476bc5f837",
+          "0x0000000000000000000000000000000000000000000000000000000000000001"
+        ],
+        "data": "0x00000000000000000000000000000000000000000000000000000000000f424000000000000000000000000000000000000000000000000000000000931f6bf00000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "eventName": "MigrationPositionSeeded",
+      "gasUsed": 217101,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWei": 6694451305
+    }
+  ],
+  "publicSendInvocations": 8,
+  "independentlyVerifiedSigner": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+  "preblock": 47458712,
+  "preblockHash": "0x4325086fe083fe9f2e8d44555251cc142b758d94bba585a38c61f61521168d5e",
+  "ownerBalancePreWei": 1716274205898345,
+  "safeNoncePre": 15,
+  "executorNoncePre": 1,
+  "passwordFileAbsent": true,
+  "finalReconciliationFile": "postflight.json",
+  "finalReconciliationPassed": true,
+  "finalReconciliationBlock": 47459089
+}
