@@ -48,9 +48,22 @@ import {PerpMarketRegistry} from "../src/perp/PerpMarketRegistry.sol";
 ///    canonical sequence and verifies every readback matches the expected
 ///    values.
 ///
-///  Required env when broadcasting:
-///    - `DEPLOYER_PRIVATE_KEY` (must resolve to expected OWNER)
-///    - `PERPS_V2_EXPECTED_OWNER` (safety pin — must equal deployer address)
+///  Signing model:
+///    - Broadcasts via `vm.startBroadcast(deployer)` where `deployer` is the
+///      `--sender` address passed by the operator on the forge CLI. This
+///      keeps the private material inside the keystore
+///      (`~/.foundry/keystores/deopt-deployer` per operator policy) — the
+///      script never handles the key itself.
+///    - The script hard-stops if `--sender` does not resolve to the expected
+///      OWNER address, so a wrong keystore/account cannot silently deploy.
+///
+///  Required forge CLI when broadcasting:
+///    forge script script/DeployPerpMarketRegistryV2.s.sol \
+///      --rpc-url <BASE_SEPOLIA_RPC> \
+///      --sender 0xc35F7A8A103A9A4464adfaa76B9B514093D23C27 \
+///      --keystore ~/.foundry/keystores/deopt-deployer \
+///      --password-file /run/user/$(id -u)/deopt-deployer.pw \
+///      --broadcast
 ///
 ///  Deterministic parameter overrides (optional):
 ///    - `PERPS_V2_MARKET1_EXECUTION_BPS`  default 100
@@ -93,8 +106,9 @@ contract DeployPerpMarketRegistryV2 is Script {
     function run() external {
         if (block.chainid != EXPECTED_CHAIN_ID) revert UnexpectedChain(block.chainid);
 
-        uint256 deployerPk = vm.envUint("DEPLOYER_PRIVATE_KEY");
-        address deployer = vm.addr(deployerPk);
+        // Signing address comes from forge --sender. The keystore holds the
+        // private material; the script never touches it directly.
+        address deployer = msg.sender;
         if (deployer != EXPECTED_OWNER) revert DeployerNotOwner(deployer, EXPECTED_OWNER);
 
         uint16 market1Bps = uint16(vm.envOr("PERPS_V2_MARKET1_EXECUTION_BPS", uint256(DEFAULT_EXECUTION_BPS)));
@@ -116,7 +130,7 @@ contract DeployPerpMarketRegistryV2 is Script {
             return;
         }
 
-        vm.startBroadcast(deployerPk);
+        vm.startBroadcast(deployer);
 
         PerpMarketRegistry pmr = new PerpMarketRegistry(deployer);
         _log("deployed PerpMarketRegistry", address(pmr));
