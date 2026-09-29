@@ -1,0 +1,459 @@
+{
+  "chainId": 84532,
+  "newEngine": "0xa2bdc0efe80806ffda20189294dd8a5a1b426f15",
+  "preBlock": 47457061,
+  "transactions": [
+    {
+      "ordinal": 1,
+      "nonce": 790,
+      "target": "CREATE",
+      "function": "constructor(address,address,address,address)",
+      "selector": null,
+      "args": [
+        "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+        "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+        "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+        "0xB416406F200B2Ef3D7a86A5D5877Ed41D9B1A581"
+      ],
+      "gasEstimate": 7255341,
+      "hash": "0xe9af35ea3c17a97d039669fe2cf9d9a28609783744e526d700c193328195a4cc",
+      "block": 47457089,
+      "blockHash": "0x727d3bd84e3f697d57a04030fd0395d5575af25b24fcaefd90bcf977fde5bfa8",
+      "status": 1,
+      "gasUsed": 5581032,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWei": 914136493233
+    },
+    {
+      "ordinal": 2,
+      "nonce": 791,
+      "target": "0xa2bdc0efe80806ffda20189294dd8a5a1b426f15",
+      "function": "setMatchingEngine(address)",
+      "selector": "0xcaa57466",
+      "args": [
+        "0xF5FB81e447AF3A3E81951aC72D751dE3E9B8eee2"
+      ],
+      "gasEstimate": 70786,
+      "hash": "0x511e3efd4dadf44a34880ca3aa77f749dc3baaf2e34250232df7e96660c4cd03",
+      "block": 47457090,
+      "blockHash": "0xfce4c4c1937c0c4d2b20ce47b21fb814b0502c846463a85b5f06478f40624414",
+      "status": 1,
+      "gasUsed": 48401,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWei": 6308407237
+    },
+    {
+      "ordinal": 3,
+      "nonce": 792,
+      "target": "0xa2bdc0efe80806ffda20189294dd8a5a1b426f15",
+      "function": "setRiskModule(address)",
+      "selector": "0x04f6f5b2",
+      "args": [
+        "0x8C3d9F71cA59B908Fa200546A63ea62F9C932998"
+      ],
+      "gasEstimate": 65081,
+      "hash": "0xec1c4438d4bdb3bf79d27bd524a74928f9d2797f56a193417068b1d71575581b",
+      "block": 47457091,
+      "blockHash": "0x42aff5e4488c612cf45dda0915478e263a0d42b8648367f1a2a75032f79d26c4",
+      "status": 1,
+      "gasUsed": 47119,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWei": 6308407237
+    },
+    {
+      "ordinal": 4,
+      "nonce": 793,
+      "target": "0xa2bdc0efe80806ffda20189294dd8a5a1b426f15",
+      "function": "setClearingAccount(address)",
+      "selector": "0x41590123",
+      "args": [
+        "0x54d49c088DD27cFc82685b867c182b4bB4aC435c"
+      ],
+      "gasEstimate": 75944,
+      "hash": "0xb82cafd52ce5801b380a33a9770a6a662e4fb9f6e4ccba448f15aa12107a2a99",
+      "block": 47457092,
+      "blockHash": "0x0bf1c46d66f1c6df1f0b4ad3dcb4bf9c3bd949827edd554821e16f35a0598aec",
+      "status": 1,
+      "gasUsed": 54983,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWei": 6308407237
+    },
+    {
+      "ordinal": 5,
+      "nonce": 794,
+      "target": "0xa2bdc0efe80806ffda20189294dd8a5a1b426f15",
+      "function": "setInsuranceFund(address)",
+      "selector": "0xc3c05293",
+      "args": [
+        "0x009f38440F058d095b61E0E2ee7fAbDF05BE7500"
+      ],
+      "gasEstimate": 67310,
+      "hash": "0x70cb762979d34ce085e2362097166426a68506b94e787ccae4a355cd6993c81d",
+      "block": 47457094,
+      "blockHash": "0x6cc8d007635fba0f505eadb558662323165cff111ab00ebd985144f1f0a137b9",
+      "status": 1,
+      "gasUsed": 48732,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWei": 6440364312
+    },
+    {
+      "ordinal": 6,
+      "nonce": 795,
+      "target": "0xa2bdc0efe80806ffda20189294dd8a5a1b426f15",
+      "function": "setCollateralSeizer(address)",
+      "selector": "0xc34db4d6",
+      "args": [
+        "0x39F928b959cF58369E7C7a3B925e6cBfFA62B669"
+      ],
+      "gasEstimate": 71315,
+      "hash": "0x6817bc4bff1fca662b47f239a0e0d25a9aaca1a12470be5ca8a25801437ca377",
+      "block": 47457096,
+      "blockHash": "0x73add616cc3f4f8f5abe06dbbc787fa32a603e0c1df2f375b7ed01fbb1d6508d",
+      "status": 1,
+      "gasUsed": 48763,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWei": 6440364312
+    },
+    {
+      "ordinal": 7,
+      "nonce": 796,
+      "target": "0xa2bdc0efe80806ffda20189294dd8a5a1b426f15",
+      "function": "setFeesManagerV2(address)",
+      "selector": "0x81b5323a",
+      "args": [
+        "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f"
+      ],
+      "gasEstimate": 70189,
+      "hash": "0xd579248db6923a38363efe2d040927100a14963c2b90fb2f31ad01ff1b8d0320",
+      "block": 47457097,
+      "blockHash": "0x232afe4762979de8e434aa12067c5f612d0f410664e2c858bf1a424945adb824",
+      "status": 1,
+      "gasUsed": 47993,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWei": 6440364312
+    },
+    {
+      "ordinal": 8,
+      "nonce": 797,
+      "target": "0xa2bdc0efe80806ffda20189294dd8a5a1b426f15",
+      "function": "setUseFeesManagerV2(bool)",
+      "selector": "0x74304b2a",
+      "args": [
+        "true"
+      ],
+      "gasEstimate": 44733,
+      "hash": "0x163e7d1865858cf6b8255684900efed7910883574be12536da6b0638440fc021",
+      "block": 47457098,
+      "blockHash": "0xae14c63f2f62181daadac59b55750ecf4cb8a2c7a88766473dbb4f9a31870ca2",
+      "status": 1,
+      "gasUsed": 30587,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWei": 6440364312
+    },
+    {
+      "ordinal": 9,
+      "nonce": 798,
+      "target": "0xa2bdc0efe80806ffda20189294dd8a5a1b426f15",
+      "function": "setGuardian(address)",
+      "selector": "0x8a0dac4a",
+      "args": [
+        "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27"
+      ],
+      "gasEstimate": 41783,
+      "hash": "0x24c2979b0d6245d5c8b38c3d14df6b486f349eec509bd784a72e1c499b1bc5ec",
+      "block": 47457099,
+      "blockHash": "0x5defbc41fe96f6700eb18a42bf516206d364cef612e921ce8b6a14bd00425d72",
+      "status": 1,
+      "gasUsed": 28570,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWei": 6440364312
+    }
+  ],
+  "deploymentBlockReadback": {
+    "owner()": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+    "marketRegistry()": "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+    "collateralVault()": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+    "oracle()": "0xB416406F200B2Ef3D7a86A5D5877Ed41D9B1A581",
+    "guardian()": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+    "migrationState()": 0,
+    "migrationSnapshotHash()": 0,
+    "matchingEngine()": 0,
+    "riskModule()": 0,
+    "clearingAccount()": 0,
+    "totalResidualBadDebtBase()": 0
+  },
+  "block": 47457159,
+  "blockHash": "0x9c403667f5b7647aca3953524db9a8a29b892c6a0c15cf62f96235b568563e93",
+  "ownerNoncePre": 790,
+  "ownerNoncePost": 799,
+  "ownerPendingNoncePost": 799,
+  "ownerBalancePreETH": "0.001752856549434849",
+  "ownerBalancePostETH": "0.001716274205898345",
+  "ownerBalanceDeltaWei": 36582343536504,
+  "totalExecutionGasUsed": 5936180,
+  "receiptFeesWei": 36582343536504,
+  "runtime": {
+    "size": 24321,
+    "ethereumKeccak256": "0xc0ac9015866a36d0c9c25920387af78cb59cc24f66170728ade1a835d1211a2a",
+    "byteEqualOldAndLocal": true,
+    "headroom": 255
+  },
+  "constructorReadback": {
+    "owner()": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+    "marketRegistry()": "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+    "collateralVault()": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+    "oracle()": "0xB416406F200B2Ef3D7a86A5D5877Ed41D9B1A581"
+  },
+  "internalWiring": {
+    "matchingEngine()": "0xF5FB81e447AF3A3E81951aC72D751dE3E9B8eee2",
+    "riskModule()": "0x8C3d9F71cA59B908Fa200546A63ea62F9C932998",
+    "clearingAccount()": "0x54d49c088DD27cFc82685b867c182b4bB4aC435c",
+    "insuranceFund()": "0x009f38440F058d095b61E0E2ee7fAbDF05BE7500",
+    "collateralSeizer()": "0x39F928b959cF58369E7C7a3B925e6cBfFA62B669",
+    "feesManagerV2()": "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f",
+    "useFeesManagerV2()": 1,
+    "guardian()": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27"
+  },
+  "migration": {
+    "migrationState()": 0,
+    "migrationSnapshotHash()": 0,
+    "totalResidualBadDebtBase()": 0
+  },
+  "markets": {
+    "1": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "2": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "positions": [
+    {
+      "trader": "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "market1": [
+        0,
+        0,
+        0
+      ],
+      "market2": [
+        0,
+        0,
+        0
+      ],
+      "residualBadDebt": 0,
+      "activeMarketCount": 0
+    },
+    {
+      "trader": "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "market1": [
+        0,
+        0,
+        0
+      ],
+      "market2": [
+        0,
+        0,
+        0
+      ],
+      "residualBadDebt": 0,
+      "activeMarketCount": 0
+    },
+    {
+      "trader": "0x66858286feea78a05ea093673ea1535e0a52002d",
+      "market1": [
+        0,
+        0,
+        0
+      ],
+      "market2": [
+        0,
+        0,
+        0
+      ],
+      "residualBadDebt": 0,
+      "activeMarketCount": 0
+    },
+    {
+      "trader": "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "market1": [
+        0,
+        0,
+        0
+      ],
+      "market2": [
+        0,
+        0,
+        0
+      ],
+      "residualBadDebt": 0,
+      "activeMarketCount": 0
+    },
+    {
+      "trader": "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "market1": [
+        0,
+        0,
+        0
+      ],
+      "market2": [
+        0,
+        0,
+        0
+      ],
+      "residualBadDebt": 0,
+      "activeMarketCount": 0
+    },
+    {
+      "trader": "0xff287410852b9328437eac353720e5476bc5f837",
+      "market1": [
+        0,
+        0,
+        0
+      ],
+      "market2": [
+        0,
+        0,
+        0
+      ],
+      "residualBadDebt": 0,
+      "activeMarketCount": 0
+    }
+  ],
+  "invariants": [
+    {
+      "check": "PME_V1.paused",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "check": "V1.liquidationPaused",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "check": "OLD.migrationState",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "check": "OLD.migrationSnapshotHash",
+      "value": "0x039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d",
+      "passed": true
+    },
+    {
+      "check": "Vault.V1",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "check": "Vault.OLD",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "check": "Vault.NEW",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "check": "Clearing.balance",
+      "value": 1000000000,
+      "passed": true
+    },
+    {
+      "check": "OLD.PMR",
+      "value": "0xb4fcf45E57b93274441dEf8f0f68bd30f6D677eC",
+      "passed": true
+    },
+    {
+      "check": "PME_V2.engine",
+      "value": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "passed": true
+    },
+    {
+      "check": "RISK_V2.engine",
+      "value": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "passed": true
+    },
+    {
+      "check": "NEW_PMR.owner",
+      "value": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+      "passed": true
+    },
+    {
+      "check": "NEW_PMR.totalMarkets",
+      "value": 2,
+      "passed": true
+    },
+    {
+      "check": "FMV2.NEW",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "check": "Insurance.NEW",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "check": "PMR.getMaxExecutionDeviationBps(uint256).1",
+      "value": 100,
+      "passed": true
+    },
+    {
+      "check": "PMR.marketExists(uint256).1",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "check": "PMR.isMarketActive(uint256).1",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "check": "PMR.getMaxExecutionDeviationBps(uint256).2",
+      "value": 100,
+      "passed": true
+    },
+    {
+      "check": "PMR.marketExists(uint256).2",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "check": "PMR.isMarketActive(uint256).2",
+      "value": 1,
+      "passed": true
+    }
+  ],
+  "safeNoncePre": 15,
+  "safeNoncePost": 15,
+  "executorNoncePre": 1,
+  "executorNoncePost": 1,
+  "tradeScan": {
+    "fromBlock": 47147740,
+    "toBlock": 47457159,
+    "events": 0,
+    "method": "Full preflight scan plus continuous postflight extension"
+  },
+  "ownerTransactionsInWindow": [
+    "0xe9af35ea3c17a97d039669fe2cf9d9a28609783744e526d700c193328195a4cc",
+    "0x511e3efd4dadf44a34880ca3aa77f749dc3baaf2e34250232df7e96660c4cd03",
+    "0xec1c4438d4bdb3bf79d27bd524a74928f9d2797f56a193417068b1d71575581b",
+    "0xb82cafd52ce5801b380a33a9770a6a662e4fb9f6e4ccba448f15aa12107a2a99",
+    "0x70cb762979d34ce085e2362097166426a68506b94e787ccae4a355cd6993c81d",
+    "0x6817bc4bff1fca662b47f239a0e0d25a9aaca1a12470be5ca8a25801437ca377",
+    "0xd579248db6923a38363efe2d040927100a14963c2b90fb2f31ad01ff1b8d0320",
+    "0x163e7d1865858cf6b8255684900efed7910883574be12536da6b0638440fc021",
+    "0x24c2979b0d6245d5c8b38c3d14df6b486f349eec509bd784a72e1c499b1bc5ec"
+  ],
+  "backend_runtime_state": "STOPPED",
+  "transaction_emission_capability": "NONE",
+  "passwordFileAbsent": true
+}
