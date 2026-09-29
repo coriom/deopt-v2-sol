@@ -1,5 +1,7 @@
 # PERPS V2 BASE SEPOLIA PMR V2 DEPLOY V1
 
+> Hash terminology correction — `PERPS_V2_CODEX_HANDOFF_RECONCILIATION_V1`: runtime identities below use **Ethereum Keccak-256**, verified with `cast keccak` and byte-for-byte live/local comparison. The previously published Engine value `0xef5486354584feba953f4eed0d5573b65e9e2bfb6dca0e43a4eedfe7ba46652e` and PMR value `0x5d66f23543a0e9ded3da5e85c8f0413af3cbe00794e99e1aa3c9b1b40c63fd8c` are **NIST SHA3-256**, not Ethereum hashes. This correction does not change deployed bytes, historical transactions, or the canonical migration snapshotHash. See [reconciliation](PERPS_V2_CODEX_HANDOFF_RECONCILIATION_V1.md) for current script guards and the operator's intentionally STOPPED backend decision.
+
 **Milestone**: `PERPS_V2_BASE_SEPOLIA_PMR_V2_DEPLOY_V1`
 **Status**: **COMPLETE — 6 authorized OWNER tx broadcast + verified**
 **Sol HEAD (pre)**: `cf99f94` (`RECOVERY_DEPLOYMENT_FREEZE_V1`)
@@ -26,7 +28,7 @@ Pre-broadcast (against local out/):
 
 ```
 runtime size    = 13_217 bytes                                                  ✓ matches freeze
-runtime keccak  = 0x5d66f23543a0e9ded3da5e85c8f0413af3cbe00794e99e1aa3c9b1b40c63fd8c  ✓ matches freeze
+runtime Ethereum Keccak-256  = 0x70a03433c8f58ac8e97e6caa5c0e488db1440c05aa1dce46b0fef4930e8194f5  ✓ matches freeze
 ```
 
 Selectors required (all present):
@@ -123,7 +125,7 @@ Sequential blocks 47_450_189..47_450_195 (with `--slow` between broadcasts). All
 
 ```
 NEW_PMR runtime size    = 13_217 bytes                                                     ✓
-NEW_PMR runtime keccak  = 0x5d66f23543a0e9ded3da5e85c8f0413af3cbe00794e99e1aa3c9b1b40c63fd8c ✓
+NEW_PMR runtime Ethereum Keccak-256  = 0x70a03433c8f58ac8e97e6caa5c0e488db1440c05aa1dce46b0fef4930e8194f5 ✓
 ```
 
 Byte-identical to the frozen local compile artifact (§B).

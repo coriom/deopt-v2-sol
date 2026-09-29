@@ -17,17 +17,13 @@ Determinism rules:
   * schemaVersion prefix ensures forward-incompat detection
 
 Dependencies:
-  pip install cbor2 pysha3   (or use `pycryptodome` for keccak)
+  pip install cbor2 pysha3   (or use `pycryptodome` or Foundry's `cast keccak`)
 
-If cbor2/pysha3 are unavailable in your environment, this script also emits
-the canonical byte string on stdout so you can hash externally
-(e.g. `cast keccak "0x$(...)"`).
+The CLI requires cbor2. Ethereum hashing uses pysha3, pycryptodome, or
+`cast keccak`, in that order. NIST SHA3-256 is NOT Ethereum Keccak-256
+and must never be used as a fallback. Missing Ethereum hash support fails closed.
 """
-import json, sys, hashlib, binascii
-try:
-    import cbor2
-except ImportError:
-    print("ERROR: pip install cbor2", file=sys.stderr); sys.exit(2)
+import json, sys, binascii, subprocess
 
 def h20(a):  # address → 20 raw bytes
     s = a.lower().removeprefix('0x')
@@ -79,20 +75,36 @@ def canonical(m):
     }
 
 def keccak256(b):
-    try:
-        import pysha3  # noqa
-        h = hashlib.new('sha3_256'); h.update(b); return h.digest()
-    except Exception:
-        pass
+    """Ethereum Keccak-256, never the incompatible NIST SHA3-256."""
     try:
         import sha3  # noqa
-        return sha3.keccak_256(b).digest()
-    except Exception:
+    except ImportError:
         pass
-    from Crypto.Hash import keccak
-    k = keccak.new(digest_bits=256); k.update(b); return k.digest()
+    else:
+        return sha3.keccak_256(b).digest()
+    try:
+        from Crypto.Hash import keccak
+    except ImportError:
+        pass
+    else:
+        k = keccak.new(digest_bits=256); k.update(b); return k.digest()
+    try:
+        result = subprocess.run(
+            ["cast", "keccak"], input="0x" + b.hex(), text=True,
+            capture_output=True, check=True,
+        )
+        digest = bytes.fromhex(result.stdout.strip().removeprefix("0x"))
+        if len(digest) != 32:
+            raise ValueError("invalid Ethereum digest length")
+        return digest
+    except (OSError, subprocess.CalledProcessError, ValueError) as exc:
+        raise RuntimeError("Ethereum Keccak-256 requires pysha3, pycryptodome or cast") from exc
 
 if __name__ == "__main__":
+    try:
+        import cbor2
+    except ImportError:
+        print("ERROR: pip install cbor2", file=sys.stderr); sys.exit(2)
     if len(sys.argv) < 2:
         print("usage: snapshot_hash.py manifest.json", file=sys.stderr); sys.exit(2)
     m = json.load(open(sys.argv[1]))
@@ -103,8 +115,3 @@ if __name__ == "__main__":
     print(f"canonical_cbor_bytes = {len(blob)}")
     print(f"canonical_cbor_hex   = 0x{binascii.hexlify(blob).decode()}")
     print(f"snapshot_hash        = 0x{binascii.hexlify(h).decode()}")
-
-# Test vectors (self-check on first import as a sanity guard):
-if __name__ == "__main__" and False:
-    # placeholder; add golden vectors before use
-    pass

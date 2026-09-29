@@ -1,5 +1,7 @@
 # PERPS V2 BASE SEPOLIA RECOVERY DEPLOYMENT FREEZE V1
 
+> Hash terminology correction — `PERPS_V2_CODEX_HANDOFF_RECONCILIATION_V1`: runtime identities below use **Ethereum Keccak-256**, verified with `cast keccak` and byte-for-byte live/local comparison. The previously published Engine value `0xef5486354584feba953f4eed0d5573b65e9e2bfb6dca0e43a4eedfe7ba46652e` and PMR value `0x5d66f23543a0e9ded3da5e85c8f0413af3cbe00794e99e1aa3c9b1b40c63fd8c` are **NIST SHA3-256**, not Ethereum hashes. This correction does not change deployed bytes, historical transactions, or the canonical migration snapshotHash. See [reconciliation](PERPS_V2_CODEX_HANDOFF_RECONCILIATION_V1.md) for current script guards and the operator's intentionally STOPPED backend decision.
+
 **Milestone**: `PERPS_V2_BASE_SEPOLIA_RECOVERY_DEPLOYMENT_FREEZE_V1`
 **Status**: **COMPLETE — TOOLCHAIN + BYTECODE + SCRIPTS + LOCAL REHEARSAL FROZEN**
 **Sol HEAD (pre)**: `a891283` (unchanged during milestone; new commit follows)
@@ -8,7 +10,7 @@
 
 Scope: read-only / local only. No public-chain writes, no deployment, no contract mutation, no Safe/Timelock tx, no backend mutation, no DB writes, no trade. Freeze the exact recovery deployment artifacts before the first public write.
 
-**Executive summary**: the prior preflight's 18-byte runtime discrepancy was a measurement error — after correctly linking the two deployed libraries (`PerpEngineLiquidationLib` at `0x69F3868F…E77D`, `PerpEngineSeizureLib` at `0xf0C56522…60A5`), the current-source PerpEngineV2 compiles to **byte-identical runtime bytecode** as the deployed OLD engine (`0xef5486354584feba953f4eed0d5573b65e9e2bfb6dca0e43a4eedfe7ba46652e`, 24_321 bytes). Two deploy scripts are authored + compiled; 3 new rehearsal tests + 56 pre-existing tests = **59 tests green** proving the recovery flow end-to-end.
+**Executive summary**: the prior preflight's 18-byte runtime discrepancy was a measurement error — after correctly linking the two deployed libraries (`PerpEngineLiquidationLib` at `0x69F3868F…E77D`, `PerpEngineSeizureLib` at `0xf0C56522…60A5`), the current-source PerpEngineV2 compiles to **byte-identical runtime bytecode** as the deployed OLD engine (`0xc0ac9015866a36d0c9c25920387af78cb59cc24f66170728ade1a835d1211a2a`, 24_321 bytes). Two deploy scripts are authored + compiled; 3 new rehearsal tests + 56 pre-existing tests = **59 tests green** proving the recovery flow end-to-end.
 
 ---
 
@@ -40,14 +42,14 @@ Result of correctly-linked compile:
 
 ```
 size (linked): 24_321 bytes
-keccak256:     0xef5486354584feba953f4eed0d5573b65e9e2bfb6dca0e43a4eedfe7ba46652e
+Ethereum Keccak-256:     0xc0ac9015866a36d0c9c25920387af78cb59cc24f66170728ade1a835d1211a2a
 ```
 
 matches the live-chain readback of `cast code 0x44702B0A…6db9`:
 
 ```
 size:      24_321 bytes
-keccak256: 0xef5486354584feba953f4eed0d5573b65e9e2bfb6dca0e43a4eedfe7ba46652e
+Ethereum Keccak-256: 0xc0ac9015866a36d0c9c25920387af78cb59cc24f66170728ade1a835d1211a2a
 ```
 
 **Classification of the (now-zero) difference**:
@@ -68,7 +70,7 @@ keccak256: 0xef5486354584feba953f4eed0d5573b65e9e2bfb6dca0e43a4eedfe7ba46652e
 Verification recipe (deterministic):
 
 ```python
-import json, hashlib
+import json, subprocess
 
 d = json.load(open('out/PerpEngineV2.sol/PerpEngineV2.json'))
 obj = d['deployedBytecode']['object'][2:]  # strip 0x
@@ -91,8 +93,8 @@ for start, length, addr in positions:
 
 b = bytes.fromhex(obj)
 assert len(b) == 24321
-assert '0x' + hashlib.new('sha3_256', b).hexdigest() == \
-       '0xef5486354584feba953f4eed0d5573b65e9e2bfb6dca0e43a4eedfe7ba46652e'
+assert subprocess.check_output(['cast', 'keccak'], input='0x' + b.hex(), text=True).strip() == \
+       '0xc0ac9015866a36d0c9c25920387af78cb59cc24f66170728ade1a835d1211a2a'
 ```
 
 ## D. Frozen NEW Engine runtime hash / size
@@ -102,7 +104,7 @@ source:         src/perp/PerpEngineV2.sol @ HEAD a891283
 linked libs:    PerpEngineLiquidationLib = 0x69F3868Ff47C8bCcC45211B787a6e15D0282E77D
                 PerpEngineSeizureLib     = 0xf0C5652277CF88B508E05F7aB54949fCDF0360A5
 runtime size:   24_321 bytes
-runtime keccak: 0xef5486354584feba953f4eed0d5573b65e9e2bfb6dca0e43a4eedfe7ba46652e
+runtime Ethereum Keccak-256: 0xc0ac9015866a36d0c9c25920387af78cb59cc24f66170728ade1a835d1211a2a
 ```
 
 ## E. EIP-170 headroom
@@ -146,7 +148,7 @@ source:              src/perp/PerpMarketRegistry.sol @ HEAD a891283
 linked libs:         none (self-contained, no library placeholders)
 creation size:       13_534 bytes
 runtime size:        13_217 bytes
-runtime keccak256:   0x5d66f23543a0e9ded3da5e85c8f0413af3cbe00794e99e1aa3c9b1b40c63fd8c
+runtime Ethereum Keccak-256:   0x70a03433c8f58ac8e97e6caa5c0e488db1440c05aa1dce46b0fef4930e8194f5
 ```
 
 Well under EIP-170. New deployment (fresh address) will differ from OLD PMR (`0xb4fcf45E…`) — that's the point; the OLD PMR is deliberately being replaced.

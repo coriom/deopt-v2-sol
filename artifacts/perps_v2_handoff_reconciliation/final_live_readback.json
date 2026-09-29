@@ -1,0 +1,143 @@
+{
+  "chainId": 84532,
+  "block": 47455898,
+  "blockHash": "0xb8d9f5826c8385659ee681f23fa8639c8b0d269578c4d87b0ea6c86bb365ddb2",
+  "timestampUTC": "2026-09-29T11:08:04+00:00",
+  "checks": [
+    {
+      "check": "PME_V1.paused",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "check": "V1.liquidationPaused",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "check": "OLD.migrationState",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "check": "OLD.migrationSnapshotHash",
+      "value": "0x039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d",
+      "passed": true
+    },
+    {
+      "check": "Vault.V1",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "check": "Vault.OLD",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "check": "Vault.NEW",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "check": "Clearing.balance",
+      "value": 1000000000,
+      "passed": true
+    },
+    {
+      "check": "OLD.PMR",
+      "value": "0xb4fcf45E57b93274441dEf8f0f68bd30f6D677eC",
+      "passed": true
+    },
+    {
+      "check": "PME_V2.engine",
+      "value": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "passed": true
+    },
+    {
+      "check": "RISK_V2.engine",
+      "value": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "passed": true
+    },
+    {
+      "check": "NEW_PMR.owner",
+      "value": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+      "passed": true
+    },
+    {
+      "check": "NEW_PMR.totalMarkets",
+      "value": 2,
+      "passed": true
+    },
+    {
+      "check": "NEW_PMR.settlementAllowed",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "check": "FMV2.NEW",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "check": "Insurance.NEW",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "check": "OLD.badDebt",
+      "value": 0,
+      "passed": true
+    },
+    {
+      "check": "NEW_PMR.getMaxExecutionDeviationBps(uint256).1",
+      "value": 100,
+      "passed": true
+    },
+    {
+      "check": "NEW_PMR.marketExists(uint256).1",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "check": "NEW_PMR.isMarketActive(uint256).1",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "check": "NEW_PMR.getMaxExecutionDeviationBps(uint256).2",
+      "value": 100,
+      "passed": true
+    },
+    {
+      "check": "NEW_PMR.marketExists(uint256).2",
+      "value": 1,
+      "passed": true
+    },
+    {
+      "check": "NEW_PMR.isMarketActive(uint256).2",
+      "value": 1,
+      "passed": true
+    }
+  ],
+  "snapshotBlockHash": "0x78debf6044c4f0d1282f0b8c60d0bb41171844453118a092bca5946a9ce54c89",
+  "tradeScan": {
+    "fromBlock": 47147740,
+    "toBlock": 47455898,
+    "addresses": [
+      "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "0xF5FB81e447AF3A3E81951aC72D751dE3E9B8eee2"
+    ],
+    "topics": [
+      "0xa73bf9fa75c33ddc672c6fc71d4d4b4e5f85c018c8acc16855e94f564114ed60",
+      "0x5018a0a73d56c00e01815636cf5e029fd7ed9440d42b3eea0e75404dfedb3f80"
+    ],
+    "events": 0
+  },
+  "ownerNonce": 790,
+  "pendingNonce": 790,
+  "predictedEngine": "0xa2bdc0efe80806ffda20189294dd8a5a1b426f15",
+  "predictedCode": "0x",
+  "backend_runtime_state": "STOPPED",
+  "transaction_emission_capability": "NONE"
+}

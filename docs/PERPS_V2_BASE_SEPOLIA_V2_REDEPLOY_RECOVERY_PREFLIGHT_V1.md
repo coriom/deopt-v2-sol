@@ -1,5 +1,7 @@
 # PERPS V2 BASE SEPOLIA V2 REDEPLOY RECOVERY PREFLIGHT V1
 
+> Hash terminology correction — `PERPS_V2_CODEX_HANDOFF_RECONCILIATION_V1`: runtime identities below use **Ethereum Keccak-256**, verified with `cast keccak` and byte-for-byte live/local comparison. The previously published Engine value `0xef5486354584feba953f4eed0d5573b65e9e2bfb6dca0e43a4eedfe7ba46652e` and PMR value `0x5d66f23543a0e9ded3da5e85c8f0413af3cbe00794e99e1aa3c9b1b40c63fd8c` are **NIST SHA3-256**, not Ethereum hashes. This correction does not change deployed bytes, historical transactions, or the canonical migration snapshotHash. See [reconciliation](PERPS_V2_CODEX_HANDOFF_RECONCILIATION_V1.md) for current script guards and the operator's intentionally STOPPED backend decision.
+
 **Milestone**: `PERPS_V2_BASE_SEPOLIA_V2_REDEPLOY_RECOVERY_PREFLIGHT_V1`
 **Status**: **COMPLETE — READ-ONLY / LOCAL-FORK; MINIMAL REPLACEMENT = 2 CONTRACTS**
 **Sol HEAD (pre)**: `e311a5a` (unchanged during milestone; new docs commit follows)
@@ -273,13 +275,13 @@ Optional wiring (may be no-op / left as init default):
 Deployed OLD ENGINE_V2 runtime bytecode:
 ```
 size:      24 321 bytes
-keccak256: 0xef5486354584feba953f4eed0d5573b65e9e2bfb6dca0e43a4eedfe7ba46652e
+Ethereum Keccak-256: 0xc0ac9015866a36d0c9c25920387af78cb59cc24f66170728ade1a835d1211a2a
 ```
 
 Fresh compile at HEAD `e311a5a` via `forge inspect PerpEngineV2 deployedBytecode`:
 ```
 size:      24 303 bytes  (≈18 B smaller — Solidity metadata bytehash diff, functionally equivalent)
-keccak256: 0x91bafdf6a3a950641b24552eb5abc9fb865a1e95ab7b9e44aea912c1235e25d4
+Historical digest (unverified, superseded measurement): 0x91bafdf6a3a950641b24552eb5abc9fb865a1e95ab7b9e44aea912c1235e25d4
 ```
 
 Byte prologue equivalent up to and including the dispatcher entry point:

@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import {Script, console2} from "forge-std/Script.sol";
 
 import {PerpEngineV2} from "../src/perp/PerpEngineV2.sol";
+import {PerpMarketRegistry} from "../src/perp/PerpMarketRegistry.sol";
 
 /// @title DeployPerpEngineV2Recovery
 /// @notice PERPS_V2_BASE_SEPOLIA_RECOVERY_DEPLOYMENT_FREEZE_V1 §7 —
@@ -14,9 +15,9 @@ import {PerpEngineV2} from "../src/perp/PerpEngineV2.sol";
 ///  Scope: engine deployment + engine-side setter initialization only. This
 ///  script does NOT rebind PME_V2 / RISK_V2 / FMV2 / InsuranceFund / Vault —
 ///  those belong to later milestones (V2_REBIND_V1, TIMELOCK_*).
-///  Post-deployment the engine is INERT: no matching engine is authorized on
-///  it, no risk module downstream on the new engine, no Vault authorization,
-///  and the migration state is `OPEN` (pre-seed).
+///  Post-deployment the engine internally points to the existing PME/Risk/etc.
+///  Shared dependencies still point to OLD ENGINE. The new engine remains
+///  INERT: migration is OPEN, it is economically empty and Vault unauthorized.
 ///
 ///  Reused dependencies (byte-identical to current live wiring):
 ///    - PME_V2 (matching engine)   = 0xF5FB81e447AF3A3E81951aC72D751dE3E9B8eee2
@@ -31,14 +32,15 @@ import {PerpEngineV2} from "../src/perp/PerpEngineV2.sol";
 ///
 ///  Broadcast gate:
 ///    Default (no confirmation flag): read-only preflight.
-///    With `PERP_ENGINE_V2_RECOVERY_DEPLOY_CONFIRM=true`: broadcasts the
-///    canonical sequence.
+///    With `PERP_ENGINE_V2_RECOVERY_DEPLOY_CONFIRM=true`: records the canonical
+///    sequence. Only an explicit Forge --broadcast sends it to the network.
 ///
-///  Required env when broadcasting:
-///    - `DEPLOYER_PRIVATE_KEY` (must resolve to expected OWNER)
-///    - `PERP_MARKET_REGISTRY_V2_ADDRESS` (address of the NEW PMR from
-///      DeployPerpMarketRegistryV2.s.sol; MUST have `getMaxExecutionDeviationBps`
-///      selector present)
+///  Signing: msg.sender comes from --sender; vm.startBroadcast(address) leaves
+///  signing to Forge --keystore / --password-file. No secret enters this script.
+///  PERP_MARKET_REGISTRY_V2_ADDRESS must equal APPROVED_PMR.
+///  Both existing libraries must be explicitly linked; the frozen runtime
+///  size/hash and OLD ENGINE code are checked BEFORE CREATE. Exact command:
+///  docs/PERPS_V2_CODEX_HANDOFF_RECONCILIATION_V1.md.
 contract DeployPerpEngineV2Recovery is Script {
     /*//////////////////////////////////////////////////////////////
                                 CONSTANTS
@@ -46,6 +48,11 @@ contract DeployPerpEngineV2Recovery is Script {
 
     uint256 internal constant EXPECTED_CHAIN_ID = 84532;
     address internal constant EXPECTED_OWNER = 0xc35F7A8A103A9A4464adfaa76B9B514093D23C27;
+    address internal constant APPROVED_PMR = 0xAD8B0855d1fd649539A344AD594bf86929cf0FF7;
+    address internal constant OLD_ENGINE = 0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9;
+    uint256 internal constant ENGINE_RUNTIME_SIZE = 24_321;
+    bytes32 internal constant ENGINE_RUNTIME_KECCAK =
+        0xc0ac9015866a36d0c9c25920387af78cb59cc24f66170728ade1a835d1211a2a;
 
     address internal constant VAULT = 0x00340C360353a5AB784c5Bc5c44322A6AF0625D3;
     address internal constant ORACLE_ROUTER = 0xB416406F200B2Ef3D7a86A5D5877Ed41D9B1A581;
@@ -58,20 +65,20 @@ contract DeployPerpEngineV2Recovery is Script {
     address internal constant COLLATERAL_SEIZER = 0x39F928b959cF58369E7C7a3B925e6cBfFA62B669;
     address internal constant GUARDIAN = 0xc35F7A8A103A9A4464adfaa76B9B514093D23C27;
 
-    // Selector that must be present on the supplied PMR to prove it is
-    // execution-guard-capable (this is the exact selector the deployed
-    // OLD PMR lacks).
-    bytes4 internal constant PMR_EXEC_GUARD_SELECTOR = 0x4d73d67f;
-
     /*//////////////////////////////////////////////////////////////
                                   ERRORS
     //////////////////////////////////////////////////////////////*/
 
     error UnexpectedChain(uint256 chainId);
     error DeployerNotOwner(address deployer, address expectedOwner);
-    error PmrAddressUnset();
+    error UnexpectedPmr(address actual, address expected);
     error PmrHasNoCode(address pmr);
-    error PmrMissingExecutionGuardSelector(address pmr);
+    error UnexpectedPmrDeviation(uint256 marketId, uint16 actual);
+    error PmrMarketMissing(uint256 marketId);
+    error PmrMarketInactive(uint256 marketId);
+    error UnexpectedRuntimeSize(uint256 actual);
+    error UnexpectedRuntimeHash(bytes32 actual);
+    error OldEngineRuntimeMismatch();
     error UnexpectedEngineOwner(address deployedOwner, address expected);
     error UnexpectedEngineRegistry(address actual, address expected);
     error UnexpectedEngineVault(address actual, address expected);
@@ -92,14 +99,12 @@ contract DeployPerpEngineV2Recovery is Script {
     function run() external {
         if (block.chainid != EXPECTED_CHAIN_ID) revert UnexpectedChain(block.chainid);
 
-        uint256 deployerPk = vm.envUint("DEPLOYER_PRIVATE_KEY");
-        address deployer = vm.addr(deployerPk);
+        address deployer = msg.sender;
         if (deployer != EXPECTED_OWNER) revert DeployerNotOwner(deployer, EXPECTED_OWNER);
 
         address pmr = vm.envAddress("PERP_MARKET_REGISTRY_V2_ADDRESS");
-        if (pmr == address(0)) revert PmrAddressUnset();
-        if (pmr.code.length == 0) revert PmrHasNoCode(pmr);
-        _requirePmrHasExecutionGuardSelector(pmr);
+        _requireApprovedPmr(pmr);
+        _requireFrozenRuntime(type(PerpEngineV2).runtimeCode);
 
         bool confirm = vm.envOr("PERP_ENGINE_V2_RECOVERY_DEPLOY_CONFIRM", false);
 
@@ -114,7 +119,7 @@ contract DeployPerpEngineV2Recovery is Script {
             return;
         }
 
-        vm.startBroadcast(deployerPk);
+        vm.startBroadcast(deployer);
 
         PerpEngineV2 engine = new PerpEngineV2(deployer, pmr, VAULT, ORACLE_ROUTER);
         _log("deployed PerpEngineV2", address(engine));
@@ -157,13 +162,29 @@ contract DeployPerpEngineV2Recovery is Script {
         _log("wired dependencies verified byte-identical to current live wiring");
     }
 
-    /// @dev Prove the target PMR implements the execution-price deviation
-    ///      getter by attempting a staticcall that the OLD PMR bytecode
-    ///      lacks. Reverting means the caller supplied a non-recovery PMR
-    ///      and MUST abort before broadcasting the engine deploy.
-    function _requirePmrHasExecutionGuardSelector(address pmr) internal view {
-        (bool ok,) = pmr.staticcall(abi.encodeWithSelector(PMR_EXEC_GUARD_SELECTOR, uint256(1)));
-        if (!ok) revert PmrMissingExecutionGuardSelector(pmr);
+    /// @dev Typed calls decode return values and reject missing/malformed data.
+    function _requireApprovedPmr(address pmr) internal view {
+        if (pmr != APPROVED_PMR) revert UnexpectedPmr(pmr, APPROVED_PMR);
+        if (pmr.code.length == 0) revert PmrHasNoCode(pmr);
+        PerpMarketRegistry registry = PerpMarketRegistry(pmr);
+        for (uint256 marketId = 1; marketId <= 2; ++marketId) {
+            uint16 deviation = registry.getMaxExecutionDeviationBps(marketId);
+            if (deviation != 100) revert UnexpectedPmrDeviation(marketId, deviation);
+            if (!registry.marketExists(marketId)) revert PmrMarketMissing(marketId);
+            if (!registry.isMarketActive(marketId)) revert PmrMarketInactive(marketId);
+        }
+    }
+
+    /// @dev The linked runtime hash binds BOTH deployed library addresses.
+    ///      Wrong links, automatic new-library addresses or compiler drift fail.
+    function _requireFrozenRuntime(bytes memory runtime) internal view {
+        if (runtime.length != ENGINE_RUNTIME_SIZE) revert UnexpectedRuntimeSize(runtime.length);
+        bytes32 actual = keccak256(runtime);
+        if (actual != ENGINE_RUNTIME_KECCAK) revert UnexpectedRuntimeHash(actual);
+        bytes memory oldRuntime = OLD_ENGINE.code;
+        if (oldRuntime.length != runtime.length || keccak256(oldRuntime) != actual) {
+            revert OldEngineRuntimeMismatch();
+        }
     }
 
     function _log(string memory label) internal pure {
