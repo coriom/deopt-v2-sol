@@ -1,0 +1,42 @@
+{
+  "milestone": "PERPS_V2_BASE_SEPOLIA_MIGRATION_RESEAL_V1",
+  "chainId": 84532,
+  "previewSha256": "993727c3d27fe697d28f04d2adbda4c91573e77f035a44b5ba4865e6f8a13134",
+  "status": "COMPLETE",
+  "publicSendInvocations": 1,
+  "receiptObservations": [
+    {
+      "transactionHash": "0xf4cd9b68d0b21734e2d1ab4710b52b20ca36a7458e8fcc518d01731e07b0cec2",
+      "blockNumber": "0x2d4a83e",
+      "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "status": "0x1",
+      "gasUsed": "0xde33",
+      "effectiveGasPrice": "0x5b8d80",
+      "l1Fee": "0x163defe7c"
+    },
+    {
+      "transactionHash": "0xf4cd9b68d0b21734e2d1ab4710b52b20ca36a7458e8fcc518d01731e07b0cec2",
+      "blockNumber": "0x2d4a83e",
+      "blockHash": "0x78734583f186f0c68a5437626778e19d8bce9240d1a8bb6d0fe0e209fe5d2ac3",
+      "status": "0x1",
+      "gasUsed": "0xde33",
+      "effectiveGasPrice": "0x5b8d80",
+      "l1Fee": "0x163defe7c"
+    }
+  ],
+  "preblock": 47491119,
+  "preblockHash": "0x5ff620b6725e294a4d1fd6094d5d7a83bc1478632a27a7e1ad5669dd91ab0115",
+  "ownerNoncePre": 807,
+  "ownerBalancePreWei": 1707180795682353,
+  "independentlyVerifiedSigner": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+  "transactionHash": "0xf4cd9b68d0b21734e2d1ab4710b52b20ca36a7458e8fcc518d01731e07b0cec2",
+  "receiptBlock": 47491134,
+  "receiptBlockHash": "0x78734583f186f0c68a5437626778e19d8bce9240d1a8bb6d0fe0e209fe5d2ac3",
+  "receiptStatus": 1,
+  "eventVerified": true,
+  "migrationState": "SEALED",
+  "migrationSnapshotHash": "0x039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d",
+  "passwordFileAbsent": true,
+  "postflightBlock": 47491264,
+  "postflightPassed": true
+}

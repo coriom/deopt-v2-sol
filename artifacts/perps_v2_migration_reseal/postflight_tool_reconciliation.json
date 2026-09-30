@@ -1,0 +1,14 @@
+{
+  "phase": "read-only postflight",
+  "initialFailure": "Unexpected state change beyond seal metadata",
+  "cause": "Argument metadata for 22 zero-argument getters used Python tuple () in memory versus JSON array [] in the saved baseline. Getter value checks had passed.",
+  "localVerification": "All non-seal expected records equal the saved baseline after JSON normalization; no expected getter value changed.",
+  "correction": "Normalize only the args metadata to list before exact before/after equality. Getter values and all chain assertions remain unchanged.",
+  "publicWritesAfterFailure": 0,
+  "passwordFileAbsent": true,
+  "requiredResolution": "Fresh independent full read-only postflight rerun must pass before COMPLETE",
+  "resolved": true,
+  "freshPostflightBlock": 47491264,
+  "freshPostflightBlockHash": "0x582ab9e02cf6b2f387319684d9eeec942049a95727f2daef79fab5a2a64d48df",
+  "freshPostflightPassed": true
+}

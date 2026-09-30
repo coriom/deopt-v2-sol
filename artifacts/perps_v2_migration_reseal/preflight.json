@@ -1,0 +1,3154 @@
+{
+  "milestone": "PERPS_V2_BASE_SEPOLIA_MIGRATION_RESEAL_V1",
+  "stage": "A",
+  "solHead": "a43e66245871a6286dcc158ef08e2f0373494a6a",
+  "backendHead": "ad8dd7466aeba6963d28687e825fe4df58ef32ee",
+  "chainId": 84532,
+  "publicWrites": 0,
+  "keystoreUnlocked": false,
+  "comparisonBlock": 47490487,
+  "comparisonBlockHash": "0xa9a85e43732baf193daba5d87f2f64b44d289e76bde2869aa96095e96b90cb2d",
+  "snapshotHash": "0x039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d",
+  "canonicalFileSha256": {
+    "manifest.json": "88707f092c2be05fb5e4b73454f880b84abc4a1a95199e4eeb9aeec024687ddd",
+    "manifest.cbor": "520897f586cb275fbe81d4d5acb30ce45632be4ce2574a0577bc302b339ed857",
+    "seed_calldata.json": "d92cf6abae899123d7d96009f36da3f8a715c04a7ee9ac6bf5dddc9c0b1cdb14"
+  },
+  "recoveryPackageSha256": "bdcc5f48b4637822316752358e3c37324cf6e3aa85f86dc406b1e0f74bee5738",
+  "jsonCborSemanticAgreement": true,
+  "runtimeBytes": 24321,
+  "runtimeKeccak256": "0xc0ac9015866a36d0c9c25920387af78cb59cc24f66170728ade1a835d1211a2a",
+  "replayReceipts": [
+    {
+      "ordinal": 1,
+      "hash": "0x01d0068166d12a976a3e0ed0b71a413a46c27827193000d4f4f3a1806e9ce3d0",
+      "block": 47458723,
+      "blockHash": "0xfb20a54e4f2c91684f7c9406c0fe3b14e0910952a05e49c14e99e0b704c7389f",
+      "status": 1,
+      "senderTargetNonceCalldataVerified": true
+    },
+    {
+      "ordinal": 2,
+      "hash": "0x69f5ee24443a1c9f05e879768ed125a356565e72b0eef510f76db6122d0d6075",
+      "block": 47458736,
+      "blockHash": "0x3fb076d2fb127bdfb67ba7a6ac5034812b0c5649203ed575437ae9ad99ec393a",
+      "status": 1,
+      "senderTargetNonceCalldataVerified": true
+    },
+    {
+      "ordinal": 3,
+      "hash": "0xfc3a8617aa2535ecf669db9585780f473d67a38867f963b25bf3c8e565a69e01",
+      "block": 47458749,
+      "blockHash": "0xee9f71e8dfb3d8f684dca5242e07eaf3a55a70efe0f5ded6438cfea80c28d996",
+      "status": 1,
+      "senderTargetNonceCalldataVerified": true
+    },
+    {
+      "ordinal": 4,
+      "hash": "0x1f30189c1bb20423631c93b1b14f820b9784623d2751dc687a25491891a50695",
+      "block": 47458766,
+      "blockHash": "0x81bf2904ceaf4c836e81e049b878b4b704a229644052f5b84a668128908d136b",
+      "status": 1,
+      "senderTargetNonceCalldataVerified": true
+    },
+    {
+      "ordinal": 5,
+      "hash": "0xdaa6e9aaf2a401d60413d4b56a0ad45947035f183627755a49fd96c8b182fbed",
+      "block": 47458784,
+      "blockHash": "0x4e27e8291b16b0b6730fcaa2266d468336228ee4ae49d3f629e1df9e93f933d7",
+      "status": 1,
+      "senderTargetNonceCalldataVerified": true
+    },
+    {
+      "ordinal": 6,
+      "hash": "0x66c1a111198d81568ccc2a2f6604f4fb3595802a3d1d01c5f6341a5ad39a83e7",
+      "block": 47458805,
+      "blockHash": "0x40178cf4db429290877e9ec0dfaa260b1c48fca8a20c4aed5a8728dbead4fdaa",
+      "status": 1,
+      "senderTargetNonceCalldataVerified": true
+    },
+    {
+      "ordinal": 7,
+      "hash": "0x753d2a9b8c031e99280c76a61f642d440fc92271bbd42a07399af97ef813173f",
+      "block": 47458822,
+      "blockHash": "0x754a6496fff60f21334c0081ec76a782337527a88691dbeb897604d9228fb6b9",
+      "status": 1,
+      "senderTargetNonceCalldataVerified": true
+    },
+    {
+      "ordinal": 8,
+      "hash": "0xd595efa3c5d997bce502cc15b1eaa114d00dd7ea2eb0b0662bbbb92b6449c8e9",
+      "block": 47458840,
+      "blockHash": "0xf1a0646a95748eee8752202844c84bc3d440f01e00a97bef2a703b7f4a0454ef",
+      "status": 1,
+      "senderTargetNonceCalldataVerified": true
+    }
+  ],
+  "inclusionHeads": {
+    "safe": {
+      "block": 47490494,
+      "hash": "0xfc6655b382fa2f5a291bd711683c7777bc2ea5267cd71ff95d7990d597a3df2f"
+    },
+    "finalized": {
+      "block": 47489736,
+      "hash": "0x1c2aa4b80ffe4a23052f225cb97b5afb781440ee8047036db152019cf0096d27"
+    }
+  },
+  "receiptInclusionTagUsed": "finalized",
+  "checks": [
+    {
+      "label": "NEW.owner()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "owner()",
+      "args": [],
+      "value": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+      "passed": true
+    },
+    {
+      "label": "NEW.marketRegistry()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "marketRegistry()",
+      "args": [],
+      "value": "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+      "passed": true
+    },
+    {
+      "label": "NEW.collateralVault()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "collateralVault()",
+      "args": [],
+      "value": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "passed": true
+    },
+    {
+      "label": "NEW.oracle()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "oracle()",
+      "args": [],
+      "value": "0xB416406F200B2Ef3D7a86A5D5877Ed41D9B1A581",
+      "passed": true
+    },
+    {
+      "label": "NEW.matchingEngine()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "matchingEngine()",
+      "args": [],
+      "value": "0xF5FB81e447AF3A3E81951aC72D751dE3E9B8eee2",
+      "passed": true
+    },
+    {
+      "label": "NEW.riskModule()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "riskModule()",
+      "args": [],
+      "value": "0x8C3d9F71cA59B908Fa200546A63ea62F9C932998",
+      "passed": true
+    },
+    {
+      "label": "NEW.clearingAccount()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "clearingAccount()",
+      "args": [],
+      "value": "0x54d49c088DD27cFc82685b867c182b4bB4aC435c",
+      "passed": true
+    },
+    {
+      "label": "NEW.insuranceFund()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "insuranceFund()",
+      "args": [],
+      "value": "0x009f38440F058d095b61E0E2ee7fAbDF05BE7500",
+      "passed": true
+    },
+    {
+      "label": "NEW.collateralSeizer()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "collateralSeizer()",
+      "args": [],
+      "value": "0x39F928b959cF58369E7C7a3B925e6cBfFA62B669",
+      "passed": true
+    },
+    {
+      "label": "NEW.feesManagerV2()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "feesManagerV2()",
+      "args": [],
+      "value": "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f",
+      "passed": true
+    },
+    {
+      "label": "NEW.useFeesManagerV2()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "useFeesManagerV2()",
+      "args": [],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "NEW.guardian()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "guardian()",
+      "args": [],
+      "value": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+      "passed": true
+    },
+    {
+      "label": "NEW.migrationState()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "migrationState()",
+      "args": [],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "NEW.migrationSnapshotHash()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "migrationSnapshotHash()",
+      "args": [],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalResidualBadDebtBase()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "totalResidualBadDebtBase()",
+      "args": [],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "V1.PME.paused",
+      "address": "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+      "function": "paused()",
+      "args": [],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "V1.liquidationPaused",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "liquidationPaused()",
+      "args": [],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "OLD.migrationState",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "migrationState()",
+      "args": [],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "OLD.snapshot",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "migrationSnapshotHash()",
+      "args": [],
+      "value": "0x039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d",
+      "passed": true
+    },
+    {
+      "label": "OLD.registry",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "marketRegistry()",
+      "args": [],
+      "value": "0xb4fcf45E57b93274441dEf8f0f68bd30f6D677eC",
+      "passed": true
+    },
+    {
+      "label": "Vault.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "function": "isAuthorizedEngine(address)",
+      "args": [
+        "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c"
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "Vault.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "function": "isAuthorizedEngine(address)",
+      "args": [
+        "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9"
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "Vault.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "function": "isAuthorizedEngine(address)",
+      "args": [
+        "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "Shared.perpEngine.0xF5FB81e447AF3A3E81951aC72D751dE3E9B8eee2",
+      "address": "0xF5FB81e447AF3A3E81951aC72D751dE3E9B8eee2",
+      "function": "perpEngine()",
+      "args": [],
+      "value": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "passed": true
+    },
+    {
+      "label": "Shared.perpEngine.0x8C3d9F71cA59B908Fa200546A63ea62F9C932998",
+      "address": "0x8C3d9F71cA59B908Fa200546A63ea62F9C932998",
+      "function": "perpEngine()",
+      "args": [],
+      "value": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "passed": true
+    },
+    {
+      "label": "NEW.feeConsumer",
+      "address": "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f",
+      "function": "isFeeConsumer(address)",
+      "args": [
+        "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "NEW.backstopCaller",
+      "address": "0x009f38440F058d095b61E0E2ee7fAbDF05BE7500",
+      "function": "isBackstopCaller(address)",
+      "args": [
+        "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "Clearing.balance",
+      "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "function": "balances(address,address)",
+      "args": [
+        "0x54d49c088DD27cFc82685b867c182b4bB4aC435c",
+        "0x6eAe407f5640B006faC9965182e238582A3B412E"
+      ],
+      "value": 1000000000,
+      "passed": true
+    },
+    {
+      "label": "NEW.market.1",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "marketState(uint256)",
+      "args": [
+        1
+      ],
+      "value": [
+        1001002,
+        1001002,
+        0,
+        1789715546
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.market.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.1",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "marketState(uint256)",
+      "args": [
+        1
+      ],
+      "value": [
+        1001002,
+        1001002,
+        0,
+        1789715546
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.market.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.1",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "marketState(uint256)",
+      "args": [
+        1
+      ],
+      "value": [
+        1001002,
+        1001002,
+        0,
+        1789715546
+      ],
+      "passed": true
+    },
+    {
+      "label": "PMR.getMaxExecutionDeviationBps(uint256).1",
+      "address": "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+      "function": "getMaxExecutionDeviationBps(uint256)",
+      "args": [
+        1
+      ],
+      "value": 100,
+      "passed": true
+    },
+    {
+      "label": "PMR.marketExists(uint256).1",
+      "address": "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+      "function": "marketExists(uint256)",
+      "args": [
+        1
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "PMR.isMarketActive(uint256).1",
+      "address": "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+      "function": "isMarketActive(uint256)",
+      "args": [
+        1
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "NEW.market.2",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "marketState(uint256)",
+      "args": [
+        2
+      ],
+      "value": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.market.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.2",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "marketState(uint256)",
+      "args": [
+        2
+      ],
+      "value": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.market.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.2",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "marketState(uint256)",
+      "args": [
+        2
+      ],
+      "value": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "PMR.getMaxExecutionDeviationBps(uint256).2",
+      "address": "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+      "function": "getMaxExecutionDeviationBps(uint256)",
+      "args": [
+        2
+      ],
+      "value": 100,
+      "passed": true
+    },
+    {
+      "label": "PMR.marketExists(uint256).2",
+      "address": "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+      "function": "marketExists(uint256)",
+      "args": [
+        2
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "PMR.isMarketActive(uint256).2",
+      "address": "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+      "function": "isMarketActive(uint256)",
+      "args": [
+        2
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        1
+      ],
+      "value": [
+        1000,
+        3000000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        1
+      ],
+      "value": [
+        1000,
+        3000000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x290bd12c93e467bf51c51f5273d35bddb19e9274.1",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        1
+      ],
+      "value": [
+        1000,
+        3000000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x290bd12c93e467bf51c51f5273d35bddb19e9274.2",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        2
+      ],
+      "value": [
+        0,
+        0,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.getTraderMarketsLength(address).0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "getTraderMarketsLength(address)",
+      "args": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274"
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsLongSize1e8(address).0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "totalAbsLongSize1e8(address)",
+      "args": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274"
+      ],
+      "value": 1000,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsShortSize1e8(address).0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "totalAbsShortSize1e8(address)",
+      "args": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        1
+      ],
+      "value": [
+        -2,
+        -6000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        1
+      ],
+      "value": [
+        -2,
+        -6000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x475fe397fa56884952d350aa9ee1c3946964bc0c.1",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        1
+      ],
+      "value": [
+        -2,
+        -6000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x475fe397fa56884952d350aa9ee1c3946964bc0c.2",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        2
+      ],
+      "value": [
+        0,
+        0,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.getTraderMarketsLength(address).0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "getTraderMarketsLength(address)",
+      "args": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c"
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsLongSize1e8(address).0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "totalAbsLongSize1e8(address)",
+      "args": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsShortSize1e8(address).0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "totalAbsShortSize1e8(address)",
+      "args": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c"
+      ],
+      "value": 2,
+      "passed": true
+    },
+    {
+      "label": "debt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x66858286feea78a05ea093673ea1535e0a52002d",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d",
+        1
+      ],
+      "value": [
+        -1000000,
+        -2468310000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x66858286feea78a05ea093673ea1535e0a52002d",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d",
+        1
+      ],
+      "value": [
+        -1000000,
+        -2468310000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x66858286feea78a05ea093673ea1535e0a52002d.1",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d",
+        1
+      ],
+      "value": [
+        -1000000,
+        -2468310000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x66858286feea78a05ea093673ea1535e0a52002d.2",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d",
+        2
+      ],
+      "value": [
+        0,
+        0,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.getTraderMarketsLength(address).0x66858286feea78a05ea093673ea1535e0a52002d",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "getTraderMarketsLength(address)",
+      "args": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d"
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsLongSize1e8(address).0x66858286feea78a05ea093673ea1535e0a52002d",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "totalAbsLongSize1e8(address)",
+      "args": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsShortSize1e8(address).0x66858286feea78a05ea093673ea1535e0a52002d",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "totalAbsShortSize1e8(address)",
+      "args": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d"
+      ],
+      "value": 1000000,
+      "passed": true
+    },
+    {
+      "label": "debt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x66858286feea78a05ea093673ea1535e0a52002d",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x66858286feea78a05ea093673ea1535e0a52002d",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15.0x66858286feea78a05ea093673ea1535e0a52002d",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        1
+      ],
+      "value": [
+        -1000,
+        -3000000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        1
+      ],
+      "value": [
+        -1000,
+        -3000000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x77ca9dd6ccce2d692fb23877a2db7178807b0020.1",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        1
+      ],
+      "value": [
+        -1000,
+        -3000000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x77ca9dd6ccce2d692fb23877a2db7178807b0020.2",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        2
+      ],
+      "value": [
+        0,
+        0,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.getTraderMarketsLength(address).0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "getTraderMarketsLength(address)",
+      "args": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020"
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsLongSize1e8(address).0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "totalAbsLongSize1e8(address)",
+      "args": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsShortSize1e8(address).0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "totalAbsShortSize1e8(address)",
+      "args": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020"
+      ],
+      "value": 1000,
+      "passed": true
+    },
+    {
+      "label": "debt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        1
+      ],
+      "value": [
+        2,
+        6000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        1
+      ],
+      "value": [
+        2,
+        6000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34.1",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        1
+      ],
+      "value": [
+        2,
+        6000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34.2",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        2
+      ],
+      "value": [
+        0,
+        0,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.getTraderMarketsLength(address).0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "getTraderMarketsLength(address)",
+      "args": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34"
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsLongSize1e8(address).0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "totalAbsLongSize1e8(address)",
+      "args": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34"
+      ],
+      "value": 2,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsShortSize1e8(address).0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "totalAbsShortSize1e8(address)",
+      "args": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0xff287410852b9328437eac353720e5476bc5f837",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0xff287410852b9328437eac353720e5476bc5f837",
+        1
+      ],
+      "value": [
+        1000000,
+        2468310000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0xff287410852b9328437eac353720e5476bc5f837",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0xff287410852b9328437eac353720e5476bc5f837",
+        1
+      ],
+      "value": [
+        1000000,
+        2468310000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0xff287410852b9328437eac353720e5476bc5f837.1",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0xff287410852b9328437eac353720e5476bc5f837",
+        1
+      ],
+      "value": [
+        1000000,
+        2468310000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0xff287410852b9328437eac353720e5476bc5f837.2",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0xff287410852b9328437eac353720e5476bc5f837",
+        2
+      ],
+      "value": [
+        0,
+        0,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.getTraderMarketsLength(address).0xff287410852b9328437eac353720e5476bc5f837",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "getTraderMarketsLength(address)",
+      "args": [
+        "0xff287410852b9328437eac353720e5476bc5f837"
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsLongSize1e8(address).0xff287410852b9328437eac353720e5476bc5f837",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "totalAbsLongSize1e8(address)",
+      "args": [
+        "0xff287410852b9328437eac353720e5476bc5f837"
+      ],
+      "value": 1000000,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsShortSize1e8(address).0xff287410852b9328437eac353720e5476bc5f837",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "totalAbsShortSize1e8(address)",
+      "args": [
+        "0xff287410852b9328437eac353720e5476bc5f837"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0xff287410852b9328437eac353720e5476bc5f837",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0xff287410852b9328437eac353720e5476bc5f837"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0xff287410852b9328437eac353720e5476bc5f837",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0xff287410852b9328437eac353720e5476bc5f837"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15.0xff287410852b9328437eac353720e5476bc5f837",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0xff287410852b9328437eac353720e5476bc5f837"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "totalDebt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "totalResidualBadDebtBase()",
+      "args": [],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "totalDebt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "totalResidualBadDebtBase()",
+      "args": [],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "V1.nonce.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "address": "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+      "function": "nonces(address)",
+      "args": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274"
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "V1.nonce.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "address": "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+      "function": "nonces(address)",
+      "args": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c"
+      ],
+      "value": 2,
+      "passed": true
+    },
+    {
+      "label": "V1.nonce.0x66858286feea78a05ea093673ea1535e0a52002d",
+      "address": "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+      "function": "nonces(address)",
+      "args": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d"
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "V1.nonce.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "address": "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+      "function": "nonces(address)",
+      "args": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020"
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "V1.nonce.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "address": "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+      "function": "nonces(address)",
+      "args": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34"
+      ],
+      "value": 2,
+      "passed": true
+    },
+    {
+      "label": "V1.nonce.0xff287410852b9328437eac353720e5476bc5f837",
+      "address": "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+      "function": "nonces(address)",
+      "args": [
+        "0xff287410852b9328437eac353720e5476bc5f837"
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "canonical.vault.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "function": "balances(address,address)",
+      "args": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        "0x6eAe407f5640B006faC9965182e238582A3B412E"
+      ],
+      "value": 1503000053,
+      "passed": true
+    },
+    {
+      "label": "canonical.vault.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "function": "balances(address,address)",
+      "args": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        "0x6eAe407f5640B006faC9965182e238582A3B412E"
+      ],
+      "value": 999999,
+      "passed": true
+    },
+    {
+      "label": "canonical.vault.0x66858286feea78a05ea093673ea1535e0a52002d",
+      "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "function": "balances(address,address)",
+      "args": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d",
+        "0x6eAe407f5640B006faC9965182e238582A3B412E"
+      ],
+      "value": 9998765,
+      "passed": true
+    },
+    {
+      "label": "canonical.vault.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "function": "balances(address,address)",
+      "args": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        "0x6eAe407f5640B006faC9965182e238582A3B412E"
+      ],
+      "value": 1500999893,
+      "passed": true
+    },
+    {
+      "label": "canonical.vault.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "function": "balances(address,address)",
+      "args": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        "0x6eAe407f5640B006faC9965182e238582A3B412E"
+      ],
+      "value": 999999,
+      "passed": true
+    },
+    {
+      "label": "canonical.vault.0xff287410852b9328437eac353720e5476bc5f837",
+      "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "function": "balances(address,address)",
+      "args": [
+        "0xff287410852b9328437eac353720e5476bc5f837",
+        "0x6eAe407f5640B006faC9965182e238582A3B412E"
+      ],
+      "value": 9992595,
+      "passed": true
+    }
+  ],
+  "seedFlags": [
+    {
+      "label": "_marketFundingSeeded",
+      "keys": [
+        1
+      ],
+      "slot": "0xe39b43e4224876d80510ac9d8f190663bcce357e28a4aec26f3bf2e600bb40ec",
+      "value": 1
+    },
+    {
+      "label": "_marketFundingSeeded",
+      "keys": [
+        2
+      ],
+      "slot": "0x52978eb6718a0ed733b71dbb3c4781d6da146a41523832713c09679420d0cac5",
+      "value": 1
+    },
+    {
+      "label": "_positionSeeded",
+      "keys": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        1
+      ],
+      "slot": "0xb954dfa9a76b892e0c0709a47185a0d5aaa52a4579b2fd545f6a4707f512f879",
+      "value": 1
+    },
+    {
+      "label": "_residualBadDebtSeeded",
+      "keys": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274"
+      ],
+      "slot": "0x3385e528246aabed6f9dad3ab984c20b3855e6af9c2142deb1c6f9462b0af01c",
+      "value": 0
+    },
+    {
+      "label": "_positionSeeded",
+      "keys": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        1
+      ],
+      "slot": "0x89491d07f95130b0fcb8c835c39ff073c42076bbc35e33913fae72750faab22a",
+      "value": 1
+    },
+    {
+      "label": "_residualBadDebtSeeded",
+      "keys": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c"
+      ],
+      "slot": "0xa661b9e809ba71348bd61f4fb2453f8de57d929a673ca06fd09ad42cdffb7749",
+      "value": 0
+    },
+    {
+      "label": "_positionSeeded",
+      "keys": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d",
+        1
+      ],
+      "slot": "0xa5561e2d91db5d263a5a52b83de90775ec7e67a8ab20ed8456ec90cfa782bc40",
+      "value": 1
+    },
+    {
+      "label": "_residualBadDebtSeeded",
+      "keys": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d"
+      ],
+      "slot": "0x6ac6baea3eb65c812254ec27aef6803f96ba0fc53f809af66d136a72b6b8a65",
+      "value": 0
+    },
+    {
+      "label": "_positionSeeded",
+      "keys": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        1
+      ],
+      "slot": "0x5e7296c894b9ce5d18c072e0d118b0a62d8791cc5e73d0d46fc3cacb4d3c719c",
+      "value": 1
+    },
+    {
+      "label": "_residualBadDebtSeeded",
+      "keys": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020"
+      ],
+      "slot": "0x41d2f084fab5798a308ac4bf1ba9f53a200e419fa887653cb49b19e239d4ac80",
+      "value": 0
+    },
+    {
+      "label": "_positionSeeded",
+      "keys": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        1
+      ],
+      "slot": "0x460b51f0783adb7d7bda7cd00a08c17daf99726f5bce0afd5f0d24c7b1c9852e",
+      "value": 1
+    },
+    {
+      "label": "_residualBadDebtSeeded",
+      "keys": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34"
+      ],
+      "slot": "0x74f396a63ab4f4c46c987a0c0dce621bcaec7cdc973daa7a4fb2c5de35ae092e",
+      "value": 0
+    },
+    {
+      "label": "_positionSeeded",
+      "keys": [
+        "0xff287410852b9328437eac353720e5476bc5f837",
+        1
+      ],
+      "slot": "0x25ae4081686150c57937f90d26d7ed71f35d8e442676457debf3bb792636b92",
+      "value": 1
+    },
+    {
+      "label": "_residualBadDebtSeeded",
+      "keys": [
+        "0xff287410852b9328437eac353720e5476bc5f837"
+      ],
+      "slot": "0xd9faf7920695226a8c4e0799242b49d385aac6ac5bafe46e07ee934108e91bc0",
+      "value": 0
+    }
+  ],
+  "positionIndexes": [
+    {
+      "label": "traderMarketIndexPlus1",
+      "keys": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        1
+      ],
+      "slot": "0x1914e8dfd484601326ba47de44b365738b621d2376d278036ec1380eb430b51",
+      "value": 1
+    },
+    {
+      "label": "traderMarketIndexPlus1",
+      "keys": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        1
+      ],
+      "slot": "0x789aed25f85609ac94a9ed0eb6eac8333d9a5dc1b78cc6fcbc681362dc2e23f5",
+      "value": 1
+    },
+    {
+      "label": "traderMarketIndexPlus1",
+      "keys": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d",
+        1
+      ],
+      "slot": "0xe7bd1ee6762df74e3514256725c137803041be60935820f6d161d1f7f8afe4b3",
+      "value": 1
+    },
+    {
+      "label": "traderMarketIndexPlus1",
+      "keys": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        1
+      ],
+      "slot": "0x8db25134a192c475c5ba15cf7b18ea77f6fa6c427591334ac5d21b5bd58c46d8",
+      "value": 1
+    },
+    {
+      "label": "traderMarketIndexPlus1",
+      "keys": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        1
+      ],
+      "slot": "0x40dec9df8488b9a962a9514a6684e7daf61a6342fa25742bffe53c23b4d370b9",
+      "value": 1
+    },
+    {
+      "label": "traderMarketIndexPlus1",
+      "keys": [
+        "0xff287410852b9328437eac353720e5476bc5f837",
+        1
+      ],
+      "slot": "0x47a05237cdc7227c6fef405d4f58ff15fb8937ebbf2ceada628474d3206cfdc4",
+      "value": 1
+    }
+  ],
+  "pmeV2Nonces": {
+    "0x290bd12c93e467bf51c51f5273d35bddb19e9274": 0,
+    "0x475fe397fa56884952d350aa9ee1c3946964bc0c": 0,
+    "0x66858286feea78a05ea093673ea1535e0a52002d": 0,
+    "0x77ca9dd6ccce2d692fb23877a2db7178807b0020": 0,
+    "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34": 0,
+    "0xff287410852b9328437eac353720e5476bc5f837": 0
+  },
+  "positionTotals": {
+    "netSize": 0,
+    "longOI": 1001002,
+    "shortOI": 1001002
+  },
+  "positions": [
+    {
+      "trader": "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "marketId": 1,
+      "size1e8": 1000,
+      "openNotional1e8": 3000000,
+      "lastCumulativeFundingRate1e18": 0
+    },
+    {
+      "trader": "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "marketId": 1,
+      "size1e8": -2,
+      "openNotional1e8": -6000,
+      "lastCumulativeFundingRate1e18": 0
+    },
+    {
+      "trader": "0x66858286feea78a05ea093673ea1535e0a52002d",
+      "marketId": 1,
+      "size1e8": -1000000,
+      "openNotional1e8": -2468310000,
+      "lastCumulativeFundingRate1e18": 0
+    },
+    {
+      "trader": "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "marketId": 1,
+      "size1e8": -1000,
+      "openNotional1e8": -3000000,
+      "lastCumulativeFundingRate1e18": 0
+    },
+    {
+      "trader": "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "marketId": 1,
+      "size1e8": 2,
+      "openNotional1e8": 6000,
+      "lastCumulativeFundingRate1e18": 0
+    },
+    {
+      "trader": "0xff287410852b9328437eac353720e5476bc5f837",
+      "marketId": 1,
+      "size1e8": 1000000,
+      "openNotional1e8": 2468310000,
+      "lastCumulativeFundingRate1e18": 0
+    }
+  ],
+  "markets": [
+    {
+      "marketId": 1,
+      "cumulativeFundingRate1e18": 0,
+      "lastFundingTimestamp": 1789715546,
+      "longOI1e8": 1001002,
+      "shortOI1e8": 1001002
+    },
+    {
+      "marketId": 2,
+      "cumulativeFundingRate1e18": 0,
+      "lastFundingTimestamp": 0,
+      "longOI1e8": 0,
+      "shortOI1e8": 0
+    }
+  ],
+  "migrationState": "OPEN",
+  "migrationSnapshotHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "eventScan": {
+    "fromBlock": 47459090,
+    "toBlock": 47490487,
+    "emitters": [
+      "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "0xF5FB81e447AF3A3E81951aC72D751dE3E9B8eee2",
+      "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+      "0x8C3d9F71cA59B908Fa200546A63ea62F9C932998",
+      "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+      "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f",
+      "0x009f38440F058d095b61E0E2ee7fAbDF05BE7500"
+    ],
+    "topics": "all events from these exact emitters",
+    "events": 0
+  },
+  "backend_runtime_state": "STOPPED",
+  "transaction_emission_capability": "NONE",
+  "backendProcesses": 0,
+  "port8080Listeners": 0,
+  "freshness": {
+    "block": 47490558,
+    "blockHash": "0xfb87a979c5e005b3a13d98546b13cbd20ccdce63ec6fefa887e1d38cd9b38ce9",
+    "checks": [
+      {
+        "label": "NEW.owner()",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "owner()",
+        "args": [],
+        "value": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+        "passed": true
+      },
+      {
+        "label": "NEW.marketRegistry()",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "marketRegistry()",
+        "args": [],
+        "value": "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+        "passed": true
+      },
+      {
+        "label": "NEW.collateralVault()",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "collateralVault()",
+        "args": [],
+        "value": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+        "passed": true
+      },
+      {
+        "label": "NEW.oracle()",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "oracle()",
+        "args": [],
+        "value": "0xB416406F200B2Ef3D7a86A5D5877Ed41D9B1A581",
+        "passed": true
+      },
+      {
+        "label": "NEW.matchingEngine()",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "matchingEngine()",
+        "args": [],
+        "value": "0xF5FB81e447AF3A3E81951aC72D751dE3E9B8eee2",
+        "passed": true
+      },
+      {
+        "label": "NEW.riskModule()",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "riskModule()",
+        "args": [],
+        "value": "0x8C3d9F71cA59B908Fa200546A63ea62F9C932998",
+        "passed": true
+      },
+      {
+        "label": "NEW.clearingAccount()",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "clearingAccount()",
+        "args": [],
+        "value": "0x54d49c088DD27cFc82685b867c182b4bB4aC435c",
+        "passed": true
+      },
+      {
+        "label": "NEW.insuranceFund()",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "insuranceFund()",
+        "args": [],
+        "value": "0x009f38440F058d095b61E0E2ee7fAbDF05BE7500",
+        "passed": true
+      },
+      {
+        "label": "NEW.collateralSeizer()",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "collateralSeizer()",
+        "args": [],
+        "value": "0x39F928b959cF58369E7C7a3B925e6cBfFA62B669",
+        "passed": true
+      },
+      {
+        "label": "NEW.feesManagerV2()",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "feesManagerV2()",
+        "args": [],
+        "value": "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f",
+        "passed": true
+      },
+      {
+        "label": "NEW.useFeesManagerV2()",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "useFeesManagerV2()",
+        "args": [],
+        "value": 1,
+        "passed": true
+      },
+      {
+        "label": "NEW.guardian()",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "guardian()",
+        "args": [],
+        "value": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+        "passed": true
+      },
+      {
+        "label": "NEW.migrationState()",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "migrationState()",
+        "args": [],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "NEW.migrationSnapshotHash()",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "migrationSnapshotHash()",
+        "args": [],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "NEW.totalResidualBadDebtBase()",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "totalResidualBadDebtBase()",
+        "args": [],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "V1.PME.paused",
+        "address": "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+        "function": "paused()",
+        "args": [],
+        "value": 1,
+        "passed": true
+      },
+      {
+        "label": "V1.liquidationPaused",
+        "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+        "function": "liquidationPaused()",
+        "args": [],
+        "value": 1,
+        "passed": true
+      },
+      {
+        "label": "OLD.migrationState",
+        "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+        "function": "migrationState()",
+        "args": [],
+        "value": 1,
+        "passed": true
+      },
+      {
+        "label": "OLD.snapshot",
+        "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+        "function": "migrationSnapshotHash()",
+        "args": [],
+        "value": "0x039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d",
+        "passed": true
+      },
+      {
+        "label": "OLD.registry",
+        "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+        "function": "marketRegistry()",
+        "args": [],
+        "value": "0xb4fcf45E57b93274441dEf8f0f68bd30f6D677eC",
+        "passed": true
+      },
+      {
+        "label": "Vault.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+        "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+        "function": "isAuthorizedEngine(address)",
+        "args": [
+          "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c"
+        ],
+        "value": 1,
+        "passed": true
+      },
+      {
+        "label": "Vault.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+        "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+        "function": "isAuthorizedEngine(address)",
+        "args": [
+          "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9"
+        ],
+        "value": 1,
+        "passed": true
+      },
+      {
+        "label": "Vault.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+        "function": "isAuthorizedEngine(address)",
+        "args": [
+          "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15"
+        ],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "Shared.perpEngine.0xF5FB81e447AF3A3E81951aC72D751dE3E9B8eee2",
+        "address": "0xF5FB81e447AF3A3E81951aC72D751dE3E9B8eee2",
+        "function": "perpEngine()",
+        "args": [],
+        "value": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+        "passed": true
+      },
+      {
+        "label": "Shared.perpEngine.0x8C3d9F71cA59B908Fa200546A63ea62F9C932998",
+        "address": "0x8C3d9F71cA59B908Fa200546A63ea62F9C932998",
+        "function": "perpEngine()",
+        "args": [],
+        "value": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+        "passed": true
+      },
+      {
+        "label": "NEW.feeConsumer",
+        "address": "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f",
+        "function": "isFeeConsumer(address)",
+        "args": [
+          "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15"
+        ],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "NEW.backstopCaller",
+        "address": "0x009f38440F058d095b61E0E2ee7fAbDF05BE7500",
+        "function": "isBackstopCaller(address)",
+        "args": [
+          "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15"
+        ],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "Clearing.balance",
+        "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+        "function": "balances(address,address)",
+        "args": [
+          "0x54d49c088DD27cFc82685b867c182b4bB4aC435c",
+          "0x6eAe407f5640B006faC9965182e238582A3B412E"
+        ],
+        "value": 1000000000,
+        "passed": true
+      },
+      {
+        "label": "NEW.market.1",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "marketState(uint256)",
+        "args": [
+          1
+        ],
+        "value": [
+          1001002,
+          1001002,
+          0,
+          1789715546
+        ],
+        "passed": true
+      },
+      {
+        "label": "canonical.market.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.1",
+        "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+        "function": "marketState(uint256)",
+        "args": [
+          1
+        ],
+        "value": [
+          1001002,
+          1001002,
+          0,
+          1789715546
+        ],
+        "passed": true
+      },
+      {
+        "label": "canonical.market.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.1",
+        "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+        "function": "marketState(uint256)",
+        "args": [
+          1
+        ],
+        "value": [
+          1001002,
+          1001002,
+          0,
+          1789715546
+        ],
+        "passed": true
+      },
+      {
+        "label": "PMR.getMaxExecutionDeviationBps(uint256).1",
+        "address": "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+        "function": "getMaxExecutionDeviationBps(uint256)",
+        "args": [
+          1
+        ],
+        "value": 100,
+        "passed": true
+      },
+      {
+        "label": "PMR.marketExists(uint256).1",
+        "address": "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+        "function": "marketExists(uint256)",
+        "args": [
+          1
+        ],
+        "value": 1,
+        "passed": true
+      },
+      {
+        "label": "PMR.isMarketActive(uint256).1",
+        "address": "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+        "function": "isMarketActive(uint256)",
+        "args": [
+          1
+        ],
+        "value": 1,
+        "passed": true
+      },
+      {
+        "label": "NEW.market.2",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "marketState(uint256)",
+        "args": [
+          2
+        ],
+        "value": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "passed": true
+      },
+      {
+        "label": "canonical.market.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.2",
+        "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+        "function": "marketState(uint256)",
+        "args": [
+          2
+        ],
+        "value": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "passed": true
+      },
+      {
+        "label": "canonical.market.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.2",
+        "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+        "function": "marketState(uint256)",
+        "args": [
+          2
+        ],
+        "value": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "passed": true
+      },
+      {
+        "label": "PMR.getMaxExecutionDeviationBps(uint256).2",
+        "address": "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+        "function": "getMaxExecutionDeviationBps(uint256)",
+        "args": [
+          2
+        ],
+        "value": 100,
+        "passed": true
+      },
+      {
+        "label": "PMR.marketExists(uint256).2",
+        "address": "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+        "function": "marketExists(uint256)",
+        "args": [
+          2
+        ],
+        "value": 1,
+        "passed": true
+      },
+      {
+        "label": "PMR.isMarketActive(uint256).2",
+        "address": "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+        "function": "isMarketActive(uint256)",
+        "args": [
+          2
+        ],
+        "value": 1,
+        "passed": true
+      },
+      {
+        "label": "canonical.position.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+        "function": "positions(address,uint256)",
+        "args": [
+          "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+          1
+        ],
+        "value": [
+          1000,
+          3000000,
+          0
+        ],
+        "passed": true
+      },
+      {
+        "label": "canonical.position.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+        "function": "positions(address,uint256)",
+        "args": [
+          "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+          1
+        ],
+        "value": [
+          1000,
+          3000000,
+          0
+        ],
+        "passed": true
+      },
+      {
+        "label": "NEW.position.0x290bd12c93e467bf51c51f5273d35bddb19e9274.1",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "positions(address,uint256)",
+        "args": [
+          "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+          1
+        ],
+        "value": [
+          1000,
+          3000000,
+          0
+        ],
+        "passed": true
+      },
+      {
+        "label": "NEW.position.0x290bd12c93e467bf51c51f5273d35bddb19e9274.2",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "positions(address,uint256)",
+        "args": [
+          "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+          2
+        ],
+        "value": [
+          0,
+          0,
+          0
+        ],
+        "passed": true
+      },
+      {
+        "label": "NEW.getTraderMarketsLength(address).0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "getTraderMarketsLength(address)",
+        "args": [
+          "0x290bd12c93e467bf51c51f5273d35bddb19e9274"
+        ],
+        "value": 1,
+        "passed": true
+      },
+      {
+        "label": "NEW.totalAbsLongSize1e8(address).0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "totalAbsLongSize1e8(address)",
+        "args": [
+          "0x290bd12c93e467bf51c51f5273d35bddb19e9274"
+        ],
+        "value": 1000,
+        "passed": true
+      },
+      {
+        "label": "NEW.totalAbsShortSize1e8(address).0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "totalAbsShortSize1e8(address)",
+        "args": [
+          "0x290bd12c93e467bf51c51f5273d35bddb19e9274"
+        ],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "debt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+        "function": "getResidualBadDebt(address)",
+        "args": [
+          "0x290bd12c93e467bf51c51f5273d35bddb19e9274"
+        ],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "debt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+        "function": "getResidualBadDebt(address)",
+        "args": [
+          "0x290bd12c93e467bf51c51f5273d35bddb19e9274"
+        ],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "debt.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "getResidualBadDebt(address)",
+        "args": [
+          "0x290bd12c93e467bf51c51f5273d35bddb19e9274"
+        ],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "canonical.position.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+        "function": "positions(address,uint256)",
+        "args": [
+          "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+          1
+        ],
+        "value": [
+          -2,
+          -6000,
+          0
+        ],
+        "passed": true
+      },
+      {
+        "label": "canonical.position.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+        "function": "positions(address,uint256)",
+        "args": [
+          "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+          1
+        ],
+        "value": [
+          -2,
+          -6000,
+          0
+        ],
+        "passed": true
+      },
+      {
+        "label": "NEW.position.0x475fe397fa56884952d350aa9ee1c3946964bc0c.1",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "positions(address,uint256)",
+        "args": [
+          "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+          1
+        ],
+        "value": [
+          -2,
+          -6000,
+          0
+        ],
+        "passed": true
+      },
+      {
+        "label": "NEW.position.0x475fe397fa56884952d350aa9ee1c3946964bc0c.2",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "positions(address,uint256)",
+        "args": [
+          "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+          2
+        ],
+        "value": [
+          0,
+          0,
+          0
+        ],
+        "passed": true
+      },
+      {
+        "label": "NEW.getTraderMarketsLength(address).0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "getTraderMarketsLength(address)",
+        "args": [
+          "0x475fe397fa56884952d350aa9ee1c3946964bc0c"
+        ],
+        "value": 1,
+        "passed": true
+      },
+      {
+        "label": "NEW.totalAbsLongSize1e8(address).0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "totalAbsLongSize1e8(address)",
+        "args": [
+          "0x475fe397fa56884952d350aa9ee1c3946964bc0c"
+        ],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "NEW.totalAbsShortSize1e8(address).0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "totalAbsShortSize1e8(address)",
+        "args": [
+          "0x475fe397fa56884952d350aa9ee1c3946964bc0c"
+        ],
+        "value": 2,
+        "passed": true
+      },
+      {
+        "label": "debt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+        "function": "getResidualBadDebt(address)",
+        "args": [
+          "0x475fe397fa56884952d350aa9ee1c3946964bc0c"
+        ],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "debt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+        "function": "getResidualBadDebt(address)",
+        "args": [
+          "0x475fe397fa56884952d350aa9ee1c3946964bc0c"
+        ],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "debt.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "getResidualBadDebt(address)",
+        "args": [
+          "0x475fe397fa56884952d350aa9ee1c3946964bc0c"
+        ],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "canonical.position.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x66858286feea78a05ea093673ea1535e0a52002d",
+        "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+        "function": "positions(address,uint256)",
+        "args": [
+          "0x66858286feea78a05ea093673ea1535e0a52002d",
+          1
+        ],
+        "value": [
+          -1000000,
+          -2468310000,
+          0
+        ],
+        "passed": true
+      },
+      {
+        "label": "canonical.position.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x66858286feea78a05ea093673ea1535e0a52002d",
+        "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+        "function": "positions(address,uint256)",
+        "args": [
+          "0x66858286feea78a05ea093673ea1535e0a52002d",
+          1
+        ],
+        "value": [
+          -1000000,
+          -2468310000,
+          0
+        ],
+        "passed": true
+      },
+      {
+        "label": "NEW.position.0x66858286feea78a05ea093673ea1535e0a52002d.1",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "positions(address,uint256)",
+        "args": [
+          "0x66858286feea78a05ea093673ea1535e0a52002d",
+          1
+        ],
+        "value": [
+          -1000000,
+          -2468310000,
+          0
+        ],
+        "passed": true
+      },
+      {
+        "label": "NEW.position.0x66858286feea78a05ea093673ea1535e0a52002d.2",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "positions(address,uint256)",
+        "args": [
+          "0x66858286feea78a05ea093673ea1535e0a52002d",
+          2
+        ],
+        "value": [
+          0,
+          0,
+          0
+        ],
+        "passed": true
+      },
+      {
+        "label": "NEW.getTraderMarketsLength(address).0x66858286feea78a05ea093673ea1535e0a52002d",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "getTraderMarketsLength(address)",
+        "args": [
+          "0x66858286feea78a05ea093673ea1535e0a52002d"
+        ],
+        "value": 1,
+        "passed": true
+      },
+      {
+        "label": "NEW.totalAbsLongSize1e8(address).0x66858286feea78a05ea093673ea1535e0a52002d",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "totalAbsLongSize1e8(address)",
+        "args": [
+          "0x66858286feea78a05ea093673ea1535e0a52002d"
+        ],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "NEW.totalAbsShortSize1e8(address).0x66858286feea78a05ea093673ea1535e0a52002d",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "totalAbsShortSize1e8(address)",
+        "args": [
+          "0x66858286feea78a05ea093673ea1535e0a52002d"
+        ],
+        "value": 1000000,
+        "passed": true
+      },
+      {
+        "label": "debt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x66858286feea78a05ea093673ea1535e0a52002d",
+        "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+        "function": "getResidualBadDebt(address)",
+        "args": [
+          "0x66858286feea78a05ea093673ea1535e0a52002d"
+        ],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "debt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x66858286feea78a05ea093673ea1535e0a52002d",
+        "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+        "function": "getResidualBadDebt(address)",
+        "args": [
+          "0x66858286feea78a05ea093673ea1535e0a52002d"
+        ],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "debt.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15.0x66858286feea78a05ea093673ea1535e0a52002d",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "getResidualBadDebt(address)",
+        "args": [
+          "0x66858286feea78a05ea093673ea1535e0a52002d"
+        ],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "canonical.position.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+        "function": "positions(address,uint256)",
+        "args": [
+          "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+          1
+        ],
+        "value": [
+          -1000,
+          -3000000,
+          0
+        ],
+        "passed": true
+      },
+      {
+        "label": "canonical.position.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+        "function": "positions(address,uint256)",
+        "args": [
+          "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+          1
+        ],
+        "value": [
+          -1000,
+          -3000000,
+          0
+        ],
+        "passed": true
+      },
+      {
+        "label": "NEW.position.0x77ca9dd6ccce2d692fb23877a2db7178807b0020.1",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "positions(address,uint256)",
+        "args": [
+          "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+          1
+        ],
+        "value": [
+          -1000,
+          -3000000,
+          0
+        ],
+        "passed": true
+      },
+      {
+        "label": "NEW.position.0x77ca9dd6ccce2d692fb23877a2db7178807b0020.2",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "positions(address,uint256)",
+        "args": [
+          "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+          2
+        ],
+        "value": [
+          0,
+          0,
+          0
+        ],
+        "passed": true
+      },
+      {
+        "label": "NEW.getTraderMarketsLength(address).0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "getTraderMarketsLength(address)",
+        "args": [
+          "0x77ca9dd6ccce2d692fb23877a2db7178807b0020"
+        ],
+        "value": 1,
+        "passed": true
+      },
+      {
+        "label": "NEW.totalAbsLongSize1e8(address).0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "totalAbsLongSize1e8(address)",
+        "args": [
+          "0x77ca9dd6ccce2d692fb23877a2db7178807b0020"
+        ],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "NEW.totalAbsShortSize1e8(address).0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "totalAbsShortSize1e8(address)",
+        "args": [
+          "0x77ca9dd6ccce2d692fb23877a2db7178807b0020"
+        ],
+        "value": 1000,
+        "passed": true
+      },
+      {
+        "label": "debt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+        "function": "getResidualBadDebt(address)",
+        "args": [
+          "0x77ca9dd6ccce2d692fb23877a2db7178807b0020"
+        ],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "debt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+        "function": "getResidualBadDebt(address)",
+        "args": [
+          "0x77ca9dd6ccce2d692fb23877a2db7178807b0020"
+        ],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "debt.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "getResidualBadDebt(address)",
+        "args": [
+          "0x77ca9dd6ccce2d692fb23877a2db7178807b0020"
+        ],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "canonical.position.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+        "function": "positions(address,uint256)",
+        "args": [
+          "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+          1
+        ],
+        "value": [
+          2,
+          6000,
+          0
+        ],
+        "passed": true
+      },
+      {
+        "label": "canonical.position.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+        "function": "positions(address,uint256)",
+        "args": [
+          "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+          1
+        ],
+        "value": [
+          2,
+          6000,
+          0
+        ],
+        "passed": true
+      },
+      {
+        "label": "NEW.position.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34.1",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "positions(address,uint256)",
+        "args": [
+          "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+          1
+        ],
+        "value": [
+          2,
+          6000,
+          0
+        ],
+        "passed": true
+      },
+      {
+        "label": "NEW.position.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34.2",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "positions(address,uint256)",
+        "args": [
+          "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+          2
+        ],
+        "value": [
+          0,
+          0,
+          0
+        ],
+        "passed": true
+      },
+      {
+        "label": "NEW.getTraderMarketsLength(address).0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "getTraderMarketsLength(address)",
+        "args": [
+          "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34"
+        ],
+        "value": 1,
+        "passed": true
+      },
+      {
+        "label": "NEW.totalAbsLongSize1e8(address).0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "totalAbsLongSize1e8(address)",
+        "args": [
+          "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34"
+        ],
+        "value": 2,
+        "passed": true
+      },
+      {
+        "label": "NEW.totalAbsShortSize1e8(address).0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "totalAbsShortSize1e8(address)",
+        "args": [
+          "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34"
+        ],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "debt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+        "function": "getResidualBadDebt(address)",
+        "args": [
+          "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34"
+        ],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "debt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+        "function": "getResidualBadDebt(address)",
+        "args": [
+          "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34"
+        ],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "debt.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "getResidualBadDebt(address)",
+        "args": [
+          "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34"
+        ],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "canonical.position.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0xff287410852b9328437eac353720e5476bc5f837",
+        "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+        "function": "positions(address,uint256)",
+        "args": [
+          "0xff287410852b9328437eac353720e5476bc5f837",
+          1
+        ],
+        "value": [
+          1000000,
+          2468310000,
+          0
+        ],
+        "passed": true
+      },
+      {
+        "label": "canonical.position.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0xff287410852b9328437eac353720e5476bc5f837",
+        "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+        "function": "positions(address,uint256)",
+        "args": [
+          "0xff287410852b9328437eac353720e5476bc5f837",
+          1
+        ],
+        "value": [
+          1000000,
+          2468310000,
+          0
+        ],
+        "passed": true
+      },
+      {
+        "label": "NEW.position.0xff287410852b9328437eac353720e5476bc5f837.1",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "positions(address,uint256)",
+        "args": [
+          "0xff287410852b9328437eac353720e5476bc5f837",
+          1
+        ],
+        "value": [
+          1000000,
+          2468310000,
+          0
+        ],
+        "passed": true
+      },
+      {
+        "label": "NEW.position.0xff287410852b9328437eac353720e5476bc5f837.2",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "positions(address,uint256)",
+        "args": [
+          "0xff287410852b9328437eac353720e5476bc5f837",
+          2
+        ],
+        "value": [
+          0,
+          0,
+          0
+        ],
+        "passed": true
+      },
+      {
+        "label": "NEW.getTraderMarketsLength(address).0xff287410852b9328437eac353720e5476bc5f837",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "getTraderMarketsLength(address)",
+        "args": [
+          "0xff287410852b9328437eac353720e5476bc5f837"
+        ],
+        "value": 1,
+        "passed": true
+      },
+      {
+        "label": "NEW.totalAbsLongSize1e8(address).0xff287410852b9328437eac353720e5476bc5f837",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "totalAbsLongSize1e8(address)",
+        "args": [
+          "0xff287410852b9328437eac353720e5476bc5f837"
+        ],
+        "value": 1000000,
+        "passed": true
+      },
+      {
+        "label": "NEW.totalAbsShortSize1e8(address).0xff287410852b9328437eac353720e5476bc5f837",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "totalAbsShortSize1e8(address)",
+        "args": [
+          "0xff287410852b9328437eac353720e5476bc5f837"
+        ],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "debt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0xff287410852b9328437eac353720e5476bc5f837",
+        "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+        "function": "getResidualBadDebt(address)",
+        "args": [
+          "0xff287410852b9328437eac353720e5476bc5f837"
+        ],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "debt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0xff287410852b9328437eac353720e5476bc5f837",
+        "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+        "function": "getResidualBadDebt(address)",
+        "args": [
+          "0xff287410852b9328437eac353720e5476bc5f837"
+        ],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "debt.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15.0xff287410852b9328437eac353720e5476bc5f837",
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "function": "getResidualBadDebt(address)",
+        "args": [
+          "0xff287410852b9328437eac353720e5476bc5f837"
+        ],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "totalDebt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+        "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+        "function": "totalResidualBadDebtBase()",
+        "args": [],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "totalDebt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+        "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+        "function": "totalResidualBadDebtBase()",
+        "args": [],
+        "value": 0,
+        "passed": true
+      },
+      {
+        "label": "V1.nonce.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        "address": "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+        "function": "nonces(address)",
+        "args": [
+          "0x290bd12c93e467bf51c51f5273d35bddb19e9274"
+        ],
+        "value": 1,
+        "passed": true
+      },
+      {
+        "label": "V1.nonce.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        "address": "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+        "function": "nonces(address)",
+        "args": [
+          "0x475fe397fa56884952d350aa9ee1c3946964bc0c"
+        ],
+        "value": 2,
+        "passed": true
+      },
+      {
+        "label": "V1.nonce.0x66858286feea78a05ea093673ea1535e0a52002d",
+        "address": "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+        "function": "nonces(address)",
+        "args": [
+          "0x66858286feea78a05ea093673ea1535e0a52002d"
+        ],
+        "value": 1,
+        "passed": true
+      },
+      {
+        "label": "V1.nonce.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        "address": "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+        "function": "nonces(address)",
+        "args": [
+          "0x77ca9dd6ccce2d692fb23877a2db7178807b0020"
+        ],
+        "value": 1,
+        "passed": true
+      },
+      {
+        "label": "V1.nonce.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        "address": "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+        "function": "nonces(address)",
+        "args": [
+          "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34"
+        ],
+        "value": 2,
+        "passed": true
+      },
+      {
+        "label": "V1.nonce.0xff287410852b9328437eac353720e5476bc5f837",
+        "address": "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+        "function": "nonces(address)",
+        "args": [
+          "0xff287410852b9328437eac353720e5476bc5f837"
+        ],
+        "value": 1,
+        "passed": true
+      },
+      {
+        "label": "canonical.vault.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+        "function": "balances(address,address)",
+        "args": [
+          "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+          "0x6eAe407f5640B006faC9965182e238582A3B412E"
+        ],
+        "value": 1503000053,
+        "passed": true
+      },
+      {
+        "label": "canonical.vault.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+        "function": "balances(address,address)",
+        "args": [
+          "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+          "0x6eAe407f5640B006faC9965182e238582A3B412E"
+        ],
+        "value": 999999,
+        "passed": true
+      },
+      {
+        "label": "canonical.vault.0x66858286feea78a05ea093673ea1535e0a52002d",
+        "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+        "function": "balances(address,address)",
+        "args": [
+          "0x66858286feea78a05ea093673ea1535e0a52002d",
+          "0x6eAe407f5640B006faC9965182e238582A3B412E"
+        ],
+        "value": 9998765,
+        "passed": true
+      },
+      {
+        "label": "canonical.vault.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+        "function": "balances(address,address)",
+        "args": [
+          "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+          "0x6eAe407f5640B006faC9965182e238582A3B412E"
+        ],
+        "value": 1500999893,
+        "passed": true
+      },
+      {
+        "label": "canonical.vault.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+        "function": "balances(address,address)",
+        "args": [
+          "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+          "0x6eAe407f5640B006faC9965182e238582A3B412E"
+        ],
+        "value": 999999,
+        "passed": true
+      },
+      {
+        "label": "canonical.vault.0xff287410852b9328437eac353720e5476bc5f837",
+        "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+        "function": "balances(address,address)",
+        "args": [
+          "0xff287410852b9328437eac353720e5476bc5f837",
+          "0x6eAe407f5640B006faC9965182e238582A3B412E"
+        ],
+        "value": 9992595,
+        "passed": true
+      }
+    ],
+    "seedFlags": [
+      {
+        "label": "_marketFundingSeeded",
+        "keys": [
+          1
+        ],
+        "slot": "0xe39b43e4224876d80510ac9d8f190663bcce357e28a4aec26f3bf2e600bb40ec",
+        "value": 1
+      },
+      {
+        "label": "_marketFundingSeeded",
+        "keys": [
+          2
+        ],
+        "slot": "0x52978eb6718a0ed733b71dbb3c4781d6da146a41523832713c09679420d0cac5",
+        "value": 1
+      },
+      {
+        "label": "_positionSeeded",
+        "keys": [
+          "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+          1
+        ],
+        "slot": "0xb954dfa9a76b892e0c0709a47185a0d5aaa52a4579b2fd545f6a4707f512f879",
+        "value": 1
+      },
+      {
+        "label": "_residualBadDebtSeeded",
+        "keys": [
+          "0x290bd12c93e467bf51c51f5273d35bddb19e9274"
+        ],
+        "slot": "0x3385e528246aabed6f9dad3ab984c20b3855e6af9c2142deb1c6f9462b0af01c",
+        "value": 0
+      },
+      {
+        "label": "_positionSeeded",
+        "keys": [
+          "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+          1
+        ],
+        "slot": "0x89491d07f95130b0fcb8c835c39ff073c42076bbc35e33913fae72750faab22a",
+        "value": 1
+      },
+      {
+        "label": "_residualBadDebtSeeded",
+        "keys": [
+          "0x475fe397fa56884952d350aa9ee1c3946964bc0c"
+        ],
+        "slot": "0xa661b9e809ba71348bd61f4fb2453f8de57d929a673ca06fd09ad42cdffb7749",
+        "value": 0
+      },
+      {
+        "label": "_positionSeeded",
+        "keys": [
+          "0x66858286feea78a05ea093673ea1535e0a52002d",
+          1
+        ],
+        "slot": "0xa5561e2d91db5d263a5a52b83de90775ec7e67a8ab20ed8456ec90cfa782bc40",
+        "value": 1
+      },
+      {
+        "label": "_residualBadDebtSeeded",
+        "keys": [
+          "0x66858286feea78a05ea093673ea1535e0a52002d"
+        ],
+        "slot": "0x6ac6baea3eb65c812254ec27aef6803f96ba0fc53f809af66d136a72b6b8a65",
+        "value": 0
+      },
+      {
+        "label": "_positionSeeded",
+        "keys": [
+          "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+          1
+        ],
+        "slot": "0x5e7296c894b9ce5d18c072e0d118b0a62d8791cc5e73d0d46fc3cacb4d3c719c",
+        "value": 1
+      },
+      {
+        "label": "_residualBadDebtSeeded",
+        "keys": [
+          "0x77ca9dd6ccce2d692fb23877a2db7178807b0020"
+        ],
+        "slot": "0x41d2f084fab5798a308ac4bf1ba9f53a200e419fa887653cb49b19e239d4ac80",
+        "value": 0
+      },
+      {
+        "label": "_positionSeeded",
+        "keys": [
+          "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+          1
+        ],
+        "slot": "0x460b51f0783adb7d7bda7cd00a08c17daf99726f5bce0afd5f0d24c7b1c9852e",
+        "value": 1
+      },
+      {
+        "label": "_residualBadDebtSeeded",
+        "keys": [
+          "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34"
+        ],
+        "slot": "0x74f396a63ab4f4c46c987a0c0dce621bcaec7cdc973daa7a4fb2c5de35ae092e",
+        "value": 0
+      },
+      {
+        "label": "_positionSeeded",
+        "keys": [
+          "0xff287410852b9328437eac353720e5476bc5f837",
+          1
+        ],
+        "slot": "0x25ae4081686150c57937f90d26d7ed71f35d8e442676457debf3bb792636b92",
+        "value": 1
+      },
+      {
+        "label": "_residualBadDebtSeeded",
+        "keys": [
+          "0xff287410852b9328437eac353720e5476bc5f837"
+        ],
+        "slot": "0xd9faf7920695226a8c4e0799242b49d385aac6ac5bafe46e07ee934108e91bc0",
+        "value": 0
+      }
+    ],
+    "positionIndexes": [
+      {
+        "label": "traderMarketIndexPlus1",
+        "keys": [
+          "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+          1
+        ],
+        "slot": "0x1914e8dfd484601326ba47de44b365738b621d2376d278036ec1380eb430b51",
+        "value": 1
+      },
+      {
+        "label": "traderMarketIndexPlus1",
+        "keys": [
+          "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+          1
+        ],
+        "slot": "0x789aed25f85609ac94a9ed0eb6eac8333d9a5dc1b78cc6fcbc681362dc2e23f5",
+        "value": 1
+      },
+      {
+        "label": "traderMarketIndexPlus1",
+        "keys": [
+          "0x66858286feea78a05ea093673ea1535e0a52002d",
+          1
+        ],
+        "slot": "0xe7bd1ee6762df74e3514256725c137803041be60935820f6d161d1f7f8afe4b3",
+        "value": 1
+      },
+      {
+        "label": "traderMarketIndexPlus1",
+        "keys": [
+          "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+          1
+        ],
+        "slot": "0x8db25134a192c475c5ba15cf7b18ea77f6fa6c427591334ac5d21b5bd58c46d8",
+        "value": 1
+      },
+      {
+        "label": "traderMarketIndexPlus1",
+        "keys": [
+          "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+          1
+        ],
+        "slot": "0x40dec9df8488b9a962a9514a6684e7daf61a6342fa25742bffe53c23b4d370b9",
+        "value": 1
+      },
+      {
+        "label": "traderMarketIndexPlus1",
+        "keys": [
+          "0xff287410852b9328437eac353720e5476bc5f837",
+          1
+        ],
+        "slot": "0x47a05237cdc7227c6fef405d4f58ff15fb8937ebbf2ceada628474d3206cfdc4",
+        "value": 1
+      }
+    ],
+    "pmeV2Nonces": {
+      "0x290bd12c93e467bf51c51f5273d35bddb19e9274": 0,
+      "0x475fe397fa56884952d350aa9ee1c3946964bc0c": 0,
+      "0x66858286feea78a05ea093673ea1535e0a52002d": 0,
+      "0x77ca9dd6ccce2d692fb23877a2db7178807b0020": 0,
+      "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34": 0,
+      "0xff287410852b9328437eac353720e5476bc5f837": 0
+    },
+    "eventScan": {
+      "fromBlock": 47490488,
+      "toBlock": 47490558,
+      "emitters": [
+        "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+        "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+        "0xF5FB81e447AF3A3E81951aC72D751dE3E9B8eee2",
+        "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+        "0x8C3d9F71cA59B908Fa200546A63ea62F9C932998",
+        "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+        "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+        "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f",
+        "0x009f38440F058d095b61E0E2ee7fAbDF05BE7500"
+      ],
+      "topics": "all events from these exact emitters",
+      "events": 0
+    }
+  },
+  "ownerNonce": 807,
+  "ownerPendingNonce": 807,
+  "ownerBalanceWei": 1707180795682353,
+  "ownerBalanceETH": "0.001707180795682353",
+  "safeNonce": 15,
+  "executorNonce": 1,
+  "simulation": {
+    "method": "eth_call",
+    "block": 47490558,
+    "from": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+    "to": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+    "data": "0x05d5af5b039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d",
+    "value": 0,
+    "result": "0x",
+    "stateOverrides": false,
+    "passed": true
+  },
+  "fees": {
+    "gasEstimate": 57692,
+    "gasLimitWithMargin": 75000,
+    "gasMarginPercent": 30,
+    "baseFeePerGasWei": 5000000,
+    "priorityFeePerGasWei": 1000000,
+    "maxFeePerGasWei": 11000000,
+    "l1FeeUpperBound512BytesWei": 28490599994,
+    "l1AllowanceWei": 56981199988,
+    "maxBudgetWei": 881981199988,
+    "maxBudgetETH": "8.81981199988E-7"
+  },
+  "expectedEvent": {
+    "emitter": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+    "signature": "MigrationSealed(bytes32,address)",
+    "topics": [
+      "0xfdd70720ee4ac8df3db40d2f0ef06f3a6df16e1f981ef0d658be4ac266d788b5",
+      "0x000000000000000000000000c35f7a8a103a9a4464adfaa76b9b514093d23c27"
+    ],
+    "data": "0x039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d"
+  },
+  "transaction": {
+    "chainId": 84532,
+    "from": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+    "to": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+    "nonce": 807,
+    "value": 0,
+    "function": "sealMigration(bytes32)",
+    "selector": "0x05d5af5b",
+    "args": [
+      "0x039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d"
+    ],
+    "calldata": "0x05d5af5b039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d",
+    "gasLimit": 75000,
+    "maxFeePerGasWei": 11000000,
+    "maxPriorityFeePerGasWei": 1000000
+  },
+  "preservedArtifactSha256": {
+    "artifacts/perps_v2_final_snapshot/manifest.json": "88707f092c2be05fb5e4b73454f880b84abc4a1a95199e4eeb9aeec024687ddd",
+    "artifacts/perps_v2_final_snapshot/first_close_report.txt": "2232c4e00ab4851e9a2b853d0e937279508070fc8ae7322d0173c7c7332c12ca",
+    "artifacts/perps_v2_final_snapshot/manifest.cbor": "520897f586cb275fbe81d4d5acb30ce45632be4ce2574a0577bc302b339ed857",
+    "artifacts/perps_v2_final_snapshot/first_close.json": "a7bd80e5a0a6d9c5c3043fd2f4c5990ed4b14f02ae2e76690135228e35e65eeb",
+    "artifacts/perps_v2_final_snapshot/market_params.json": "5f90cfdce06130c6da0e0734c04812096dde23431024bca42ff332c55d0a9024",
+    "artifacts/perps_v2_final_snapshot/seed_calldata.json": "d92cf6abae899123d7d96009f36da3f8a715c04a7ee9ac6bf5dddc9c0b1cdb14",
+    "artifacts/perps_v2_final_snapshot/clearing_sizing_report.txt": "cfc3371b205af249792df54f8245567e5afaf3bd41b70b6ec26d16a0eb5bcf10",
+    "artifacts/perps_v2_migration_replay/preflight.json": "3d0d30fdfe45a296e096d0e984f57559b07d33e838256a2836b01b6e88440d20",
+    "artifacts/perps_v2_migration_replay/storage_layout.json": "bbff898edc0b21d81178ff7fefb21cc889681afbd82820de4d1e492ae7214031",
+    "artifacts/perps_v2_migration_replay/execution_package.json": "bdcc5f48b4637822316752358e3c37324cf6e3aa85f86dc406b1e0f74bee5738",
+    "artifacts/perps_v2_migration_replay/simulation.json": "bf1ee23f6fab6320c9b7c2e9ff2558a693c01bbeacd88dff385fd8e31cbc5cc3",
+    "artifacts/perps_v2_migration_replay/execution_started.json": "eaf7bae53a34dd1932d425cab3a6dc6a0ae593636f857769ee863e5226879512",
+    "artifacts/perps_v2_migration_replay/artifact_verification.json": "a0b122a61d85b4e51b08f77e30ecf5c957017cbcb1430ea6156c6c11f30977b9",
+    "artifacts/perps_v2_migration_replay/execution_journal.json": "4debdeeadecd4aa0634173a3d9635877bd75dc84d933e269d7502d8f9401dc2a",
+    "artifacts/perps_v2_migration_replay/receipt_block_reconciliation.json": "82308e0628c9dd405193a5d6abc9be52a5582817177e273a983846c7d5f34f70",
+    "artifacts/perps_v2_migration_replay/postflight.json": "fd00d5170a5d4043f1d91c79ac1cedc359dc84077b76cd36acd38efd0e629167",
+    "artifacts/perps_v2_migration_replay/prebroadcast.json": "91eb479abdaea353250184fde2b00b6104e1788412db7e19465d5dd1bd364068"
+  },
+  "status": "PERPS_V2_BASE_SEPOLIA_MIGRATION_RESEAL_V1_READY_TO_BROADCAST",
+  "previewSha256": "993727c3d27fe697d28f04d2adbda4c91573e77f035a44b5ba4865e6f8a13134"
+}

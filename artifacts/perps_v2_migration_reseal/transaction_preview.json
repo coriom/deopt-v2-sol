@@ -1,0 +1,16 @@
+{
+  "chainId": 84532,
+  "from": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+  "to": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+  "nonce": 807,
+  "value": 0,
+  "function": "sealMigration(bytes32)",
+  "selector": "0x05d5af5b",
+  "args": [
+    "0x039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d"
+  ],
+  "calldata": "0x05d5af5b039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d",
+  "gasLimit": 75000,
+  "maxFeePerGasWei": 11000000,
+  "maxPriorityFeePerGasWei": 1000000
+}

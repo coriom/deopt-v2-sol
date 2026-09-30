@@ -1,0 +1,19 @@
+{
+  "chainId": 84532,
+  "transactionHash": "0xf4cd9b68d0b21734e2d1ab4710b52b20ca36a7458e8fcc518d01731e07b0cec2",
+  "receiptBlock": 47491134,
+  "receiptBlockHash": "0x78734583f186f0c68a5437626778e19d8bce9240d1a8bb6d0fe0e209fe5d2ac3",
+  "canonicalInclusionStillMatches": true,
+  "heads": {
+    "safe": {
+      "block": 47491271,
+      "hash": "0x950a2da4f35f5fd3c3847a57b5fa0d4f6feb891f29598101042d250f8ffb5578",
+      "coversSeal": true
+    },
+    "finalized": {
+      "block": 47490683,
+      "hash": "0x96b54af4aef5685a6a0744d691500894c70aacd3ff3ddfce870109d0a9c67a4a",
+      "coversSeal": false
+    }
+  }
+}
