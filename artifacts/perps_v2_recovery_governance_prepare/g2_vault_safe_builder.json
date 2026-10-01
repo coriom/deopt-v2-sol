@@ -1,0 +1,51 @@
+{
+  "chainId": "84532",
+  "createdAt": 1790827734000,
+  "meta": {
+    "createdFromOwnerAddress": "",
+    "createdFromSafeAddress": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "description": "Review only: one Safe CALL to queue one independent Timelock operation",
+    "name": "G2_VAULT",
+    "txBuilderVersion": "1.18.0"
+  },
+  "transactions": [
+    {
+      "contractInputsValues": {
+        "data": "0x3331c56e000000000000000000000000a2bdc0efe80806ffda20189294dd8a5a1b426f150000000000000000000000000000000000000000000000000000000000000001",
+        "eta": "1791086934",
+        "target": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+        "value": "0"
+      },
+      "contractMethod": {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "target",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "value",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "data",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint256",
+            "name": "eta",
+            "type": "uint256"
+          }
+        ],
+        "name": "queueTransaction",
+        "payable": false
+      },
+      "data": "0x8e361cdf00000000000000000000000000340c360353a5ab784c5bc5c44322a6af0625d300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ac1d15600000000000000000000000000000000000000000000000000000000000000443331c56e000000000000000000000000a2bdc0efe80806ffda20189294dd8a5a1b426f15000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000",
+      "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "value": "0"
+    }
+  ],
+  "version": "1.0"
+}
