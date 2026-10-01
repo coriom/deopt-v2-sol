@@ -1,0 +1,11 @@
+{
+  "chainId": 84532,
+  "block": 47493208,
+  "blockHash": "0x79aac6f4a54370843b71662954db4843f8b340fa49deeb0c5cff45ae3be3f725",
+  "ownerConfirmedNonce": 808,
+  "ownerPendingNonce": 808,
+  "packageSha256": "41ea29ebdbcde48dd43733d6f288bd819ad8274738bd008501d03c9d528b6697",
+  "publicWrites": 0,
+  "keystoreUnlocked": false,
+  "preservedBlockedRebindFiles": 6
+}

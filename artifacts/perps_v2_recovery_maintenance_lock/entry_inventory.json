@@ -1,0 +1,13 @@
+{
+  "preservedBlockedRebindFiles": {
+    "docs/PERPS_V2_BASE_SEPOLIA_V2_REBIND_V1.md": "aeb2e646fa430a747bcd0e62120728072f5346ced29c038c0b40c6c908b05a3c",
+    "tools/perps_v2_cutover/rebind_stage_a_readback.py": "558f8a34e76d9556a0536f22bdee8dd3e827ab91dcca27800f07151c8f7764be",
+    "artifacts/perps_v2_rebind/ownership_gate.json": "606368209a724d2917186aff09baa81bdff0aa7151443b452789d395943b30dd",
+    "artifacts/perps_v2_rebind/stage_a_readback.json": "815cda15b0370a851dd5f9eb8972ed28a204fcfbfe6869a0c38b6b10e63dc2c9",
+    "artifacts/perps_v2_rebind/operational_record_access.json": "6b967684e0953e756bcb1de4a8df97970543de98c195810b0db3766c00e43c64",
+    "artifacts/perps_v2_rebind/final_readonly_refresh.json": "5113d7d4f52a3af7d355ddad5e7a1c755a7c52564ba4ce028f100626dd6835af"
+  },
+  "solHead": "fe5a7e4588504fdaf50db2ea940943c75442a8e7",
+  "backendHead": "ad8dd7466aeba6963d28687e825fe4df58ef32ee",
+  "resources": "7.6 GiB RAM, 6.4 GiB available; no build; no memory configuration changes"
+}

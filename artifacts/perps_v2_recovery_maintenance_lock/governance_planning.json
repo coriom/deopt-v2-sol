@@ -1,0 +1,34 @@
+{
+  "timelock": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+  "minDelay": 86400,
+  "queuePaused": 0,
+  "owner": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+  "vaultOwner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+  "roles": {
+    "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27": {
+      "proposers(address)": 0,
+      "executors(address)": 0
+    },
+    "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46": {
+      "proposers(address)": 1,
+      "executors(address)": 1
+    }
+  },
+  "safeThreshold": 2,
+  "safeOwnersAbi": "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003000000000000000000000000b9f8de807ff98d5730035a8bfed4bda33e886d060000000000000000000000000e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d000000000000000000000000a774c46c41064524df895bd7be9f294409798dfc",
+  "operationIdFormula": "Ethereum keccak256(abi.encode(target,value,data,eta)); two distinct operations; ETA not selected",
+  "insuranceTarget": "0x009f38440F058d095b61E0E2ee7fAbDF05BE7500",
+  "vaultTarget": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+  "noQueueOrExecutionPrepared": true,
+  "runtimeEqualsLocalArtifact": true,
+  "runtimeKeccak256": "0xb20f9fa764b46a832c7665f07c1b9c3cd6506a58f6885c0e12e88e9bbc55233c",
+  "sourceOperationMethods": [
+    "executeTransaction",
+    "isQueued",
+    "pauseQueueing",
+    "queuePaused",
+    "queueTransaction",
+    "queuedTransactions",
+    "unpauseQueueing"
+  ]
+}

@@ -1,0 +1,107 @@
+[
+  {
+    "name": "NEW.funding1",
+    "outcome": "EXPECTED_PAUSE_ERROR",
+    "errorData": "0xad4ee267",
+    "expectedError": "FundingPaused()",
+    "method": "eth_call"
+  },
+  {
+    "name": "NEW.funding2",
+    "outcome": "EXPECTED_PAUSE_ERROR",
+    "errorData": "0xad4ee267",
+    "expectedError": "FundingPaused()",
+    "method": "eth_call"
+  },
+  {
+    "name": "NEW.applyTrade",
+    "outcome": "EXPECTED_PAUSE_ERROR",
+    "errorData": "0x02b874a6",
+    "expectedError": "TradingPaused()",
+    "method": "eth_call"
+  },
+  {
+    "name": "NEW.liquidate",
+    "outcome": "EXPECTED_PAUSE_ERROR",
+    "errorData": "0x0d3f92fd",
+    "expectedError": "LiquidationPaused()",
+    "method": "eth_call"
+  },
+  {
+    "name": "NEW.impactMid",
+    "outcome": "EXPECTED_PAUSE_ERROR",
+    "errorData": "0xad4ee267",
+    "expectedError": "FundingPaused()",
+    "method": "eth_call"
+  },
+  {
+    "name": "OLD.funding1",
+    "outcome": "EXPECTED_PAUSE_ERROR",
+    "errorData": "0xad4ee267",
+    "expectedError": "FundingPaused()",
+    "method": "eth_call"
+  },
+  {
+    "name": "OLD.funding2",
+    "outcome": "EXPECTED_PAUSE_ERROR",
+    "errorData": "0xad4ee267",
+    "expectedError": "FundingPaused()",
+    "method": "eth_call"
+  },
+  {
+    "name": "OLD.applyTrade",
+    "outcome": "EXPECTED_PAUSE_ERROR",
+    "errorData": "0x02b874a6",
+    "expectedError": "TradingPaused()",
+    "method": "eth_call"
+  },
+  {
+    "name": "OLD.liquidate",
+    "outcome": "EXPECTED_PAUSE_ERROR",
+    "errorData": "0x0d3f92fd",
+    "expectedError": "LiquidationPaused()",
+    "method": "eth_call"
+  },
+  {
+    "name": "OLD.impactMid",
+    "outcome": "EXPECTED_PAUSE_ERROR",
+    "errorData": "0xad4ee267",
+    "expectedError": "FundingPaused()",
+    "method": "eth_call"
+  },
+  {
+    "name": "V1.funding1",
+    "outcome": "STILL_CALLABLE_READ_ONLY",
+    "errorData": null,
+    "expectedError": "FundingPaused()",
+    "method": "eth_call"
+  },
+  {
+    "name": "V1.funding2",
+    "outcome": "STILL_CALLABLE_READ_ONLY",
+    "errorData": null,
+    "expectedError": "FundingPaused()",
+    "method": "eth_call"
+  },
+  {
+    "name": "V1.applyTrade",
+    "outcome": "NOT_TRADING_PAUSED_ERROR",
+    "errorData": null,
+    "expectedError": "TradingPaused()",
+    "method": "eth_call"
+  },
+  {
+    "name": "V1.liquidate",
+    "outcome": "EXPECTED_PAUSE_ERROR",
+    "errorData": "0x0d3f92fd",
+    "expectedError": "LiquidationPaused()",
+    "method": "eth_call"
+  },
+  {
+    "name": "PME.executeTrade",
+    "outcome": "EXPECTED_PAUSE_ERROR",
+    "errorData": "0xeced32bc",
+    "expectedError": "PausedError()",
+    "method": "eth_call"
+  }
+]

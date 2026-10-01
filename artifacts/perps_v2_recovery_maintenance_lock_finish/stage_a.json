@@ -1,0 +1,148 @@
+{
+  "status": "PERPS_V2_BASE_SEPOLIA_RECOVERY_MAINTENANCE_LOCK_V1_FINISH_READY_TO_BROADCAST",
+  "publicWrites": 0,
+  "keystoreUnlocked": false,
+  "solHead": "fe5a7e4588504fdaf50db2ea940943c75442a8e7",
+  "backendHead": "ad8dd7466aeba6963d28687e825fe4df58ef32ee",
+  "comparisonBlock": 47528512,
+  "comparisonBlockHash": "0xae36eb48b4de74952ce0b3588411662795e95f4e7b02653e905bd74542fe26aa",
+  "comparisonTimestamp": 1790825312,
+  "chainId": 84532,
+  "ownerNonceConfirmed": 811,
+  "ownerNoncePending": 811,
+  "ownerBalanceWei": 1705858283559396,
+  "prefixReceipts": [
+    {
+      "ordinal": 1,
+      "hash": "0x02fc79a153b5db07933d23df14fec1071dde098e6c1ffa2d8ed7be050269e05f",
+      "block": 47494275,
+      "blockHash": "0xe9321a71018f86690477246095c66b6e0cb3f0a0c4f7e18e6037b6e2bcfb3496",
+      "status": 1,
+      "senderTargetNonceInputEventsVerified": true
+    },
+    {
+      "ordinal": 2,
+      "hash": "0xde74e08da9bfa42415f280b94e0ccae55f2ffe88ca4a20dad704c220be768505",
+      "block": 47494408,
+      "blockHash": "0xc0d211bb9f14fd63687f7b3bc41f2f4ba2baeda8370154a48eb9b271cbae245b",
+      "status": 1,
+      "senderTargetNonceInputEventsVerified": true
+    },
+    {
+      "ordinal": 3,
+      "hash": "0x15b337c5874da28710b3bc03b69b30324128da8763ba79b2160da21f2e14eeb7",
+      "block": 47494575,
+      "blockHash": "0x111704323031afad563452207842572325de48d946375ad71db39de8afd5a026",
+      "status": 1,
+      "senderTargetNonceInputEventsVerified": true
+    }
+  ],
+  "scopedExpectedEventsSincePrefix": 11,
+  "economicChecks": 114,
+  "seedFlagsChecked": 14,
+  "positionIndexesChecked": 6,
+  "pmeTraderNoncesChecked": 6,
+  "controls": {
+    "PME": [
+      1
+    ],
+    "NEW": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "OLD": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "V1": [
+      0,
+      1,
+      0,
+      0
+    ]
+  },
+  "simulation": {
+    "method": "eth_call",
+    "from": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+    "to": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+    "result": "0x",
+    "block": 47528512,
+    "priorLocalFourStepRehearsal": "artifacts/perps_v2_recovery_maintenance_lock/fork_simulation.json"
+  },
+  "oracle": {
+    "address": "0x420000000000000000000000000000000000000F",
+    "method": "getL1FeeUpperBound(uint256)",
+    "unsignedRlpType2SizeBytes": 178,
+    "conservativeInputBytes": 512,
+    "boundAtActualUnsignedSizeWei": 10301847742,
+    "boundAt512BytesWei": 26699634399,
+    "adds68BytesItself": true,
+    "getOperatorFeeAtEstimateWei": 0,
+    "getOperatorFeeAtGasLimitWei": 0
+  },
+  "feeDecision": {
+    "blockNumber": 47528512,
+    "blockHash": "0xae36eb48b4de74952ce0b3588411662795e95f4e7b02653e905bd74542fe26aa",
+    "blockTimestamp": 1790825312,
+    "rpcMethod": "eth_call",
+    "oracleAddress": "0x420000000000000000000000000000000000000F",
+    "oracleFunction": "getL1FeeUpperBound(uint256)",
+    "oracleUnsignedTxSizeBytes": 512,
+    "oracleReturnedL1BoundWei": 26699634399,
+    "approvedL2GasEstimate": 37269,
+    "observedL2GasEstimate": 37269,
+    "gasLimit": 48450,
+    "observedBaseFeePerGasWei": 5000000,
+    "observedSuggestedPriorityFeePerGasWei": 1000000,
+    "observedRpcGasPriceWei": 6000000,
+    "maxFeePerGasWei": 11000000,
+    "maxPriorityFeePerGasWei": 1000000,
+    "l1BoundMultiplierNumerator": 2,
+    "l1BoundMultiplierDenominator": 1,
+    "approvedL1AllowanceWei": 66749085998,
+    "additionalFeeAllowanceWei": 0,
+    "additionalFeeQuotedWei": 0,
+    "totalPlanningBudgetWei": 599699085998,
+    "ownerBalanceWei": 1705858283559396,
+    "comparison": "scaledL1BoundWei <= approvedL1AllowanceWei; additionalFeeQuotedWei <= additionalFeeAllowanceWei; observedL2GasEstimate <= gasLimit; 2*baseFee+suggestedPriority <= maxFeePerGas; suggestedPriority <= maxPriorityFeePerGas; rpcGasPrice <= maxFeePerGas; ownerBalanceWei > totalPlanningBudgetWei",
+    "result": "PASS",
+    "scaledL1BoundWei": 53399268798,
+    "reason": "WITHIN_APPROVED_LIMITS"
+  },
+  "oldVsProposed": {
+    "gasEstimate": [
+      36905,
+      37269
+    ],
+    "gasLimit": [
+      47977,
+      48450
+    ],
+    "maxFeePerGasWei": [
+      11000000,
+      11000000
+    ],
+    "maxPriorityFeePerGasWei": [
+      1000000,
+      1000000
+    ],
+    "l1AllowanceWei": [
+      57175216312,
+      66749085998
+    ],
+    "additionalOperatorFeeAllowanceWei": [
+      0,
+      0
+    ]
+  },
+  "originalPackageSha256": "41ea29ebdbcde48dd43733d6f288bd819ad8274738bd008501d03c9d528b6697",
+  "continuationPackageSha256": "cd4509be30e9fc9baf39a7606a523018ea667f6c93a685a46d870334adc29adb",
+  "historicalTriggerValue": "UNKNOWN_NOT_RECORDED",
+  "backendRuntimeState": "STOPPED",
+  "noStep4RecordedOrNonceConsumed": true,
+  "noPublicWritePerformed": true
+}

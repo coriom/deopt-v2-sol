@@ -1,0 +1,259 @@
+{
+  "scope": "Existing local config names/DSN identity fingerprints, docker metadata and volume names only; no record executability inference",
+  "containers": [
+    {
+      "ID": "d5a8ce2213f1",
+      "Names": "deopt-v2g-l0-webhook-sink",
+      "Image": "python:3.13-slim",
+      "State": "running"
+    },
+    {
+      "ID": "9c22f3f54e7f",
+      "Names": "deopt-v2g-l0-grafana",
+      "Image": "grafana/grafana:11.4.0",
+      "State": "running"
+    },
+    {
+      "ID": "f4e0c4708a6b",
+      "Names": "deopt-v2g-l0-prometheus",
+      "Image": "prom/prometheus:v3.12.0",
+      "State": "running"
+    },
+    {
+      "ID": "31220ca85b4d",
+      "Names": "deopt-v2g-l0-alertmanager",
+      "Image": "prom/alertmanager:v0.32.1",
+      "State": "running"
+    }
+  ],
+  "databaseConfigurations": [
+    {
+      "file": ".env.bak.fx_q1_c.20260608T082115Z",
+      "databaseIdentitySha256": "ff67959e6d4e944a23195621f03346b0988cd5d6d4e797f7d22b20436c9b2293",
+      "loopback": true,
+      "example": false
+    },
+    {
+      "file": ".env.bak.gas_cap_remediation.20260608T091544Z",
+      "databaseIdentitySha256": "ff67959e6d4e944a23195621f03346b0988cd5d6d4e797f7d22b20436c9b2293",
+      "loopback": true,
+      "example": false
+    },
+    {
+      "file": ".env.bak.nonce_sync.20260608T145505Z",
+      "databaseIdentitySha256": "ff67959e6d4e944a23195621f03346b0988cd5d6d4e797f7d22b20436c9b2293",
+      "loopback": true,
+      "example": false
+    },
+    {
+      "file": ".env.bak.ops_cleanup.20260608T140556Z",
+      "databaseIdentitySha256": "ff67959e6d4e944a23195621f03346b0988cd5d6d4e797f7d22b20436c9b2293",
+      "loopback": true,
+      "example": false
+    },
+    {
+      "file": ".env.example",
+      "databaseIdentitySha256": "ff67959e6d4e944a23195621f03346b0988cd5d6d4e797f7d22b20436c9b2293",
+      "loopback": true,
+      "example": true
+    },
+    {
+      "file": ".env.perps_closed_test_prepare_only.local",
+      "databaseIdentitySha256": "ff67959e6d4e944a23195621f03346b0988cd5d6d4e797f7d22b20436c9b2293",
+      "loopback": true,
+      "example": false
+    },
+    {
+      "file": ".env.production.example",
+      "databaseIdentitySha256": "75a71f4599e893ac690d27250b880f703a73e9e7132e1e8e5392c0923c2c8e03",
+      "loopback": false,
+      "example": true
+    }
+  ],
+  "volumes": [
+    {
+      "name": "0ce0d4625162898ee107ab1d0d104ebaa842099e52abd96a12f7333d697363b5",
+      "driver": "local"
+    },
+    {
+      "name": "1cb579796f654f664b2c11d466097aec221b45cb490ec5078f50dd0560f8f056",
+      "driver": "local"
+    },
+    {
+      "name": "2c57a40609b0dfb6d341308fd7100b7a3b1b84042a4596a42c88056a3c9200b2",
+      "driver": "local"
+    },
+    {
+      "name": "6ddb752e85958dd985db7395b899e14ab1ed64f038e05ff8896918d48e4ef422",
+      "driver": "local"
+    },
+    {
+      "name": "7aee030c6c89606c252c051459cd68b557581644e52168274ac864656b17b06c",
+      "driver": "local"
+    },
+    {
+      "name": "7c3153759a201bfae88379006a57e5fcd38347a2e7f63ea5e2bc732d3430ac1f",
+      "driver": "local"
+    },
+    {
+      "name": "8b80d9781b4215936b978ce034511461ce7de3d8a0efb8f5c901f02e29d46ce3",
+      "driver": "local"
+    },
+    {
+      "name": "8d722002e13be8c36b9b633aaf76322c8628cd0ad03e5a3b474fee314d80f5e2",
+      "driver": "local"
+    },
+    {
+      "name": "8ff877fdcad6e6d5218e4f228ac4fe23ddce15b295e163a9e29cb027741d178e",
+      "driver": "local"
+    },
+    {
+      "name": "9b837ab221bbb6a7d95b10e2a0df3cd362631a76f0ccbd0eb482a97ddd72c065",
+      "driver": "local"
+    },
+    {
+      "name": "26a59699e09302b538082312c13dcf67bf5034019fd4520a8c596a4e8efee264",
+      "driver": "local"
+    },
+    {
+      "name": "27b8b59fc0b72ccc89b8864b40fb44369f543c6829038e7fb4c6bd8baba0ca84",
+      "driver": "local"
+    },
+    {
+      "name": "28c0489b7473f835c404feeeefd1c23373362ea4b465e575d3d76cfb49a3fcab",
+      "driver": "local"
+    },
+    {
+      "name": "31c1725f8cfe321c8f9447a2f48b9ba0a39160cf7be773d460d22243b339c292",
+      "driver": "local"
+    },
+    {
+      "name": "98ef7243a8f1914a71b8c0996008c9a127147788357184fb8dd0217bb3b6cf7d",
+      "driver": "local"
+    },
+    {
+      "name": "382f98284555afe8dba2ca78a1a07dc8e1a8c503b779a54735b7efc563ba9009",
+      "driver": "local"
+    },
+    {
+      "name": "415b732699767e49cd99a484512d3402c59f672439ab1e34a8fa5b67dc68095a",
+      "driver": "local"
+    },
+    {
+      "name": "689e54cedfb9e56761cd85dfb115ae20a4db2ed9a992b7be789371b80d91a5c6",
+      "driver": "local"
+    },
+    {
+      "name": "03434eaf18e9992a43ca288fc9df72e14494d62b9dd29d0f52e53c4b0b124673",
+      "driver": "local"
+    },
+    {
+      "name": "7660e69f49fedbabfe2b5125897159647b7f4ad7d9c75014d5d45e26a0481e09",
+      "driver": "local"
+    },
+    {
+      "name": "42254b5410b5832c1cc4c44de08316c6eff2b18c97d1d99a918be75c1da3167d",
+      "driver": "local"
+    },
+    {
+      "name": "66027afd3be9ed06c3aff8be3a4faaa9f1273758549d0df71cb043ecd3037f1a",
+      "driver": "local"
+    },
+    {
+      "name": "a760e39818f560b60595418109bf1cc5a7f0085cefed076d03ee7f461ad70c49",
+      "driver": "local"
+    },
+    {
+      "name": "b7a2442f6f8d7df8aa25ec34c78776c7eabfc52e6af5088f048c0b3f62770568",
+      "driver": "local"
+    },
+    {
+      "name": "b7f3c73e556adcd76c1430d68214ee32d5a6afad0bf25f8caf9a1b4fcf3d9798",
+      "driver": "local"
+    },
+    {
+      "name": "bcacb07fea5d4c2a30d6ab8798d21710af267c0674fd89360b2d60cf83c431e2",
+      "driver": "local"
+    },
+    {
+      "name": "c34aa14add403ffd2c40141126d2c7e2424d1bd6a3f5b5e44507dd06dd725de3",
+      "driver": "local"
+    },
+    {
+      "name": "d8ba998313dcc6d5b150bf5150606e623847cf74c9230755bb86a595603d6595",
+      "driver": "local"
+    },
+    {
+      "name": "d9eb72ccd912aee361c5255e9129df2701634b8ad9da43c31e4f20e5f34f6699",
+      "driver": "local"
+    },
+    {
+      "name": "d060a4c33f06819cad844ad315199730d9def4fa653f4393111e61ea4b3a1c0f",
+      "driver": "local"
+    },
+    {
+      "name": "de903b12ad38d32bf0639c7827cb1bab2f54f12a7d12c5974d7951467c284bdb",
+      "driver": "local"
+    },
+    {
+      "name": "dfb84549f9d70f8f19dcf6a70f9d5aedd15f61bbffd55faa1923536fbefb8b17",
+      "driver": "local"
+    },
+    {
+      "name": "f9a7be5c0ff986c97feeaf50f6f81fe41fd49d68e9fbf4ecbdf031997e0d37d2",
+      "driver": "local"
+    },
+    {
+      "name": "f93b5b826b0082dc43c47f895e89443d3b3d91dc5713ebdff58e899e3dc4bea8",
+      "driver": "local"
+    },
+    {
+      "name": "local-stack_alertmanager-data",
+      "driver": "local"
+    },
+    {
+      "name": "local-stack_grafana-data",
+      "driver": "local"
+    },
+    {
+      "name": "local-stack_prometheus-data",
+      "driver": "local"
+    },
+    {
+      "name": "local-stack_webhook-sink-data",
+      "driver": "local"
+    }
+  ],
+  "databaseMutations": 0,
+  "containerStarts": 0,
+  "signedOrderInventory": "UNRESOLVED",
+  "signaturesPrinted": false,
+  "databaseCatalogProbe": {
+    "database": "postgres maintenance database",
+    "readOnly": true,
+    "exitCode": 2,
+    "queried": "pg_database names only",
+    "databaseNames": [],
+    "errorDetailsWithheld": true
+  },
+  "containerCount": 20,
+  "postgresContainerPresent": false,
+  "boundedBackupInventory": {
+    "root": "/home/corio/DEOPT",
+    "patterns": [
+      "*.dump",
+      "*.sql.gz",
+      "*.backup"
+    ],
+    "files": [],
+    "contentsRead": false,
+    "restores": 0,
+    "excludes": [
+      ".git",
+      "target",
+      "node_modules",
+      "lib"
+    ],
+    "scopeNotExhaustive": true
+  }
+}

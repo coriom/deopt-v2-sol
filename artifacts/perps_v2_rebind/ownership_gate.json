@@ -1,0 +1,79 @@
+{
+  "chainId": 84532,
+  "block": 47492053,
+  "blockHash": "0xc0a7e152b11b44d63ed66673ec299885a4ee789bc93320d884f59917bf156811",
+  "expectedOwner": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+  "owners": {
+    "FMV2": {
+      "contract": "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f",
+      "owner": "0xc35f7a8a103a9a4464adfaa76b9b514093d23c27",
+      "matchesOwnerEOA": true
+    },
+    "INSURANCE": {
+      "contract": "0x009f38440F058d095b61E0E2ee7fAbDF05BE7500",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "matchesOwnerEOA": false
+    },
+    "RISK": {
+      "contract": "0x8C3d9F71cA59B908Fa200546A63ea62F9C932998",
+      "owner": "0xc35f7a8a103a9a4464adfaa76b9b514093d23c27",
+      "matchesOwnerEOA": true
+    },
+    "PME": {
+      "contract": "0xF5FB81e447AF3A3E81951aC72D751dE3E9B8eee2",
+      "owner": "0xc35f7a8a103a9a4464adfaa76b9b514093d23c27",
+      "matchesOwnerEOA": true
+    }
+  },
+  "ownerInsuranceCall": {
+    "reverted": true,
+    "method": "eth_call",
+    "publicWrite": false,
+    "selector": "0x0f62e507",
+    "calldata": "0x0f62e507000000000000000000000000a2bdc0efe80806ffda20189294dd8a5a1b426f150000000000000000000000000000000000000000000000000000000000000001",
+    "error": "NotAuthorized()",
+    "errorData": "0xea8e4eb5",
+    "exactExpectedRevert": true
+  },
+  "proposedSetterInspection": [
+    {
+      "contract": "FMV2",
+      "function": "setFeeConsumer(address,bool)",
+      "selector": "0x677682c4",
+      "arguments": [
+        "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "true"
+      ],
+      "owner": "0xc35f7a8a103a9a4464adfaa76b9b514093d23c27"
+    },
+    {
+      "contract": "INSURANCE",
+      "function": "setBackstopCaller(address,bool)",
+      "selector": "0x0f62e507",
+      "arguments": [
+        "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "true"
+      ],
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588"
+    },
+    {
+      "contract": "RISK",
+      "function": "setPerpEngine(address)",
+      "selector": "0xb619daf7",
+      "arguments": [
+        "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15"
+      ],
+      "owner": "0xc35f7a8a103a9a4464adfaa76b9b514093d23c27"
+    },
+    {
+      "contract": "PME",
+      "function": "setEngine(address)",
+      "selector": "0x0e830e49",
+      "arguments": [
+        "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15"
+      ],
+      "owner": "0xc35f7a8a103a9a4464adfaa76b9b514093d23c27"
+    }
+  ],
+  "notAnApprovedExecutionPackage": true
+}

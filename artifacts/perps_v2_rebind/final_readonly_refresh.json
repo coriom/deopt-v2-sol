@@ -1,0 +1,14 @@
+{
+  "block": 47492164,
+  "blockHash": "0x05a207758f3b0dd12b175773eed4fe00498f3057c53b802ad05ebeb8b0c6f95c",
+  "ownerConfirmedNonce": 808,
+  "ownerPendingNonce": 808,
+  "newMarket2": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "insuranceOwner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+  "publicWrites": 0
+}

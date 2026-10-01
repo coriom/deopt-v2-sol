@@ -1,0 +1,12 @@
+{
+  "localRpc": "http://127.0.0.1:56657",
+  "scope": "isolated Anvil fork, not public Base Sepolia; chainId also 84532",
+  "forkBlock": 47492624,
+  "storageOverrides": false,
+  "codeReplacement": false,
+  "balanceFabrication": false,
+  "keystoreUnlocked": false,
+  "steps": [],
+  "localForkStopped": true,
+  "attemptLimitation": "Stopped at immediate local receipt assertion; receipt and returned local hash were not retained. No successful local step claimed. Fork terminated. No public sends. Runner now journals hash and polls receipt before readback."
+}

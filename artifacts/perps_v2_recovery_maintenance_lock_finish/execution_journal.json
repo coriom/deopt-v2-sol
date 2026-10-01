@@ -1,0 +1,24 @@
+{
+  "milestone": "PERPS_V2_BASE_SEPOLIA_RECOVERY_MAINTENANCE_LOCK_V1_FINISH",
+  "status": "COMPLETE",
+  "publicSendInvocations": 1,
+  "transactions": [
+    {
+      "ordinal": 4,
+      "nonce": 811,
+      "target": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "calldata": "0xf64e345d0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001",
+      "status": "VERIFIED",
+      "submissionAttempts": 1,
+      "hash": "0x3787c2b2b6a88e6688ff71eb6b01b4dddf4fee6b8014aa739c8e691818bf4a50",
+      "receiptBlock": 47528958,
+      "receiptBlockHash": "0xed6b2baa63105fd5c472b7a3149e0afc801952e6dfff73bfb105076abab4bd4f",
+      "gasUsed": 36905,
+      "eventCount": 4
+    }
+  ],
+  "packageSha256": "cd4509be30e9fc9baf39a7606a523018ea667f6c93a685a46d870334adc29adb",
+  "comparisonBlock": 47528846,
+  "ownerNonceBefore": 811,
+  "ownerBalanceBeforeWei": 1705858283559396
+}

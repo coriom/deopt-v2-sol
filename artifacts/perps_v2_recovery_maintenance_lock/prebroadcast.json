@@ -1,0 +1,46 @@
+{
+  "block": 47494187,
+  "blockHash": "0xb4872facded791c7da11c74afa5a10ad41b4f8be351bfccabc9b718ac090aa5c",
+  "chainId": 84532,
+  "packageSha256": "41ea29ebdbcde48dd43733d6f288bd819ad8274738bd008501d03c9d528b6697",
+  "ownerNonce": 808,
+  "ownerPendingNonce": 808,
+  "ownerBalanceWei": 1706833527156533,
+  "canonicalEconomicChecks": 114,
+  "migrationHash": "0x039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d",
+  "controls": {
+    "PME": [
+      0
+    ],
+    "NEW": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "OLD": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "V1": [
+      0,
+      1,
+      0,
+      0
+    ]
+  },
+  "safeNonce": 15,
+  "executorNonce": 1,
+  "backendRuntimeState": "STOPPED",
+  "feeEvidence": {
+    "baseFeePerGasWei": 5000000,
+    "priorityFeePerGasWei": 1000000,
+    "gasPriceWei": 6000000,
+    "l1DoubleUpperBoundWei": 50633019788,
+    "approvedFeeCapWei": 11000000,
+    "approvedL1AllowanceWei": 57175216312
+  },
+  "signerVerified": true
+}

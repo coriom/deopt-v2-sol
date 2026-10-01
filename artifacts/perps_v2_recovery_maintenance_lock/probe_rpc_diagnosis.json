@@ -1,0 +1,31 @@
+{
+  "localForkOnly": true,
+  "publicWrites": 0,
+  "results": [
+    {
+      "callOptions": {},
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "error": {
+          "code": -32003,
+          "message": "Insufficient funds for gas * price + value"
+        }
+      }
+    },
+    {
+      "callOptions": {
+        "gasPrice": "0x0",
+        "gas": "0x7a120"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "error": {
+          "code": -32003,
+          "message": "Insufficient funds for gas * price + value"
+        }
+      }
+    }
+  ]
+}

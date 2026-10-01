@@ -1,0 +1,79 @@
+{
+  "status": "PARTIAL_HALTED_BEFORE_ORDINAL_4",
+  "block": 47494795,
+  "blockHash": "0x84d7e63b48eb2ceec28251bb70a5c4e00076d8b69a73009ab38210d3795bb17d",
+  "packageSha256": "41ea29ebdbcde48dd43733d6f288bd819ad8274738bd008501d03c9d528b6697",
+  "chainId": 84532,
+  "publicSendInvocations": 3,
+  "ownerNonce": 811,
+  "ownerPendingNonce": 811,
+  "ownerBalancePreWei": 1706833527156533,
+  "ownerBalancePostWei": 1705858283559396,
+  "balanceDeltaWei": 975243597137,
+  "settledExecutionFeeWei": 957534000000,
+  "observedL1FeeWei": 17709597137,
+  "observedTotalFeeWei": 975243597137,
+  "controls": {
+    "PME": [
+      1
+    ],
+    "NEW": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "OLD": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "V1": [
+      0,
+      1,
+      0,
+      0
+    ]
+  },
+  "economicChecks": 114,
+  "scopedEvents": 11,
+  "approvedL1AllowancePerTxWei": 57175216312,
+  "currentL1UpperBoundWei": 26666583392,
+  "currentDoubledL1UpperBoundWei": 53333166784,
+  "passwordFileAbsent": true,
+  "safeNonce": 15,
+  "executorNonce": 1,
+  "transactions": [
+    {
+      "ordinal": 1,
+      "hash": "0x02fc79a153b5db07933d23df14fec1071dde098e6c1ffa2d8ed7be050269e05f",
+      "block": 47494275,
+      "blockHash": "0xe9321a71018f86690477246095c66b6e0cb3f0a0c4f7e18e6037b6e2bcfb3496",
+      "status": 1,
+      "gasUsed": 49239,
+      "eventCount": 1
+    },
+    {
+      "ordinal": 2,
+      "hash": "0xde74e08da9bfa42415f280b94e0ccae55f2ffe88ca4a20dad704c220be768505",
+      "block": 47494408,
+      "blockHash": "0xc0d211bb9f14fd63687f7b3bc41f2f4ba2baeda8370154a48eb9b271cbae245b",
+      "status": 1,
+      "gasUsed": 55175,
+      "eventCount": 5
+    },
+    {
+      "ordinal": 3,
+      "hash": "0x15b337c5874da28710b3bc03b69b30324128da8763ba79b2160da21f2e14eeb7",
+      "block": 47494575,
+      "blockHash": "0x111704323031afad563452207842572325de48d946375ad71db39de8afd5a026",
+      "status": 1,
+      "gasUsed": 55175,
+      "eventCount": 5
+    }
+  ],
+  "haltClassification": "Per-step check 2 * OP GasPriceOracle.getL1FeeUpperBound(512) <= approved per-transaction L1 allowance failed before ordinal 4; exact transient bound not recorded",
+  "nextUnsentOrdinal": 4,
+  "continuationRequiresNewReviewedPackageAndApproval": true
+}

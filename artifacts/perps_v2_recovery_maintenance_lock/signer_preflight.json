@@ -1,0 +1,9 @@
+{
+  "independentlyDerivedAddress": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+  "matchesOwner": true,
+  "keystoreLocation": "~/.foundry/keystores/deopt-deployer",
+  "passwordFileMode": "0600",
+  "passwordFileUid": 1000,
+  "runtimeFilesystem": "tmpfs",
+  "publicWrites": 0
+}

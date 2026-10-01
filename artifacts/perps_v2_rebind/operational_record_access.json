@@ -1,0 +1,12 @@
+{
+  "sourceFile": ".env.perps_closed_test_prepare_only.local",
+  "readOnly": true,
+  "exitCode": 2,
+  "failureClass": "configured_database_does_not_exist",
+  "loopbackEndpoint": true,
+  "credentialsPrinted": false,
+  "databaseStarted": false,
+  "recordsInspected": false,
+  "conclusion": "Cannot establish absence or executability of surviving signed orders or prepared broadcasts from unavailable operational database.",
+  "configurationScope": "Available prepare-only local configuration; current backend .env absent. This is not proof that all historical operational stores are absent."
+}

@@ -1,0 +1,1635 @@
+{
+  "milestone": "PERPS_V2_BASE_SEPOLIA_RECOVERY_MAINTENANCE_LOCK_V1",
+  "stage": "A",
+  "publicWrites": 0,
+  "keystoreUnlocked": false,
+  "chainId": 84532,
+  "block": 47492624,
+  "blockHash": "0x52b87395d043091f9ff844a05b986ff8cfc9115ddd25b84fc8481cfc712abce4",
+  "blockTimestamp": 1790753536,
+  "ownerNonce": 808,
+  "ownerBalanceWei": 1706833527156533,
+  "snapshotHash": "0x039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d",
+  "canonicalFileSha256": {
+    "manifest.json": "88707f092c2be05fb5e4b73454f880b84abc4a1a95199e4eeb9aeec024687ddd",
+    "manifest.cbor": "520897f586cb275fbe81d4d5acb30ce45632be4ce2574a0577bc302b339ed857",
+    "seed_calldata.json": "d92cf6abae899123d7d96009f36da3f8a715c04a7ee9ac6bf5dddc9c0b1cdb14"
+  },
+  "solHead": "fe5a7e4588504fdaf50db2ea940943c75442a8e7",
+  "backendHead": "ad8dd7466aeba6963d28687e825fe4df58ef32ee",
+  "checks": [
+    {
+      "label": "NEW.owner()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "owner()",
+      "args": [],
+      "value": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+      "passed": true
+    },
+    {
+      "label": "NEW.marketRegistry()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "marketRegistry()",
+      "args": [],
+      "value": "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+      "passed": true
+    },
+    {
+      "label": "NEW.collateralVault()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "collateralVault()",
+      "args": [],
+      "value": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "passed": true
+    },
+    {
+      "label": "NEW.oracle()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "oracle()",
+      "args": [],
+      "value": "0xB416406F200B2Ef3D7a86A5D5877Ed41D9B1A581",
+      "passed": true
+    },
+    {
+      "label": "NEW.matchingEngine()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "matchingEngine()",
+      "args": [],
+      "value": "0xF5FB81e447AF3A3E81951aC72D751dE3E9B8eee2",
+      "passed": true
+    },
+    {
+      "label": "NEW.riskModule()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "riskModule()",
+      "args": [],
+      "value": "0x8C3d9F71cA59B908Fa200546A63ea62F9C932998",
+      "passed": true
+    },
+    {
+      "label": "NEW.clearingAccount()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "clearingAccount()",
+      "args": [],
+      "value": "0x54d49c088DD27cFc82685b867c182b4bB4aC435c",
+      "passed": true
+    },
+    {
+      "label": "NEW.insuranceFund()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "insuranceFund()",
+      "args": [],
+      "value": "0x009f38440F058d095b61E0E2ee7fAbDF05BE7500",
+      "passed": true
+    },
+    {
+      "label": "NEW.collateralSeizer()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "collateralSeizer()",
+      "args": [],
+      "value": "0x39F928b959cF58369E7C7a3B925e6cBfFA62B669",
+      "passed": true
+    },
+    {
+      "label": "NEW.feesManagerV2()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "feesManagerV2()",
+      "args": [],
+      "value": "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f",
+      "passed": true
+    },
+    {
+      "label": "NEW.useFeesManagerV2()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "useFeesManagerV2()",
+      "args": [],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "NEW.guardian()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "guardian()",
+      "args": [],
+      "value": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+      "passed": true
+    },
+    {
+      "label": "NEW.migrationState()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "migrationState()",
+      "args": [],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "NEW.migrationSnapshotHash()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "migrationSnapshotHash()",
+      "args": [],
+      "value": "0x039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d",
+      "passed": true
+    },
+    {
+      "label": "NEW.totalResidualBadDebtBase()",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "totalResidualBadDebtBase()",
+      "args": [],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "V1.PME.paused",
+      "address": "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+      "function": "paused()",
+      "args": [],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "V1.liquidationPaused",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "liquidationPaused()",
+      "args": [],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "OLD.migrationState",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "migrationState()",
+      "args": [],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "OLD.snapshot",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "migrationSnapshotHash()",
+      "args": [],
+      "value": "0x039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d",
+      "passed": true
+    },
+    {
+      "label": "OLD.registry",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "marketRegistry()",
+      "args": [],
+      "value": "0xb4fcf45E57b93274441dEf8f0f68bd30f6D677eC",
+      "passed": true
+    },
+    {
+      "label": "Vault.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "function": "isAuthorizedEngine(address)",
+      "args": [
+        "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c"
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "Vault.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "function": "isAuthorizedEngine(address)",
+      "args": [
+        "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9"
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "Vault.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "function": "isAuthorizedEngine(address)",
+      "args": [
+        "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "Shared.perpEngine.0xF5FB81e447AF3A3E81951aC72D751dE3E9B8eee2",
+      "address": "0xF5FB81e447AF3A3E81951aC72D751dE3E9B8eee2",
+      "function": "perpEngine()",
+      "args": [],
+      "value": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "passed": true
+    },
+    {
+      "label": "Shared.perpEngine.0x8C3d9F71cA59B908Fa200546A63ea62F9C932998",
+      "address": "0x8C3d9F71cA59B908Fa200546A63ea62F9C932998",
+      "function": "perpEngine()",
+      "args": [],
+      "value": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "passed": true
+    },
+    {
+      "label": "NEW.feeConsumer",
+      "address": "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f",
+      "function": "isFeeConsumer(address)",
+      "args": [
+        "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "NEW.backstopCaller",
+      "address": "0x009f38440F058d095b61E0E2ee7fAbDF05BE7500",
+      "function": "isBackstopCaller(address)",
+      "args": [
+        "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "Clearing.balance",
+      "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "function": "balances(address,address)",
+      "args": [
+        "0x54d49c088DD27cFc82685b867c182b4bB4aC435c",
+        "0x6eAe407f5640B006faC9965182e238582A3B412E"
+      ],
+      "value": 1000000000,
+      "passed": true
+    },
+    {
+      "label": "NEW.market.1",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "marketState(uint256)",
+      "args": [
+        1
+      ],
+      "value": [
+        1001002,
+        1001002,
+        0,
+        1789715546
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.market.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.1",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "marketState(uint256)",
+      "args": [
+        1
+      ],
+      "value": [
+        1001002,
+        1001002,
+        0,
+        1789715546
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.market.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.1",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "marketState(uint256)",
+      "args": [
+        1
+      ],
+      "value": [
+        1001002,
+        1001002,
+        0,
+        1789715546
+      ],
+      "passed": true
+    },
+    {
+      "label": "PMR.getMaxExecutionDeviationBps(uint256).1",
+      "address": "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+      "function": "getMaxExecutionDeviationBps(uint256)",
+      "args": [
+        1
+      ],
+      "value": 100,
+      "passed": true
+    },
+    {
+      "label": "PMR.marketExists(uint256).1",
+      "address": "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+      "function": "marketExists(uint256)",
+      "args": [
+        1
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "PMR.isMarketActive(uint256).1",
+      "address": "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+      "function": "isMarketActive(uint256)",
+      "args": [
+        1
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "NEW.market.2",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "marketState(uint256)",
+      "args": [
+        2
+      ],
+      "value": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.market.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.2",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "marketState(uint256)",
+      "args": [
+        2
+      ],
+      "value": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.market.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.2",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "marketState(uint256)",
+      "args": [
+        2
+      ],
+      "value": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "PMR.getMaxExecutionDeviationBps(uint256).2",
+      "address": "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+      "function": "getMaxExecutionDeviationBps(uint256)",
+      "args": [
+        2
+      ],
+      "value": 100,
+      "passed": true
+    },
+    {
+      "label": "PMR.marketExists(uint256).2",
+      "address": "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+      "function": "marketExists(uint256)",
+      "args": [
+        2
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "PMR.isMarketActive(uint256).2",
+      "address": "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+      "function": "isMarketActive(uint256)",
+      "args": [
+        2
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        1
+      ],
+      "value": [
+        1000,
+        3000000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        1
+      ],
+      "value": [
+        1000,
+        3000000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x290bd12c93e467bf51c51f5273d35bddb19e9274.1",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        1
+      ],
+      "value": [
+        1000,
+        3000000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x290bd12c93e467bf51c51f5273d35bddb19e9274.2",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        2
+      ],
+      "value": [
+        0,
+        0,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.getTraderMarketsLength(address).0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "getTraderMarketsLength(address)",
+      "args": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274"
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsLongSize1e8(address).0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "totalAbsLongSize1e8(address)",
+      "args": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274"
+      ],
+      "value": 1000,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsShortSize1e8(address).0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "totalAbsShortSize1e8(address)",
+      "args": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        1
+      ],
+      "value": [
+        -2,
+        -6000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        1
+      ],
+      "value": [
+        -2,
+        -6000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x475fe397fa56884952d350aa9ee1c3946964bc0c.1",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        1
+      ],
+      "value": [
+        -2,
+        -6000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x475fe397fa56884952d350aa9ee1c3946964bc0c.2",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        2
+      ],
+      "value": [
+        0,
+        0,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.getTraderMarketsLength(address).0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "getTraderMarketsLength(address)",
+      "args": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c"
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsLongSize1e8(address).0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "totalAbsLongSize1e8(address)",
+      "args": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsShortSize1e8(address).0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "totalAbsShortSize1e8(address)",
+      "args": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c"
+      ],
+      "value": 2,
+      "passed": true
+    },
+    {
+      "label": "debt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x66858286feea78a05ea093673ea1535e0a52002d",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d",
+        1
+      ],
+      "value": [
+        -1000000,
+        -2468310000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x66858286feea78a05ea093673ea1535e0a52002d",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d",
+        1
+      ],
+      "value": [
+        -1000000,
+        -2468310000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x66858286feea78a05ea093673ea1535e0a52002d.1",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d",
+        1
+      ],
+      "value": [
+        -1000000,
+        -2468310000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x66858286feea78a05ea093673ea1535e0a52002d.2",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d",
+        2
+      ],
+      "value": [
+        0,
+        0,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.getTraderMarketsLength(address).0x66858286feea78a05ea093673ea1535e0a52002d",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "getTraderMarketsLength(address)",
+      "args": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d"
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsLongSize1e8(address).0x66858286feea78a05ea093673ea1535e0a52002d",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "totalAbsLongSize1e8(address)",
+      "args": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsShortSize1e8(address).0x66858286feea78a05ea093673ea1535e0a52002d",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "totalAbsShortSize1e8(address)",
+      "args": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d"
+      ],
+      "value": 1000000,
+      "passed": true
+    },
+    {
+      "label": "debt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x66858286feea78a05ea093673ea1535e0a52002d",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x66858286feea78a05ea093673ea1535e0a52002d",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15.0x66858286feea78a05ea093673ea1535e0a52002d",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        1
+      ],
+      "value": [
+        -1000,
+        -3000000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        1
+      ],
+      "value": [
+        -1000,
+        -3000000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x77ca9dd6ccce2d692fb23877a2db7178807b0020.1",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        1
+      ],
+      "value": [
+        -1000,
+        -3000000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x77ca9dd6ccce2d692fb23877a2db7178807b0020.2",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        2
+      ],
+      "value": [
+        0,
+        0,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.getTraderMarketsLength(address).0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "getTraderMarketsLength(address)",
+      "args": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020"
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsLongSize1e8(address).0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "totalAbsLongSize1e8(address)",
+      "args": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsShortSize1e8(address).0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "totalAbsShortSize1e8(address)",
+      "args": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020"
+      ],
+      "value": 1000,
+      "passed": true
+    },
+    {
+      "label": "debt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        1
+      ],
+      "value": [
+        2,
+        6000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        1
+      ],
+      "value": [
+        2,
+        6000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34.1",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        1
+      ],
+      "value": [
+        2,
+        6000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34.2",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        2
+      ],
+      "value": [
+        0,
+        0,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.getTraderMarketsLength(address).0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "getTraderMarketsLength(address)",
+      "args": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34"
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsLongSize1e8(address).0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "totalAbsLongSize1e8(address)",
+      "args": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34"
+      ],
+      "value": 2,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsShortSize1e8(address).0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "totalAbsShortSize1e8(address)",
+      "args": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0xff287410852b9328437eac353720e5476bc5f837",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0xff287410852b9328437eac353720e5476bc5f837",
+        1
+      ],
+      "value": [
+        1000000,
+        2468310000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "canonical.position.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0xff287410852b9328437eac353720e5476bc5f837",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0xff287410852b9328437eac353720e5476bc5f837",
+        1
+      ],
+      "value": [
+        1000000,
+        2468310000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0xff287410852b9328437eac353720e5476bc5f837.1",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0xff287410852b9328437eac353720e5476bc5f837",
+        1
+      ],
+      "value": [
+        1000000,
+        2468310000,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.position.0xff287410852b9328437eac353720e5476bc5f837.2",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "positions(address,uint256)",
+      "args": [
+        "0xff287410852b9328437eac353720e5476bc5f837",
+        2
+      ],
+      "value": [
+        0,
+        0,
+        0
+      ],
+      "passed": true
+    },
+    {
+      "label": "NEW.getTraderMarketsLength(address).0xff287410852b9328437eac353720e5476bc5f837",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "getTraderMarketsLength(address)",
+      "args": [
+        "0xff287410852b9328437eac353720e5476bc5f837"
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsLongSize1e8(address).0xff287410852b9328437eac353720e5476bc5f837",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "totalAbsLongSize1e8(address)",
+      "args": [
+        "0xff287410852b9328437eac353720e5476bc5f837"
+      ],
+      "value": 1000000,
+      "passed": true
+    },
+    {
+      "label": "NEW.totalAbsShortSize1e8(address).0xff287410852b9328437eac353720e5476bc5f837",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "totalAbsShortSize1e8(address)",
+      "args": [
+        "0xff287410852b9328437eac353720e5476bc5f837"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c.0xff287410852b9328437eac353720e5476bc5f837",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0xff287410852b9328437eac353720e5476bc5f837"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9.0xff287410852b9328437eac353720e5476bc5f837",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0xff287410852b9328437eac353720e5476bc5f837"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "debt.0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15.0xff287410852b9328437eac353720e5476bc5f837",
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "function": "getResidualBadDebt(address)",
+      "args": [
+        "0xff287410852b9328437eac353720e5476bc5f837"
+      ],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "totalDebt.0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "function": "totalResidualBadDebtBase()",
+      "args": [],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "totalDebt.0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "function": "totalResidualBadDebtBase()",
+      "args": [],
+      "value": 0,
+      "passed": true
+    },
+    {
+      "label": "V1.nonce.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "address": "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+      "function": "nonces(address)",
+      "args": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274"
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "V1.nonce.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "address": "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+      "function": "nonces(address)",
+      "args": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c"
+      ],
+      "value": 2,
+      "passed": true
+    },
+    {
+      "label": "V1.nonce.0x66858286feea78a05ea093673ea1535e0a52002d",
+      "address": "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+      "function": "nonces(address)",
+      "args": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d"
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "V1.nonce.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "address": "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+      "function": "nonces(address)",
+      "args": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020"
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "V1.nonce.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "address": "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+      "function": "nonces(address)",
+      "args": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34"
+      ],
+      "value": 2,
+      "passed": true
+    },
+    {
+      "label": "V1.nonce.0xff287410852b9328437eac353720e5476bc5f837",
+      "address": "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+      "function": "nonces(address)",
+      "args": [
+        "0xff287410852b9328437eac353720e5476bc5f837"
+      ],
+      "value": 1,
+      "passed": true
+    },
+    {
+      "label": "canonical.vault.0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+      "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "function": "balances(address,address)",
+      "args": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        "0x6eAe407f5640B006faC9965182e238582A3B412E"
+      ],
+      "value": 1503000053,
+      "passed": true
+    },
+    {
+      "label": "canonical.vault.0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+      "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "function": "balances(address,address)",
+      "args": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        "0x6eAe407f5640B006faC9965182e238582A3B412E"
+      ],
+      "value": 999999,
+      "passed": true
+    },
+    {
+      "label": "canonical.vault.0x66858286feea78a05ea093673ea1535e0a52002d",
+      "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "function": "balances(address,address)",
+      "args": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d",
+        "0x6eAe407f5640B006faC9965182e238582A3B412E"
+      ],
+      "value": 9998765,
+      "passed": true
+    },
+    {
+      "label": "canonical.vault.0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+      "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "function": "balances(address,address)",
+      "args": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        "0x6eAe407f5640B006faC9965182e238582A3B412E"
+      ],
+      "value": 1500999893,
+      "passed": true
+    },
+    {
+      "label": "canonical.vault.0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+      "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "function": "balances(address,address)",
+      "args": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        "0x6eAe407f5640B006faC9965182e238582A3B412E"
+      ],
+      "value": 999999,
+      "passed": true
+    },
+    {
+      "label": "canonical.vault.0xff287410852b9328437eac353720e5476bc5f837",
+      "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "function": "balances(address,address)",
+      "args": [
+        "0xff287410852b9328437eac353720e5476bc5f837",
+        "0x6eAe407f5640B006faC9965182e238582A3B412E"
+      ],
+      "value": 9992595,
+      "passed": true
+    }
+  ],
+  "seedFlags": [
+    {
+      "label": "_marketFundingSeeded",
+      "keys": [
+        1
+      ],
+      "slot": "0xe39b43e4224876d80510ac9d8f190663bcce357e28a4aec26f3bf2e600bb40ec",
+      "value": 1
+    },
+    {
+      "label": "_marketFundingSeeded",
+      "keys": [
+        2
+      ],
+      "slot": "0x52978eb6718a0ed733b71dbb3c4781d6da146a41523832713c09679420d0cac5",
+      "value": 1
+    },
+    {
+      "label": "_positionSeeded",
+      "keys": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        1
+      ],
+      "slot": "0xb954dfa9a76b892e0c0709a47185a0d5aaa52a4579b2fd545f6a4707f512f879",
+      "value": 1
+    },
+    {
+      "label": "_residualBadDebtSeeded",
+      "keys": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274"
+      ],
+      "slot": "0x3385e528246aabed6f9dad3ab984c20b3855e6af9c2142deb1c6f9462b0af01c",
+      "value": 0
+    },
+    {
+      "label": "_positionSeeded",
+      "keys": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        1
+      ],
+      "slot": "0x89491d07f95130b0fcb8c835c39ff073c42076bbc35e33913fae72750faab22a",
+      "value": 1
+    },
+    {
+      "label": "_residualBadDebtSeeded",
+      "keys": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c"
+      ],
+      "slot": "0xa661b9e809ba71348bd61f4fb2453f8de57d929a673ca06fd09ad42cdffb7749",
+      "value": 0
+    },
+    {
+      "label": "_positionSeeded",
+      "keys": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d",
+        1
+      ],
+      "slot": "0xa5561e2d91db5d263a5a52b83de90775ec7e67a8ab20ed8456ec90cfa782bc40",
+      "value": 1
+    },
+    {
+      "label": "_residualBadDebtSeeded",
+      "keys": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d"
+      ],
+      "slot": "0x6ac6baea3eb65c812254ec27aef6803f96ba0fc53f809af66d136a72b6b8a65",
+      "value": 0
+    },
+    {
+      "label": "_positionSeeded",
+      "keys": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        1
+      ],
+      "slot": "0x5e7296c894b9ce5d18c072e0d118b0a62d8791cc5e73d0d46fc3cacb4d3c719c",
+      "value": 1
+    },
+    {
+      "label": "_residualBadDebtSeeded",
+      "keys": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020"
+      ],
+      "slot": "0x41d2f084fab5798a308ac4bf1ba9f53a200e419fa887653cb49b19e239d4ac80",
+      "value": 0
+    },
+    {
+      "label": "_positionSeeded",
+      "keys": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        1
+      ],
+      "slot": "0x460b51f0783adb7d7bda7cd00a08c17daf99726f5bce0afd5f0d24c7b1c9852e",
+      "value": 1
+    },
+    {
+      "label": "_residualBadDebtSeeded",
+      "keys": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34"
+      ],
+      "slot": "0x74f396a63ab4f4c46c987a0c0dce621bcaec7cdc973daa7a4fb2c5de35ae092e",
+      "value": 0
+    },
+    {
+      "label": "_positionSeeded",
+      "keys": [
+        "0xff287410852b9328437eac353720e5476bc5f837",
+        1
+      ],
+      "slot": "0x25ae4081686150c57937f90d26d7ed71f35d8e442676457debf3bb792636b92",
+      "value": 1
+    },
+    {
+      "label": "_residualBadDebtSeeded",
+      "keys": [
+        "0xff287410852b9328437eac353720e5476bc5f837"
+      ],
+      "slot": "0xd9faf7920695226a8c4e0799242b49d385aac6ac5bafe46e07ee934108e91bc0",
+      "value": 0
+    }
+  ],
+  "positionIndexes": [
+    {
+      "label": "traderMarketIndexPlus1",
+      "keys": [
+        "0x290bd12c93e467bf51c51f5273d35bddb19e9274",
+        1
+      ],
+      "slot": "0x1914e8dfd484601326ba47de44b365738b621d2376d278036ec1380eb430b51",
+      "value": 1
+    },
+    {
+      "label": "traderMarketIndexPlus1",
+      "keys": [
+        "0x475fe397fa56884952d350aa9ee1c3946964bc0c",
+        1
+      ],
+      "slot": "0x789aed25f85609ac94a9ed0eb6eac8333d9a5dc1b78cc6fcbc681362dc2e23f5",
+      "value": 1
+    },
+    {
+      "label": "traderMarketIndexPlus1",
+      "keys": [
+        "0x66858286feea78a05ea093673ea1535e0a52002d",
+        1
+      ],
+      "slot": "0xe7bd1ee6762df74e3514256725c137803041be60935820f6d161d1f7f8afe4b3",
+      "value": 1
+    },
+    {
+      "label": "traderMarketIndexPlus1",
+      "keys": [
+        "0x77ca9dd6ccce2d692fb23877a2db7178807b0020",
+        1
+      ],
+      "slot": "0x8db25134a192c475c5ba15cf7b18ea77f6fa6c427591334ac5d21b5bd58c46d8",
+      "value": 1
+    },
+    {
+      "label": "traderMarketIndexPlus1",
+      "keys": [
+        "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34",
+        1
+      ],
+      "slot": "0x40dec9df8488b9a962a9514a6684e7daf61a6342fa25742bffe53c23b4d370b9",
+      "value": 1
+    },
+    {
+      "label": "traderMarketIndexPlus1",
+      "keys": [
+        "0xff287410852b9328437eac353720e5476bc5f837",
+        1
+      ],
+      "slot": "0x47a05237cdc7227c6fef405d4f58ff15fb8937ebbf2ceada628474d3206cfdc4",
+      "value": 1
+    }
+  ],
+  "pmeV2Nonces": {
+    "0x290bd12c93e467bf51c51f5273d35bddb19e9274": 0,
+    "0x475fe397fa56884952d350aa9ee1c3946964bc0c": 0,
+    "0x66858286feea78a05ea093673ea1535e0a52002d": 0,
+    "0x77ca9dd6ccce2d692fb23877a2db7178807b0020": 0,
+    "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34": 0,
+    "0xff287410852b9328437eac353720e5476bc5f837": 0
+  },
+  "authorities": {
+    "PME": {
+      "address": "0xF5FB81e447AF3A3E81951aC72D751dE3E9B8eee2",
+      "owner": "0xc35f7a8a103a9a4464adfaa76b9b514093d23c27",
+      "guardian": "0x0000000000000000000000000000000000000000",
+      "ownerContextCallPassed": true,
+      "selector": "0x8456cb59",
+      "runtimeBytes": 10441,
+      "runtimeKeccak256": "0x815d473801fd4353051a3a7c1b4e9cae493786b0c3cc643a789e496e5f2813bc",
+      "equalsCurrentArtifact": false,
+      "artifactMatchExcludingImmutables": true,
+      "abiScope": "Deployed maintenance surface checked by live call, fork controls/events and storage-diff trace; no whole-V1-source identity assumed"
+    },
+    "NEW": {
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "owner": "0xc35f7a8a103a9a4464adfaa76b9b514093d23c27",
+      "guardian": "0xc35f7a8a103a9a4464adfaa76b9b514093d23c27",
+      "ownerContextCallPassed": true,
+      "selector": "0xf64e345d",
+      "runtimeBytes": 24321,
+      "runtimeKeccak256": "0xc0ac9015866a36d0c9c25920387af78cb59cc24f66170728ade1a835d1211a2a",
+      "equalsCurrentArtifact": true,
+      "artifactMatchExcludingImmutables": null,
+      "abiScope": "Current artifact exact"
+    },
+    "OLD": {
+      "address": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "owner": "0xc35f7a8a103a9a4464adfaa76b9b514093d23c27",
+      "guardian": "0xc35f7a8a103a9a4464adfaa76b9b514093d23c27",
+      "ownerContextCallPassed": true,
+      "selector": "0xf64e345d",
+      "runtimeBytes": 24321,
+      "runtimeKeccak256": "0xc0ac9015866a36d0c9c25920387af78cb59cc24f66170728ade1a835d1211a2a",
+      "equalsCurrentArtifact": true,
+      "artifactMatchExcludingImmutables": null,
+      "abiScope": "Current artifact exact"
+    },
+    "V1": {
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "owner": "0xc35f7a8a103a9a4464adfaa76b9b514093d23c27",
+      "guardian": "0xc35f7a8a103a9a4464adfaa76b9b514093d23c27",
+      "ownerContextCallPassed": true,
+      "selector": "0xf64e345d",
+      "runtimeBytes": 23794,
+      "runtimeKeccak256": "0x51e22fb1f8e982fddd190247368062f646438b7339574e8e0be97e3d7606984a",
+      "equalsCurrentArtifact": false,
+      "artifactMatchExcludingImmutables": null,
+      "abiScope": "Deployed maintenance surface checked by live call, fork controls/events and storage-diff trace; no whole-V1-source identity assumed"
+    }
+  },
+  "controls": {
+    "PME": [
+      0
+    ],
+    "NEW": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "OLD": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "V1": [
+      0,
+      1,
+      0,
+      0
+    ]
+  },
+  "skipped": [],
+  "insuranceOwner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+  "safeNonce": 15,
+  "executorNonce": 1,
+  "pmeDomainSeparator": "0x26a8b7a2a20b6c06fd610e824899da507ef8e51ad40f76040549a8332376c559",
+  "executorPermissions": {
+    "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27": 1,
+    "0x58Ad437Cb9E32B0fAEe810ef05810d5Ba2aE52B8": 1
+  },
+  "oldPermissions": {
+    "feesManagerV2()": 1,
+    "insuranceFund()": 0
+  },
+  "localBackend": {
+    "backend_runtime_state": "STOPPED",
+    "transaction_emission_capability": "NONE",
+    "backendProcesses": 0,
+    "port8080Listeners": 0,
+    "scope": "local process and port 8080 only"
+  },
+  "fundingExposure": [
+    {
+      "name": "NEW",
+      "transaction": {
+        "from": "0x0000000000000000000000000000000000000001",
+        "to": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "value": "0x0",
+        "data": "0x6ea9f1390000000000000000000000000000000000000000000000000000000000000002"
+      },
+      "result": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "errorData": null,
+      "publicWrite": false,
+      "storageDiff": {
+        "0x9adb202b1492743bc00c81d33cdc6423fa8c79109027eb6a845391e8fc1f0484": "0x000000000000000000000000000000000000000000000000000000006abcbb00"
+      },
+      "previousStorageValue": 0,
+      "effect": "market 2 timestamp initialization only; no funding/PnL accrual"
+    },
+    {
+      "name": "OLD",
+      "transaction": {
+        "from": "0x0000000000000000000000000000000000000001",
+        "to": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+        "value": "0x0",
+        "data": "0x6ea9f1390000000000000000000000000000000000000000000000000000000000000002"
+      },
+      "result": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "errorData": null,
+      "publicWrite": false,
+      "storageDiff": {
+        "0x9adb202b1492743bc00c81d33cdc6423fa8c79109027eb6a845391e8fc1f0484": "0x000000000000000000000000000000000000000000000000000000006abcbb00"
+      },
+      "previousStorageValue": 0,
+      "effect": "market 2 timestamp initialization only; no funding/PnL accrual"
+    },
+    {
+      "name": "V1",
+      "transaction": {
+        "from": "0x0000000000000000000000000000000000000001",
+        "to": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+        "value": "0x0",
+        "data": "0x6ea9f1390000000000000000000000000000000000000000000000000000000000000002"
+      },
+      "result": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "errorData": null,
+      "publicWrite": false,
+      "storageDiff": {
+        "0x9adb202b1492743bc00c81d33cdc6423fa8c79109027eb6a845391e8fc1f0484": "0x000000000000000000000000000000000000000000000000000000006abcbb00"
+      },
+      "previousStorageValue": 0,
+      "effect": "market 2 timestamp initialization only; no funding/PnL accrual"
+    }
+  ],
+  "freshBlock": 47493084,
+  "freshBlockHash": "0xf00705a8e59266f2616aa2f9e6b814d75bdffbdf7b62761087144acdae1c2723",
+  "eventScan": {
+    "fromBlock": 47491265,
+    "toBlock": 47493084,
+    "emitters": [
+      "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "0xF5FB81e447AF3A3E81951aC72D751dE3E9B8eee2",
+      "0x774d96E5739bffadEE91508b4D3D74F5BE29F165",
+      "0x8C3d9F71cA59B908Fa200546A63ea62F9C932998",
+      "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+      "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f",
+      "0x009f38440F058d095b61E0E2ee7fAbDF05BE7500"
+    ],
+    "events": 0
+  },
+  "packageSha256": "41ea29ebdbcde48dd43733d6f288bd819ad8274738bd008501d03c9d528b6697",
+  "fees": {
+    "baseFeePerGasWei": 5000000,
+    "maxPriorityFeePerGasWei": 1000000,
+    "maxFeePerGasWei": 11000000,
+    "l1AllowancePerTxWei": 57175216312,
+    "l1Method": "2x deployed OP GasPriceOracle.getL1FeeUpperBound(512); exceeds 132-byte calldata plus signed-envelope overhead",
+    "gasMarginPercent": 30,
+    "finalFeeBlock": 47493084,
+    "finalBaseFeePerGasWei": 5000000,
+    "totalGasEstimate": 196494,
+    "totalGasLimit": 255444,
+    "totalBudgetWei": 3038584865248
+  },
+  "simulationPassed": true
+}

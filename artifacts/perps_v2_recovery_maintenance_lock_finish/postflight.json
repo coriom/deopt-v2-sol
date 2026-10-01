@@ -1,0 +1,48 @@
+{
+  "status": "PERPS_V2_BASE_SEPOLIA_RECOVERY_MAINTENANCE_LOCK_V1_COMPLETE",
+  "chainId": 84532,
+  "continuationPackageSha256": "cd4509be30e9fc9baf39a7606a523018ea667f6c93a685a46d870334adc29adb",
+  "comparisonBlock": 47528961,
+  "comparisonBlockHash": "0xf4d4e3a61ccd69b655570aa98d115cf0917bd93ace8b9416c844b28079cd6fbc",
+  "transactionHash": "0x3787c2b2b6a88e6688ff71eb6b01b4dddf4fee6b8014aa739c8e691818bf4a50",
+  "receiptBlock": 47528958,
+  "receiptBlockHash": "0xed6b2baa63105fd5c472b7a3149e0afc801952e6dfff73bfb105076abab4bd4f",
+  "receiptStatus": 1,
+  "ownerNonceBefore": 811,
+  "ownerNonceAfter": 812,
+  "feeDecisionFile": "fee_decision_broadcast.json",
+  "ownerExpenditureWei": 227265777308,
+  "executionFeeWei": 221430000000,
+  "l1FeeWei": 5835777308,
+  "controls": {
+    "PME": [
+      1
+    ],
+    "NEW": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "OLD": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "V1": [
+      1,
+      1,
+      1,
+      1
+    ]
+  },
+  "economicChecks": 114,
+  "exactNegativeProbes": 15,
+  "scopedEvents": 15,
+  "newPublicSendInvocations": 1,
+  "combinedMaintenanceWrites": 4,
+  "backendRuntimeState": "STOPPED",
+  "signedOrderInventory": "UNRESOLVED",
+  "insuranceGovernance": "UNRESOLVED"
+}

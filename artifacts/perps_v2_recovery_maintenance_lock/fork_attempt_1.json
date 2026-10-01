@@ -1,0 +1,11 @@
+{
+  "localRpc": "http://127.0.0.1:36441",
+  "scope": "isolated Anvil fork, not public Base Sepolia; chainId also 84532",
+  "forkBlock": 47492624,
+  "storageOverrides": false,
+  "codeReplacement": false,
+  "balanceFabrication": false,
+  "keystoreUnlocked": false,
+  "steps": [],
+  "localForkStopped": true
+}

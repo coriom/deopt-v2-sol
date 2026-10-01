@@ -1,0 +1,39 @@
+{
+  "publicWrites": 0,
+  "balancesUnchanged": true,
+  "results": [
+    {
+      "optimismMode": true,
+      "impersonatedMatchingEngine": true,
+      "callResult": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "error": {
+          "code": -32003,
+          "message": "Insufficient funds for gas * price + value"
+        }
+      },
+      "traceResult": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "error": {
+          "code": -32003,
+          "message": "Insufficient funds for gas * price + value"
+        }
+      }
+    },
+    {
+      "optimismMode": false,
+      "impersonatedMatchingEngine": true,
+      "callResult": {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "error": {
+          "code": 3,
+          "message": "execution reverted: custom error 0x17cdbb83",
+          "data": "0x17cdbb83"
+        }
+      }
+    }
+  ]
+}

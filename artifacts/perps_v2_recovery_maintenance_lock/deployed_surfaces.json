@@ -1,0 +1,601 @@
+{
+  "block": 47492700,
+  "engines": {
+    "V1": {
+      "address": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "runtimeBytes": 23794,
+      "ethereumKeccak256": "0x51e22fb1f8e982fddd190247368062f646438b7339574e8e0be97e3d7606984a",
+      "deployedSelectors": [
+        {
+          "selector": "0x0212fd6a",
+          "currentAbiSignature": "clearCollateralSeizer()"
+        },
+        {
+          "selector": "0x04f6f5b2",
+          "currentAbiSignature": "setRiskModule(address)"
+        },
+        {
+          "selector": "0x0560f426",
+          "currentAbiSignature": "liquidationOracleMaxDelay()"
+        },
+        {
+          "selector": "0x05a9e073",
+          "currentAbiSignature": "feesManager()"
+        },
+        {
+          "selector": "0x0b7afd5a",
+          "currentAbiSignature": "marketState(uint256)"
+        },
+        {
+          "selector": "0x0bece79c",
+          "currentAbiSignature": "collateralVault()"
+        },
+        {
+          "selector": "0x1031e36e",
+          "currentAbiSignature": "pauseTrading()"
+        },
+        {
+          "selector": "0x1b5c370c",
+          "currentAbiSignature": "unpauseCollateralOps()"
+        },
+        {
+          "selector": "0x1c0edff2",
+          "currentAbiSignature": "matchingEngine()"
+        },
+        {
+          "selector": "0x1c89382a",
+          "currentAbiSignature": "setFeesManager(address)"
+        },
+        {
+          "selector": "0x1d966e81",
+          "currentAbiSignature": "pauseLiquidation()"
+        },
+        {
+          "selector": "0x219362d9",
+          "currentAbiSignature": "getSettlementAsset(uint256)"
+        },
+        {
+          "selector": "0x29255894",
+          "currentAbiSignature": "getTraderMarketsSlice(address,uint256,uint256)"
+        },
+        {
+          "selector": "0x2bea5152",
+          "currentAbiSignature": "unpauseFunding()"
+        },
+        {
+          "selector": "0x39c19f70",
+          "currentAbiSignature": "totalAbsShortSize1e8(address)"
+        },
+        {
+          "selector": "0x452a9320",
+          "currentAbiSignature": "guardian()"
+        },
+        {
+          "selector": "0x456068d2",
+          "currentAbiSignature": "unpauseTrading()"
+        },
+        {
+          "selector": "0x46904840",
+          "currentAbiSignature": "feeRecipient()"
+        },
+        {
+          "selector": "0x4746c8d2",
+          "currentAbiSignature": "setMarketActivationState(uint256,uint8)"
+        },
+        {
+          "selector": "0x475c007d",
+          "currentAbiSignature": "setLaunchOpenInterestCap(uint256,uint256)"
+        },
+        {
+          "selector": "0x48d3ad6e",
+          "currentAbiSignature": "totalAbsLongSize1e8(address)"
+        },
+        {
+          "selector": "0x4aae235c",
+          "currentAbiSignature": "feesManagerV2()"
+        },
+        {
+          "selector": "0x53e23e2e",
+          "currentAbiSignature": "tradingPaused()"
+        },
+        {
+          "selector": "0x5af3d061",
+          "currentAbiSignature": "getMarkPrice(uint256)"
+        },
+        {
+          "selector": "0x5c7a5975",
+          "currentAbiSignature": "unpauseLiquidation()"
+        },
+        {
+          "selector": "0x5c975abb",
+          "currentAbiSignature": "paused()"
+        },
+        {
+          "selector": "0x5dd20574",
+          "currentAbiSignature": "pauseFunding()"
+        },
+        {
+          "selector": "0x64a6b8d9",
+          "currentAbiSignature": "liquidationCloseFactorBps()"
+        },
+        {
+          "selector": "0x68a806c4",
+          "currentAbiSignature": "setCollateralVault(address)"
+        },
+        {
+          "selector": "0x68baab4e",
+          "currentAbiSignature": "setMarketEmergencyCloseOnly(uint256,bool)"
+        },
+        {
+          "selector": "0x6ea9f139",
+          "currentAbiSignature": "updateFunding(uint256)"
+        },
+        {
+          "selector": "0x6f3f81af",
+          "currentAbiSignature": "getTraderMarketsLength(address)"
+        },
+        {
+          "selector": "0x70d2f490",
+          "currentAbiSignature": "setLiquidationParams(uint256,uint256,uint256,uint256)"
+        },
+        {
+          "selector": "0x74304b2a",
+          "currentAbiSignature": "setUseFeesManagerV2(bool)"
+        },
+        {
+          "selector": "0x7998b38f",
+          "currentAbiSignature": "getPositionFundingAccrued(address,uint256)"
+        },
+        {
+          "selector": "0x79ba5097",
+          "currentAbiSignature": "acceptOwnership()"
+        },
+        {
+          "selector": "0x7adbf973",
+          "currentAbiSignature": "setOracle(address)"
+        },
+        {
+          "selector": "0x7b4f7e67",
+          "currentAbiSignature": "marketEmergencyCloseOnly(uint256)"
+        },
+        {
+          "selector": "0x7dc0d1d0",
+          "currentAbiSignature": "oracle()"
+        },
+        {
+          "selector": "0x81b5323a",
+          "currentAbiSignature": "setFeesManagerV2(address)"
+        },
+        {
+          "selector": "0x82ec5ab8",
+          "currentAbiSignature": "getPositionSize(address,uint256)"
+        },
+        {
+          "selector": "0x87dfacb2",
+          "currentAbiSignature": "pauseCollateralOps()"
+        },
+        {
+          "selector": "0x8a0dac4a",
+          "currentAbiSignature": "setGuardian(address)"
+        },
+        {
+          "selector": "0x8da5cb5b",
+          "currentAbiSignature": "owner()"
+        },
+        {
+          "selector": "0x91187ebd",
+          "currentAbiSignature": "useFeesManagerV2()"
+        },
+        {
+          "selector": "0x96f7aa45",
+          "currentAbiSignature": "totalResidualBadDebtBase()"
+        },
+        {
+          "selector": "0x9c331c2a",
+          "currentAbiSignature": "collateralSeizer()"
+        },
+        {
+          "selector": "0x9ed1a985",
+          "currentAbiSignature": "riskModule()"
+        },
+        {
+          "selector": "0xa0372f08",
+          "currentAbiSignature": "getResidualBadDebt(address)"
+        },
+        {
+          "selector": "0xa0f86ba6",
+          "currentAbiSignature": "liquidationPenaltyBps()"
+        },
+        {
+          "selector": "0xa6a96c3a",
+          "currentAbiSignature": "getRiskConfig(uint256)"
+        },
+        {
+          "selector": "0xa88a3c7e",
+          "currentAbiSignature": "recordResidualBadDebt(address,uint256)"
+        },
+        {
+          "selector": "0xac53d154",
+          "currentAbiSignature": "collateralOpsPaused()"
+        },
+        {
+          "selector": "0xb022e608",
+          "currentAbiSignature": "applyTrade((address,address,uint256,uint128,uint128,bool))"
+        },
+        {
+          "selector": "0xb7902303",
+          "currentAbiSignature": "insuranceFund()"
+        },
+        {
+          "selector": "0xbacfb86f",
+          "currentAbiSignature": "clearResidualBadDebt(address)"
+        },
+        {
+          "selector": "0xc1be6677",
+          "currentAbiSignature": "positions(address,uint256)"
+        },
+        {
+          "selector": "0xc34db4d6",
+          "currentAbiSignature": "setCollateralSeizer(address)"
+        },
+        {
+          "selector": "0xc3c05293",
+          "currentAbiSignature": "setInsuranceFund(address)"
+        },
+        {
+          "selector": "0xc5d67c9d",
+          "currentAbiSignature": "liquidate(address,uint256,uint128)"
+        },
+        {
+          "selector": "0xcaa57466",
+          "currentAbiSignature": "setMatchingEngine(address)"
+        },
+        {
+          "selector": "0xcecf4868",
+          "currentAbiSignature": "minLiquidationImprovementBps()"
+        },
+        {
+          "selector": "0xd53dc739",
+          "currentAbiSignature": "liquidationPaused()"
+        },
+        {
+          "selector": "0xd54f4b87",
+          "currentAbiSignature": "launchOpenInterestCap1e8(uint256)"
+        },
+        {
+          "selector": "0xdf0379e4",
+          "currentAbiSignature": "getUnrealizedPnl(address,uint256)"
+        },
+        {
+          "selector": "0xe065286f",
+          "currentAbiSignature": "liquidationPriceSpreadBps()"
+        },
+        {
+          "selector": "0xe0c91e8e",
+          "currentAbiSignature": "repayResidualBadDebt(address,address,uint256)"
+        },
+        {
+          "selector": "0xe30c3978",
+          "currentAbiSignature": "pendingOwner()"
+        },
+        {
+          "selector": "0xe4dd7794",
+          "currentAbiSignature": "fundingPaused()"
+        },
+        {
+          "selector": "0xecb96fe6",
+          "currentAbiSignature": "marketRegistry()"
+        },
+        {
+          "selector": "0xed8a6ff5",
+          "currentAbiSignature": "marketActivationState(uint256)"
+        },
+        {
+          "selector": "0xf2fde38b",
+          "currentAbiSignature": "transferOwnership(address)"
+        },
+        {
+          "selector": "0xf64e345d",
+          "currentAbiSignature": "setEmergencyModes(bool,bool,bool,bool)"
+        },
+        {
+          "selector": "0xfce89102",
+          "currentAbiSignature": "reduceResidualBadDebt(address,uint256)"
+        }
+      ],
+      "unmappedCount": 0
+    },
+    "NEW": {
+      "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "runtimeBytes": 24321,
+      "ethereumKeccak256": "0xc0ac9015866a36d0c9c25920387af78cb59cc24f66170728ade1a835d1211a2a",
+      "deployedSelectors": [
+        {
+          "selector": "0x0212fd6a",
+          "currentAbiSignature": "clearCollateralSeizer()"
+        },
+        {
+          "selector": "0x04f6f5b2",
+          "currentAbiSignature": "setRiskModule(address)"
+        },
+        {
+          "selector": "0x05d5af5b",
+          "currentAbiSignature": "sealMigration(bytes32)"
+        },
+        {
+          "selector": "0x06dd9b0b",
+          "currentAbiSignature": "impactMidSource()"
+        },
+        {
+          "selector": "0x09fc5705",
+          "currentAbiSignature": "clearingAccount()"
+        },
+        {
+          "selector": "0x0b7afd5a",
+          "currentAbiSignature": "marketState(uint256)"
+        },
+        {
+          "selector": "0x0bece79c",
+          "currentAbiSignature": "collateralVault()"
+        },
+        {
+          "selector": "0x0ef3a5f7",
+          "currentAbiSignature": "adminSeedPosition(address,uint256,int256,int256,int256)"
+        },
+        {
+          "selector": "0x1031e36e",
+          "currentAbiSignature": "pauseTrading()"
+        },
+        {
+          "selector": "0x12a2f792",
+          "currentAbiSignature": "migrationState()"
+        },
+        {
+          "selector": "0x1b5c370c",
+          "currentAbiSignature": "unpauseCollateralOps()"
+        },
+        {
+          "selector": "0x1c0edff2",
+          "currentAbiSignature": "matchingEngine()"
+        },
+        {
+          "selector": "0x1d966e81",
+          "currentAbiSignature": "pauseLiquidation()"
+        },
+        {
+          "selector": "0x219362d9",
+          "currentAbiSignature": "getSettlementAsset(uint256)"
+        },
+        {
+          "selector": "0x29255894",
+          "currentAbiSignature": "getTraderMarketsSlice(address,uint256,uint256)"
+        },
+        {
+          "selector": "0x2bea5152",
+          "currentAbiSignature": "unpauseFunding()"
+        },
+        {
+          "selector": "0x2c96f1bc",
+          "currentAbiSignature": "adminSeedMarketFunding(uint256,int256,uint64)"
+        },
+        {
+          "selector": "0x344e514a",
+          "currentAbiSignature": "updateImpactMid(uint256,uint128)"
+        },
+        {
+          "selector": "0x39c19f70",
+          "currentAbiSignature": "totalAbsShortSize1e8(address)"
+        },
+        {
+          "selector": "0x41590123",
+          "currentAbiSignature": "setClearingAccount(address)"
+        },
+        {
+          "selector": "0x452a9320",
+          "currentAbiSignature": "guardian()"
+        },
+        {
+          "selector": "0x456068d2",
+          "currentAbiSignature": "unpauseTrading()"
+        },
+        {
+          "selector": "0x4746c8d2",
+          "currentAbiSignature": "setMarketActivationState(uint256,uint8)"
+        },
+        {
+          "selector": "0x475c007d",
+          "currentAbiSignature": "setLaunchOpenInterestCap(uint256,uint256)"
+        },
+        {
+          "selector": "0x48d3ad6e",
+          "currentAbiSignature": "totalAbsLongSize1e8(address)"
+        },
+        {
+          "selector": "0x4aae235c",
+          "currentAbiSignature": "feesManagerV2()"
+        },
+        {
+          "selector": "0x53e23e2e",
+          "currentAbiSignature": "tradingPaused()"
+        },
+        {
+          "selector": "0x5af3d061",
+          "currentAbiSignature": "getMarkPrice(uint256)"
+        },
+        {
+          "selector": "0x5c7a5975",
+          "currentAbiSignature": "unpauseLiquidation()"
+        },
+        {
+          "selector": "0x5dd20574",
+          "currentAbiSignature": "pauseFunding()"
+        },
+        {
+          "selector": "0x6067ee86",
+          "currentAbiSignature": "adminSeedResidualBadDebt(address,uint256)"
+        },
+        {
+          "selector": "0x68a806c4",
+          "currentAbiSignature": "setCollateralVault(address)"
+        },
+        {
+          "selector": "0x68baab4e",
+          "currentAbiSignature": "setMarketEmergencyCloseOnly(uint256,bool)"
+        },
+        {
+          "selector": "0x6ea9f139",
+          "currentAbiSignature": "updateFunding(uint256)"
+        },
+        {
+          "selector": "0x6f3f81af",
+          "currentAbiSignature": "getTraderMarketsLength(address)"
+        },
+        {
+          "selector": "0x74304b2a",
+          "currentAbiSignature": "setUseFeesManagerV2(bool)"
+        },
+        {
+          "selector": "0x7998b38f",
+          "currentAbiSignature": "getPositionFundingAccrued(address,uint256)"
+        },
+        {
+          "selector": "0x79ba5097",
+          "currentAbiSignature": "acceptOwnership()"
+        },
+        {
+          "selector": "0x7adbf973",
+          "currentAbiSignature": "setOracle(address)"
+        },
+        {
+          "selector": "0x7b4f7e67",
+          "currentAbiSignature": "marketEmergencyCloseOnly(uint256)"
+        },
+        {
+          "selector": "0x7dc0d1d0",
+          "currentAbiSignature": "oracle()"
+        },
+        {
+          "selector": "0x81b5323a",
+          "currentAbiSignature": "setFeesManagerV2(address)"
+        },
+        {
+          "selector": "0x82ec5ab8",
+          "currentAbiSignature": "getPositionSize(address,uint256)"
+        },
+        {
+          "selector": "0x87dfacb2",
+          "currentAbiSignature": "pauseCollateralOps()"
+        },
+        {
+          "selector": "0x8a0dac4a",
+          "currentAbiSignature": "setGuardian(address)"
+        },
+        {
+          "selector": "0x8da5cb5b",
+          "currentAbiSignature": "owner()"
+        },
+        {
+          "selector": "0x91187ebd",
+          "currentAbiSignature": "useFeesManagerV2()"
+        },
+        {
+          "selector": "0x96f7aa45",
+          "currentAbiSignature": "totalResidualBadDebtBase()"
+        },
+        {
+          "selector": "0x9c331c2a",
+          "currentAbiSignature": "collateralSeizer()"
+        },
+        {
+          "selector": "0x9ed1a985",
+          "currentAbiSignature": "riskModule()"
+        },
+        {
+          "selector": "0xa0372f08",
+          "currentAbiSignature": "getResidualBadDebt(address)"
+        },
+        {
+          "selector": "0xa6a96c3a",
+          "currentAbiSignature": "getRiskConfig(uint256)"
+        },
+        {
+          "selector": "0xac53d154",
+          "currentAbiSignature": "collateralOpsPaused()"
+        },
+        {
+          "selector": "0xb022e608",
+          "currentAbiSignature": "applyTrade((address,address,uint256,uint128,uint128,bool))"
+        },
+        {
+          "selector": "0xb7902303",
+          "currentAbiSignature": "insuranceFund()"
+        },
+        {
+          "selector": "0xc1be6677",
+          "currentAbiSignature": "positions(address,uint256)"
+        },
+        {
+          "selector": "0xc34db4d6",
+          "currentAbiSignature": "setCollateralSeizer(address)"
+        },
+        {
+          "selector": "0xc3c05293",
+          "currentAbiSignature": "setInsuranceFund(address)"
+        },
+        {
+          "selector": "0xc5d67c9d",
+          "currentAbiSignature": "liquidate(address,uint256,uint128)"
+        },
+        {
+          "selector": "0xcaa57466",
+          "currentAbiSignature": "setMatchingEngine(address)"
+        },
+        {
+          "selector": "0xcbfd2682",
+          "currentAbiSignature": "setImpactMidSource(address)"
+        },
+        {
+          "selector": "0xd53dc739",
+          "currentAbiSignature": "liquidationPaused()"
+        },
+        {
+          "selector": "0xd54f4b87",
+          "currentAbiSignature": "launchOpenInterestCap1e8(uint256)"
+        },
+        {
+          "selector": "0xd5d7cc3f",
+          "currentAbiSignature": "migrationSnapshotHash()"
+        },
+        {
+          "selector": "0xdf0379e4",
+          "currentAbiSignature": "getUnrealizedPnl(address,uint256)"
+        },
+        {
+          "selector": "0xe30c3978",
+          "currentAbiSignature": "pendingOwner()"
+        },
+        {
+          "selector": "0xe4dd7794",
+          "currentAbiSignature": "fundingPaused()"
+        },
+        {
+          "selector": "0xecb96fe6",
+          "currentAbiSignature": "marketRegistry()"
+        },
+        {
+          "selector": "0xed8a6ff5",
+          "currentAbiSignature": "marketActivationState(uint256)"
+        },
+        {
+          "selector": "0xf2fde38b",
+          "currentAbiSignature": "transferOwnership(address)"
+        },
+        {
+          "selector": "0xf64e345d",
+          "currentAbiSignature": "setEmergencyModes(bool,bool,bool,bool)"
+        }
+      ],
+      "unmappedCount": 0
+    }
+  }
+}

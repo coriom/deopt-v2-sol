@@ -1,0 +1,11 @@
+{
+  "opAdminStepsVerified": 4,
+  "standardEvmStepsVerified": 4,
+  "exactMaintenanceErrorProbes": 15,
+  "v1ImpactMidAbsent": true,
+  "gasAndStorageAgreement": true,
+  "publicWrites": 0,
+  "codeOverrides": false,
+  "storageOverrides": false,
+  "balanceFabrication": false
+}

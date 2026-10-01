@@ -1,0 +1,199 @@
+{
+  "milestone": "PERPS_V2_BASE_SEPOLIA_RECOVERY_MAINTENANCE_LOCK_V1",
+  "approvedPackageSha256": "41ea29ebdbcde48dd43733d6f288bd819ad8274738bd008501d03c9d528b6697",
+  "status": "HALTED",
+  "publicSendInvocations": 3,
+  "transactions": [
+    {
+      "ordinal": 1,
+      "name": "PME",
+      "target": "0xF5FB81e447AF3A3E81951aC72D751dE3E9B8eee2",
+      "nonce": 808,
+      "calldata": "0x8456cb59",
+      "status": "VERIFIED",
+      "submissionAttempts": 1,
+      "preBlock": 47494211,
+      "receiptObservations": [
+        {
+          "transactionHash": "0x02fc79a153b5db07933d23df14fec1071dde098e6c1ffa2d8ed7be050269e05f",
+          "blockNumber": "0x2d4b483",
+          "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "status": "0x1",
+          "gasUsed": "0xc057",
+          "effectiveGasPrice": "0x5b8d80",
+          "l1Fee": "0x16afae301"
+        },
+        {
+          "transactionHash": "0x02fc79a153b5db07933d23df14fec1071dde098e6c1ffa2d8ed7be050269e05f",
+          "blockNumber": "0x2d4b483",
+          "blockHash": "0xe9321a71018f86690477246095c66b6e0cb3f0a0c4f7e18e6037b6e2bcfb3496",
+          "status": "0x1",
+          "gasUsed": "0xc057",
+          "effectiveGasPrice": "0x5b8d80",
+          "l1Fee": "0x16afae301"
+        }
+      ],
+      "hash": "0x02fc79a153b5db07933d23df14fec1071dde098e6c1ffa2d8ed7be050269e05f",
+      "receiptBlock": 47494275,
+      "receiptBlockHash": "0xe9321a71018f86690477246095c66b6e0cb3f0a0c4f7e18e6037b6e2bcfb3496",
+      "gasUsed": 49239,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWeiProvisional": 6089794305,
+      "eventCount": 1,
+      "expectedPauseControls": {
+        "PME": [
+          1
+        ],
+        "NEW": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "OLD": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "V1": [
+          0,
+          1,
+          0,
+          0
+        ]
+      },
+      "economicChecks": 114,
+      "eventVerified": true
+    },
+    {
+      "ordinal": 2,
+      "name": "NEW",
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "nonce": 809,
+      "calldata": "0xf64e345d0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001",
+      "status": "VERIFIED",
+      "submissionAttempts": 1,
+      "preBlock": 47494340,
+      "receiptObservations": [
+        {
+          "transactionHash": "0xde74e08da9bfa42415f280b94e0ccae55f2ffe88ca4a20dad704c220be768505",
+          "blockNumber": "0x2d4b508",
+          "blockHash": "0xc0d211bb9f14fd63687f7b3bc41f2f4ba2baeda8370154a48eb9b271cbae245b",
+          "status": "0x1",
+          "gasUsed": "0xd787",
+          "effectiveGasPrice": "0x5b8d80",
+          "l1Fee": "0x140ca78ff"
+        }
+      ],
+      "hash": "0xde74e08da9bfa42415f280b94e0ccae55f2ffe88ca4a20dad704c220be768505",
+      "receiptBlock": 47494408,
+      "receiptBlockHash": "0xc0d211bb9f14fd63687f7b3bc41f2f4ba2baeda8370154a48eb9b271cbae245b",
+      "gasUsed": 55175,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWeiProvisional": 5381978367,
+      "eventCount": 5,
+      "expectedPauseControls": {
+        "PME": [
+          1
+        ],
+        "NEW": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "OLD": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "V1": [
+          0,
+          1,
+          0,
+          0
+        ]
+      },
+      "economicChecks": 114,
+      "eventVerified": true
+    },
+    {
+      "ordinal": 3,
+      "name": "OLD",
+      "target": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "nonce": 810,
+      "calldata": "0xf64e345d0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001",
+      "status": "VERIFIED",
+      "submissionAttempts": 1,
+      "preBlock": 47494504,
+      "receiptObservations": [
+        {
+          "transactionHash": "0x15b337c5874da28710b3bc03b69b30324128da8763ba79b2160da21f2e14eeb7",
+          "blockNumber": "0x2d4b5af",
+          "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "status": "0x1",
+          "gasUsed": "0xd787",
+          "effectiveGasPrice": "0x5b8d80",
+          "l1Fee": "0x173cda5d1"
+        },
+        {
+          "transactionHash": "0x15b337c5874da28710b3bc03b69b30324128da8763ba79b2160da21f2e14eeb7",
+          "blockNumber": "0x2d4b5af",
+          "blockHash": "0x111704323031afad563452207842572325de48d946375ad71db39de8afd5a026",
+          "status": "0x1",
+          "gasUsed": "0xd787",
+          "effectiveGasPrice": "0x5b8d80",
+          "l1Fee": "0x173cda5d1"
+        }
+      ],
+      "hash": "0x15b337c5874da28710b3bc03b69b30324128da8763ba79b2160da21f2e14eeb7",
+      "receiptBlock": 47494575,
+      "receiptBlockHash": "0x111704323031afad563452207842572325de48d946375ad71db39de8afd5a026",
+      "gasUsed": 55175,
+      "effectiveGasPriceWei": 6000000,
+      "l1FeeWeiProvisional": 6237824465,
+      "eventCount": 5,
+      "expectedPauseControls": {
+        "PME": [
+          1
+        ],
+        "NEW": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "OLD": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "V1": [
+          0,
+          1,
+          0,
+          0
+        ]
+      },
+      "economicChecks": 114,
+      "eventVerified": true
+    }
+  ],
+  "preBlock": 47494187,
+  "preBlockHash": "0xb4872facded791c7da11c74afa5a10ad41b4f8be351bfccabc9b718ac090aa5c",
+  "ownerNoncePre": 808,
+  "ownerBalancePreWei": 1706833527156533,
+  "verifiedSigner": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+  "feeEvidence": {
+    "baseFeePerGasWei": 5000000,
+    "priorityFeePerGasWei": 1000000,
+    "gasPriceWei": 6000000,
+    "l1DoubleUpperBoundWei": 50633019788,
+    "approvedFeeCapWei": 11000000,
+    "approvedL1AllowanceWei": 57175216312
+  },
+  "haltReason": ""
+}

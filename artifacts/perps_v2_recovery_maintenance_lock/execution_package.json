@@ -1,0 +1,262 @@
+{
+  "milestone": "PERPS_V2_BASE_SEPOLIA_RECOVERY_MAINTENANCE_LOCK_V1",
+  "stage": "A_REQUIRES_NEW_OPERATOR_READY",
+  "chainId": 84532,
+  "sender": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+  "comparisonBlock": 47492624,
+  "comparisonBlockHash": "0x52b87395d043091f9ff844a05b986ff8cfc9115ddd25b84fc8481cfc712abce4",
+  "snapshotHash": "0x039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d",
+  "startingNonce": 808,
+  "expectedFinalNonce": 812,
+  "transactions": [
+    {
+      "ordinal": 1,
+      "name": "PME",
+      "chainId": 84532,
+      "sender": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+      "target": "0xF5FB81e447AF3A3E81951aC72D751dE3E9B8eee2",
+      "nonce": 808,
+      "value": 0,
+      "function": "pause()",
+      "selector": "0x8456cb59",
+      "decodedArguments": [],
+      "calldata": "0x8456cb59",
+      "pauseFlagsBefore": [
+        0
+      ],
+      "pauseFlagsAfter": [
+        1
+      ],
+      "expectedEvents": [
+        {
+          "topics": [
+            "0x62e78cea01bee320cd4e420270b5ea74000d11b0c9f74754ebdbfc544b05a258",
+            "0x000000000000000000000000c35f7a8a103a9a4464adfaa76b9b514093d23c27"
+          ],
+          "data": "0x"
+        }
+      ],
+      "gasEstimate": 49239,
+      "gasLimit": 64011,
+      "maxFeePerGasWei": 11000000,
+      "maxPriorityFeePerGasWei": 1000000,
+      "l1FeeAllowanceWei": 57175216312
+    },
+    {
+      "ordinal": 2,
+      "name": "NEW",
+      "chainId": 84532,
+      "sender": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "nonce": 809,
+      "value": 0,
+      "function": "setEmergencyModes(bool,bool,bool,bool)",
+      "selector": "0xf64e345d",
+      "decodedArguments": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "calldata": "0xf64e345d0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001",
+      "pauseFlagsBefore": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "pauseFlagsAfter": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "expectedEvents": [
+        {
+          "topics": [
+            "0xab21e886b2299b7f2e5674bc2d7eee7ca2fca5417eb57e8bc765aecd91fb611e"
+          ],
+          "data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+        },
+        {
+          "topics": [
+            "0x1eb82b06aa284b326c89633f27ae24e2042ef8b28942daa18082db180f621efa"
+          ],
+          "data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+        },
+        {
+          "topics": [
+            "0x1458406ee9cf9306c16b8b0a3a7d91255d5bf8b4e2a5317d0a61c20fa9a900b8"
+          ],
+          "data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+        },
+        {
+          "topics": [
+            "0x77b00977182dda3b2c25bf6cde1452ca7b2a314a208bcbe7d3925c4688c566d8"
+          ],
+          "data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+        },
+        {
+          "topics": [
+            "0xefcae44e8da20c3a97e0256ac9dfe9c8c5a900dca59f556168b17e7d68e2c4b7"
+          ],
+          "data": "0x0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001"
+        }
+      ],
+      "gasEstimate": 55175,
+      "gasLimit": 71728,
+      "maxFeePerGasWei": 11000000,
+      "maxPriorityFeePerGasWei": 1000000,
+      "l1FeeAllowanceWei": 57175216312
+    },
+    {
+      "ordinal": 3,
+      "name": "OLD",
+      "chainId": 84532,
+      "sender": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+      "target": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "nonce": 810,
+      "value": 0,
+      "function": "setEmergencyModes(bool,bool,bool,bool)",
+      "selector": "0xf64e345d",
+      "decodedArguments": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "calldata": "0xf64e345d0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001",
+      "pauseFlagsBefore": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "pauseFlagsAfter": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "expectedEvents": [
+        {
+          "topics": [
+            "0xab21e886b2299b7f2e5674bc2d7eee7ca2fca5417eb57e8bc765aecd91fb611e"
+          ],
+          "data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+        },
+        {
+          "topics": [
+            "0x1eb82b06aa284b326c89633f27ae24e2042ef8b28942daa18082db180f621efa"
+          ],
+          "data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+        },
+        {
+          "topics": [
+            "0x1458406ee9cf9306c16b8b0a3a7d91255d5bf8b4e2a5317d0a61c20fa9a900b8"
+          ],
+          "data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+        },
+        {
+          "topics": [
+            "0x77b00977182dda3b2c25bf6cde1452ca7b2a314a208bcbe7d3925c4688c566d8"
+          ],
+          "data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+        },
+        {
+          "topics": [
+            "0xefcae44e8da20c3a97e0256ac9dfe9c8c5a900dca59f556168b17e7d68e2c4b7"
+          ],
+          "data": "0x0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001"
+        }
+      ],
+      "gasEstimate": 55175,
+      "gasLimit": 71728,
+      "maxFeePerGasWei": 11000000,
+      "maxPriorityFeePerGasWei": 1000000,
+      "l1FeeAllowanceWei": 57175216312
+    },
+    {
+      "ordinal": 4,
+      "name": "V1",
+      "chainId": 84532,
+      "sender": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+      "target": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "nonce": 811,
+      "value": 0,
+      "function": "setEmergencyModes(bool,bool,bool,bool)",
+      "selector": "0xf64e345d",
+      "decodedArguments": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "calldata": "0xf64e345d0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001",
+      "pauseFlagsBefore": [
+        0,
+        1,
+        0,
+        0
+      ],
+      "pauseFlagsAfter": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "expectedEvents": [
+        {
+          "topics": [
+            "0xab21e886b2299b7f2e5674bc2d7eee7ca2fca5417eb57e8bc765aecd91fb611e"
+          ],
+          "data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+        },
+        {
+          "topics": [
+            "0x1458406ee9cf9306c16b8b0a3a7d91255d5bf8b4e2a5317d0a61c20fa9a900b8"
+          ],
+          "data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+        },
+        {
+          "topics": [
+            "0x77b00977182dda3b2c25bf6cde1452ca7b2a314a208bcbe7d3925c4688c566d8"
+          ],
+          "data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+        },
+        {
+          "topics": [
+            "0xefcae44e8da20c3a97e0256ac9dfe9c8c5a900dca59f556168b17e7d68e2c4b7"
+          ],
+          "data": "0x0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001"
+        }
+      ],
+      "gasEstimate": 36905,
+      "gasLimit": 47977,
+      "maxFeePerGasWei": 11000000,
+      "maxPriorityFeePerGasWei": 1000000,
+      "l1FeeAllowanceWei": 57175216312
+    }
+  ],
+  "fees": {
+    "baseFeePerGasWei": 5000000,
+    "maxPriorityFeePerGasWei": 1000000,
+    "maxFeePerGasWei": 11000000,
+    "l1AllowancePerTxWei": 57175216312,
+    "l1Method": "2x deployed OP GasPriceOracle.getL1FeeUpperBound(512); exceeds 132-byte calldata plus signed-envelope overhead",
+    "gasMarginPercent": 30,
+    "finalFeeBlock": 47493084,
+    "finalBaseFeePerGasWei": 5000000,
+    "totalGasEstimate": 196494,
+    "totalGasLimit": 255444,
+    "totalBudgetWei": 3038584865248
+  },
+  "ownerBalanceWei": 1706833527156533,
+  "skipped": [],
+  "publicWrites": 0,
+  "prohibitions": "No rebind, Insurance/FMV2/Risk/Vault/Timelock writes, unpause, trade, backend/DB action",
+  "remainingIssues": [
+    "Insurance authorization requires actual ProtocolTimelock owner",
+    "Signed-order inventory unresolved; pauses do not invalidate signatures"
+  ]
+}

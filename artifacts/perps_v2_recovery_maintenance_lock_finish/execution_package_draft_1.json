@@ -1,0 +1,70 @@
+{
+  "milestone": "PERPS_V2_BASE_SEPOLIA_RECOVERY_MAINTENANCE_LOCK_V1_FINISH",
+  "chainId": 84532,
+  "originalPackageSha256": "41ea29ebdbcde48dd43733d6f288bd819ad8274738bd008501d03c9d528b6697",
+  "originalOrdinal": 4,
+  "sender": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+  "target": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+  "nonce": 811,
+  "expectedFinalNonce": 812,
+  "value": 0,
+  "function": "setEmergencyModes(bool,bool,bool,bool)",
+  "selector": "0xf64e345d",
+  "decodedArguments": [
+    true,
+    true,
+    true,
+    true
+  ],
+  "calldata": "0xf64e345d0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001",
+  "pauseFlagsBefore": [
+    0,
+    1,
+    0,
+    0
+  ],
+  "pauseFlagsAfter": [
+    1,
+    1,
+    1,
+    1
+  ],
+  "expectedEvents": [
+    {
+      "topics": [
+        "0xab21e886b2299b7f2e5674bc2d7eee7ca2fca5417eb57e8bc765aecd91fb611e"
+      ],
+      "data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+    },
+    {
+      "topics": [
+        "0x1458406ee9cf9306c16b8b0a3a7d91255d5bf8b4e2a5317d0a61c20fa9a900b8"
+      ],
+      "data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+    },
+    {
+      "topics": [
+        "0x77b00977182dda3b2c25bf6cde1452ca7b2a314a208bcbe7d3925c4688c566d8"
+      ],
+      "data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+    },
+    {
+      "topics": [
+        "0xefcae44e8da20c3a97e0256ac9dfe9c8c5a900dca59f556168b17e7d68e2c4b7"
+      ],
+      "data": "0x0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001"
+    }
+  ],
+  "feePolicy": {
+    "oracleUnsignedTxSizeBytes": 512,
+    "l2GasEstimate": 37269,
+    "gasLimit": 48450,
+    "maxFeePerGasWei": 11000000,
+    "maxPriorityFeePerGasWei": 1000000,
+    "l1BoundMultiplierNumerator": 2,
+    "l1BoundMultiplierDenominator": 1,
+    "l1AllowanceWei": 64164915695,
+    "additionalFeeAllowanceWei": 0,
+    "totalPlanningBudgetWei": 597114915695
+  }
+}

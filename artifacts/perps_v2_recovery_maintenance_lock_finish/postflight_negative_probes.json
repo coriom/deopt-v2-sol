@@ -1,0 +1,162 @@
+{
+  "chainId": 84532,
+  "comparisonBlock": 47529107,
+  "comparisonBlockHash": "0x2bbc4116a8442c600d9b4bceaff64aace1c0b695d8e4b853ca27b5f61f080fcf",
+  "ownerNonce": 812,
+  "controlsAllPaused": true,
+  "backendRuntimeState": "STOPPED",
+  "exactPauseErrorsVerified": 15,
+  "publicWrites": 0,
+  "probes": [
+    {
+      "name": "NEW.funding1",
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "caller": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+      "selector": "0x6ea9f139",
+      "error": "FundingPaused()",
+      "errorData": "0xad4ee267",
+      "method": "eth_call",
+      "publicWrite": false
+    },
+    {
+      "name": "NEW.funding2",
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "caller": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+      "selector": "0x6ea9f139",
+      "error": "FundingPaused()",
+      "errorData": "0xad4ee267",
+      "method": "eth_call",
+      "publicWrite": false
+    },
+    {
+      "name": "NEW.applyTrade",
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "caller": "0xf5fb81e447af3a3e81951ac72d751de3e9b8eee2",
+      "selector": "0xb022e608",
+      "error": "TradingPaused()",
+      "errorData": "0x02b874a6",
+      "method": "eth_call",
+      "publicWrite": false
+    },
+    {
+      "name": "NEW.liquidate",
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "caller": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+      "selector": "0xc5d67c9d",
+      "error": "LiquidationPaused()",
+      "errorData": "0x0d3f92fd",
+      "method": "eth_call",
+      "publicWrite": false
+    },
+    {
+      "name": "NEW.impactMid",
+      "target": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      "caller": "0x0000000000000000000000000000000000000000",
+      "selector": "0x344e514a",
+      "error": "FundingPaused()",
+      "errorData": "0xad4ee267",
+      "method": "eth_call",
+      "publicWrite": false
+    },
+    {
+      "name": "OLD.funding1",
+      "target": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "caller": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+      "selector": "0x6ea9f139",
+      "error": "FundingPaused()",
+      "errorData": "0xad4ee267",
+      "method": "eth_call",
+      "publicWrite": false
+    },
+    {
+      "name": "OLD.funding2",
+      "target": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "caller": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+      "selector": "0x6ea9f139",
+      "error": "FundingPaused()",
+      "errorData": "0xad4ee267",
+      "method": "eth_call",
+      "publicWrite": false
+    },
+    {
+      "name": "OLD.applyTrade",
+      "target": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "caller": "0xf5fb81e447af3a3e81951ac72d751de3e9b8eee2",
+      "selector": "0xb022e608",
+      "error": "TradingPaused()",
+      "errorData": "0x02b874a6",
+      "method": "eth_call",
+      "publicWrite": false
+    },
+    {
+      "name": "OLD.liquidate",
+      "target": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "caller": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+      "selector": "0xc5d67c9d",
+      "error": "LiquidationPaused()",
+      "errorData": "0x0d3f92fd",
+      "method": "eth_call",
+      "publicWrite": false
+    },
+    {
+      "name": "OLD.impactMid",
+      "target": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+      "caller": "0x0000000000000000000000000000000000000000",
+      "selector": "0x344e514a",
+      "error": "FundingPaused()",
+      "errorData": "0xad4ee267",
+      "method": "eth_call",
+      "publicWrite": false
+    },
+    {
+      "name": "V1.funding1",
+      "target": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "caller": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+      "selector": "0x6ea9f139",
+      "error": "FundingPaused()",
+      "errorData": "0xad4ee267",
+      "method": "eth_call",
+      "publicWrite": false
+    },
+    {
+      "name": "V1.funding2",
+      "target": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "caller": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+      "selector": "0x6ea9f139",
+      "error": "FundingPaused()",
+      "errorData": "0xad4ee267",
+      "method": "eth_call",
+      "publicWrite": false
+    },
+    {
+      "name": "V1.applyTrade",
+      "target": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "caller": "0x774d96e5739bffadee91508b4d3d74f5be29f165",
+      "selector": "0xb022e608",
+      "error": "TradingPaused()",
+      "errorData": "0x02b874a6",
+      "method": "eth_call",
+      "publicWrite": false
+    },
+    {
+      "name": "V1.liquidate",
+      "target": "0xc6C592100723Fe0C66343A16e95eC34cC0c2141c",
+      "caller": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+      "selector": "0xc5d67c9d",
+      "error": "LiquidationPaused()",
+      "errorData": "0x0d3f92fd",
+      "method": "eth_call",
+      "publicWrite": false
+    },
+    {
+      "name": "PME.executeTrade",
+      "target": "0xF5FB81e447AF3A3E81951aC72D751dE3E9B8eee2",
+      "caller": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+      "selector": "0x7101c201",
+      "error": "PausedError()",
+      "errorData": "0xeced32bc",
+      "method": "eth_call",
+      "publicWrite": false
+    }
+  ]
+}
