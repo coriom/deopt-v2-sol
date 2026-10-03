@@ -1,0 +1,777 @@
+{
+  "G1Queued": true,
+  "G2Queued": true,
+  "KNOWN_RECORDS": "PARTIALLY_RESOLVED",
+  "PRE_UNPAUSE_ACTION": "SPECIFIC_ACTION_REQUIRED",
+  "STORE_COVERAGE": "INCOMPLETE",
+  "TRADING": "NOT AUTHORIZED",
+  "backendLocalRuntime": "STOPPED",
+  "broadcastCount": 11,
+  "canonicalTraderNoncesUnchanged": true,
+  "chainId": 84532,
+  "clearingBalanceNative": 1000000000,
+  "comparisonBlock": 47615266,
+  "comparisonBlockHash": "0x46770e9331b6f2e4b745c3dd1e690bcde3bacc4e299d62ccfb072142c67533c6",
+  "comparisonTimestamp": 1790998820,
+  "comparisonUTC": "2026-10-03T03:40:20+00:00",
+  "databaseWrites": 0,
+  "executorAllowlist": {
+    "owner": true,
+    "runtimeExecutor": true
+  },
+  "fivePreviouslyUnresolvedCovered": true,
+  "independentViemRecoveryChecks": 26,
+  "intentCount": 14,
+  "intents": [
+    {
+      "broadcastTargetRecorded": false,
+      "entrypoint": "executeTrade(PerpTrade,bytes,bytes)",
+      "fillAssessment": "NOT_APPLICABLE_BILATERAL_PERP_TRADE",
+      "intentId": "5f98818a-4db8-444c-a417-8056cf3279db",
+      "lifecycle": "simulation_failed",
+      "messageType": "bilateral PerpTrade",
+      "nonces": {
+        "buyer": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        },
+        "seller": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        }
+      },
+      "payloadComplete": true,
+      "protocolVersion": "perp_v2",
+      "provenance": "UNPROVEN",
+      "reconstructedDeadlineExpired": true,
+      "reconstructedDeadlineSeconds": 1789967348,
+      "reconstructedDeadlineUTC": "2026-09-21T05:09:08+00:00",
+      "reconstructedPayload": {
+        "buyer": "0x84a455903b69286645467c9b30414a241771d4b1",
+        "buyerIsMaker": true,
+        "buyerNonce": 0,
+        "deadline": 1789967348,
+        "executionPrice1e8": 249273743964,
+        "intentIdBytes32": "0xa8a9e9d63efc085d16d0238147a37516789dcdc53e15fe58e03a3d0596556b07",
+        "marketId": 1,
+        "maxExecutionPrice1e8": 260000000000,
+        "minExecutionPrice1e8": 240000000000,
+        "seller": "0xfe426f11734ec902ca565a0a51ca31bd75d90b29",
+        "sellerNonce": 0,
+        "sizeDelta1e8": 1000000
+      },
+      "recordedHistoricalTargetSignatureValid": false,
+      "recordedTargetCandidatePairMatches": 0,
+      "signatureChecks": {
+        "buyer": "INVALID_LIVE_DOMAIN_OR_PAYLOAD",
+        "seller": "INVALID_LIVE_DOMAIN_OR_PAYLOAD"
+      },
+      "signaturePairPresent": true,
+      "storedLivePayloadSignatureValid": false,
+      "subaccountAndPartialFillFields": "NOT_APPLICABLE",
+      "verdict": "UNRESOLVED_ORIGINAL_SIGNED_PAYLOAD"
+    },
+    {
+      "broadcastTargetRecorded": false,
+      "entrypoint": "executeTrade(PerpTrade,bytes,bytes)",
+      "fillAssessment": "NOT_APPLICABLE_BILATERAL_PERP_TRADE",
+      "intentId": "c1ddbbac-3066-4f31-9e2a-e0bf6b5a3a1b",
+      "lifecycle": "simulation_ok",
+      "messageType": "bilateral PerpTrade",
+      "nonces": {
+        "buyer": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        },
+        "seller": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        }
+      },
+      "payloadComplete": true,
+      "protocolVersion": "perp_v2",
+      "provenance": "UNPROVEN",
+      "reconstructedDeadlineExpired": true,
+      "reconstructedDeadlineSeconds": 1789967661,
+      "reconstructedDeadlineUTC": "2026-09-21T05:14:21+00:00",
+      "reconstructedPayload": {
+        "buyer": "0x40f3b998bcbbf76958e81582fdc87d844c0127df",
+        "buyerIsMaker": true,
+        "buyerNonce": 0,
+        "deadline": 1789967661,
+        "executionPrice1e8": 249273743964,
+        "intentIdBytes32": "0xbdeff8ea2d1f37628a906396b6a7794ea7ad4a6b9dbbdcdaccf90a5b502a0c32",
+        "marketId": 1,
+        "maxExecutionPrice1e8": 260000000000,
+        "minExecutionPrice1e8": 240000000000,
+        "seller": "0x8eb88270b68965d9b91a6bf0a56f99b880584788",
+        "sellerNonce": 0,
+        "sizeDelta1e8": 1000000
+      },
+      "recordedHistoricalTargetSignatureValid": false,
+      "recordedTargetCandidatePairMatches": 0,
+      "signatureChecks": {
+        "buyer": "INVALID_LIVE_DOMAIN_OR_PAYLOAD",
+        "seller": "INVALID_LIVE_DOMAIN_OR_PAYLOAD"
+      },
+      "signaturePairPresent": true,
+      "storedLivePayloadSignatureValid": false,
+      "subaccountAndPartialFillFields": "NOT_APPLICABLE",
+      "verdict": "UNRESOLVED_ORIGINAL_SIGNED_PAYLOAD"
+    },
+    {
+      "broadcastTargetRecorded": false,
+      "entrypoint": "executeTrade(PerpTrade,bytes,bytes)",
+      "fillAssessment": "NOT_APPLICABLE_BILATERAL_PERP_TRADE",
+      "intentId": "3b98f01a-7936-4522-a82e-4e98d158a069",
+      "lifecycle": "simulation_ok",
+      "messageType": "bilateral PerpTrade",
+      "nonces": {
+        "buyer": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        },
+        "seller": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        }
+      },
+      "payloadComplete": true,
+      "protocolVersion": "perp_v2",
+      "provenance": "UNPROVEN",
+      "reconstructedDeadlineExpired": true,
+      "reconstructedDeadlineSeconds": 1789975007,
+      "reconstructedDeadlineUTC": "2026-09-21T07:16:47+00:00",
+      "reconstructedPayload": {
+        "buyer": "0x51b4c6fe37974b998f3748140ec15cd8061bfdac",
+        "buyerIsMaker": true,
+        "buyerNonce": 0,
+        "deadline": 1789975007,
+        "executionPrice1e8": 249273743964,
+        "intentIdBytes32": "0x50e2d98d6378e4fe5531680a9005d1ce4fe4b2fb7f62f1fd12def4317e1911ca",
+        "marketId": 1,
+        "maxExecutionPrice1e8": 260000000000,
+        "minExecutionPrice1e8": 240000000000,
+        "seller": "0xa27e7e769902bd85a28fe29129a3c0f8069239ab",
+        "sellerNonce": 0,
+        "sizeDelta1e8": 1000000
+      },
+      "recordedHistoricalTargetSignatureValid": false,
+      "recordedTargetCandidatePairMatches": 0,
+      "signatureChecks": {
+        "buyer": "INVALID_LIVE_DOMAIN_OR_PAYLOAD",
+        "seller": "INVALID_LIVE_DOMAIN_OR_PAYLOAD"
+      },
+      "signaturePairPresent": true,
+      "storedLivePayloadSignatureValid": false,
+      "subaccountAndPartialFillFields": "NOT_APPLICABLE",
+      "verdict": "UNRESOLVED_ORIGINAL_SIGNED_PAYLOAD"
+    },
+    {
+      "broadcastTargetRecorded": false,
+      "entrypoint": "executeTrade(PerpTrade,bytes,bytes)",
+      "fillAssessment": "NOT_APPLICABLE_BILATERAL_PERP_TRADE",
+      "intentId": "870d04b6-8e98-4ef3-bcbb-9ed407361a38",
+      "lifecycle": "simulation_ok",
+      "messageType": "bilateral PerpTrade",
+      "nonces": {
+        "buyer": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        },
+        "seller": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        }
+      },
+      "payloadComplete": true,
+      "protocolVersion": "perp_v2",
+      "provenance": "UNPROVEN",
+      "reconstructedDeadlineExpired": true,
+      "reconstructedDeadlineSeconds": 1789975024,
+      "reconstructedDeadlineUTC": "2026-09-21T07:17:04+00:00",
+      "reconstructedPayload": {
+        "buyer": "0x481be0865e10d2a71bfd843d4e4f219e3fb69579",
+        "buyerIsMaker": true,
+        "buyerNonce": 0,
+        "deadline": 1789975024,
+        "executionPrice1e8": 249273743964,
+        "intentIdBytes32": "0x89223670b7298bb65c97bbe5459bd375944037df995577860fa7486cdff9e2a1",
+        "marketId": 1,
+        "maxExecutionPrice1e8": 260000000000,
+        "minExecutionPrice1e8": 240000000000,
+        "seller": "0xed90ef8c363ccb3c8994865ccf965b19c9340cb1",
+        "sellerNonce": 0,
+        "sizeDelta1e8": 1000000
+      },
+      "recordedHistoricalTargetSignatureValid": false,
+      "recordedTargetCandidatePairMatches": 0,
+      "signatureChecks": {
+        "buyer": "INVALID_LIVE_DOMAIN_OR_PAYLOAD",
+        "seller": "INVALID_LIVE_DOMAIN_OR_PAYLOAD"
+      },
+      "signaturePairPresent": true,
+      "storedLivePayloadSignatureValid": false,
+      "subaccountAndPartialFillFields": "NOT_APPLICABLE",
+      "verdict": "UNRESOLVED_ORIGINAL_SIGNED_PAYLOAD"
+    },
+    {
+      "broadcastTargetRecorded": false,
+      "entrypoint": "executeTrade(PerpTrade,bytes,bytes)",
+      "fillAssessment": "NOT_APPLICABLE_BILATERAL_PERP_TRADE",
+      "intentId": "e93faa83-ade8-4749-a130-5024a6c98314",
+      "lifecycle": "simulation_ok",
+      "messageType": "bilateral PerpTrade",
+      "nonces": {
+        "buyer": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        },
+        "seller": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        }
+      },
+      "payloadComplete": true,
+      "protocolVersion": "perp_v2",
+      "provenance": "UNPROVEN",
+      "reconstructedDeadlineExpired": true,
+      "reconstructedDeadlineSeconds": 1789975124,
+      "reconstructedDeadlineUTC": "2026-09-21T07:18:44+00:00",
+      "reconstructedPayload": {
+        "buyer": "0x66c353781059436fe50e08c9cd02736229b41b6f",
+        "buyerIsMaker": true,
+        "buyerNonce": 0,
+        "deadline": 1789975124,
+        "executionPrice1e8": 246831000000,
+        "intentIdBytes32": "0xe211078b260af6f9f9044eecd88d4ccffe45181dff3c1f07c43b56adf9bfc48b",
+        "marketId": 1,
+        "maxExecutionPrice1e8": 249299310000,
+        "minExecutionPrice1e8": 244362690000,
+        "seller": "0x4ab6c090ab9fd1171504bf0edf34a99d11c7ce3f",
+        "sellerNonce": 0,
+        "sizeDelta1e8": 1000000
+      },
+      "recordedHistoricalTargetSignatureValid": false,
+      "recordedTargetCandidatePairMatches": 0,
+      "signatureChecks": {
+        "buyer": "INVALID_LIVE_DOMAIN_OR_PAYLOAD",
+        "seller": "INVALID_LIVE_DOMAIN_OR_PAYLOAD"
+      },
+      "signaturePairPresent": true,
+      "storedLivePayloadSignatureValid": false,
+      "subaccountAndPartialFillFields": "NOT_APPLICABLE",
+      "verdict": "UNRESOLVED_ORIGINAL_SIGNED_PAYLOAD"
+    },
+    {
+      "broadcastTargetRecorded": true,
+      "entrypoint": "executeTrade(PerpTrade,bytes,bytes)",
+      "fillAssessment": "NOT_APPLICABLE_BILATERAL_PERP_TRADE",
+      "intentId": "065ae94b-d19c-4a43-9fe4-02f141f56a32",
+      "lifecycle": "confirmed",
+      "messageType": "bilateral PerpTrade",
+      "nonces": {
+        "buyer": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        },
+        "seller": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        }
+      },
+      "payloadComplete": true,
+      "protocolVersion": "perp_v2",
+      "provenance": "SIGNED_PAYLOAD_VERIFIED_FOR_RECORDED_HISTORICAL_TARGET",
+      "reconstructedDeadlineExpired": true,
+      "reconstructedDeadlineSeconds": 1789968050,
+      "reconstructedDeadlineUTC": "2026-09-21T05:20:50+00:00",
+      "reconstructedPayload": {
+        "buyer": "0x8821d28657ea4605860d788225b9c554cfaa9164",
+        "buyerIsMaker": true,
+        "buyerNonce": 0,
+        "deadline": 1789968050,
+        "executionPrice1e8": 249273743964,
+        "intentIdBytes32": "0xd2ccc15a68fa6fff785da07d3531ae7f337f5ff708bf487f9d727a0c10aacb1d",
+        "marketId": 1,
+        "maxExecutionPrice1e8": 260000000000,
+        "minExecutionPrice1e8": 240000000000,
+        "seller": "0xbef9c0e372557130789e97874c82ee6f0cfd806d",
+        "sellerNonce": 0,
+        "sizeDelta1e8": 1000000
+      },
+      "recordedHistoricalTarget": "0xa26d0e207a513cfd8fb1085d6af09ca65c1b994d",
+      "recordedHistoricalTargetSignatureValid": true,
+      "signatureChecks": {
+        "buyer": "INVALID_LIVE_DOMAIN_OR_PAYLOAD",
+        "seller": "INVALID_LIVE_DOMAIN_OR_PAYLOAD"
+      },
+      "signaturePairPresent": true,
+      "storedLivePayloadSignatureValid": false,
+      "subaccountAndPartialFillFields": "NOT_APPLICABLE",
+      "verdict": "EXPIRED_VERIFIED_SIGNED_DEADLINE",
+      "verifiedSignedDeadlineSeconds": 1789968050
+    },
+    {
+      "broadcastTargetRecorded": true,
+      "entrypoint": "executeTrade(PerpTrade,bytes,bytes)",
+      "fillAssessment": "NOT_APPLICABLE_BILATERAL_PERP_TRADE",
+      "intentId": "46c4873b-3771-4097-aab9-fdb3e6c6e208",
+      "lifecycle": "confirmed",
+      "messageType": "bilateral PerpTrade",
+      "nonces": {
+        "buyer": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        },
+        "seller": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        }
+      },
+      "payloadComplete": true,
+      "protocolVersion": "perp_v2",
+      "provenance": "SIGNED_PAYLOAD_VERIFIED_FOR_RECORDED_HISTORICAL_TARGET",
+      "reconstructedDeadlineExpired": true,
+      "reconstructedDeadlineSeconds": 1789967769,
+      "reconstructedDeadlineUTC": "2026-09-21T05:16:09+00:00",
+      "reconstructedPayload": {
+        "buyer": "0x8a6c0699361f5e040753c73498364490ce163ece",
+        "buyerIsMaker": true,
+        "buyerNonce": 0,
+        "deadline": 1789967769,
+        "executionPrice1e8": 249273743964,
+        "intentIdBytes32": "0x5dc969b356710ee2316cba48d9f28e64baf6c51ffdd1883f1c6619a2cb96ef28",
+        "marketId": 1,
+        "maxExecutionPrice1e8": 260000000000,
+        "minExecutionPrice1e8": 240000000000,
+        "seller": "0xe4c9fd8c4013753ae374bf885b466b975dd1ff2b",
+        "sellerNonce": 0,
+        "sizeDelta1e8": 1000000
+      },
+      "recordedHistoricalTarget": "0x700771623439ff530ff9ff16731eb10747afa7ec",
+      "recordedHistoricalTargetSignatureValid": true,
+      "signatureChecks": {
+        "buyer": "INVALID_LIVE_DOMAIN_OR_PAYLOAD",
+        "seller": "INVALID_LIVE_DOMAIN_OR_PAYLOAD"
+      },
+      "signaturePairPresent": true,
+      "storedLivePayloadSignatureValid": false,
+      "subaccountAndPartialFillFields": "NOT_APPLICABLE",
+      "verdict": "EXPIRED_VERIFIED_SIGNED_DEADLINE",
+      "verifiedSignedDeadlineSeconds": 1789967769
+    },
+    {
+      "broadcastTargetRecorded": false,
+      "entrypoint": "executeTrade(PerpTrade,bytes,bytes)",
+      "fillAssessment": "NOT_APPLICABLE_BILATERAL_PERP_TRADE",
+      "intentId": "5d113f5c-d351-4a1b-b898-cc1482ac7f0a",
+      "lifecycle": "pending",
+      "messageType": "bilateral PerpTrade",
+      "nonces": {
+        "buyer": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        },
+        "seller": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        }
+      },
+      "payloadComplete": true,
+      "protocolVersion": "perp_v2",
+      "provenance": "UNPROVEN",
+      "reconstructedDeadlineExpired": true,
+      "reconstructedDeadlineSeconds": 1789967246,
+      "reconstructedDeadlineUTC": "2026-09-21T05:07:26+00:00",
+      "reconstructedPayload": {
+        "buyer": "0x5845c166338a6edef63778bc572b28c29f7170f9",
+        "buyerIsMaker": true,
+        "buyerNonce": 0,
+        "deadline": 1789967246,
+        "executionPrice1e8": 246831000000,
+        "intentIdBytes32": "0x9d92829c7fd336c8cc68d7c3713fc30f8b7f4387ba1455724b2f92026774abcd",
+        "marketId": 1,
+        "maxExecutionPrice1e8": 260000000000,
+        "minExecutionPrice1e8": 240000000000,
+        "seller": "0x57c57a005546ed8eda6579f2379701e27e48e15d",
+        "sellerNonce": 0,
+        "sizeDelta1e8": 1000000
+      },
+      "recordedHistoricalTargetSignatureValid": false,
+      "signatureChecks": {
+        "buyer": "MISSING",
+        "seller": "MISSING"
+      },
+      "signaturePairPresent": false,
+      "storedLivePayloadSignatureValid": false,
+      "subaccountAndPartialFillFields": "NOT_APPLICABLE",
+      "verdict": "MISSING_SIGNATURE"
+    },
+    {
+      "broadcastTargetRecorded": true,
+      "entrypoint": "executeTrade(PerpTrade,bytes,bytes)",
+      "fillAssessment": "NOT_APPLICABLE_BILATERAL_PERP_TRADE",
+      "intentId": "6fd75b70-7a80-4d24-8800-8dcb405ca62e",
+      "lifecycle": "confirmed",
+      "messageType": "bilateral PerpTrade",
+      "nonces": {
+        "buyer": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        },
+        "seller": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        }
+      },
+      "payloadComplete": true,
+      "protocolVersion": "perp_v2",
+      "provenance": "SIGNED_PAYLOAD_VERIFIED_FOR_RECORDED_HISTORICAL_TARGET",
+      "reconstructedDeadlineExpired": true,
+      "reconstructedDeadlineSeconds": 1789967905,
+      "reconstructedDeadlineUTC": "2026-09-21T05:18:25+00:00",
+      "reconstructedPayload": {
+        "buyer": "0x23b78a80b7b20ce82eb162946c2bbdab73d90a64",
+        "buyerIsMaker": true,
+        "buyerNonce": 0,
+        "deadline": 1789967905,
+        "executionPrice1e8": 249273743964,
+        "intentIdBytes32": "0x996f1ad2cc0c912de08f3d9d66a30ff471f9119fdee534eb90436d291ff9dc73",
+        "marketId": 1,
+        "maxExecutionPrice1e8": 260000000000,
+        "minExecutionPrice1e8": 240000000000,
+        "seller": "0x9b6d22277ccc5ae5923cb547fc912b7989d1b7cf",
+        "sellerNonce": 0,
+        "sizeDelta1e8": 1000000
+      },
+      "recordedHistoricalTarget": "0x64f6c61370400cc10518b8dae5758a76906b0ddb",
+      "recordedHistoricalTargetSignatureValid": true,
+      "signatureChecks": {
+        "buyer": "INVALID_LIVE_DOMAIN_OR_PAYLOAD",
+        "seller": "INVALID_LIVE_DOMAIN_OR_PAYLOAD"
+      },
+      "signaturePairPresent": true,
+      "storedLivePayloadSignatureValid": false,
+      "subaccountAndPartialFillFields": "NOT_APPLICABLE",
+      "verdict": "EXPIRED_VERIFIED_SIGNED_DEADLINE",
+      "verifiedSignedDeadlineSeconds": 1789967905
+    },
+    {
+      "broadcastTargetRecorded": true,
+      "entrypoint": "executeTrade(PerpTrade,bytes,bytes)",
+      "fillAssessment": "NOT_APPLICABLE_BILATERAL_PERP_TRADE",
+      "intentId": "7d15bacd-25fb-4689-aa07-9b55a35167df",
+      "lifecycle": "confirmed",
+      "messageType": "bilateral PerpTrade",
+      "nonces": {
+        "buyer": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        },
+        "seller": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        }
+      },
+      "payloadComplete": true,
+      "protocolVersion": "perp_v2",
+      "provenance": "SIGNED_PAYLOAD_VERIFIED_FOR_RECORDED_HISTORICAL_TARGET",
+      "reconstructedDeadlineExpired": true,
+      "reconstructedDeadlineSeconds": 1789968417,
+      "reconstructedDeadlineUTC": "2026-09-21T05:26:57+00:00",
+      "reconstructedPayload": {
+        "buyer": "0x94d5ce86f2cb434bf2e5af65c9b2a6716943540e",
+        "buyerIsMaker": true,
+        "buyerNonce": 0,
+        "deadline": 1789968417,
+        "executionPrice1e8": 249273743964,
+        "intentIdBytes32": "0x5e7de6e565727a9905145d104a640b576150c2e6d7ff89eacedc342655ae276a",
+        "marketId": 1,
+        "maxExecutionPrice1e8": 260000000000,
+        "minExecutionPrice1e8": 240000000000,
+        "seller": "0x75ae5d637f50745a7ffd623f4d40cc615efe5c62",
+        "sellerNonce": 0,
+        "sizeDelta1e8": 1000000
+      },
+      "recordedHistoricalTarget": "0x17ce223c8708a0dfa2906b38fee80322fa9faa93",
+      "recordedHistoricalTargetSignatureValid": true,
+      "signatureChecks": {
+        "buyer": "INVALID_LIVE_DOMAIN_OR_PAYLOAD",
+        "seller": "INVALID_LIVE_DOMAIN_OR_PAYLOAD"
+      },
+      "signaturePairPresent": true,
+      "storedLivePayloadSignatureValid": false,
+      "subaccountAndPartialFillFields": "NOT_APPLICABLE",
+      "verdict": "EXPIRED_VERIFIED_SIGNED_DEADLINE",
+      "verifiedSignedDeadlineSeconds": 1789968417
+    },
+    {
+      "broadcastTargetRecorded": true,
+      "entrypoint": "executeTrade(PerpTrade,bytes,bytes)",
+      "fillAssessment": "NOT_APPLICABLE_BILATERAL_PERP_TRADE",
+      "intentId": "86de6951-d787-4107-b180-d94b0bd1307b",
+      "lifecycle": "confirmed",
+      "messageType": "bilateral PerpTrade",
+      "nonces": {
+        "buyer": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        },
+        "seller": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        }
+      },
+      "payloadComplete": true,
+      "protocolVersion": "perp_v2",
+      "provenance": "SIGNED_PAYLOAD_VERIFIED_FOR_RECORDED_HISTORICAL_TARGET",
+      "reconstructedDeadlineExpired": true,
+      "reconstructedDeadlineSeconds": 1789974904,
+      "reconstructedDeadlineUTC": "2026-09-21T07:15:04+00:00",
+      "reconstructedPayload": {
+        "buyer": "0x269c612b1cba2ffecca474ccb12bbf9cf46af07f",
+        "buyerIsMaker": true,
+        "buyerNonce": 0,
+        "deadline": 1789974904,
+        "executionPrice1e8": 249273743964,
+        "intentIdBytes32": "0x7d9d2d10c1220346863ebfc0e562559b2c27cc461f45296ad52a7981347b1461",
+        "marketId": 1,
+        "maxExecutionPrice1e8": 260000000000,
+        "minExecutionPrice1e8": 240000000000,
+        "seller": "0x644c1aca6d434a6e3484db8f599d409f98a5f1e2",
+        "sellerNonce": 0,
+        "sizeDelta1e8": 1000000
+      },
+      "recordedHistoricalTarget": "0x1b3761a13605aba2c4f57e1a3feb015c500c6ea6",
+      "recordedHistoricalTargetSignatureValid": true,
+      "signatureChecks": {
+        "buyer": "INVALID_LIVE_DOMAIN_OR_PAYLOAD",
+        "seller": "INVALID_LIVE_DOMAIN_OR_PAYLOAD"
+      },
+      "signaturePairPresent": true,
+      "storedLivePayloadSignatureValid": false,
+      "subaccountAndPartialFillFields": "NOT_APPLICABLE",
+      "verdict": "EXPIRED_VERIFIED_SIGNED_DEADLINE",
+      "verifiedSignedDeadlineSeconds": 1789974904
+    },
+    {
+      "broadcastTargetRecorded": true,
+      "entrypoint": "executeTrade(PerpTrade,bytes,bytes)",
+      "fillAssessment": "NOT_APPLICABLE_BILATERAL_PERP_TRADE",
+      "intentId": "d21303f5-e45c-4849-b75b-57b7129b2085",
+      "lifecycle": "confirmed",
+      "messageType": "bilateral PerpTrade",
+      "nonces": {
+        "buyer": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        },
+        "seller": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        }
+      },
+      "payloadComplete": true,
+      "protocolVersion": "perp_v2",
+      "provenance": "SIGNED_PAYLOAD_VERIFIED_FOR_RECORDED_HISTORICAL_TARGET",
+      "reconstructedDeadlineExpired": true,
+      "reconstructedDeadlineSeconds": 1789975015,
+      "reconstructedDeadlineUTC": "2026-09-21T07:16:55+00:00",
+      "reconstructedPayload": {
+        "buyer": "0x3c3e41d6931801f4b3210b2cef47ed4b08f4d0a6",
+        "buyerIsMaker": true,
+        "buyerNonce": 0,
+        "deadline": 1789975015,
+        "executionPrice1e8": 249273743964,
+        "intentIdBytes32": "0x70a729e97ac41749d02072abf345e46b7e7a7db59e0d3711247abdef973b62b9",
+        "marketId": 1,
+        "maxExecutionPrice1e8": 260000000000,
+        "minExecutionPrice1e8": 240000000000,
+        "seller": "0x1900e5d17b837829c240b2da2918236ebb6dfdb5",
+        "sellerNonce": 0,
+        "sizeDelta1e8": 1000000
+      },
+      "recordedHistoricalTarget": "0xc2e366d8cdd88bab015c1b279684ea8717e976e3",
+      "recordedHistoricalTargetSignatureValid": true,
+      "signatureChecks": {
+        "buyer": "INVALID_LIVE_DOMAIN_OR_PAYLOAD",
+        "seller": "INVALID_LIVE_DOMAIN_OR_PAYLOAD"
+      },
+      "signaturePairPresent": true,
+      "storedLivePayloadSignatureValid": false,
+      "subaccountAndPartialFillFields": "NOT_APPLICABLE",
+      "verdict": "EXPIRED_VERIFIED_SIGNED_DEADLINE",
+      "verifiedSignedDeadlineSeconds": 1789975015
+    },
+    {
+      "broadcastTargetRecorded": true,
+      "entrypoint": "executeTrade(PerpTrade,bytes,bytes)",
+      "fillAssessment": "NOT_APPLICABLE_BILATERAL_PERP_TRADE",
+      "intentId": "e156340a-ff16-460f-b30c-bdd90c91dbfc",
+      "lifecycle": "confirmed",
+      "messageType": "bilateral PerpTrade",
+      "nonces": {
+        "buyer": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        },
+        "seller": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        }
+      },
+      "payloadComplete": true,
+      "protocolVersion": "perp_v2",
+      "provenance": "SIGNED_PAYLOAD_VERIFIED_FOR_RECORDED_HISTORICAL_TARGET",
+      "reconstructedDeadlineExpired": true,
+      "reconstructedDeadlineSeconds": 1789968261,
+      "reconstructedDeadlineUTC": "2026-09-21T05:24:21+00:00",
+      "reconstructedPayload": {
+        "buyer": "0x8502e3cdcfc375acd3582f54256c0f4d94e23444",
+        "buyerIsMaker": true,
+        "buyerNonce": 0,
+        "deadline": 1789968261,
+        "executionPrice1e8": 249273743964,
+        "intentIdBytes32": "0xdae9320b140eee9b32f86ea85224862f007b8a54141634a64daa8fddeff162b4",
+        "marketId": 1,
+        "maxExecutionPrice1e8": 260000000000,
+        "minExecutionPrice1e8": 240000000000,
+        "seller": "0x31daf6d91e5b8f30a020c50a00794903cb7ea9de",
+        "sellerNonce": 0,
+        "sizeDelta1e8": 1000000
+      },
+      "recordedHistoricalTarget": "0xc35b97c209d20f2362e277ed015c297a710f7bfc",
+      "recordedHistoricalTargetSignatureValid": true,
+      "signatureChecks": {
+        "buyer": "INVALID_LIVE_DOMAIN_OR_PAYLOAD",
+        "seller": "INVALID_LIVE_DOMAIN_OR_PAYLOAD"
+      },
+      "signaturePairPresent": true,
+      "storedLivePayloadSignatureValid": false,
+      "subaccountAndPartialFillFields": "NOT_APPLICABLE",
+      "verdict": "EXPIRED_VERIFIED_SIGNED_DEADLINE",
+      "verifiedSignedDeadlineSeconds": 1789968261
+    },
+    {
+      "broadcastTargetRecorded": true,
+      "entrypoint": "executeTrade(PerpTrade,bytes,bytes)",
+      "fillAssessment": "NOT_APPLICABLE_BILATERAL_PERP_TRADE",
+      "intentId": "e6c7ac84-6bbe-4515-83e9-d22dad94e5da",
+      "lifecycle": "confirmed",
+      "messageType": "bilateral PerpTrade",
+      "nonces": {
+        "buyer": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        },
+        "seller": {
+          "live": 0,
+          "relation": "MATCH",
+          "signed": 0
+        }
+      },
+      "payloadComplete": true,
+      "protocolVersion": "perp_v2",
+      "provenance": "SIGNED_PAYLOAD_VERIFIED_FOR_RECORDED_HISTORICAL_TARGET",
+      "reconstructedDeadlineExpired": true,
+      "reconstructedDeadlineSeconds": 1789967835,
+      "reconstructedDeadlineUTC": "2026-09-21T05:17:15+00:00",
+      "reconstructedPayload": {
+        "buyer": "0x026267c22d7e32754b7b5ea570837cf7cb7823c0",
+        "buyerIsMaker": true,
+        "buyerNonce": 0,
+        "deadline": 1789967835,
+        "executionPrice1e8": 249273743964,
+        "intentIdBytes32": "0x016c07c4eded08ad29874a32a6e28f41d0c4a47e27f9f45b907a53264c66998c",
+        "marketId": 1,
+        "maxExecutionPrice1e8": 260000000000,
+        "minExecutionPrice1e8": 240000000000,
+        "seller": "0x1450e05e800aaf801e003c0068e01e13d88775c5",
+        "sellerNonce": 0,
+        "sizeDelta1e8": 1000000
+      },
+      "recordedHistoricalTarget": "0x634aab998974ddf81f87b101258b00850211b9f3",
+      "recordedHistoricalTargetSignatureValid": true,
+      "signatureChecks": {
+        "buyer": "INVALID_LIVE_DOMAIN_OR_PAYLOAD",
+        "seller": "INVALID_LIVE_DOMAIN_OR_PAYLOAD"
+      },
+      "signaturePairPresent": true,
+      "storedLivePayloadSignatureValid": false,
+      "subaccountAndPartialFillFields": "NOT_APPLICABLE",
+      "verdict": "EXPIRED_VERIFIED_SIGNED_DEADLINE",
+      "verifiedSignedDeadlineSeconds": 1789967835
+    }
+  ],
+  "liveDomainSeparatorMatchesLocal": true,
+  "livePmeRuntimeBytes": 10441,
+  "livePmeRuntimeEthereumKeccak": "0x815d473801fd4353051a3a7c1b4e9cae493786b0c3cc643a789e496e5f2813bc",
+  "maintenanceControls": {
+    "NEW": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "OLD": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "V1": [
+      1,
+      1,
+      1,
+      1
+    ]
+  },
+  "milestone": "PERPS_V2_BASE_SEPOLIA_SIGNED_ORDER_RESOLUTION_V1",
+  "newFeeConsumerAuthorization": false,
+  "newInsuranceAuthorization": false,
+  "newVaultAuthorization": false,
+  "otherIdentifiedLocalStoreRowCounts": {
+    "orders": 0,
+    "perps_intent_fills_ledger": 0,
+    "perps_signed_intent_nonce_ledger": 0
+  },
+  "publicChainWrites": 0,
+  "recordedHistoricalTargetsTested": 9,
+  "reusedPme": "0xF5FB81e447AF3A3E81951aC72D751dE3E9B8eee2",
+  "scopedProtocolEventScan": {
+    "eventCount": 0,
+    "fromBlock": 47614195,
+    "toBlock": 47615266
+  },
+  "signatureBytesPersisted": false,
+  "signedPairCount": 13,
+  "storeScope": "One existing loopback PostgreSQL database from prepare-only config; bounded V2 execution_intents, signatures and broadcasts tables"
+}
