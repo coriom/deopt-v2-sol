@@ -1,0 +1,82 @@
+{
+  "G1Queued": true,
+  "G2Queued": true,
+  "activeExecutors": [
+    "0x58ad437cb9e32b0faee810ef05810d5ba2ae52b8",
+    "0xc35f7a8a103a9a4464adfaa76b9b514093d23c27"
+  ],
+  "backendLocalRuntime": "STOPPED",
+  "chainId": 84532,
+  "comparisonBlock": 47619181,
+  "comparisonBlockHash": "0xd1da1bfb2c2f4a61c48c26468a6178e4a86faa2be0aba7ba8d49026a5e6f096a",
+  "comparisonUTC": "2026-10-03T05:50:50+00:00",
+  "currentPmeEngine": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+  "executorEventCount": 2,
+  "executorEventScanFromBlock": 47147788,
+  "executorEventScanToBlock": 47619181,
+  "executorTimeline": [
+    {
+      "allowed": true,
+      "block": 47147788,
+      "executor": "0xc35f7a8a103a9a4464adfaa76b9b514093d23c27",
+      "transactionHash": "0x6275f353337f4a4b1ea4f018e56e9d947b3364f9e665e8d4e788d4c61b6fa07f"
+    },
+    {
+      "allowed": true,
+      "block": 47151229,
+      "executor": "0x58ad437cb9e32b0faee810ef05810d5ba2ae52b8",
+      "transactionHash": "0xfa9bd4a8e9db1dffdcb2cb8d0156830adc897783477168c109b1fd3a477f690e"
+    }
+  ],
+  "keystoreAccess": false,
+  "maintenanceControls": {
+    "NEW": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "OLD": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "V1": [
+      1,
+      1,
+      1,
+      1
+    ]
+  },
+  "milestone": "PERPS_V2_BASE_SEPOLIA_RESTRICTED_FIRST_TRADE_GUARD_V1",
+  "newEngineRuntimeEthereumKeccak": "0xc0ac9015866a36d0c9c25920387af78cb59cc24f66170728ade1a835d1211a2a",
+  "newEngineRuntimeSize": 24321,
+  "newFeeConsumerAuthorized": false,
+  "newInsuranceAuthorized": false,
+  "newVaultAuthorized": false,
+  "pmeDeploymentBlock": 47147788,
+  "pmeEventCountSinceSignedOrderPostflight": 0,
+  "pmeEventScanFromBlock": 47615267,
+  "pmeEventScanToBlock": 47619181,
+  "positions": {
+    "buyer": {
+      "lastCumulativeFundingRate1e18": 0,
+      "openNotional1e8": -2468310000,
+      "pmeNonce": 0,
+      "size1e8": -1000000,
+      "trader": "0x66858286fEEA78a05eA093673EA1535E0A52002d"
+    },
+    "seller": {
+      "lastCumulativeFundingRate1e18": 0,
+      "openNotional1e8": 2468310000,
+      "pmeNonce": 0,
+      "size1e8": 1000000,
+      "trader": "0xff287410852B9328437eaC353720e5476bC5F837"
+    }
+  },
+  "proposedEngine": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+  "publicWrites": 0,
+  "result": "READ_ONLY_PREFLIGHT",
+  "runtimeExecutorFromCommittedEvidence": "0x58Ad437Cb9E32B0fAEe810ef05810d5Ba2aE52B8"
+}
