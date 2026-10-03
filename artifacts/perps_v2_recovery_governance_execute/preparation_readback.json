@@ -1,0 +1,164 @@
+{
+  "backendLocalRuntimeState": "STOPPED",
+  "canonicalQueueReceipts": [
+    {
+      "blockTimestamp": 1790994502,
+      "blockUTC": "2026-10-03T02:28:22+00:00",
+      "canonicalBlock": 47613107,
+      "canonicalBlockHash": "0x2f88c9ab9dfe9e9a36a20bd1dee8fb5f6eb6ca4e40ecc6486b224359a4f6ae7c",
+      "eta": 1791086934,
+      "executionEventAbsent": true,
+      "inclusionMarginSeconds": 6032,
+      "innerCalldataMatches": true,
+      "minDelaySeconds": 86400,
+      "operation": "G1",
+      "operationId": "0x824bc77bb68ff4878d2e477478ed4d120abab89ce27b181a7c8ecc5ba7cfa3f6",
+      "publicTxHash": "0x7b68dfe378952e2eae86915e1ae908027293506397443de5ba01b8de9fb68eb9",
+      "queueDeadline": 1791000534,
+      "queuedAtReceiptBlock": true,
+      "receiptLogs": 3,
+      "receiptStatus": 1,
+      "safeInputFieldsMatchManifest": true,
+      "safeNonceAfter": 16,
+      "safeNonceBefore": 15,
+      "safeNonceConsumed": 15,
+      "safeSuccessEvent": true,
+      "safeTxHash": "0x98871782d3c1ca79e9e85504aff45f2974044054c00dc791a1b49f85afa90a51",
+      "target": "0x009f38440F058d095b61E0E2ee7fAbDF05BE7500",
+      "targetAuthorizationAtReceiptBlock": false,
+      "timelockEvent": "TransactionQueued",
+      "transactionInCanonicalBlock": true,
+      "transactionReceiptBlockHashesMatch": true,
+      "valueWei": 0
+    },
+    {
+      "blockTimestamp": 1790995972,
+      "blockUTC": "2026-10-03T02:52:52+00:00",
+      "canonicalBlock": 47613842,
+      "canonicalBlockHash": "0xbe0102ec2e274b7b7bd0ea12628196bd2cf95cd25e2755ddc31dbe75b674a40d",
+      "eta": 1791086934,
+      "executionEventAbsent": true,
+      "inclusionMarginSeconds": 4562,
+      "innerCalldataMatches": true,
+      "minDelaySeconds": 86400,
+      "operation": "G2",
+      "operationId": "0x02705011c0ee36d4928843bfb5641ff90aebf658162735668774768a7bc3e846",
+      "publicTxHash": "0x4bab77791496f15524f9a5a5b602e6e8369bbc636bef6400e3cfd73b332c354e",
+      "queueDeadline": 1791000534,
+      "queuedAtReceiptBlock": true,
+      "receiptLogs": 3,
+      "receiptStatus": 1,
+      "safeInputFieldsMatchManifest": true,
+      "safeNonceAfter": 17,
+      "safeNonceBefore": 16,
+      "safeNonceConsumed": 16,
+      "safeSuccessEvent": true,
+      "safeTxHash": "0xfbcdb5ab155b4756f76d7d5ba329dd776b6dbd7807d9461d97708c4ff8ddc68f",
+      "target": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "targetAuthorizationAtReceiptBlock": false,
+      "timelockEvent": "TransactionQueued",
+      "transactionInCanonicalBlock": true,
+      "transactionReceiptBlockHashesMatch": true,
+      "valueWei": 0
+    }
+  ],
+  "chainId": 84532,
+  "clearingBalanceNative": 1000000000,
+  "comparisonBlock": 47624415,
+  "comparisonBlockHash": "0x677abfe5b414f5cb4e16661cc18c3b714ed1e7a5485cdd440d7e3e42c538e567",
+  "comparisonTimestamp": 1791017118,
+  "comparisonUTC": "2026-10-03T08:45:18+00:00",
+  "economicChecks": 114,
+  "eta": 1791086934,
+  "fmv2NewConsumer": false,
+  "keystoreAccess": false,
+  "maintenanceFlags": {
+    "NEW": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "OLD": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "V1": [
+      1,
+      1,
+      1,
+      1
+    ]
+  },
+  "observedHeads": {
+    "finalized": {
+      "block": 47623564,
+      "hash": "0xd82e992ce7378ea32e1e21a961a69718c9dcbac4da06f321651e26f22bd41c5f"
+    },
+    "safe": {
+      "block": 47624333,
+      "hash": "0x642692a4de9279204ce8c002ddf546d6423b966f9f499376a4bbb73e0eca1a74"
+    }
+  },
+  "operations": [
+    {
+      "builderSha256": "6990ae6126f88b9fcc12d05a109ee1615d18163984e3d923fd16aa4d9b34a4a4",
+      "innerCalldata": "0x0f62e507000000000000000000000000a2bdc0efe80806ffda20189294dd8a5a1b426f150000000000000000000000000000000000000000000000000000000000000001",
+      "manifestSha256": "af21bd6ad880ffa356db061a38b5e0b598d8e372e5b712f15e6ddeda026873f6",
+      "name": "g1_insurance",
+      "operationId": "0x824bc77bb68ff4878d2e477478ed4d120abab89ce27b181a7c8ecc5ba7cfa3f6",
+      "outerCalldata": "0x06a41d09000000000000000000000000009f38440f058d095b61e0e2ee7fabdf05be750000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ac1d15600000000000000000000000000000000000000000000000000000000000000440f62e507000000000000000000000000a2bdc0efe80806ffda20189294dd8a5a1b426f15000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000",
+      "queued": true,
+      "safeNonceForReview": 17,
+      "safeTxHash": "0xee4ad79dac2ddf37019731cd9bc255f85531e8f82607c1c56a02ef8eb457911d",
+      "target": "0x009f38440F058d095b61E0E2ee7fAbDF05BE7500",
+      "targetPermission": false
+    },
+    {
+      "builderSha256": "d1ba5f3891c8bae2da9f608b11f2ca4955bce530fd524419f7ea09863e84abbe",
+      "innerCalldata": "0x3331c56e000000000000000000000000a2bdc0efe80806ffda20189294dd8a5a1b426f150000000000000000000000000000000000000000000000000000000000000001",
+      "manifestSha256": "d91b928fd780c410e14af91e28f0f67078892b9d05b2132b2142829a6b8b828b",
+      "name": "g2_vault",
+      "operationId": "0x02705011c0ee36d4928843bfb5641ff90aebf658162735668774768a7bc3e846",
+      "outerCalldata": "0x06a41d0900000000000000000000000000340c360353a5ab784c5bc5c44322a6af0625d300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ac1d15600000000000000000000000000000000000000000000000000000000000000443331c56e000000000000000000000000a2bdc0efe80806ffda20189294dd8a5a1b426f15000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000",
+      "queued": true,
+      "safeNonceForReview": 18,
+      "safeTxHash": "0x6d2383e70c856f106dc92aa896755df6373d7968be103572f9b5eb2eb0bcf8c8",
+      "target": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "targetPermission": false
+    }
+  ],
+  "pmeRiskStillOld": true,
+  "positionIndexes": 6,
+  "postQueueScanFromBlock": 47614195,
+  "postQueueScopedEvents": 0,
+  "publicWrites": 0,
+  "remainingSeconds": 69816,
+  "result": "PAYLOAD_PREPARED",
+  "safe": {
+    "domainSeparator": "0x2c0d582d9c9e132109be0c6b670d4740fd7774bb12703c7888886a9b7748656a",
+    "modules": [],
+    "nonce": 17,
+    "owners": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "threshold": 2
+  },
+  "safeInterfaceComparison": "PENDING",
+  "seedFlags": 14,
+  "signaturesGenerated": false,
+  "timeGate": "NOT_YET_EXECUTABLE",
+  "timelock": {
+    "gracePeriod": 1209600,
+    "minDelay": 86400,
+    "owner": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "queuePaused": false,
+    "safeExecutor": true
+  },
+  "traderNonces": 6,
+  "windowEnd": 1792296534
+}
