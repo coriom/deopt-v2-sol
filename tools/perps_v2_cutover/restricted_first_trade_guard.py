@@ -231,17 +231,20 @@ def _persist(path, record):
         raise
 
 
-def one_shot(decision, journal, tx_hash, send_callback, *, persist=_persist):
-    """Future integration primitive; no sender is supplied by this module.
+def one_shot(decision, journal, signed_bytes, send_callback, *,
+             locked_preflight, persist=_persist):
+    """Journal the exact immutable bytes before a caller-supplied test transport.
 
-    The signed transaction identity must be known before this call. On an
-    ambiguous callback result, journal stays SUBMISSION_UNKNOWN; no retry.
+    No sender is supplied. The final check runs under the exclusive lock.
+    An ambiguous callback leaves SUBMISSION_UNKNOWN; no retry.
     """
     require(set(decision) == {'packageSha256', 'calldataSha256', 'digest',
                              'preflightBlockHash', 'executor', 'nonce', 'gasLimit',
                              'maxFeePerGas', 'maxPriorityFeePerGas'}, 'unvalidated decision')
-    require(isinstance(tx_hash, str) and len(tx_hash) == 66 and tx_hash.startswith('0x'),
-            'transaction identity missing')
+    require(type(signed_bytes) is bytes and len(signed_bytes) > 0,
+            'immutable signed transaction missing')
+    require(callable(locked_preflight), 'locked final preflight missing')
+    tx_hash = '0x'+k256(signed_bytes).hex()
     path = Path(journal)
     parent = path.parent.stat()
     require(stat.S_ISDIR(parent.st_mode) and parent.st_uid == os.getuid() and
@@ -252,26 +255,24 @@ def one_shot(decision, journal, tx_hash, send_callback, *, persist=_persist):
         fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         require(not path.exists() and not path.with_suffix(path.suffix+'.tmp').exists(),
                 'prior or ambiguous attempt exists')
+        fresh = locked_preflight()
+        require(fresh['packageSha256'] == decision['packageSha256'] and
+                fresh['calldataSha256'] == decision['calldataSha256'] and
+                fresh['digest'] == decision['digest'] and
+                fresh['executor'].lower() == decision['executor'].lower() and
+                fresh['nonce'] == decision['nonce'] and
+                fresh['gasLimit'] == decision['gasLimit'] and
+                fresh['maxFeePerGas'] == decision['maxFeePerGas'] and
+                fresh['maxPriorityFeePerGas'] == decision['maxPriorityFeePerGas'],
+                'final locked preflight changed approved decision')
+        decision = fresh
         record = {'status': 'SUBMISSION_UNKNOWN', 'packageSha256': decision['packageSha256'],
                   'calldataSha256': decision['calldataSha256'], 'txHash': tx_hash,
                   'nonce': decision['nonce'], 'preflightBlockHash': decision['preflightBlockHash'],
                   'recordedAtUnix': int(time.time())}
         persist(path, record)
-        observed_hash = send_callback(tx_hash)
+        observed_hash = send_callback(signed_bytes)
         require(observed_hash == tx_hash, 'ambiguous submission; reconcile exact hash')
         persist(path, {**record, 'status': 'SUBMITTED'})
     finally:
         os.close(lock_fd)
-
-
-def validate_then_one_shot(package_bytes, approved_sha256, candidate, live,
-                           journal, tx_hash, send_callback, *, persist=_persist):
-    """Future integration point: validation always precedes the callback.
-
-    The caller must obtain `live` from a fresh pinned Base Sepolia read and
-    independently verify its signed raw transaction matches `candidate`.
-    No signer or sender implementation is supplied in this milestone.
-    """
-    decision = validate(package_bytes, approved_sha256, candidate, live)
-    one_shot(decision, journal, tx_hash, send_callback, persist=persist)
-    return decision

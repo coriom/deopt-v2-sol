@@ -238,9 +238,9 @@ class GuardTest(unittest.TestCase):
         calls=[]
         with tempfile.TemporaryDirectory() as td:
             with synthetic_traders(self.policy), self.assertRaises(g.GuardRejected):
-                g.validate_then_one_shot(raw,g.approved_hash(raw),self.candidate,self.live,
-                                         Path(td)/'journal.json','0x'+'12'*32,
-                                         lambda h:calls.append(h))
+                decision=g.validate(raw,g.approved_hash(raw),self.candidate,self.live)
+                g.one_shot(decision,Path(td)/'journal.json',b'\x02synthetic',
+                           lambda b:calls.append(b),locked_preflight=lambda:decision)
             self.assertEqual(calls,[])
 
     def test_persist_failure_prevents_send(self):
@@ -249,33 +249,38 @@ class GuardTest(unittest.TestCase):
         def fail(*_):
             raise OSError('synthetic persistence failure')
         with tempfile.TemporaryDirectory() as td:
-            with synthetic_traders(self.policy), self.assertRaises(OSError):
-                g.validate_then_one_shot(raw,g.approved_hash(raw),self.candidate,self.live,
-                                         Path(td)/'journal.json','0x'+'12'*32,
-                                         lambda h:calls.append(h),persist=fail)
+            with synthetic_traders(self.policy):
+                decision=g.validate(raw,g.approved_hash(raw),self.candidate,self.live)
+            with self.assertRaises(OSError):
+                g.one_shot(decision,Path(td)/'journal.json',b'\x02synthetic',
+                           lambda b:calls.append(b),locked_preflight=lambda:decision,persist=fail)
             self.assertEqual(calls,[])
 
     def test_one_shot_and_ambiguous_prior_submission(self):
         decision=self.check()
-        tx='0x'+'12'*32
+        tx=b'\x02synthetic'
         with tempfile.TemporaryDirectory() as td:
             journal=Path(td)/'journal.json'
             calls=[]
-            g.one_shot(decision,journal,tx,lambda h:calls.append(h) or h)
+            g.one_shot(decision,journal,tx,
+                       lambda b:calls.append(b) or '0x'+g.k256(b).hex(),
+                       locked_preflight=lambda:decision)
             self.assertEqual(calls,[tx])
             self.assertEqual(json.loads(journal.read_text())['status'],'SUBMITTED')
             with self.assertRaisesRegex(g.GuardRejected,'prior or ambiguous'):
-                g.one_shot(decision,journal,tx,lambda h:calls.append(h) or h)
+                g.one_shot(decision,journal,tx,
+                           lambda b:calls.append(b) or '0x'+g.k256(b).hex(),
+                           locked_preflight=lambda:decision)
             self.assertEqual(calls,[tx])
         with tempfile.TemporaryDirectory() as td:
             journal=Path(td)/'journal.json'
             def ambiguous(_):
                 raise TimeoutError('synthetic ambiguous submission')
             with self.assertRaises(TimeoutError):
-                g.one_shot(decision,journal,tx,ambiguous)
+                g.one_shot(decision,journal,tx,ambiguous,locked_preflight=lambda:decision)
             self.assertEqual(json.loads(journal.read_text())['status'],'SUBMISSION_UNKNOWN')
             with self.assertRaisesRegex(g.GuardRejected,'prior or ambiguous'):
-                g.one_shot(decision,journal,tx,ambiguous)
+                g.one_shot(decision,journal,tx,ambiguous,locked_preflight=lambda:decision)
 
 
 if __name__=='__main__':

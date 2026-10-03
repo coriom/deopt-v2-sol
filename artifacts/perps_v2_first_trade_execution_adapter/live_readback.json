@@ -1,0 +1,91 @@
+{
+  "activeExecutors": [
+    "0x58ad437cb9e32b0faee810ef05810d5ba2ae52b8",
+    "0xc35f7a8a103a9a4464adfaa76b9b514093d23c27"
+  ],
+  "backendLocalStopped": true,
+  "blockHash": "0xbcd3d6f46cc30e75c4e03b920eab666010309f811d7667bc07be1f93543f1214",
+  "blockNumber": 47622352,
+  "blockTimestamp": 1791012992,
+  "buyerNonce": 0,
+  "buyerPosition": [
+    -1000000,
+    -2468310000,
+    0
+  ],
+  "chainId": 84532,
+  "clearingBalanceNative": 1000000000,
+  "engineCollateralOpsPaused": true,
+  "engineFundingPaused": true,
+  "engineLiquidationPaused": true,
+  "engineRuntimeHash": "0xc0ac9015866a36d0c9c25920387af78cb59cc24f66170728ade1a835d1211a2a",
+  "engineTradingPaused": true,
+  "executorBalanceWei": 1951581847894143,
+  "executorEventScanFromBlock": 47619182,
+  "executorEventsSinceBaseline": 0,
+  "executorNonceConfirmed": 1,
+  "executorNoncePending": 1,
+  "feeConsumerAuthorized": false,
+  "g1Queued": true,
+  "g2Queued": true,
+  "gasPriceWei": 6000000,
+  "insuranceAuthorized": false,
+  "l1FeeQuoteWei": null,
+  "l1QuoteInputSerializedBytes": null,
+  "l1QuoteMethod": null,
+  "markPrice1e8": 268108000000,
+  "markPriceStatus": "AVAILABLE",
+  "marketState": [
+    1001002,
+    1001002,
+    0,
+    1789715546
+  ],
+  "maxExecutionDeviationBps": 100,
+  "maxPriorityFeeQuoteWei": 1000000,
+  "migrationSnapshotHash": "0x039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d",
+  "oldEnginePauseFlags": [
+    true,
+    true,
+    true,
+    true
+  ],
+  "pinningMode": "EIP1898_BLOCK_HASH_REQUIRE_CANONICAL",
+  "pmeEngine": "0x44702b0a3c329f2cc5b5c02c2123dc9386a46db9",
+  "pmePaused": true,
+  "pmeRuntimeHash": "0x815d473801fd4353051a3a7c1b4e9cae493786b0c3cc643a789e496e5f2813bc",
+  "pmeV1Paused": true,
+  "publicWrites": 0,
+  "readiness": {
+    "reasons": [
+      "pmeEngine not rebound",
+      "riskEngine not rebound",
+      "pmePaused active",
+      "engineTradingPaused active",
+      "engineFundingPaused active",
+      "vaultAuthorized not satisfied",
+      "insuranceAuthorized not satisfied",
+      "feeConsumerAuthorized not satisfied",
+      "executor set not restricted",
+      "exact signed transaction size/fee quote absent"
+    ],
+    "status": "NOT_ARMED"
+  },
+  "riskEngine": "0x44702b0a3c329f2cc5b5c02c2123dc9386a46db9",
+  "sellerNonce": 0,
+  "sellerPosition": [
+    1000000,
+    2468310000,
+    0
+  ],
+  "signedRawTransactionProvided": false,
+  "v1EnginePauseFlags": [
+    true,
+    true,
+    true,
+    true
+  ],
+  "vaultAuthorized": false,
+  "vaultOldAuthorized": true,
+  "vaultV1Authorized": true
+}
