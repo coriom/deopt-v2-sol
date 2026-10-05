@@ -1,0 +1,60 @@
+{
+  "E2PublicTx": "0x57ba5e2bf1c52fc5a39aa56336c66192445e68b42b5272f069903802f6dd146a",
+  "G1Consumed": true,
+  "G2Consumed": true,
+  "backendLocalRuntime": "STOPPED",
+  "chainId": 84532,
+  "clearingBalanceNative": 1000000000,
+  "comparisonBlock": 47702782,
+  "comparisonBlockHash": "0x6a68a91b97103a8494c2a97404ca3cf78e05f5b38f87048809b050563f7c0b19",
+  "comparisonTimestamp": 1791173852,
+  "economicChecks": 114,
+  "feeConsumerNewBefore": false,
+  "insuranceNewAuthorized": true,
+  "keystoreAccess": false,
+  "maintenanceFlags": {
+    "NEW": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "OLD": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "V1": [
+      1,
+      1,
+      1,
+      1
+    ]
+  },
+  "migrationHash": "0x039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d",
+  "milestone": "PERPS_V2_BASE_SEPOLIA_V2_REBIND_OWNER_ONLY_V1",
+  "newEngineRuntimeKeccak": "0xc0ac9015866a36d0c9c25920387af78cb59cc24f66170728ade1a835d1211a2a",
+  "newEngineRuntimeSize": 24321,
+  "ownerConfirmedNonce": 812,
+  "ownerPendingNonce": 812,
+  "pmeBefore": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+  "positionIndexes": 6,
+  "publicWrites": 0,
+  "result": "PREPARED_NOT_AUTHORIZED_FOR_BROADCAST",
+  "reviewFileSha256": {
+    "r1_fmv2_review.json": "f45e8d50c1f24ccff91c524847be66229c5ffb6f636987bdef01ee14700a5601",
+    "r2_risk_review.json": "03568d7616d5ec2d078c32145e1e719550277ee165b737190d75756bccefcf53",
+    "r3_pme_review.json": "cc0342458aeb02f805081b50dd11f30c8664cf47529367405ae416a94d573c9c"
+  },
+  "riskBefore": "0x44702B0A3C329f2cc5b5c02c2123Dc9386a46db9",
+  "scopedProtocolEventsAfterE2": 0,
+  "seedFlags": 14,
+  "targetsOwnedByOwner": [
+    "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f",
+    "0x8C3d9F71cA59B908Fa200546A63ea62F9C932998",
+    "0xF5FB81e447AF3A3E81951aC72D751dE3E9B8eee2"
+  ],
+  "traderNonces": 6,
+  "vaultNewAuthorized": true
+}

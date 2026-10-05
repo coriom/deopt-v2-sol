@@ -1,0 +1,47 @@
+{
+  "chainIdReportedByLocalFork": 84532,
+  "executionEnvironment": "isolated Anvil fork at 127.0.0.1; never the public Base Sepolia endpoint",
+  "forkSourceBlock": 47702782,
+  "localOwnerImpersonation": true,
+  "publicWrites": 0,
+  "realKeystoreAccess": false,
+  "remoteRpcRelay": "read-only method allowlist; eth_sendTransaction and eth_sendRawTransaction rejected upstream",
+  "result": "THREE_LOCAL_STEPS_PASSED",
+  "steps": [
+    {
+      "ordinal": 1,
+      "call": "FMV2.setFeeConsumer(NEW_ENGINE,true)",
+      "localReceiptStatus": 1,
+      "event": "FeeConsumerSet(address,bool)",
+      "feeConsumerNew": true,
+      "riskEngine": "OLD_ENGINE",
+      "pmeEngine": "OLD_ENGINE",
+      "economicAndMaintenanceReadbackUnchanged": true
+    },
+    {
+      "ordinal": 2,
+      "call": "RISK_V2.setPerpEngine(NEW_ENGINE)",
+      "localReceiptStatus": 1,
+      "event": "PerpEngineSet(address,address)",
+      "feeConsumerNew": true,
+      "riskEngine": "NEW_ENGINE",
+      "pmeEngine": "OLD_ENGINE",
+      "economicAndMaintenanceReadbackUnchanged": true
+    },
+    {
+      "ordinal": 3,
+      "call": "PME_V2.setEngine(NEW_ENGINE)",
+      "localReceiptStatus": 1,
+      "event": "EngineSet(address,address)",
+      "feeConsumerNew": true,
+      "riskEngine": "NEW_ENGINE",
+      "pmeEngine": "NEW_ENGINE",
+      "economicAndMaintenanceReadbackUnchanged": true
+    }
+  ],
+  "limitations": [
+    "No public-chain transaction or operational acceptance was tested.",
+    "The local fork used standard EVM execution and does not model Base Sepolia L1 fees.",
+    "The one-off local rehearsal runner was not committed; review files and read-only preparation helper are committed separately."
+  ]
+}

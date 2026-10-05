@@ -1,0 +1,30 @@
+{
+  "args": [
+    "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+    true
+  ],
+  "calldata": "0x677682c4000000000000000000000000a2bdc0efe80806ffda20189294dd8a5a1b426f150000000000000000000000000000000000000000000000000000000000000001",
+  "chainId": 84532,
+  "estimateCaveat": "R2/R3 estimated against current state; refresh after each preceding write.",
+  "expectedEvent": "FeeConsumerSet(address,bool)",
+  "expectedEventTopic0": "0xe5f74e03b23dbd55ec11084eb60f0a5b531b3536ff67ff57518a75a547443953",
+  "expectedPostcondition": "isFeeConsumer(NEW_ENGINE)=true; Risk/PME remain OLD_ENGINE",
+  "from": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+  "function": "setFeeConsumer(address,bool)",
+  "gasEstimateAtCurrentState": 48311,
+  "nonce": 812,
+  "nonceConditionalOnPriorVerifiedSuccess": false,
+  "ordinal": 1,
+  "ownerContextEthCall": "SUCCESS_AT_COMPARISON_BLOCK",
+  "rollbackForReviewOnly": {
+    "args": [
+      "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+      false
+    ],
+    "calldata": "0x677682c4000000000000000000000000a2bdc0efe80806ffda20189294dd8a5a1b426f150000000000000000000000000000000000000000000000000000000000000000",
+    "function": "setFeeConsumer(address,bool)"
+  },
+  "selector": "0x677682c4",
+  "to": "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f",
+  "valueWei": 0
+}
