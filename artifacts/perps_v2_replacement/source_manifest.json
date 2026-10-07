@@ -1,0 +1,712 @@
+{
+  "bytecodeHashMethod": "Ethereum Keccak-256 only for fully resolved artifact bytecode; linked or immutable runtime templates use SHA-256 until constructor/library addresses are reviewed",
+  "chainIdForFutureDeployment": 84532,
+  "contracts": [
+    {
+      "compilerVersion": "0.8.30+commit.73712a01",
+      "constructorAbi": {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "_owner",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+      },
+      "creationBytecodeKeccak256": "0x33e91b43bb9cbb7ee949d94c3675984ec10186d7e8f23318679c6fd1540584e5",
+      "creationBytecodeTemplateSha256": "0x4476b30d6a8c2bdf7b27696cf57fdba66490b3b096760cdfd00feed5f0e7124b",
+      "creationHashStatus": "DETERMINISTIC",
+      "effectiveEvmVersionFromArtifact": "prague",
+      "evmVersionExplicitInFoundryToml": false,
+      "linkReferences": {},
+      "name": "PerpMarketRegistry",
+      "optimizer": {
+        "enabled": true,
+        "runs": 0
+      },
+      "runtimeBytecodeKeccak256": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5",
+      "runtimeBytecodeTemplateSha256": "0xf90d1c6efc149551998d6dc9570bd31ecc54ba0fc06e7da378cf0a0f4b29e127",
+      "runtimeHashStatus": "DETERMINISTIC",
+      "runtimeImmutableReferences": {},
+      "runtimeLinkReferences": {},
+      "source": "src/perp/PerpMarketRegistry.sol",
+      "sourceDependencies": [
+        {
+          "path": "src/perp/PerpMarketRegistry.sol",
+          "sha256": "0x3e20d5792df63cb2ca59b12f5bd634cbbda228e7140c10857b1015a94f2fa3fa"
+        }
+      ],
+      "sourceSha256": "0x3e20d5792df63cb2ca59b12f5bd634cbbda228e7140c10857b1015a94f2fa3fa",
+      "viaIR": true
+    },
+    {
+      "compilerVersion": "0.8.30+commit.73712a01",
+      "constructorAbi": {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "owner_",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "feeRecipient_",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+      },
+      "creationBytecodeKeccak256": "0x906b8877876f8756432bcbebcd383b09e75d1b0c74ac473673fe210f5ba5e3b8",
+      "creationBytecodeTemplateSha256": "0x1b13d4960e352c0bf9fecd685ba60c8d5c7cebbcb10d3aaa48dd6dfa195aed8a",
+      "creationHashStatus": "DETERMINISTIC",
+      "effectiveEvmVersionFromArtifact": "prague",
+      "evmVersionExplicitInFoundryToml": false,
+      "linkReferences": {},
+      "name": "FeesManagerV2",
+      "optimizer": {
+        "enabled": true,
+        "runs": 0
+      },
+      "runtimeBytecodeKeccak256": "0x732101d67fb112f6d3159f32852071bbf995f8bd1995335cf9a2b0f167d08726",
+      "runtimeBytecodeTemplateSha256": "0xeeab804630f314553253ecdf540fd6cfcb41a362722dbb178c9a385de6f5e9a4",
+      "runtimeHashStatus": "DETERMINISTIC",
+      "runtimeImmutableReferences": {},
+      "runtimeLinkReferences": {},
+      "source": "src/fees/FeesManagerV2.sol",
+      "sourceDependencies": [
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/Panic.sol",
+          "sha256": "0x270fc8401c1a13fae6a7a4a2dd6e381b95d658896701e51f0d3e2688acab3dec"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/cryptography/Hashes.sol",
+          "sha256": "0xecdbce11c5ecdf32b306e26b8ab1b878327c08154b4ccd04518b6b64b298cf31"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/cryptography/MerkleProof.sol",
+          "sha256": "0xa174525c74ab5d2f066206ec9cebb6b3c618384c53ec35ad224ac1fbbf06b3f0"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/math/Math.sol",
+          "sha256": "0x8219debc76137c8103ea66340ae04185e34d6f33d1d735d2e9a88288cc435f10"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/math/SafeCast.sol",
+          "sha256": "0x9769274bf53f26a7c7896c526ea1980dc9bea5bf5c2a5fd04870008c4afc1de9"
+        },
+        {
+          "path": "src/fees/FeesManagerV2.sol",
+          "sha256": "0xfa6187a52e74d702e42eb4173466704c7f29815fe01c2b16ca9405e80437c405"
+        },
+        {
+          "path": "src/fees/IFeesManagerV2.sol",
+          "sha256": "0xc6a5ed331987b479fe79b6a2f5cacb864a228fae20e83f2a54a6b05b5ac83240"
+        },
+        {
+          "path": "src/fees/IProtocolFeeVault.sol",
+          "sha256": "0x643ce658cbd44188466af287f20435ad50396d32f55469a33ad0773953094dc0"
+        }
+      ],
+      "sourceSha256": "0xfa6187a52e74d702e42eb4173466704c7f29815fe01c2b16ca9405e80437c405",
+      "viaIR": true
+    },
+    {
+      "compilerVersion": "0.8.30+commit.73712a01",
+      "constructorAbi": {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "_owner",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "_vault",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "_oracle",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "_riskModule",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+      },
+      "creationBytecodeKeccak256": "0x67333de506052e7d3b93ff826997b7028e623489928456a8713758f152300f5e",
+      "creationBytecodeTemplateSha256": "0xd0d1d23281a0b2b5c199b887455b5b63f80e6c1ed0d1ee0f18c2226629c63241",
+      "creationHashStatus": "DETERMINISTIC",
+      "effectiveEvmVersionFromArtifact": "prague",
+      "evmVersionExplicitInFoundryToml": false,
+      "linkReferences": {},
+      "name": "CollateralSeizer",
+      "optimizer": {
+        "enabled": true,
+        "runs": 0
+      },
+      "runtimeBytecodeKeccak256": "0x6d199e027af598ee903513a1ab41e27e2937115c79b8ec85e386d739615befcb",
+      "runtimeBytecodeTemplateSha256": "0x5529a5791c611b5e1a2f8e7de0d2bc873a7c6fc844a270d11660f4b6a80f4d8a",
+      "runtimeHashStatus": "DETERMINISTIC",
+      "runtimeImmutableReferences": {},
+      "runtimeLinkReferences": {},
+      "source": "src/liquidation/CollateralSeizer.sol",
+      "sourceDependencies": [
+        {
+          "path": "lib/openzeppelin-contracts/contracts/interfaces/IERC1363.sol",
+          "sha256": "0x9c3a75a925a6dac9e88b03cddc58d42fe3131b0aaaad84408521f3f7af2f991b"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/interfaces/IERC165.sol",
+          "sha256": "0xdfb3f56fa928a7c6cae41a7ce2c86b9210fa18d33fa26389099d66a0fa790368"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/interfaces/IERC20.sol",
+          "sha256": "0x0158e2d3e0e28bedd99eec13dcf1a8aa3a70a5b7e4bb2ad709609c95fcc740d1"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol",
+          "sha256": "0x01b6f5c4fa45fd38822b286ecef6daf983d27306dd6362496fa71b3e4600b72c"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol",
+          "sha256": "0xc2394cb2a327f234711da34884947f4aa0f6dd2791d1d6303a0c7acfaf81bca3"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/Panic.sol",
+          "sha256": "0x270fc8401c1a13fae6a7a4a2dd6e381b95d658896701e51f0d3e2688acab3dec"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol",
+          "sha256": "0x94e409e8f6e3184236651a6cc2b1a6a3ea0f0a25eb85b71e524ad5791bb2fbc8"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+          "sha256": "0x75704538dcb223239280c6726d9a31cf769a7816718517c997fc7d63bdb70778"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/introspection/IERC165.sol",
+          "sha256": "0x9055c2994b37dea1a41b7b7926dcb510f05dbe2540b0aafc5fbee9558fffd0ca"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/math/Math.sol",
+          "sha256": "0x8219debc76137c8103ea66340ae04185e34d6f33d1d735d2e9a88288cc435f10"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/math/SafeCast.sol",
+          "sha256": "0x9769274bf53f26a7c7896c526ea1980dc9bea5bf5c2a5fd04870008c4afc1de9"
+        },
+        {
+          "path": "src/collateral/CollateralVault.sol",
+          "sha256": "0xa9af51ff833e764ac15a804affa0a1299cc4e6aa67d4645356dd870ed691b362"
+        },
+        {
+          "path": "src/collateral/CollateralVaultActions.sol",
+          "sha256": "0x78fc1b3f6b3d3d15aac96c303382073c0509b5cfbb1b9a51a33d7bb9495f48cd"
+        },
+        {
+          "path": "src/collateral/CollateralVaultAdmin.sol",
+          "sha256": "0x5d6df862f782320b8fd240df965a77623532a52f535224810035a7af8bc814c5"
+        },
+        {
+          "path": "src/collateral/CollateralVaultStorage.sol",
+          "sha256": "0x5f48d166f4bcaba8f3b87a6e78ba608f77729c1d2939c8d01b23ae0c6724e226"
+        },
+        {
+          "path": "src/collateral/CollateralVaultViews.sol",
+          "sha256": "0xdef1c2c77a885847108f56746062a93a88e9c64f5333dc293622e1dbea6d7b67"
+        },
+        {
+          "path": "src/collateral/CollateralVaultYield.sol",
+          "sha256": "0x9373e34dff40ea4284be8ae3d142f0f4db086bd50990699e67f7c7dc72a31f7a"
+        },
+        {
+          "path": "src/liquidation/CollateralSeizer.sol",
+          "sha256": "0x6eb96240e44d8354766678b47c2e997bef979e261076d5b6f4ba25b5a7214854"
+        },
+        {
+          "path": "src/liquidation/ICollateralSeizer.sol",
+          "sha256": "0x4fff102c8dd3c8dc0393784a0e4e03f8615ce0f41e04fd3e1eda1a26d9995bfc"
+        },
+        {
+          "path": "src/oracle/IOracle.sol",
+          "sha256": "0x15182928b7034fbd358d03d8e54e6ee1e0e2a37c06f3681512fd8181ec3083da"
+        },
+        {
+          "path": "src/risk/IRiskModule.sol",
+          "sha256": "0x17fcf4f7e483ce0c481067087cc339ab98d4e61457142616088cfa1fe61818da"
+        },
+        {
+          "path": "src/yield/IYieldAdapter.sol",
+          "sha256": "0x4f94a5a59687ab6f78db76fe63f4fbc122cbec21e47353a7c67cf4ecd05b511c"
+        }
+      ],
+      "sourceSha256": "0x6eb96240e44d8354766678b47c2e997bef979e261076d5b6f4ba25b5a7214854",
+      "viaIR": true
+    },
+    {
+      "compilerVersion": "0.8.30+commit.73712a01",
+      "constructorAbi": {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "_owner",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "registry_",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "vault_",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "oracle_",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+      },
+      "creationBytecodeKeccak256": null,
+      "creationBytecodeTemplateSha256": "0x527b71848ddfdb785bb323910ea96899d04741980e40b460fb4cfdea993f9e5f",
+      "creationHashStatus": "REQUIRES_LIBRARY_ADDRESSES",
+      "effectiveEvmVersionFromArtifact": "prague",
+      "evmVersionExplicitInFoundryToml": false,
+      "linkReferences": {
+        "src/perp/PerpEngineLiquidationLib.sol": {
+          "PerpEngineLiquidationLib": [
+            {
+              "length": 20,
+              "start": 3258
+            },
+            {
+              "length": 20,
+              "start": 3705
+            },
+            {
+              "length": 20,
+              "start": 4419
+            }
+          ]
+        },
+        "src/perp/PerpEngineSeizureLib.sol": {
+          "PerpEngineSeizureLib": [
+            {
+              "length": 20,
+              "start": 3529
+            },
+            {
+              "length": 20,
+              "start": 23371
+            },
+            {
+              "length": 20,
+              "start": 24774
+            }
+          ]
+        }
+      },
+      "name": "PerpEngineV2",
+      "optimizer": {
+        "enabled": true,
+        "runs": 0
+      },
+      "runtimeBytecodeKeccak256": null,
+      "runtimeBytecodeTemplateSha256": "0x36ebb512644bcdf449e0d1f65b38bc9ec36557d0eb4c1641a6c5de1afd45f197",
+      "runtimeHashStatus": "REQUIRES_LIBRARY_ADDRESSES",
+      "runtimeImmutableReferences": {},
+      "runtimeLinkReferences": {
+        "src/perp/PerpEngineLiquidationLib.sol": {
+          "PerpEngineLiquidationLib": [
+            {
+              "length": 20,
+              "start": 2550
+            },
+            {
+              "length": 20,
+              "start": 2997
+            },
+            {
+              "length": 20,
+              "start": 3711
+            }
+          ]
+        },
+        "src/perp/PerpEngineSeizureLib.sol": {
+          "PerpEngineSeizureLib": [
+            {
+              "length": 20,
+              "start": 2821
+            },
+            {
+              "length": 20,
+              "start": 22663
+            },
+            {
+              "length": 20,
+              "start": 24066
+            }
+          ]
+        }
+      },
+      "source": "src/perp/PerpEngineV2.sol",
+      "sourceDependencies": [
+        {
+          "path": "lib/openzeppelin-contracts/contracts/interfaces/IERC1363.sol",
+          "sha256": "0x9c3a75a925a6dac9e88b03cddc58d42fe3131b0aaaad84408521f3f7af2f991b"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/interfaces/IERC165.sol",
+          "sha256": "0xdfb3f56fa928a7c6cae41a7ce2c86b9210fa18d33fa26389099d66a0fa790368"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/interfaces/IERC20.sol",
+          "sha256": "0x0158e2d3e0e28bedd99eec13dcf1a8aa3a70a5b7e4bb2ad709609c95fcc740d1"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol",
+          "sha256": "0x01b6f5c4fa45fd38822b286ecef6daf983d27306dd6362496fa71b3e4600b72c"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol",
+          "sha256": "0xc2394cb2a327f234711da34884947f4aa0f6dd2791d1d6303a0c7acfaf81bca3"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol",
+          "sha256": "0x94e409e8f6e3184236651a6cc2b1a6a3ea0f0a25eb85b71e524ad5791bb2fbc8"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+          "sha256": "0x75704538dcb223239280c6726d9a31cf769a7816718517c997fc7d63bdb70778"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/introspection/IERC165.sol",
+          "sha256": "0x9055c2994b37dea1a41b7b7926dcb510f05dbe2540b0aafc5fbee9558fffd0ca"
+        },
+        {
+          "path": "src/collateral/CollateralVault.sol",
+          "sha256": "0xa9af51ff833e764ac15a804affa0a1299cc4e6aa67d4645356dd870ed691b362"
+        },
+        {
+          "path": "src/collateral/CollateralVaultActions.sol",
+          "sha256": "0x78fc1b3f6b3d3d15aac96c303382073c0509b5cfbb1b9a51a33d7bb9495f48cd"
+        },
+        {
+          "path": "src/collateral/CollateralVaultAdmin.sol",
+          "sha256": "0x5d6df862f782320b8fd240df965a77623532a52f535224810035a7af8bc814c5"
+        },
+        {
+          "path": "src/collateral/CollateralVaultStorage.sol",
+          "sha256": "0x5f48d166f4bcaba8f3b87a6e78ba608f77729c1d2939c8d01b23ae0c6724e226"
+        },
+        {
+          "path": "src/collateral/CollateralVaultViews.sol",
+          "sha256": "0xdef1c2c77a885847108f56746062a93a88e9c64f5333dc293622e1dbea6d7b67"
+        },
+        {
+          "path": "src/collateral/CollateralVaultYield.sol",
+          "sha256": "0x9373e34dff40ea4284be8ae3d142f0f4db086bd50990699e67f7c7dc72a31f7a"
+        },
+        {
+          "path": "src/fees/IFeesManager.sol",
+          "sha256": "0x6132c13ec0ebf3378e080da65056c69242ecdd5d1d149f358583835fb15f3074"
+        },
+        {
+          "path": "src/fees/IFeesManagerV2.sol",
+          "sha256": "0xc6a5ed331987b479fe79b6a2f5cacb864a228fae20e83f2a54a6b05b5ac83240"
+        },
+        {
+          "path": "src/liquidation/ICollateralSeizer.sol",
+          "sha256": "0x4fff102c8dd3c8dc0393784a0e4e03f8615ce0f41e04fd3e1eda1a26d9995bfc"
+        },
+        {
+          "path": "src/matching/IPerpEngineTrade.sol",
+          "sha256": "0x318b4d1a55cbb55ad8eff004795046d91bc68f339d13d0cbeb3272f0692aa05c"
+        },
+        {
+          "path": "src/oracle/IOracle.sol",
+          "sha256": "0x15182928b7034fbd358d03d8e54e6ee1e0e2a37c06f3681512fd8181ec3083da"
+        },
+        {
+          "path": "src/perp/PerpEngineAdmin.sol",
+          "sha256": "0x01cd3d89a38ef34807d14d14f6c3726bb59001a9f7435569ea05407dbec17914"
+        },
+        {
+          "path": "src/perp/PerpEngineLiquidationLib.sol",
+          "sha256": "0x7609017041ca70169b0cfb3a9d9c3c01a10e4e3c092bce9502f2bb3eb870b65f"
+        },
+        {
+          "path": "src/perp/PerpEngineSeizureLib.sol",
+          "sha256": "0x565592e892703540dcedb96e845e0d0ccc7f57fb772a21dd712a3d7f44190cc9"
+        },
+        {
+          "path": "src/perp/PerpEngineStorage.sol",
+          "sha256": "0xfb155eab0b8c235ee623760b898273595dc74d95d39d0a9880c0fa436651c1db"
+        },
+        {
+          "path": "src/perp/PerpEngineTradingV2.sol",
+          "sha256": "0x984270a7d44b7791ebc747eefa31fc8ab67c33ab770f8c9568f7feda418cbe56"
+        },
+        {
+          "path": "src/perp/PerpEngineTypes.sol",
+          "sha256": "0x539eb465b48e6a58cf8304e6f13d59826023fa9edd92aa38aa81203898022234"
+        },
+        {
+          "path": "src/perp/PerpEngineV2.sol",
+          "sha256": "0x93a446306f5f64a04fa217bfacee0b0ee47dca2bf5e324f95ac1acfc64661ee2"
+        },
+        {
+          "path": "src/perp/PerpEngineViews.sol",
+          "sha256": "0x0d72cd0759702d097f12a48b261b20b1c7f70a56d1269aeb8161ef7e57d5a60f"
+        },
+        {
+          "path": "src/perp/PerpMarketRegistry.sol",
+          "sha256": "0x3e20d5792df63cb2ca59b12f5bd634cbbda228e7140c10857b1015a94f2fa3fa"
+        },
+        {
+          "path": "src/risk/IRiskModule.sol",
+          "sha256": "0x17fcf4f7e483ce0c481067087cc339ab98d4e61457142616088cfa1fe61818da"
+        },
+        {
+          "path": "src/yield/IYieldAdapter.sol",
+          "sha256": "0x4f94a5a59687ab6f78db76fe63f4fbc122cbec21e47353a7c67cf4ecd05b511c"
+        }
+      ],
+      "sourceSha256": "0x93a446306f5f64a04fa217bfacee0b0ee47dca2bf5e324f95ac1acfc64661ee2",
+      "viaIR": true
+    },
+    {
+      "compilerVersion": "0.8.30+commit.73712a01",
+      "constructorAbi": {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "_owner",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "_vault",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "_perpEngine",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "_oracle",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "_baseCollateralToken",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+      },
+      "creationBytecodeKeccak256": "0x0a7821cde9a8d677635576ec7984957c6ee5b5b78e96aa03d08972d9b76b2929",
+      "creationBytecodeTemplateSha256": "0xa76e95d111eaf1545256565e3e7bc86a34265d81e8054791cb100c234cf170f7",
+      "creationHashStatus": "DETERMINISTIC",
+      "effectiveEvmVersionFromArtifact": "prague",
+      "evmVersionExplicitInFoundryToml": false,
+      "linkReferences": {},
+      "name": "PerpRiskModule",
+      "optimizer": {
+        "enabled": true,
+        "runs": 0
+      },
+      "runtimeBytecodeKeccak256": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c",
+      "runtimeBytecodeTemplateSha256": "0x6443c56e60df0d995d70ee00a010c3ad2e9eec6fb37c45648ee0089f9bfc94d4",
+      "runtimeHashStatus": "DETERMINISTIC",
+      "runtimeImmutableReferences": {},
+      "runtimeLinkReferences": {},
+      "source": "src/perp/PerpRiskModule.sol",
+      "sourceDependencies": [
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/Panic.sol",
+          "sha256": "0x270fc8401c1a13fae6a7a4a2dd6e381b95d658896701e51f0d3e2688acab3dec"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/math/Math.sol",
+          "sha256": "0x8219debc76137c8103ea66340ae04185e34d6f33d1d735d2e9a88288cc435f10"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/math/SafeCast.sol",
+          "sha256": "0x9769274bf53f26a7c7896c526ea1980dc9bea5bf5c2a5fd04870008c4afc1de9"
+        },
+        {
+          "path": "src/oracle/IOracle.sol",
+          "sha256": "0x15182928b7034fbd358d03d8e54e6ee1e0e2a37c06f3681512fd8181ec3083da"
+        },
+        {
+          "path": "src/perp/PerpRiskModule.sol",
+          "sha256": "0xd796b59d40f47ad58dfe3becdff05749237a3c032933f6c890ac421f21ffb457"
+        }
+      ],
+      "sourceSha256": "0xd796b59d40f47ad58dfe3becdff05749237a3c032933f6c890ac421f21ffb457",
+      "viaIR": true
+    },
+    {
+      "compilerVersion": "0.8.30+commit.73712a01",
+      "constructorAbi": {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "_owner",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "_engine",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+      },
+      "creationBytecodeKeccak256": "0x7cd4f1444ca222b85d8643053992e2b604f743bb63556bf056f4011a61867eae",
+      "creationBytecodeTemplateSha256": "0x3cd42c8b5ba3b1c1190f0a580d4da8b04df0cbcd03ecbd11b1e00420c7323aa4",
+      "creationHashStatus": "DETERMINISTIC",
+      "effectiveEvmVersionFromArtifact": "prague",
+      "evmVersionExplicitInFoundryToml": false,
+      "linkReferences": {},
+      "name": "PerpMatchingEngineV2",
+      "optimizer": {
+        "enabled": true,
+        "runs": 0
+      },
+      "runtimeBytecodeKeccak256": null,
+      "runtimeBytecodeTemplateSha256": "0x6135c4441cdf77266d57083afc8393cf725a2770e011e11fc32cf1ac853dcb2b",
+      "runtimeHashStatus": "REQUIRES_CONSTRUCTOR_IMMUTABLE_VALUES",
+      "runtimeImmutableReferences": {
+        "44148": [
+          {
+            "length": 32,
+            "start": 8536
+          }
+        ],
+        "44150": [
+          {
+            "length": 32,
+            "start": 8725
+          }
+        ],
+        "44152": [
+          {
+            "length": 32,
+            "start": 8482
+          }
+        ],
+        "44154": [
+          {
+            "length": 32,
+            "start": 8615
+          }
+        ],
+        "44156": [
+          {
+            "length": 32,
+            "start": 8653
+          }
+        ],
+        "44159": [
+          {
+            "length": 32,
+            "start": 3238
+          }
+        ],
+        "44162": [
+          {
+            "length": 32,
+            "start": 3279
+          }
+        ]
+      },
+      "runtimeLinkReferences": {},
+      "source": "src/matching/PerpMatchingEngineV2.sol",
+      "sourceDependencies": [
+        {
+          "path": "lib/openzeppelin-contracts/contracts/interfaces/IERC5267.sol",
+          "sha256": "0xf89772d2d4fafcbef8b73bb10ee9a3373edec2eedb2f1b302320915b351dc3d1"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/Bytes.sol",
+          "sha256": "0x4902950980da33a4d0c52dbbe22d5c65fd665717163dab7f5325f73810d71f20"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/Panic.sol",
+          "sha256": "0x270fc8401c1a13fae6a7a4a2dd6e381b95d658896701e51f0d3e2688acab3dec"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol",
+          "sha256": "0x94e409e8f6e3184236651a6cc2b1a6a3ea0f0a25eb85b71e524ad5791bb2fbc8"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/ShortStrings.sol",
+          "sha256": "0x1cfa08d3c551e9ec0b9cd249b09987f04e7e90f352e1a5e3b0d6a3bc426b3de7"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/StorageSlot.sol",
+          "sha256": "0x75704538dcb223239280c6726d9a31cf769a7816718517c997fc7d63bdb70778"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/Strings.sol",
+          "sha256": "0x3de05dcb48f4e622fbe6af2ec9a157c11e536bd87e9ef0134c3ca83031620a52"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol",
+          "sha256": "0xcd5e6a1a5c4409a2d02a1e69fd07d8f2ef07bc52351a2529f7080469a29cb1b5"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/cryptography/EIP712.sol",
+          "sha256": "0x2845caaaf70757b6cce612ae4ffbec2c382cb3d1cb9765c98fa649c0f5f1c794"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/cryptography/MessageHashUtils.sol",
+          "sha256": "0x41dcf1b633941aed8e0b5373bb5bdfa1c70dfa9aaa2f518acc69b4d18d1d82cd"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/math/Math.sol",
+          "sha256": "0x8219debc76137c8103ea66340ae04185e34d6f33d1d735d2e9a88288cc435f10"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/math/SafeCast.sol",
+          "sha256": "0x9769274bf53f26a7c7896c526ea1980dc9bea5bf5c2a5fd04870008c4afc1de9"
+        },
+        {
+          "path": "lib/openzeppelin-contracts/contracts/utils/math/SignedMath.sol",
+          "sha256": "0x1ed50b1056af886752f0fb48a0165d381e69bb4a4b18b893b066dc144a7e08d7"
+        },
+        {
+          "path": "src/matching/IPerpEngineTrade.sol",
+          "sha256": "0x318b4d1a55cbb55ad8eff004795046d91bc68f339d13d0cbeb3272f0692aa05c"
+        },
+        {
+          "path": "src/matching/PerpMatchingEngineV2.sol",
+          "sha256": "0x2717cae1a3a7a84bc745b056487de3249225c041513f5ef25522d883b7ef7307"
+        }
+      ],
+      "sourceSha256": "0x2717cae1a3a7a84bc745b056487de3249225c041513f5ef25522d883b7ef7307",
+      "viaIR": true
+    }
+  ],
+  "ownerForFutureDeployment": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+  "schema": "deopt.perps_v2_replacement.source_manifest.v1",
+  "sourcePolicy": "current repository source; no historical runtime substitution"
+}

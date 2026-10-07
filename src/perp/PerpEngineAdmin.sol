@@ -130,6 +130,13 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
         bool fundingPaused_,
         bool collateralOpsPaused_
     ) external onlyGuardianOrOwner {
+        if (
+            msg.sender != owner
+                && ((tradingPaused && !tradingPaused_)
+                    || (liquidationPaused && !liquidationPaused_)
+                    || (fundingPaused && !fundingPaused_)
+                    || (collateralOpsPaused && !collateralOpsPaused_))
+        ) revert GuardianCannotRelaxEmergency();
         _setEmergencyModes(tradingPaused_, liquidationPaused_, fundingPaused_, collateralOpsPaused_);
     }
 
@@ -144,7 +151,9 @@ abstract contract PerpEngineAdmin is PerpEngineStorage {
         emit MarketActivationStateSet(marketId, oldState, state);
     }
 
-    function setMarketEmergencyCloseOnly(uint256 marketId, bool closeOnly) external onlyGuardianOrOwner {
+    /// @dev Guardian may tighten to close-only; only owner may clear it.
+    function setMarketEmergencyCloseOnly(uint256 marketId, bool closeOnly) external {
+        if (msg.sender != owner && (msg.sender != guardian || !closeOnly)) revert NotAuthorized();
         _requireMarketExists(marketId);
 
         bool oldCloseOnly = marketEmergencyCloseOnly[marketId];

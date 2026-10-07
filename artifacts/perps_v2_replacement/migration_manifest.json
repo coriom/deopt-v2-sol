@@ -1,0 +1,24 @@
+{
+  "schema": "deopt.perps_v2_replacement.migration.v1",
+  "chainId": 84532,
+  "canonicalSnapshotBlock": 47354411,
+  "canonicalSnapshotBlockHash": "0x78debf6044c4f0d1282f0b8c60d0bb41171844453118a092bca5946a9ce54c89",
+  "engineSealSnapshotHash": "0x039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d",
+  "hashPolicy": "Reuse canonical CBOR Ethereum Keccak-256 for Engine seal. A separate off-chain recovery-context commitment binds replacement metadata; it is not passed to sealMigration.",
+  "markets": [
+    {"marketId": 1, "longOpenInterest1e8": 1001002, "shortOpenInterest1e8": 1001002, "cumulativeFundingRate1e18": 0, "lastFundingTimestamp": 1789715546, "fundingSeeded": true},
+    {"marketId": 2, "longOpenInterest1e8": 0, "shortOpenInterest1e8": 0, "cumulativeFundingRate1e18": 0, "lastFundingTimestamp": 0, "fundingSeeded": false}
+  ],
+  "positions": [
+    {"trader": "0x290bD12C93E467Bf51c51f5273D35bdDb19e9274", "marketId": 1, "size1e8": 1000, "openNotional1e8": 3000000, "lastCumulativeFundingRate1e18": 0},
+    {"trader": "0x475Fe397FA56884952D350aa9EE1c3946964BC0C", "marketId": 1, "size1e8": -2, "openNotional1e8": -6000, "lastCumulativeFundingRate1e18": 0},
+    {"trader": "0x66858286fEEA78a05eA093673EA1535E0A52002d", "marketId": 1, "size1e8": -1000000, "openNotional1e8": -2468310000, "lastCumulativeFundingRate1e18": 0},
+    {"trader": "0x77cA9DD6cCce2D692FB23877a2db7178807b0020", "marketId": 1, "size1e8": -1000, "openNotional1e8": -3000000, "lastCumulativeFundingRate1e18": 0},
+    {"trader": "0x8B94A83D1AD3bD2337b1886E7962CA8E0bba9A34", "marketId": 1, "size1e8": 2, "openNotional1e8": 6000, "lastCumulativeFundingRate1e18": 0},
+    {"trader": "0xff287410852B9328437eaC353720e5476bC5F837", "marketId": 1, "size1e8": 1000000, "openNotional1e8": 2468310000, "lastCumulativeFundingRate1e18": 0}
+  ],
+  "totalResidualBadDebtBase": 0,
+  "sharedVault": {"clearingLedgerRawMUSDC": 1000000000, "copyTokenCustody": false, "copyCollateralBalances": false, "fundClearingAgain": false, "replayRealizedPnL": false, "copyFeeBudget": false},
+  "sealPreconditions": ["six exact position tuples", "both exact market states", "OI equals sum of seeded positions", "zero residual bad debt", "shared Vault custody and clearing ledger unchanged"],
+  "postSeal": "Migration entrypoints closed; maintenance remains active."
+}

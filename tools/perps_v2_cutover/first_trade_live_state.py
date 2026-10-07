@@ -109,10 +109,10 @@ def unsupported_hash_pin(error):
         'block hash','object','not supported','unsupported'))
 
 
-def pin_mode(rpc, block):
+def pin_mode(rpc, block, *, pme=PME, engine=ENGINE, executor=EXECUTOR):
     hash_tag = {'blockHash':block['hash'], 'requireCanonical':True}
-    probes = [('eth_call',[{'to':PME,'data':'0x'+k256(b'owner()')[:4].hex()},hash_tag]),
-              ('eth_getCode',[ENGINE,hash_tag]), ('eth_getBalance',[EXECUTOR,hash_tag])]
+    probes = [('eth_call',[{'to':pme,'data':'0x'+k256(b'owner()')[:4].hex()},hash_tag]),
+              ('eth_getCode',[engine,hash_tag]), ('eth_getBalance',[executor,hash_tag])]
     try:
         for method, params in probes:
             rpc(method, params)
@@ -185,8 +185,10 @@ def active_executors(rpc, pinned, block_number):
     return sorted(a for a,v in states.items() if v), count, baseline['comparisonBlock']+1
 
 
-def collect(rpc, *, raw_size_bytes=None, now=None):
+def collect(rpc, *, raw_size_bytes=None, now=None, policy=None):
     """Return actual state even while paused/unbound; no readiness shortcuts."""
+    if policy is not None:
+        return collect_replacement(rpc, policy, raw_size_bytes=raw_size_bytes, now=now)
     require(number(rpc('eth_chainId',[]),'chainId') == CHAIN, 'wrong network')
     head = rpc('eth_getBlockByNumber',['latest',False])
     require(isinstance(head,dict) and bytes_hex(head['hash'],'block hash',size=32) != bytes(32),
@@ -313,10 +315,187 @@ def collect(rpc, *, raw_size_bytes=None, now=None):
     return result
 
 
-def readiness(live):
+def replacement_executors(rpc, pme, owner, deployed_at, pinned, height):
+    """Bounded complete scan from a newly deployed PME's constructor event."""
+    require(deployed_at <= height and height-deployed_at <= 20000,
+            'replacement executor event cursor stale')
+    topic = '0x'+k256(b'ExecutorSet(address,bool)').hex()
+    states = {}
+    events = 0
+    for lo in range(deployed_at, height+1, 2000):
+        logs = rpc('eth_getLogs',[{'address':pme,'topics':[topic],
+                                  'fromBlock':hex(lo),'toBlock':hex(min(lo+1999,height))}])
+        require(isinstance(logs,list), 'malformed replacement executor logs')
+        for event in logs:
+            require(event['address'].lower() == pme.lower() and len(event['topics']) == 2 and
+                    event['topics'][0].lower() == topic and
+                    bytes_hex(event['topics'][1],'executor topic',size=32)[:12] == bytes(12),
+                    'malformed replacement executor event')
+            allowed = int.from_bytes(bytes_hex(event['data'],'executor allowed',size=32),'big')
+            require(allowed in (0,1), 'malformed replacement executor flag')
+            receipt = rpc('eth_getTransactionReceipt',[event['transactionHash']])
+            block = rpc('eth_getBlockByNumber',[event['blockNumber'],False])
+            require(receipt and number(receipt['status'],'executor receipt status') == 1 and
+                    block and block['hash'].lower() == event['blockHash'].lower() and
+                    receipt['blockHash'].lower() == event['blockHash'].lower(),
+                    'replacement executor event inclusion mismatch')
+            states['0x'+event['topics'][1][-40:].lower()] = bool(allowed)
+            events += 1
+    require(owner.lower() in states and events >= 1,
+            'constructor executor event absent')
+    for executor, allowed in states.items():
+        observed = call(rpc,pme,'isExecutor(address)',('address',),(executor,),pinned)[0]
+        require(observed == int(allowed), 'replacement executor mapping/event mismatch')
+    return sorted(a for a,v in states.items() if v), events
+
+
+def collect_replacement(rpc, policy, *, raw_size_bytes=None, now=None):
+    """Pinned replacement reads. Valid while maintenance is active; never arms it."""
+    from restricted_first_trade_guard import parse_replacement_policy
+    parse_replacement_policy(json.dumps(policy,sort_keys=True).encode())
+    require(number(rpc('eth_chainId',[]),'chainId') == CHAIN, 'wrong network')
+    head = rpc('eth_getBlockByNumber',['latest',False])
+    require(isinstance(head,dict) and bytes_hex(head['hash'],'block hash',size=32) != bytes(32),
+            'missing block identity')
+    height = number(head['number'],'block number')
+    timestamp = number(head['timestamp'],'block timestamp')
+    live_clock = now is None
+    now = int(time.time()) if live_clock else now
+    require(0 <= now-timestamp <= 300, 'stale or future block')
+    pme, engine = policy['pme'], policy['engine']
+    tag, mode = pin_mode(rpc,head,pme=pme,engine=engine,executor=policy['executor'])
+    get = lambda target,sig,types=(),args=(),words=1: call(rpc,target,sig,types,args,tag,words)
+    addr = lambda target,sig: address(get(target,sig),sig)
+    for contract, expected_length, expected_hash, label in (
+            (pme,policy['pmeRuntimeBytes'],policy['pmeRuntimeHash'],'PME'),
+            (engine,policy['engineRuntimeBytes'],policy['engineRuntimeHash'],'Engine')):
+        code = bytes_hex(rpc('eth_getCode',[contract,tag]),label+' runtime')
+        require(len(code) == expected_length and '0x'+k256(code).hex() == expected_hash.lower(),
+                'unexpected replacement '+label+' runtime')
+    for contract in (policy['pmr'], policy['fees'], policy['seizer'], engine,
+                     policy['risk'], pme):
+        require(addr(contract,'owner()').lower() == policy['owner'].lower(),
+                'replacement ownership drift')
+    for contract in (policy['pmr'], engine, policy['risk'], pme):
+        require(addr(contract,'guardian()').lower() == policy['guardian'].lower(),
+                'replacement guardian drift')
+    for sig, expected in (
+            ('marketRegistry()',policy['pmr']),('collateralVault()',policy['vault']),
+            ('oracle()',policy['oracle']),('matchingEngine()',pme),
+            ('riskModule()',policy['risk']),('feesManagerV2()',policy['fees']),
+            ('collateralSeizer()',policy['seizer']),('insuranceFund()',policy['insurance']),
+            ('clearingAccount()',policy['clearing'])):
+        require(addr(engine,sig).lower() == expected.lower(), 'replacement Engine wiring '+sig)
+    require(get(engine,'useFeesManagerV2()')[0] == 1 and
+            addr(policy['seizer'],'riskModule()').lower() == policy['legacyCollateralRisk'].lower(),
+            'replacement fee/seizer configuration drift')
+    pme_engine = addr(pme,'perpEngine()')
+    risk_engine = addr(policy['risk'],'perpEngine()')
+    expected_domain = domain(CHAIN,pme)
+    domain_value = get(pme,'domainSeparatorV4()')[0]
+    require(domain_value == int.from_bytes(expected_domain,'big'), 'replacement PME domain drift')
+    migration = get(engine,'migrationState()')[0]
+    snapshot = '0x'+get(engine,'migrationSnapshotHash()')[0].to_bytes(32,'big').hex()
+    require(migration == 1 and snapshot.lower() == policy['snapshotHash'].lower(),
+            'replacement migration state drift')
+    active, executor_events = replacement_executors(
+        rpc,pme,policy['owner'],policy['deploymentBlock'],tag,height)
+    buyer = get(engine,'positions(address,uint256)',('address','uint256'),(BUYER,1),3)
+    seller = get(engine,'positions(address,uint256)',('address','uint256'),(SELLER,1),3)
+    market = get(engine,'marketState(uint256)',('uint256',),(1,),4)
+    deviation = get(policy['pmr'],'getMaxExecutionDeviationBps(uint256)',('uint256',),(1,))[0]
+    exists = get(policy['pmr'],'marketExists(uint256)',('uint256',),(1,))[0]
+    market_active = get(policy['pmr'],'isMarketActive(uint256)',('uint256',),(1,))[0]
+    require(deviation == 100 and exists == market_active == 1, 'replacement market drift')
+    mark_price, mark_status = None, 'UNAVAILABLE'
+    try:
+        mark_price = get(engine,'getMarkPrice(uint256)',('uint256',),(1,))[0]
+        require(mark_price > 0, 'zero mark price')
+        mark_status = 'AVAILABLE'
+    except RpcFault as error:
+        if 'revert' not in error.message.lower():
+            raise
+    historical = json.loads(HISTORICAL.read_text())
+    require(historical['chainId'] == CHAIN and len(historical['intents']) == 14,
+            'known-ID evidence malformed')
+    known_ids = [item['reconstructedPayload']['intentIdBytes32'] for item in historical['intents']]
+    l1_quote = None
+    if raw_size_bytes is not None:
+        require(type(raw_size_bytes) is int and 0 < raw_size_bytes <= 10000,
+                'invalid signed transaction size')
+        l1_quote = get(GPO,'getL1FeeUpperBound(uint256)',('uint256',),(raw_size_bytes,))[0]
+    result = {
+        'chainId':CHAIN,'blockNumber':height,'blockHash':head['hash'],
+        'blockTimestamp':timestamp,'pinningMode':mode,
+        'pmeAddress':pme,'pmeRuntimeHash':policy['pmeRuntimeHash'],
+        'pmeEngine':pme_engine,'riskEngine':risk_engine,
+        'engineRuntimeHash':policy['engineRuntimeHash'],
+        'engineRuntimeBytes':policy['engineRuntimeBytes'],
+        'domainSeparator':'0x'+domain_value.to_bytes(32,'big').hex(),
+        'migrationSealed':True,'migrationSnapshotHash':snapshot,
+        'marketId':1,'marketState':[market[0],market[1],signed(market[2]),market[3]],
+        'marketExists':True,'marketActive':True,
+        'maxExecutionDeviationBps':deviation,'markPrice1e8':mark_price,
+        'markPriceStatus':mark_status,
+        'riskMaxOracleDelay':get(policy['risk'],'maxOracleDelay()')[0],
+        'buyerPosition':[signed(x) for x in buyer],
+        'sellerPosition':[signed(x) for x in seller],
+        'buyerSize1e8':signed(buyer[0]),'sellerSize1e8':signed(seller[0]),
+        'buyerNonce':get(pme,'nonces(address)',('address',),(BUYER,))[0],
+        'sellerNonce':get(pme,'nonces(address)',('address',),(SELLER,))[0],
+        'pmePaused':bool(get(pme,'paused()')[0]),
+        'engineTradingPaused':bool(get(engine,'tradingPaused()')[0]),
+        'engineFundingPaused':bool(get(engine,'fundingPaused()')[0]),
+        'engineLiquidationPaused':bool(get(engine,'liquidationPaused()')[0]),
+        'engineCollateralOpsPaused':bool(get(engine,'collateralOpsPaused()')[0]),
+        'pmeV1Paused':bool(get(PME_V1,'paused()')[0]),
+        'oldEnginePauseFlags':[bool(get(OLD,sig)[0]) for sig in
+            ('tradingPaused()','liquidationPaused()','fundingPaused()','collateralOpsPaused()')],
+        'v1EnginePauseFlags':[bool(get(V1,sig)[0]) for sig in
+            ('tradingPaused()','liquidationPaused()','fundingPaused()','collateralOpsPaused()')],
+        'vaultAuthorized':bool(get(policy['vault'],'isAuthorizedEngine(address)',
+                                   ('address',),(engine,))[0]),
+        'vaultOldAuthorized':bool(get(policy['vault'],'isAuthorizedEngine(address)',
+                                      ('address',),(OLD,))[0]),
+        'vaultV1Authorized':bool(get(policy['vault'],'isAuthorizedEngine(address)',
+                                     ('address',),(V1,))[0]),
+        'insuranceAuthorized':bool(get(policy['insurance'],'isBackstopCaller(address)',
+                                       ('address',),(engine,))[0]),
+        'feeConsumerAuthorized':bool(get(policy['fees'],'isFeeConsumer(address)',
+                                         ('address',),(engine,))[0]),
+        'clearingBalanceNative':get(policy['vault'],'balances(address,address)',
+                                    ('address','address'),(policy['clearing'],TOKEN))[0],
+        'g1Queued':bool(get(TIMELOCK,'queuedTransactions(bytes32)',('bytes32',),
+                            (bytes.fromhex(G1[2:]),))[0]),
+        'g2Queued':bool(get(TIMELOCK,'queuedTransactions(bytes32)',('bytes32',),
+                            (bytes.fromhex(G2[2:]),))[0]),
+        'activeExecutors':active,'executorEventCount':executor_events,
+        'executorEventScanFromBlock':policy['deploymentBlock'],
+        'executorBalanceWei':number(rpc('eth_getBalance',[policy['executor'],tag]),'executor balance'),
+        'executorNonceConfirmed':number(rpc('eth_getTransactionCount',[policy['executor'],'latest']),'confirmed nonce'),
+        'executorNoncePending':number(rpc('eth_getTransactionCount',[policy['executor'],'pending']),'pending nonce'),
+        'gasPriceWei':number(rpc('eth_gasPrice',[]),'gas price'),
+        'maxPriorityFeeQuoteWei':number(rpc('eth_maxPriorityFeePerGas',[]),'priority fee'),
+        'l1FeeQuoteWei':l1_quote,
+        'l1QuoteMethod':'GasPriceOracle.getL1FeeUpperBound(uint256)' if l1_quote is not None else None,
+        'l1QuoteInputSerializedBytes':raw_size_bytes,
+        'knownHistoricalIntentIds':known_ids,
+        'backendLocalStopped':local_backend_stopped(),
+    }
+    after = rpc('eth_getBlockByNumber',[hex(height),False])
+    require(after and after['hash'].lower() == head['hash'].lower(),
+            'pinned replacement block hash changed')
+    require(0 <= (int(time.time()) if live_clock else now)-timestamp <= 300,
+            'replacement observation expired during collection')
+    return result
+
+
+def readiness(live, *, policy=None):
     """Actual maintenance state is a valid collection with NOT_ARMED verdict."""
     reasons=[]
-    for key,want in (('pmeEngine',ENGINE),('riskEngine',ENGINE)):
+    expected_engine = policy['engine'] if policy else ENGINE
+    expected_executor = policy['executor'] if policy else EXECUTOR
+    for key,want in (('pmeEngine',expected_engine),('riskEngine',expected_engine)):
         if live[key].lower() != want.lower(): reasons.append(key+' not rebound')
     for key in ('pmePaused','engineTradingPaused','engineFundingPaused'):
         if live[key]: reasons.append(key+' active')
@@ -326,7 +505,7 @@ def readiness(live):
         reasons.append('old/V1 maintenance drift')
     if not live['vaultOldAuthorized'] or not live['vaultV1Authorized'] or live['clearingBalanceNative'] != 1000000000:
         reasons.append('shared custody/ledger drift')
-    if {x.lower() for x in live['activeExecutors']} != {EXECUTOR.lower()}:
+    if {x.lower() for x in live['activeExecutors']} != {expected_executor.lower()}:
         reasons.append('executor set not restricted')
     if live['executorNonceConfirmed'] != live['executorNoncePending']:
         reasons.append('executor pending nonce conflict')

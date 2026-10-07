@@ -1,0 +1,44 @@
+{
+  "schema": "deopt.perps_v2_replacement.pmr_config.v1",
+  "chainId": 84532,
+  "reference": {
+    "registry": "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+    "blockNumber": 47789885,
+    "blockHash": "0x87f35645d28adaae2c5a43a3ccb6996d87e6f4778aafe19e6b14c1a956abe8ca",
+    "timestamp": 1791348058,
+    "methods": ["getMarketConfigs", "marketMetadata", "getMaxExecutionDeviationBps", "getAllMarketIds", "nextMarketId", "isSettlementAssetAllowed", "paused", "creationPaused", "configPaused"]
+  },
+  "marketCreationOrder": [1, 2],
+  "nextMarketIdAfterCreation": 3,
+  "allowedSettlementAssetsForReplacement": ["0x6eAe407f5640B006faC9965182e238582A3B412E"],
+  "marketCreatorForReplacement": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+  "guardianForReplacement": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+  "postConfigurationMaintenance": {"paused": true, "creationPaused": true, "configPaused": true},
+  "markets": [
+    {
+      "marketId": 1,
+      "market": {"underlying": "0x4DeEBc5f537F3b8ba0E3393807B4D699D72bDd02", "settlementAsset": "0x6eAe407f5640B006faC9965182e238582A3B412E", "oracle": "0xB416406F200B2Ef3D7a86A5D5877Ed41D9B1A581", "symbolBytes32": "0x4554482d50455250000000000000000000000000000000000000000000000000", "exists": true, "isActive": true, "isCloseOnly": false},
+      "risk": {"initialMarginBps": 1000, "maintenanceMarginBps": 750, "liquidationPenaltyBps": 500, "maxPositionSize1e8": 10000000000, "maxOpenInterest1e8": 50000000000, "reduceOnlyDuringCloseOnly": true},
+      "liquidation": {"closeFactorBps": 5000, "priceSpreadBps": 100, "minImprovementBps": 50, "oracleMaxDelay": 60},
+      "funding": {"isEnabled": false, "fundingInterval": 0, "maxFundingRateBps": 0, "maxSkewFundingBps": 0, "oracleClampBps": 0, "impactMidMaxDelay": 0},
+      "maxExecutionDeviationBps": 100,
+      "metadata": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "marketId": 2,
+      "market": {"underlying": "0x9D871aC7595E8Da271E866608E5145252047967c", "settlementAsset": "0x6eAe407f5640B006faC9965182e238582A3B412E", "oracle": "0xB416406F200B2Ef3D7a86A5D5877Ed41D9B1A581", "symbolBytes32": "0x4254432d50455250000000000000000000000000000000000000000000000000", "exists": true, "isActive": true, "isCloseOnly": false},
+      "risk": {"initialMarginBps": 1200, "maintenanceMarginBps": 800, "liquidationPenaltyBps": 400, "maxPositionSize1e8": 1000000000, "maxOpenInterest1e8": 10000000000, "reduceOnlyDuringCloseOnly": true},
+      "liquidation": {"closeFactorBps": 5000, "priceSpreadBps": 80, "minImprovementBps": 50, "oracleMaxDelay": 60},
+      "funding": {"isEnabled": false, "fundingInterval": 0, "maxFundingRateBps": 0, "maxSkewFundingBps": 0, "oracleClampBps": 0, "impactMidMaxDelay": 0},
+      "maxExecutionDeviationBps": 100,
+      "metadata": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "sharedOracleDependencyReadback": {
+    "router": "0xB416406F200B2Ef3D7a86A5D5877Ed41D9B1A581",
+    "globalMaxOracleDelaySeconds": 1500,
+    "market1Feed": {"primary": "0x09BCd126FEB91e13007b2C69644c12AB56260473", "secondary": "0x1a6302eDC9e9DC5EFaE8Dd5e931089ac6Dc5322b", "maxDelaySeconds": 1500, "maxDeviationBps": 100, "isActive": true},
+    "market2Feed": {"primary": "0x78BFe7a71bD7C39d53d71b8A688BfB4AFB216867", "secondary": "0x690821211CA653b966DB07deD385cFa4c547a6c2", "maxDelaySeconds": 1500, "maxDeviationBps": 100, "isActive": true}
+  },
+  "scope": "Intended replacement market configuration. Historical market-creator and other asset allowlists are deliberately not inherited; no claim of their enumeration."
+}

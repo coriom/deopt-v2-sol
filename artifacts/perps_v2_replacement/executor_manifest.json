@@ -1,0 +1,16 @@
+{
+  "schema": "deopt.perps_v2_replacement.executor.v1",
+  "chainId": 84532,
+  "replacementPmeOwner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+  "constructorExecutor": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+  "configuration": [
+    {"caller": "TIMELOCK", "function": "setExecutor(TIMELOCK,false)", "required": true},
+    {"caller": "TIMELOCK", "function": "setExecutor(RUNTIME_EXECUTOR,true)", "required": true}
+  ],
+  "finalEnabledExecutors": ["0x58Ad437Cb9E32B0fAEe810ef05810d5Ba2aE52B8"],
+  "safeIsExecutor": false,
+  "deployerIsExecutor": false,
+  "ownerIsRoutineExecutor": false,
+  "evidence": "PerpMatchingEngineV2 constructor sets isExecutor[owner] true; owner-only setExecutor adjusts mapping. Runtime executor address is from prior committed operational configuration; no new key is introduced.",
+  "limitation": "Final active roster requires event inventory and mapping readback on the replacement deployment; this is an intended local policy, not a live assertion."
+}

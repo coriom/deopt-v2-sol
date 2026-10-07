@@ -33,6 +33,13 @@ PACKAGE_KEYS = frozenset(('schema', 'chainId', 'pme', 'engine', 'engineRuntimeHa
                           'executor', 'valueWei', 'trade', 'digest', 'buyerSignatureSha256',
                           'sellerSignatureSha256', 'calldataSha256', 'transaction',
                           'l1AllowanceWei', 'maxTotalCostWei'))
+REPLACEMENT_PACKAGE_KEYS = PACKAGE_KEYS | {'deploymentPolicySha256'}
+REPLACEMENT_POLICY_KEYS = frozenset((
+    'schema', 'chainId', 'pme', 'engine', 'engineRuntimeHash', 'pmeRuntimeHash',
+    'pmr', 'risk', 'fees', 'vault', 'insurance', 'clearing', 'oracle',
+    'seizer', 'legacyCollateralRisk', 'guardian',
+    'engineRuntimeBytes', 'pmeRuntimeBytes',
+    'owner', 'executor', 'buyer', 'seller', 'snapshotHash', 'deploymentBlock'))
 TX_KEYS = frozenset(('nonce', 'gasLimit', 'maxFeePerGas', 'maxPriorityFeePerGas'))
 MAX_DEADLINE_HORIZON = 900  # sign and approve near the actual closed test
 
@@ -76,9 +83,9 @@ def trade_words(trade):
             word(trade['buyerNonce']), word(trade['sellerNonce']), word(trade['deadline'])]
 
 
-def digest(trade):
+def digest(trade, *, pme=PME):
     struct_hash = k256(k256(TRADE_TYPE.encode()) + b''.join(trade_words(trade)))
-    return '0x' + k256(b'\x19\x01' + domain() + struct_hash).hex()
+    return '0x' + k256(b'\x19\x01' + domain(CHAIN, pme) + struct_hash).hex()
 
 
 def encode(trade, buyer_sig, seller_sig):
@@ -119,21 +126,61 @@ def approved_hash(package_bytes):
     return hashlib.sha256(package_bytes).hexdigest()
 
 
-def validate(package_bytes, approved_sha256, candidate, live):
+def parse_replacement_policy(policy_bytes):
+    require(type(policy_bytes) is bytes, 'replacement policy bytes missing')
+    policy = json.loads(policy_bytes)
+    require(set(policy) == REPLACEMENT_POLICY_KEYS and
+            policy['schema'] == 'DEOPT_REPLACEMENT_FIRST_TRADE_DEPLOYMENT_POLICY_V1' and
+            type(policy['chainId']) is int and policy['chainId'] == CHAIN and
+            type(policy['deploymentBlock']) is int and policy['deploymentBlock'] > 0,
+            'replacement policy schema')
+    for key in ('pme', 'engine', 'pmr', 'risk', 'fees', 'vault', 'insurance',
+                'clearing', 'oracle', 'seizer', 'legacyCollateralRisk', 'guardian',
+                'owner', 'executor', 'buyer', 'seller'):
+        a32(policy[key])
+    for key in ('engineRuntimeHash', 'pmeRuntimeHash', 'snapshotHash'):
+        hex32(policy[key])
+    require(all(type(policy[key]) is int and 0 < policy[key] <= 24_576
+                for key in ('engineRuntimeBytes', 'pmeRuntimeBytes')),
+            'replacement runtime size policy')
+    require(policy['pme'].lower() not in {PME.lower(), ENGINE.lower()} and
+            policy['engine'].lower() != ENGINE.lower() and
+            policy['pme'].lower() != policy['engine'].lower() and
+            policy['executor'].lower() == EXECUTOR.lower() and
+            policy['buyer'].lower() == BUYER.lower() and
+            policy['seller'].lower() == SELLER.lower() and
+            policy['snapshotHash'].lower() == '0x039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d' and
+            policy['owner'].lower() == '0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588'.lower() and
+            policy['guardian'].lower() == '0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46'.lower(),
+            'replacement policy authority or scope')
+    return policy
+
+
+def validate(package_bytes, approved_sha256, candidate, live, *, deployment_policy_bytes=None):
     """Validate only. live must come from a fresh authenticated pinned RPC read."""
     require(approved_hash(package_bytes) == approved_sha256, 'approved package hash changed')
     package = json.loads(package_bytes)
-    require(set(package) == PACKAGE_KEYS and package['schema'] == 'DEOPT_RESTRICTED_FIRST_TRADE_V1',
-            'package schema')
+    if deployment_policy_bytes is None:
+        require(set(package) == PACKAGE_KEYS and package['schema'] == 'DEOPT_RESTRICTED_FIRST_TRADE_V1',
+                'package schema')
+        expected_pme, expected_engine, expected_hash = PME, ENGINE, ENGINE_HASH
+    else:
+        require(set(package) == REPLACEMENT_PACKAGE_KEYS and
+                package['schema'] == 'DEOPT_RESTRICTED_FIRST_TRADE_REPLACEMENT_V1' and
+                package['deploymentPolicySha256'] == approved_hash(deployment_policy_bytes),
+                'replacement package/policy binding')
+        policy = parse_replacement_policy(deployment_policy_bytes)
+        expected_pme, expected_engine = policy['pme'], policy['engine']
+        expected_hash = policy['engineRuntimeHash']
     require(set(package['transaction']) == TX_KEYS, 'transaction envelope schema')
     require(package['chainId'] == candidate['chainId'] == live['chainId'] == CHAIN,
             'wrong chain')
-    require(package['pme'].lower() == candidate['to'].lower() == PME.lower(), 'wrong destination')
-    require(package['engine'].lower() == live['pmeEngine'].lower() == ENGINE.lower(),
+    require(package['pme'].lower() == candidate['to'].lower() == expected_pme.lower(), 'wrong destination')
+    require(package['engine'].lower() == live['pmeEngine'].lower() == expected_engine.lower(),
             'PME not rebound to recovery engine')
-    require(package['engineRuntimeHash'].lower() == live['engineRuntimeHash'].lower() == ENGINE_HASH,
+    require(package['engineRuntimeHash'].lower() == live['engineRuntimeHash'].lower() == expected_hash.lower(),
             'engine runtime changed')
-    require(live['domainSeparator'].lower() == '0x'+domain().hex(), 'wrong live EIP-712 domain')
+    require(live['domainSeparator'].lower() == '0x'+domain(CHAIN, expected_pme).hex(), 'wrong live EIP-712 domain')
     require(package['executor'].lower() == candidate['from'].lower() == EXECUTOR.lower(),
             'wrong executor')
     require({x.lower() for x in live['activeExecutors']} == {EXECUTOR.lower()},
@@ -195,7 +242,7 @@ def validate(package_bytes, approved_sha256, candidate, live):
     require(trade['intentId'] != '0x'+bytes(32).hex() and
             trade['intentId'].lower() not in {x.lower() for x in live['knownHistoricalIntentIds']},
             'intent ID not fresh')
-    require(digest(trade).lower() == package['digest'].lower(), 'digest changed')
+    require(digest(trade, pme=expected_pme).lower() == package['digest'].lower(), 'digest changed')
     require(hashlib.sha256(buyer_sig).hexdigest() == package['buyerSignatureSha256'] and
             hashlib.sha256(seller_sig).hexdigest() == package['sellerSignatureSha256'],
             'signature bytes changed')

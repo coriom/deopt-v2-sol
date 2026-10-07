@@ -29,7 +29,7 @@ class RecordingFakeTransport:
         return '0x'+k256(signed_bytes).hex()
 
 
-def decode_signed_raw(raw):
+def decode_signed_raw(raw, *, expected_pme=guard.PME):
     """Use mature viem parsing/recovery; never put signed bytes in argv/logs."""
     guard.require(type(raw) is bytes and raw[:1] == b'\x02' and 0 < len(raw) <= 10000,
                   'unsupported signed transaction form')
@@ -55,21 +55,26 @@ def decode_signed_raw(raw):
                  'maxPriorityFeePerGas':int(decoded['maxPriorityFeePerGas'])}
     guard.require(candidate['chainId'] == guard.CHAIN and
                   candidate['from'].lower() == guard.EXECUTOR.lower() and
-                  candidate['to'].lower() == guard.PME.lower() and
+                  candidate['to'].lower() == expected_pme.lower() and
                   candidate['valueWei'] == 0, 'signed transaction sender/target/chain/value drift')
     return candidate, decoded['transactionHash']
 
 
-def validated_decision(package_bytes, approved_sha256, raw, live):
-    candidate, tx_hash = decode_signed_raw(raw)
+def validated_decision(package_bytes, approved_sha256, raw, live, *, deployment_policy_bytes=None):
+    policy = (guard.parse_replacement_policy(deployment_policy_bytes)
+              if deployment_policy_bytes is not None else None)
+    expected_pme = policy['pme'] if policy else guard.PME
+    expected_engine = policy['engine'] if policy else guard.ENGINE
+    expected_snapshot = policy['snapshotHash'] if policy else state.SNAPSHOT
+    candidate, tx_hash = decode_signed_raw(raw, expected_pme=expected_pme)
     approval = json.loads(package_bytes)
     guard.require(guard.approved_hash(package_bytes) == approved_sha256,
                   'approved package hash changed')
     # The guard checks all candidate fields, exact ABI re-encoding, trader
     # signatures, domain, close-only pre-state, deadline, nonce and fees.
     trade = approval['trade']
-    guard.require(live['riskEngine'].lower() == guard.ENGINE.lower() and
-                  live['migrationSnapshotHash'].lower() == state.SNAPSHOT.lower() and
+    guard.require(live['riskEngine'].lower() == expected_engine.lower() and
+                  live['migrationSnapshotHash'].lower() == expected_snapshot.lower() and
                   live['marketExists'] and live['marketActive'] and
                   live['maxExecutionDeviationBps'] == 100 and
                   live['riskMaxOracleDelay'] == 600 and
@@ -81,14 +86,16 @@ def validated_decision(package_bytes, approved_sha256, raw, live):
     mark = live['markPrice1e8']
     guard.require(abs(trade['executionPrice1e8']-mark)*10000 <= mark*100,
                   'execution price outside approved PMR deviation')
-    guard.require(state.readiness(live)['status'] == 'ARMED_FOR_LOCAL_VALIDATION',
+    guard.require(state.readiness(live, policy=policy)['status'] == 'ARMED_FOR_LOCAL_VALIDATION',
                   'LIVE_EXECUTION_NOT_ARMED')
-    decision = guard.validate(package_bytes, approved_sha256, candidate, live)
+    decision = guard.validate(package_bytes, approved_sha256, candidate, live,
+                              deployment_policy_bytes=deployment_policy_bytes)
     return decision, candidate, tx_hash
 
 
 def test_only_one_shot(package_path, approved_sha256, signed_bytes, journal,
-                       fake_transport, rpc, *, persist=guard._persist):
+                       fake_transport, rpc, *, persist=guard._persist,
+                       deployment_policy_bytes=None):
     """Recording-fake transport integration. This is not an operational sender.
 
     The lock is acquired before the final collector call, final package check,
@@ -100,18 +107,23 @@ def test_only_one_shot(package_path, approved_sha256, signed_bytes, journal,
     package_bytes = package_path.read_bytes()
     guard.require(guard.approved_hash(package_bytes) == approved_sha256,
                   'approved package hash changed')
-    initial = state.collect(rpc, raw_size_bytes=len(signed_bytes))
+    policy = (guard.parse_replacement_policy(deployment_policy_bytes)
+              if deployment_policy_bytes is not None else None)
+    collect_kwargs = {'policy': policy} if policy is not None else {}
+    initial = state.collect(rpc, raw_size_bytes=len(signed_bytes), **collect_kwargs)
     decision, candidate, tx_hash = validated_decision(package_bytes,approved_sha256,
-                                                     signed_bytes,initial)
+                                                     signed_bytes,initial,
+                                                     deployment_policy_bytes=deployment_policy_bytes)
 
     def locked_preflight():
         guard.require(package_path.read_bytes() == package_bytes,
                       'approved package file changed before send')
-        refreshed = state.collect(rpc, raw_size_bytes=len(signed_bytes))
+        refreshed = state.collect(rpc, raw_size_bytes=len(signed_bytes), **collect_kwargs)
         guard.require(package_path.read_bytes() == package_bytes,
                       'approved package file changed before send')
         again, candidate_now, hash_now = validated_decision(package_bytes,approved_sha256,
-                                                             signed_bytes,refreshed)
+                                                             signed_bytes,refreshed,
+                                                             deployment_policy_bytes=deployment_policy_bytes)
         guard.require(candidate_now == candidate and hash_now.lower() == tx_hash.lower(),
                       'signed transaction changed before send')
         return again

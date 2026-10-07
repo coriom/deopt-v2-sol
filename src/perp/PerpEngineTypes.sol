@@ -214,6 +214,7 @@ abstract contract PerpEngineTypes {
     error OwnershipTransferNotInitiated();
     error NotAuthorized();
     error GuardianNotAuthorized();
+    error GuardianCannotRelaxEmergency();
     error ZeroAddress();
     error InvalidTrade();
     error InvalidMarket();

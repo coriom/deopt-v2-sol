@@ -1,0 +1,39 @@
+{
+  "canonicalSnapshotHash": "0x039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d",
+  "chainId": 84532,
+  "fixtureTest": "test/perp/PerpsV2ReplacementTopology.t.sol:testDeterministicFixtureReplacementAddresses",
+  "manifestSha256": {
+    "authority": "47c483b8ca5c8aec7e2107870124a9bcd2ddf4750ca13ba6c445a334f7c3e713",
+    "migration": "4bfcf23520716532acf5aef967042f3fe7b19ca2182b19dc7e698c332d59337e",
+    "pmr_config": "accf5770fed96c52cb869c868822697e98a3acc2b6b9f35ab6922e2fc945d20c",
+    "source": "2526f2fcfa8386b34d6b44638929e8b68d90875754d4dce636f0924ccdcdfc1b"
+  },
+  "replacementFixture": {
+    "CollateralSeizer": {
+      "address": "0x51fc2DB3130D4899c9bf2942A83b463fC5d23ef5",
+      "runtimeKeccak256": "0x6d199e027af598ee903513a1ab41e27e2937115c79b8ec85e386d739615befcb"
+    },
+    "FeesManagerV2": {
+      "address": "0xb875Dbccf7C849Fc687AFb35801047D51B806473",
+      "runtimeKeccak256": "0x732101d67fb112f6d3159f32852071bbf995f8bd1995335cf9a2b0f167d08726"
+    },
+    "PerpEngineV2": {
+      "address": "0x28E241e780f147c1cE5D3C5dAC4b05940Ca03245",
+      "runtimeKeccak256": "0x80b3316f0e0f2c058017320985d72eb6d63d9715220487f5679d1a2bb48c601c"
+    },
+    "PerpMarketRegistry": {
+      "address": "0x0b107A4a63194CC053F8773a139E9CcC5fc193F5",
+      "runtimeKeccak256": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5"
+    },
+    "PerpMatchingEngineV2": {
+      "address": "0x0E2F3490a6880139E033D242B2878953Ed695Ce6",
+      "runtimeKeccak256": "0xd5d1474e3ab29c371cbeeffd0522a3c58f483a648b33edb9730d500b6f5e6c06"
+    },
+    "PerpRiskModule": {
+      "address": "0xb0B10b88d9BB55Ea87e0251ad0d2B607Ec451a7E",
+      "runtimeKeccak256": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c"
+    }
+  },
+  "schema": "deopt.perps_v2_replacement.local_recovery_context.v1",
+  "scope": "deterministic local Foundry fixture only; never public deployment identity"
+}

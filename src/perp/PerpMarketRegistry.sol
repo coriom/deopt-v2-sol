@@ -133,6 +133,7 @@ contract PerpMarketRegistry {
     error UnknownMarket();
     error NotAuthorized();
     error GuardianNotAuthorized();
+    error GuardianCannotRelaxEmergency();
 
     error SettlementAssetNotAllowed();
     error InvalidMarketParams();
@@ -402,6 +403,9 @@ contract PerpMarketRegistry {
     }
 
     function setEmergencyModes(bool creationPaused_, bool configPaused_) external onlyGuardianOrOwner {
+        if (msg.sender != owner && ((creationPaused && !creationPaused_) || (configPaused && !configPaused_))) {
+            revert GuardianCannotRelaxEmergency();
+        }
         _setEmergencyModes(creationPaused_, configPaused_);
     }
 

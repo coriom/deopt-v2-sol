@@ -1,0 +1,33 @@
+{
+  "schema": "deopt.perps_v2_replacement.fee_liability.v1",
+  "strategy": "KEEP_ON_LEGACY",
+  "reference": {"chainId": 84532, "blockNumber": 47789885, "blockHash": "0x87f35645d28adaae2c5a43a3ccb6996d87e6f4778aafe19e6b14c1a956abe8ca"},
+  "legacy": {
+    "feesManager": "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f",
+    "owner": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+    "settlementAsset": "0x6eAe407f5640B006faC9965182e238582A3B412E",
+    "rebateBudgetRaw": 999977,
+    "rebateBudgetMeaning": "Accounting-only consumption cap; fundRebateBudget does not deposit or custody tokens",
+    "merkleRoot": "0xd8a627d7a9b600370e6f490fdd789150d7f9c4ea2f09752c88121d1f758fc2df",
+    "rootValidFrom": 1780099200,
+    "rootValidUntil": 1781913600,
+    "rootWindowAtReferenceBlock": "EXPIRED",
+    "newTierClaimsAtReferenceBlock": "BLOCKED_BY_EXPIRED_ROOT_WINDOW; a nonzero root is not an active claim window",
+    "legacyOwnerCredentialStatus": "UNAVAILABLE; no root renewal or rebate-budget administration assumed",
+    "feeRecipient": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "rebateFundingAccount": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "claimState": "Per-account claimedTiers mapping is not enumerable; preserved only in legacy contract. Existing tier validity is account-specific and not asserted globally."
+  },
+  "replacement": {
+    "implementationPolicy": "CURRENT_SOURCE_WITH_PROTOCOL_FEE_VAULT_UNSET",
+    "initialRebateBudgetRaw": 0,
+    "initialMerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "initialProtocolFeeVault": "0x0000000000000000000000000000000000000000",
+    "copyClaimState": false,
+    "copyRebateBudget": false,
+    "copyMerkleRoot": false,
+    "fundFromSharedVaultDuringMigration": false
+  },
+  "sourceBasis": ["src/fees/FeesManagerV2.sol: fundRebateBudget/withdrawRebateBudget change accounting only", "src/fees/FeesManagerV2.sol: claimTier stores per-account tier only", "src/fees/FeesManagerV2.sol: consumeFees debits rebateBudget when a rebate is consumed and requires a configured funding account"],
+  "futurePolicy": "Any new root, budget, rebate source or ProtocolFeeVault hook requires separate Timelock review and proof it does not duplicate legacy entitlement."
+}
