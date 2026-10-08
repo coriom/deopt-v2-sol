@@ -1,0 +1,142 @@
+{
+  "autoRetry": false,
+  "canonicalReceipt": {
+    "blockContainedTransaction": true,
+    "blockHash": "0xb322ad08be5c04bbff8072ed31be17d3a195495cac3fcb7183c7123323c2d07f",
+    "blockNumber": 47840346,
+    "confirmationDepthAtLeastTwo": true,
+    "contractAddress": "0x6B3D846536116082dC4E7227861C341Bb85Ee963",
+    "effectiveGasPriceWei": 7000000,
+    "gasUsed": 3009033,
+    "receiptLogCount": 3,
+    "status": 1,
+    "transactionHash": "0x8d361c5bc913deb9aa10c2638b8fc2a687c54998b3bf8c695a34c0548d921cba",
+    "transactionReceiptBlockAgreement": true
+  },
+  "cliSyntaxValidation": "PASS",
+  "d2BroadcastAuthorized": false,
+  "expectedSignedTxHash": "0x8d361c5bc913deb9aa10c2638b8fc2a687c54998b3bf8c695a34c0548d921cba",
+  "finalPreBroadcastNonceGate": "PASS",
+  "milestone": "PERPS_V2_BASE_SEPOLIA_REPLACEMENT_D1_PMR_EXECUTION_RETRY_V2",
+  "passwordFileRemoved": true,
+  "postflight": "PASS",
+  "preSend": {
+    "balanceWei": 2000000000000000,
+    "baseFeeWei": 5000000,
+    "blockHash": "0x8e4a03447c99c4cb31ed718a17ab66c4de1594994dc37b0e30e5f35127bbca70",
+    "blockNumber": 47840302,
+    "confirmedNonce": 0,
+    "costPlusL1AllowanceWei": 174000000000000,
+    "estimateGas": 3034081,
+    "feeHistoryBaseFeesWei": [
+      5000000,
+      5000000,
+      5000000,
+      5000000,
+      5000000,
+      5000000
+    ],
+    "gasPriceWei": 6000000,
+    "l1UpperBoundQuoteWei": 10730,
+    "pendingNonce": 0,
+    "priorityQuoteWei": 1000000,
+    "simulationRuntimeHash": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5"
+  },
+  "preSendGate": "PASS",
+  "preSignPayloadCheck": "PASS",
+  "provisionalReceiptObservation": {
+    "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "blockNumber": "0x2d9fc5a",
+    "contractAddress": "0x6b3d846536116082dc4e7227861c341bb85ee963",
+    "effectiveGasPrice": "0x6acfc0",
+    "gasUsed": "0x2dea09",
+    "status": "0x1",
+    "transactionHash": "0x8d361c5bc913deb9aa10c2638b8fc2a687c54998b3bf8c695a34c0548d921cba"
+  },
+  "provisionalValidationFailure": {
+    "cause": "RPC returned an initially provisional receipt with zero blockHash; subsequent canonical readback had a nonzero matching hash",
+    "errorType": "RuntimeError",
+    "reason": "transaction/receipt/block canonical disagreement",
+    "stage": "receipt"
+  },
+  "publicBroadcastOccurred": true,
+  "publicPostflight": {
+    "configPaused": false,
+    "creationPaused": false,
+    "deployerBalanceWei": 1978936768993618,
+    "deployerConfirmedNonce": 1,
+    "deployerIsMarketCreator": false,
+    "deployerPendingNonce": 1,
+    "guardian": "0x0000000000000000000000000000000000000000",
+    "latestBlockAtReconciliation": 47840395,
+    "marketIds": [],
+    "nextMarketId": 1,
+    "owner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "paused": false,
+    "pendingOwner": "0x0000000000000000000000000000000000000000",
+    "runtimeHash": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5",
+    "sharedStateComparisonScope": [
+      "Vault code/owner/stranded authorization/clearing ledger",
+      "Insurance code/owner/stranded backstop",
+      "Clearing code/Vault pointer",
+      "OracleRouter code/owner",
+      "stranded Engine code/owner/migration state/snapshotHash",
+      "existing new and old PMR code/owner/nextMarketId/marketIds"
+    ],
+    "sharedStateSnapshotMatched": true,
+    "timelockIsMarketCreator": true
+  },
+  "publicSendInvocations": 1,
+  "publicTxHash": "0x8d361c5bc913deb9aa10c2638b8fc2a687c54998b3bf8c695a34c0548d921cba",
+  "readyForD2Preparation": true,
+  "sharedBefore": {
+    "clearing": {
+      "codeHash": "0xc010101099ca99f9376c227066f4259fcecc840bfca6a0ceb7328333fe9db591",
+      "vault": "0x00340c360353a5ab784c5bc5c44322a6af0625d3"
+    },
+    "insurance": {
+      "codeHash": "0x4d226bd7473b3c6d6842b4f3b04f251a3e7a218c2317a8dd5dd829440c486ee7",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "strandedBackstop": true
+    },
+    "newPmr": {
+      "codeHash": "0x70a03433c8f58ac8e97e6caa5c0e488db1440c05aa1dce46b0fef4930e8194f5",
+      "marketIds": [
+        1,
+        2
+      ],
+      "nextMarketId": 3,
+      "owner": "0xc35f7a8a103a9a4464adfaa76b9b514093d23c27"
+    },
+    "oldPmr": {
+      "codeHash": "0x3138b1f16633c8721010b075a868896be4cb93b5a02ace311d6af83856e7ad14",
+      "marketIds": [
+        1,
+        2
+      ],
+      "nextMarketId": 3,
+      "owner": "0xc35f7a8a103a9a4464adfaa76b9b514093d23c27"
+    },
+    "oracle": {
+      "codeHash": "0x1684ec8825d72e4f59c05a6198fd6eb5ba06ff9d2914bbb00ff108796559fb14",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588"
+    },
+    "stranded": {
+      "codeHash": "0xc0ac9015866a36d0c9c25920387af78cb59cc24f66170728ade1a835d1211a2a",
+      "migrationState": 1,
+      "owner": "0xc35f7a8a103a9a4464adfaa76b9b514093d23c27",
+      "snapshotHash": "0x039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d"
+    },
+    "vault": {
+      "clearingLedger": 1000000000,
+      "codeHash": "0xf834554ab8eea4ea97136a7c627a3f36bc166c94e5eb360b400d1f2d925b1349",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "strandedAuthorized": true
+    }
+  },
+  "signedTxValidation": "PASS",
+  "signerValidation": "PASS",
+  "signingInvocations": 1,
+  "status": "VERIFIED_SUCCESS",
+  "submissionMarkedAtBlock": 47840342
+}
