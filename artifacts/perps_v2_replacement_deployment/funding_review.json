@@ -1,0 +1,100 @@
+{
+  "blockHashRechecked": true,
+  "chainId": 84532,
+  "d1": {
+    "addressMode": "DIRECT_CREATE",
+    "constructorOwner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "creationNonce": 0,
+    "expectedRuntimeKeccak256": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5",
+    "planningGasUnits": 3034081,
+    "postFundingReviewRequired": true,
+    "predictedAddress": "0x6B3D846536116082dC4E7227861C341Bb85Ee963",
+    "predictedCode": "0x",
+    "stableIdentityAcrossSimpleIncomingEth": true
+  },
+  "d1PackageStableAcrossFunding": true,
+  "d1SignerBoundReviewSha256": "78bc03524a25990ed1b1beebd26f9b62a4b514b9b1b01b38f29dba2d2c005920",
+  "deploymentAuthorized": false,
+  "feeObservation": {
+    "allSixL1UpperBoundQuoteWei": 59832,
+    "allSixPlanningEnvelopeBytes": 78566,
+    "baseFeePerGasWei": 5000000,
+    "d1L1UpperBoundQuoteWei": 10525,
+    "d1PlanningEnvelopeBytes": 13794,
+    "feeHistoryStatus": "GuardRejected",
+    "gasPriceRecommendationWei": 6000000,
+    "l1QuoteMeaning": "instantaneous local planning observation, not transaction maximum or future guarantee",
+    "priorityRecommendationWei": 1000000
+  },
+  "fundingBroadcastAuthorized": false,
+  "fundingSource": {
+    "alternateOperatorPath": "https://www.alchemy.com/faucets/base-sepolia",
+    "availabilityCaveat": "QuickNode shows actual drip only after address entry; Alchemy advertises a fixed 0.1 ETH drip and eligibility criteria. Neither was invoked.",
+    "existingCleanGasFunder": "NOT_IDENTIFIED_IN_BOUNDED_PROJECT_EVIDENCE",
+    "preferred": "FAUCET",
+    "preferredOperatorPath": "https://faucet.quicknode.com/base/",
+    "projectEvidence": [
+      "deopt-v2-frontend/src/content/public-beta/COMMUNITY_ONBOARDING.md",
+      "deopt-v2-backend/docs/SEPOLIA_SETUP_FIXES_PACK_PREFLIGHT_RESULT.md",
+      "deopt-v2-sol/docs/GOVERNANCE_OPS_MULTISIG_DEPLOY_PLAN_V2G_GOV_D2.md"
+    ]
+  },
+  "nonceSemantics": "Incoming ETH alone does not consume recipient EOA nonce; signer-originated activity would invalidate the D1 address prediction.",
+  "offlineFundingIntent": {
+    "data": "0x",
+    "desiredValueWei": 5000000000000000,
+    "faucetMayOfferDifferentFixedAmount": true,
+    "isExecutableTransaction": false,
+    "publicSendAuthorized": false,
+    "sourceAddress": null,
+    "sourceNonce": null,
+    "target": "0xDA9146F7A0aAcC41EB7Fe7e0d27E3e7ff0ABb9C0"
+  },
+  "originalPackageSha256": "4d2940751d06471e3cd6ca3a298db4e68c1a4b1872d9ca51f3371b69a42ea8b9",
+  "pinMode": "EIP1898_BLOCK_HASH_REQUIRE_CANONICAL",
+  "planning": {
+    "caveat": "Planning only; refresh gas and L1 fees before any authorized funding or deployment.",
+    "d1GasEstimate": 3034081,
+    "d1GasWithMargin": 3792602,
+    "d1MinimumSafeFundingWei": 1075852040000000,
+    "feeEnvelopeAuthorized": false,
+    "fullGasWithMargin": 21316944,
+    "fullSequenceGasEstimate": 17053555,
+    "fullSequenceMinimumSafeFundingWei": 1426338880000000,
+    "fundedForD1": false,
+    "fundedForFullSequence": false,
+    "gasMarginPercent": 25,
+    "planningL1AndVariationReserveWei": 1000000000000000,
+    "planningRateWeiPerGas": 20000000,
+    "recommendedBalanceTargetWei": 5000000000000000,
+    "recommendedFundingAmountWei": 5000000000000000
+  },
+  "postFundingRequirement": "refresh nonce, balance, code, predicted address and package state before any D1 review",
+  "reviewBlockHash": "0xed75b946958299c4f71153fc6e2b6468144ad0825ebf0ab646e0816a62d524cd",
+  "reviewBlockNumber": 47833110,
+  "reviewUtc": "2026-10-08 04:43:25 UTC",
+  "schema": "deopt.perps_v2_replacement_deployment.funding_review.v1",
+  "signer": {
+    "address": "0xDA9146F7A0aAcC41EB7Fe7e0d27E3e7ff0ABb9C0",
+    "balanceWei": 0,
+    "checkedScope": [
+      "known role addresses",
+      "Safe owners",
+      "Timelock proposer/executor",
+      "shared owners and guardians",
+      "Vault Engine ACL",
+      "Insurance backstop ACL",
+      "current PME executor mapping"
+    ],
+    "code": "0x",
+    "confirmedNonce": 0,
+    "decryptionByReviewer": false,
+    "identityEvidence": "OPERATOR_ATTESTED_INTERACTIVE_ADDRESS_ONLY",
+    "keystorePath": "/home/corio/.deopt/keystores/perps-v2-replacement-deployer-base-sepolia",
+    "noIntendedProtocolAuthorityWithinCheckedScope": true,
+    "pendingNonce": 0
+  },
+  "signerBoundPackageSha256": "672ed9b2d0341041816f496df41f796042673996ff7604253b81651d7aeb8b71",
+  "sourceCommit": "25c36670883604c1ef5229642ee6548aea6796c3",
+  "startingHead": "84715f73fe395515c87a62f5b6e954bd992f9f87"
+}
