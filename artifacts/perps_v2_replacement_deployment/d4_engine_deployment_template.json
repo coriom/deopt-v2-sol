@@ -1,0 +1,182 @@
+{
+  "addressDerivation": "last 20 bytes of keccak256(rlp([verified signer, fresh nonce])) for DIRECT_CREATE; do not force a stale nonce",
+  "artifactPath": "out/PerpEngineV2.sol/PerpEngineV2.json",
+  "compilerVersion": "0.8.30+commit.73712a01",
+  "constructorAbi": {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_owner",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "registry_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "vault_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "oracle_",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  "constructorArgs": [
+    "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "D1_CANONICAL_ADDRESS",
+    "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+    "0xB416406F200B2Ef3D7a86A5D5877Ed41D9B1A581"
+  ],
+  "constructorArgsEncoded": null,
+  "constructorTypes": [
+    "address",
+    "address",
+    "address",
+    "address"
+  ],
+  "contract": "PerpEngineV2",
+  "creationLinkReferences": {
+    "src/perp/PerpEngineLiquidationLib.sol": {
+      "PerpEngineLiquidationLib": [
+        {
+          "length": 20,
+          "start": 3258
+        },
+        {
+          "length": 20,
+          "start": 3705
+        },
+        {
+          "length": 20,
+          "start": 4419
+        }
+      ]
+    },
+    "src/perp/PerpEngineSeizureLib.sol": {
+      "PerpEngineSeizureLib": [
+        {
+          "length": 20,
+          "start": 3529
+        },
+        {
+          "length": 20,
+          "start": 23371
+        },
+        {
+          "length": 20,
+          "start": 24774
+        }
+      ]
+    }
+  },
+  "creationTransactionData": null,
+  "creationTransactionDataKeccak256": null,
+  "evmVersion": "prague",
+  "expectedOwner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+  "expectedPendingOwner": "0x0000000000000000000000000000000000000000",
+  "expectedPublicAddress": "UNRESOLVED_NO_DEPLOYMENT_SIGNER",
+  "expectedRuntimeHash": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785",
+  "gasEstimateAddressScope": "conditional local D1 address",
+  "initialState": {
+    "collateralOpsPaused": false,
+    "fundingPaused": false,
+    "guardian": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "liquidationPaused": false,
+    "marketRegistry": "D1_CANONICAL_ADDRESS",
+    "migrationSnapshotHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "migrationState": 0,
+    "oracle": "0xB416406F200B2Ef3D7a86A5D5877Ed41D9B1A581",
+    "tradingPaused": false,
+    "vault": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3"
+  },
+  "linkedCreationBytecodeKeccak256": "0xe3e6076c65595cddca1712aeb469e6c7717fa7e7425293dd64ad1d8fe72d55fe",
+  "linkedCreationBytecodeSha256": "c8a69a5015bf454ae299e50f708455fbc6ea2cd19cb52ad57e3f46cc34f61137",
+  "linkedRuntimeTemplateKeccak256": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785",
+  "linkedRuntimeTemplateSha256": "ef91e2409ee31030b0758f13cc729a93e1deef75c03e20b8b595ccbe5399cfe1",
+  "localFixtureAddress": "0x28E241e780f147c1cE5D3C5dAC4b05940Ca03245",
+  "localFixtureRuntimeHash": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785",
+  "localGasObservedExcludingIntrinsic": 5211675,
+  "metadataSettings": {
+    "appendCBOR": false,
+    "bytecodeHash": "none"
+  },
+  "noBroadcastAuthorization": true,
+  "optimizer": {
+    "enabled": true,
+    "runs": 0
+  },
+  "postflight": [
+    "canonical receipt status 1",
+    "exact constructor data and creator nonce",
+    "code/runtime hash",
+    "Timelock owner and zero pending owner where supported",
+    "initial guardian, pause state and constructor pointers"
+  ],
+  "precedingReceiptRequired": "D3 canonical receipt and postflight",
+  "predictedAddressCodeCheck": "UNAVAILABLE_NO_SIGNER_OR_NONCE",
+  "readOnlyRpcGasEstimate": 5679125,
+  "runtimeHashKind": "CONSTRUCTOR_INDEPENDENT",
+  "runtimeImmutableReferences": {},
+  "runtimeLinkReferences": {
+    "src/perp/PerpEngineLiquidationLib.sol": {
+      "PerpEngineLiquidationLib": [
+        {
+          "length": 20,
+          "start": 2550
+        },
+        {
+          "length": 20,
+          "start": 2997
+        },
+        {
+          "length": 20,
+          "start": 3711
+        }
+      ]
+    },
+    "src/perp/PerpEngineSeizureLib.sol": {
+      "PerpEngineSeizureLib": [
+        {
+          "length": 20,
+          "start": 2821
+        },
+        {
+          "length": 20,
+          "start": 22663
+        },
+        {
+          "length": 20,
+          "start": 24066
+        }
+      ]
+    }
+  },
+  "signerRequirements": {
+    "address": "UNDESIGNATED",
+    "beforePublicReview": [
+      "operator designates existing suitable signer",
+      "fresh chain and signer address verification",
+      "confirmed/pending nonce equality",
+      "balance and EIP-1559/L1 fee review",
+      "CREATE predicted address and live code nonexistence check"
+    ],
+    "mustNotBe": [
+      "owner",
+      "guardian",
+      "executor",
+      "migration authority",
+      "admin"
+    ],
+    "role": "contract creation and gas payment only"
+  },
+  "sourceFile": "src/perp/PerpEngineV2.sol",
+  "stage": "D4",
+  "viaIR": true
+}

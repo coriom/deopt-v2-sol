@@ -1,0 +1,28 @@
+{
+  "armed": false,
+  "buyer": "0x66858286feea78a05ea093673ea1535e0a52002d",
+  "closeOnly": true,
+  "eip712": {
+    "chainId": 84532,
+    "domainSeparator": "UNRESOLVED_ADDRESS",
+    "name": "DeOptV2-PerpMatchingEngine",
+    "verifyingContract": "D6_CANONICAL_ADDRESS",
+    "version": "2"
+  },
+  "engine": "D4_CANONICAL_ADDRESS",
+  "engineRuntimeKeccak256": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785",
+  "executor": "0x58Ad437Cb9E32B0fAEe810ef05810d5Ba2aE52B8",
+  "localFixtureOnly": {
+    "domainSeparator": "0x426354fe64f3cb1f528755e722f155b24cc4f861524826c624f0bb59d882c007",
+    "pme": "0x0E2F3490a6880139E033D242B2878953Ed695Ce6",
+    "pmeRuntimeKeccak256": "0xdafeca3bb64ea22a03b12f3868b96b272aa0b031a57297025444b51b4e2a9d5c"
+  },
+  "marketId": 1,
+  "maximumDeadlineHorizonSeconds": 900,
+  "pme": "D6_CANONICAL_ADDRESS",
+  "pmeRuntimeKeccak256": "UNRESOLVED_CONSTRUCTOR_IMMUTABLES",
+  "policy": "exact selector, bytes, nonce, signatures, fees, package SHA-256, one-shot journal; no live sender",
+  "schema": "deopt.perps_v2_replacement_deployment.first_trade_guard_binding.v1",
+  "seller": "0xff287410852b9328437eac353720e5476bc5f837",
+  "status": "CONDITIONAL_UNTIL_CANONICAL_D4_D6_RECEIPTS"
+}

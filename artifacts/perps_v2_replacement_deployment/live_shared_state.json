@@ -1,0 +1,529 @@
+{
+  "blockHash": "0x607e68bdceb65b18221606598dc7dbdc139f7bbfd05717bc62f56c1fd61e5763",
+  "blockNumber": 47829878,
+  "blockTimestamp": 1791428044,
+  "chainId": 84532,
+  "clearing": {
+    "vault": "0x00340c360353a5ab784c5bc5c44322a6af0625d3"
+  },
+  "insurance": {
+    "guardian": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+    "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "strandedNewBackstop": true,
+    "vault": "0x00340c360353a5ab784c5bc5c44322a6af0625d3"
+  },
+  "legacyCollateralRisk": {
+    "address": "0xc0f019005a25524a34f2ee8839dcdcc50715dd7b",
+    "oracle": "0xb416406f200b2ef3d7a86a5d5877ed41d9b1a581",
+    "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "vault": "0x00340c360353a5ab784c5bc5c44322a6af0625d3"
+  },
+  "legacyFmv2": {
+    "feeRecipient": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "owner": "0xc35f7a8a103a9a4464adfaa76b9b514093d23c27"
+  },
+  "oracle": {
+    "guardian": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+    "market1Feed": {
+      "isActive": true,
+      "maxDelay": 1500,
+      "maxDeviationBps": 100,
+      "primarySource": "0x09bcd126feb91e13007b2c69644c12ab56260473",
+      "secondarySource": "0x1a6302edc9e9dc5efae8dd5e931089ac6dc5322b"
+    },
+    "market2Feed": {
+      "isActive": true,
+      "maxDelay": 1500,
+      "maxDeviationBps": 100,
+      "primarySource": "0x78bfe7a71bd7c39d53d71b8a688bfb4afb216867",
+      "secondarySource": "0x690821211ca653b966db07ded385cfa4c547a6c2"
+    },
+    "maxOracleDelay": 1500,
+    "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588"
+  },
+  "pinMode": "EIP1898_BLOCK_HASH_REQUIRE_CANONICAL",
+  "pmr": {
+    "configPaused": false,
+    "creationPaused": false,
+    "differences": [],
+    "fieldClassifications": [
+      {
+        "field": "markets[0].marketId",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[0].market.underlying",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[0].market.settlementAsset",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[0].market.oracle",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[0].market.symbolBytes32",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[0].market.exists",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[0].market.isActive",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[0].market.isCloseOnly",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[0].risk.initialMarginBps",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[0].risk.maintenanceMarginBps",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[0].risk.liquidationPenaltyBps",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[0].risk.maxPositionSize1e8",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[0].risk.maxOpenInterest1e8",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[0].risk.reduceOnlyDuringCloseOnly",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[0].liquidation.closeFactorBps",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[0].liquidation.priceSpreadBps",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[0].liquidation.minImprovementBps",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[0].liquidation.oracleMaxDelay",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[0].funding.isEnabled",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[0].funding.fundingInterval",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[0].funding.maxFundingRateBps",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[0].funding.maxSkewFundingBps",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[0].funding.oracleClampBps",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[0].funding.impactMidMaxDelay",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[0].maxExecutionDeviationBps",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[0].metadata",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[1].marketId",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[1].market.underlying",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[1].market.settlementAsset",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[1].market.oracle",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[1].market.symbolBytes32",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[1].market.exists",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[1].market.isActive",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[1].market.isCloseOnly",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[1].risk.initialMarginBps",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[1].risk.maintenanceMarginBps",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[1].risk.liquidationPenaltyBps",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[1].risk.maxPositionSize1e8",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[1].risk.maxOpenInterest1e8",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[1].risk.reduceOnlyDuringCloseOnly",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[1].liquidation.closeFactorBps",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[1].liquidation.priceSpreadBps",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[1].liquidation.minImprovementBps",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[1].liquidation.oracleMaxDelay",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[1].funding.isEnabled",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[1].funding.fundingInterval",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[1].funding.maxFundingRateBps",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[1].funding.maxSkewFundingBps",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[1].funding.oracleClampBps",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[1].funding.impactMidMaxDelay",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[1].maxExecutionDeviationBps",
+        "status": "MATCH"
+      },
+      {
+        "field": "markets[1].metadata",
+        "status": "MATCH"
+      },
+      {
+        "field": "sharedOracleDependencyReadback.router",
+        "status": "MATCH"
+      },
+      {
+        "field": "sharedOracleDependencyReadback.globalMaxOracleDelaySeconds",
+        "status": "MATCH"
+      },
+      {
+        "field": "sharedOracleDependencyReadback.market1Feed.primary",
+        "status": "MATCH"
+      },
+      {
+        "field": "sharedOracleDependencyReadback.market1Feed.secondary",
+        "status": "MATCH"
+      },
+      {
+        "field": "sharedOracleDependencyReadback.market1Feed.maxDelaySeconds",
+        "status": "MATCH"
+      },
+      {
+        "field": "sharedOracleDependencyReadback.market1Feed.maxDeviationBps",
+        "status": "MATCH"
+      },
+      {
+        "field": "sharedOracleDependencyReadback.market1Feed.isActive",
+        "status": "MATCH"
+      },
+      {
+        "field": "sharedOracleDependencyReadback.market2Feed.primary",
+        "status": "MATCH"
+      },
+      {
+        "field": "sharedOracleDependencyReadback.market2Feed.secondary",
+        "status": "MATCH"
+      },
+      {
+        "field": "sharedOracleDependencyReadback.market2Feed.maxDelaySeconds",
+        "status": "MATCH"
+      },
+      {
+        "field": "sharedOracleDependencyReadback.market2Feed.maxDeviationBps",
+        "status": "MATCH"
+      },
+      {
+        "field": "sharedOracleDependencyReadback.market2Feed.isActive",
+        "status": "MATCH"
+      },
+      {
+        "field": "marketCreationOrder",
+        "status": "MATCH"
+      },
+      {
+        "field": "nextMarketIdAfterCreation",
+        "status": "MATCH"
+      },
+      {
+        "field": "allowedSettlementAssetsForReplacement",
+        "status": "MATCH"
+      },
+      {
+        "field": "reference.blockNumber/blockHash/timestamp",
+        "reason": "fresh canonical comparison block",
+        "status": "EXPECTED_DIFFERENCE"
+      },
+      {
+        "field": "marketCreatorForReplacement",
+        "reason": "new Timelock-owned PMR not yet deployed",
+        "status": "EXPECTED_DIFFERENCE"
+      },
+      {
+        "field": "guardianForReplacement",
+        "reason": "new PMR guardian requires future Timelock configuration",
+        "status": "EXPECTED_DIFFERENCE"
+      },
+      {
+        "field": "postConfigurationMaintenance.paused",
+        "reason": "intended replacement maintenance control; live source PMR remains separate",
+        "status": "EXPECTED_DIFFERENCE"
+      },
+      {
+        "field": "postConfigurationMaintenance.creationPaused",
+        "reason": "intended replacement maintenance control; live source PMR remains separate",
+        "status": "EXPECTED_DIFFERENCE"
+      },
+      {
+        "field": "postConfigurationMaintenance.configPaused",
+        "reason": "intended replacement maintenance control; live source PMR remains separate",
+        "status": "EXPECTED_DIFFERENCE"
+      }
+    ],
+    "guardian": "0x0000000000000000000000000000000000000000",
+    "marketIds": [
+      1,
+      2
+    ],
+    "markets": [
+      {
+        "funding": {
+          "fundingInterval": 0,
+          "impactMidMaxDelay": 0,
+          "isEnabled": false,
+          "maxFundingRateBps": 0,
+          "maxSkewFundingBps": 0,
+          "oracleClampBps": 0
+        },
+        "liquidation": {
+          "closeFactorBps": 5000,
+          "minImprovementBps": 50,
+          "oracleMaxDelay": 60,
+          "priceSpreadBps": 100
+        },
+        "market": {
+          "exists": true,
+          "isActive": true,
+          "isCloseOnly": false,
+          "oracle": "0xb416406f200b2ef3d7a86a5d5877ed41d9b1a581",
+          "settlementAsset": "0x6eae407f5640b006fac9965182e238582a3b412e",
+          "symbolBytes32": "0x4554482d50455250000000000000000000000000000000000000000000000000",
+          "underlying": "0x4deebc5f537f3b8ba0e3393807b4d699d72bdd02"
+        },
+        "marketId": 1,
+        "maxExecutionDeviationBps": 100,
+        "metadata": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "risk": {
+          "initialMarginBps": 1000,
+          "liquidationPenaltyBps": 500,
+          "maintenanceMarginBps": 750,
+          "maxOpenInterest1e8": 50000000000,
+          "maxPositionSize1e8": 10000000000,
+          "reduceOnlyDuringCloseOnly": true
+        }
+      },
+      {
+        "funding": {
+          "fundingInterval": 0,
+          "impactMidMaxDelay": 0,
+          "isEnabled": false,
+          "maxFundingRateBps": 0,
+          "maxSkewFundingBps": 0,
+          "oracleClampBps": 0
+        },
+        "liquidation": {
+          "closeFactorBps": 5000,
+          "minImprovementBps": 50,
+          "oracleMaxDelay": 60,
+          "priceSpreadBps": 80
+        },
+        "market": {
+          "exists": true,
+          "isActive": true,
+          "isCloseOnly": false,
+          "oracle": "0xb416406f200b2ef3d7a86a5d5877ed41d9b1a581",
+          "settlementAsset": "0x6eae407f5640b006fac9965182e238582a3b412e",
+          "symbolBytes32": "0x4254432d50455250000000000000000000000000000000000000000000000000",
+          "underlying": "0x9d871ac7595e8da271e866608e5145252047967c"
+        },
+        "marketId": 2,
+        "maxExecutionDeviationBps": 100,
+        "metadata": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "risk": {
+          "initialMarginBps": 1200,
+          "liquidationPenaltyBps": 400,
+          "maintenanceMarginBps": 800,
+          "maxOpenInterest1e8": 10000000000,
+          "maxPositionSize1e8": 1000000000,
+          "reduceOnlyDuringCloseOnly": true
+        }
+      }
+    ],
+    "nextMarketId": 3,
+    "owner": "0xc35f7a8a103a9a4464adfaa76b9b514093d23c27",
+    "paused": false,
+    "refresh": "PASS",
+    "registry": "0xAD8B0855d1fd649539A344AD594bf86929cf0FF7",
+    "settlementAllowed": true,
+    "timelockIsMarketCreator": false
+  },
+  "runtimeIdentity": {
+    "clearing": {
+      "address": "0x54d49c088DD27cFc82685b867c182b4bB4aC435c",
+      "bytes": 1159,
+      "keccak256": "0xc010101099ca99f9376c227066f4259fcecc840bfca6a0ceb7328333fe9db591"
+    },
+    "insurance": {
+      "address": "0x009f38440F058d095b61E0E2ee7fAbDF05BE7500",
+      "bytes": 9880,
+      "keccak256": "0x4d226bd7473b3c6d6842b4f3b04f251a3e7a218c2317a8dd5dd829440c486ee7"
+    },
+    "legacyCollateralRisk": {
+      "address": "0xc0f019005a25524a34f2ee8839dcdcc50715dd7b",
+      "bytes": 18323,
+      "keccak256": "0x6e17b8bcb36e4ced1b705cacb511df1640d183c58049d703be1980caf5b0d138"
+    },
+    "oracle": {
+      "address": "0xB416406F200B2Ef3D7a86A5D5877Ed41D9B1A581",
+      "bytes": 6982,
+      "keccak256": "0x1684ec8825d72e4f59c05a6198fd6eb5ba06ff9d2914bbb00ff108796559fb14"
+    },
+    "safe": {
+      "address": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+      "bytes": 171,
+      "keccak256": "0xd7d408ebcd99b2b70be43e20253d6d92a8ea8fab29bd3be7f55b10032331fb4c"
+    },
+    "seizer": {
+      "address": "0x39F928b959cF58369E7C7a3B925e6cBfFA62B669",
+      "bytes": 6432,
+      "keccak256": "0x6d199e027af598ee903513a1ab41e27e2937115c79b8ec85e386d739615befcb"
+    },
+    "timelock": {
+      "address": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "bytes": 4228,
+      "keccak256": "0xb20f9fa764b46a832c7665f07c1b9c3cd6506a58f6885c0e12e88e9bbc55233c"
+    },
+    "vault": {
+      "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "bytes": 15664,
+      "keccak256": "0xf834554ab8eea4ea97136a7c627a3f36bc166c94e5eb360b400d1f2d925b1349"
+    }
+  },
+  "safe": {
+    "modules": [
+      [],
+      "0x0000000000000000000000000000000000000001"
+    ],
+    "nonce": 19,
+    "owners": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "threshold": 2
+  },
+  "seizer": {
+    "oracle": "0xb416406f200b2ef3d7a86a5d5877ed41d9b1a581",
+    "oracleMaxDelay": 600,
+    "owner": "0xc35f7a8a103a9a4464adfaa76b9b514093d23c27",
+    "riskModule": "0xc0f019005a25524a34f2ee8839dcdcc50715dd7b",
+    "vault": "0x00340c360353a5ab784c5bc5c44322a6af0625d3"
+  },
+  "timelock": {
+    "guardian": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+    "minDelay": 86400,
+    "owner": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+    "safeExecutor": true,
+    "safeProposer": true
+  },
+  "vault": {
+    "clearingLedger": 1000000000,
+    "guardian": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+    "insuranceEffective": true,
+    "insuranceLedger": 2100010,
+    "insuranceMapped": true,
+    "marginEngine": "0x506cd65a63c53c66ab572b9f9dd819b7bfe00d30",
+    "oldEngine": true,
+    "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "strandedNew": true,
+    "tokenConfig": {
+      "collateralFactorBps": 10000,
+      "decimals": 6,
+      "isSupported": true
+    },
+    "v1Engine": true
+  },
+  "vaultInsuranceAcl": {
+    "caller": "0x009f38440F058d095b61E0E2ee7fAbDF05BE7500",
+    "present": true,
+    "required": true,
+    "sourcePredicate": "CollateralVaultStorage._isAuthorizedEngine(msg.sender) in onlyMarginEngine for transferBetweenAccounts",
+    "status": "PASS"
+  }
+}

@@ -1,0 +1,139 @@
+{
+  "addressDerivation": "last 20 bytes of keccak256(rlp([verified signer, fresh nonce])) for DIRECT_CREATE; do not force a stale nonce",
+  "artifactPath": "out/PerpMatchingEngineV2.sol/PerpMatchingEngineV2.json",
+  "compilerVersion": "0.8.30+commit.73712a01",
+  "constructorAbi": {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_owner",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_engine",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  "constructorArgs": [
+    "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "D4_CANONICAL_ADDRESS"
+  ],
+  "constructorArgsEncoded": null,
+  "constructorTypes": [
+    "address",
+    "address"
+  ],
+  "contract": "PerpMatchingEngineV2",
+  "creationLinkReferences": {},
+  "creationTransactionData": null,
+  "creationTransactionDataKeccak256": null,
+  "evmVersion": "prague",
+  "expectedOwner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+  "expectedPendingOwner": "0x0000000000000000000000000000000000000000",
+  "expectedPublicAddress": "UNRESOLVED_NO_DEPLOYMENT_SIGNER",
+  "expectedRuntimeHash": null,
+  "gasEstimateAddressScope": "conditional local D4 address",
+  "initialState": {
+    "guardian": "0x0000000000000000000000000000000000000000",
+    "ownerIsExecutor": true,
+    "paused": false,
+    "perpEngine": "D4_CANONICAL_ADDRESS"
+  },
+  "linkedCreationBytecodeKeccak256": "0x7cd4f1444ca222b85d8643053992e2b604f743bb63556bf056f4011a61867eae",
+  "linkedCreationBytecodeSha256": "addd7c0c53e064589078f1550ca4b8d527da62db57663b4b1caba35f9143ef02",
+  "linkedRuntimeTemplateKeccak256": null,
+  "linkedRuntimeTemplateSha256": "ec7783d1720deaf23e6ca50b007a26f4ce63ce09d3b259502fba03d411065133",
+  "localFixtureAddress": "0x0E2F3490a6880139E033D242B2878953Ed695Ce6",
+  "localFixtureRuntimeHash": "0xdafeca3bb64ea22a03b12f3868b96b272aa0b031a57297025444b51b4e2a9d5c",
+  "localGasObservedExcludingIntrinsic": 2219207,
+  "metadataSettings": {
+    "appendCBOR": false,
+    "bytecodeHash": "none"
+  },
+  "noBroadcastAuthorization": true,
+  "optimizer": {
+    "enabled": true,
+    "runs": 0
+  },
+  "postflight": [
+    "canonical receipt status 1",
+    "exact constructor data and creator nonce",
+    "code/runtime hash",
+    "Timelock owner and zero pending owner where supported",
+    "initial guardian, pause state and constructor pointers"
+  ],
+  "precedingReceiptRequired": "D5 canonical receipt and postflight",
+  "predictedAddressCodeCheck": "UNAVAILABLE_NO_SIGNER_OR_NONCE",
+  "readOnlyRpcGasEstimate": 2446882,
+  "runtimeHashKind": "CONSTRUCTOR_DEPENDENT",
+  "runtimeImmutableReferences": {
+    "3826": [
+      {
+        "length": 32,
+        "start": 8536
+      }
+    ],
+    "3828": [
+      {
+        "length": 32,
+        "start": 8725
+      }
+    ],
+    "3830": [
+      {
+        "length": 32,
+        "start": 8482
+      }
+    ],
+    "3832": [
+      {
+        "length": 32,
+        "start": 8615
+      }
+    ],
+    "3834": [
+      {
+        "length": 32,
+        "start": 8653
+      }
+    ],
+    "3837": [
+      {
+        "length": 32,
+        "start": 3238
+      }
+    ],
+    "3840": [
+      {
+        "length": 32,
+        "start": 3279
+      }
+    ]
+  },
+  "runtimeLinkReferences": {},
+  "signerRequirements": {
+    "address": "UNDESIGNATED",
+    "beforePublicReview": [
+      "operator designates existing suitable signer",
+      "fresh chain and signer address verification",
+      "confirmed/pending nonce equality",
+      "balance and EIP-1559/L1 fee review",
+      "CREATE predicted address and live code nonexistence check"
+    ],
+    "mustNotBe": [
+      "owner",
+      "guardian",
+      "executor",
+      "migration authority",
+      "admin"
+    ],
+    "role": "contract creation and gas payment only"
+  },
+  "sourceFile": "src/matching/PerpMatchingEngineV2.sol",
+  "stage": "D6",
+  "viaIR": true
+}

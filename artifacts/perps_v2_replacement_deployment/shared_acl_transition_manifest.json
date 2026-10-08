@@ -1,0 +1,32 @@
+{
+  "authorized": false,
+  "currentStrandedInsurance": true,
+  "currentStrandedVault": true,
+  "futureGrants": [
+    "Vault.setAuthorizedEngine(D4_CANONICAL_ADDRESS,true)",
+    "InsuranceFund.setBackstopCaller(D4_CANONICAL_ADDRESS,true)"
+  ],
+  "futureIndependentRevocations": [
+    "Vault.setAuthorizedEngine(0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15,false)",
+    "InsuranceFund.setBackstopCaller(0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15,false)"
+  ],
+  "grantBeforeDualWindow": [
+    "replacement Engine deployed/configured/SEALED",
+    "both Engines fully maintenance-closed",
+    "backend stopped",
+    "no duplicate Vault/Clearing funding"
+  ],
+  "insurance": "0x009f38440F058d095b61E0E2ee7fAbDF05BE7500",
+  "insuranceVaultCallerAuthorization": true,
+  "replacementEngine": "D4_CANONICAL_ADDRESS",
+  "replacementGrantCalldata": "UNRESOLVED_D4_CANONICAL_ADDRESS",
+  "revocationCalldata": {
+    "insurance": "0x0f62e507000000000000000000000000a2bdc0efe80806ffda20189294dd8a5a1b426f150000000000000000000000000000000000000000000000000000000000000000",
+    "vault": "0x3331c56e000000000000000000000000a2bdc0efe80806ffda20189294dd8a5a1b426f150000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "revocationPrerequisite": "replacement ACL/replay verified and no stranded Engine operational dependency",
+  "schema": "deopt.perps_v2_replacement_deployment.shared_acl_transition.v1",
+  "strandedEngine": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+  "timelock": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+  "vault": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3"
+}

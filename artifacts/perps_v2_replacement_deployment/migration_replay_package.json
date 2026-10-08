@@ -1,0 +1,181 @@
+{
+  "authorized": false,
+  "canonicalSnapshotBlock": 47354411,
+  "canonicalSnapshotBlockHash": "0x78debf6044c4f0d1282f0b8c60d0bb41171844453118a092bca5946a9ce54c89",
+  "forbiddenSideEffects": [
+    "Vault/Clearing funding",
+    "mint",
+    "collateral copy",
+    "rebate budget copy",
+    "realized PnL replay"
+  ],
+  "futureTarget": "D4_CANONICAL_ADDRESS",
+  "orderedSeeds": [
+    {
+      "args": {
+        "cumulativeFundingRate1e18": 0,
+        "lastFundingTimestamp": 1789715546,
+        "marketId": 1
+      },
+      "calldata": "0x2c96f1bc00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006aace45a",
+      "expectedPostcondition": "MarketState(marketId) := (cumulativeFundingRate1e18, lastFundingTimestamp)",
+      "manifestEntity": {
+        "kind": "market",
+        "marketId": 1
+      },
+      "ordinal": 1,
+      "phase": "SEED_MARKET_FUNDING",
+      "precondition": "migrationState == OPEN AND _marketFundingSeeded[marketId] == false",
+      "selector": "0x2c96f1bc",
+      "signature": "adminSeedMarketFunding(uint256,int256,uint64)"
+    },
+    {
+      "args": {
+        "cumulativeFundingRate1e18": 0,
+        "lastFundingTimestamp": 0,
+        "marketId": 2
+      },
+      "calldata": "0x2c96f1bc000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "expectedPostcondition": "MarketState(marketId) := (cumulativeFundingRate1e18, lastFundingTimestamp)",
+      "manifestEntity": {
+        "kind": "market",
+        "marketId": 2
+      },
+      "ordinal": 2,
+      "phase": "SEED_MARKET_FUNDING",
+      "precondition": "migrationState == OPEN AND _marketFundingSeeded[marketId] == false",
+      "selector": "0x2c96f1bc",
+      "signature": "adminSeedMarketFunding(uint256,int256,uint64)"
+    },
+    {
+      "args": {
+        "lastCumulativeFundingRate1e18": 0,
+        "marketId": 1,
+        "openNotional1e8": 3000000,
+        "size1e8": 1000,
+        "trader": "0x290bd12c93e467bf51c51f5273d35bddb19e9274"
+      },
+      "calldata": "0x0ef3a5f7000000000000000000000000290bd12c93e467bf51c51f5273d35bddb19e9274000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000003e800000000000000000000000000000000000000000000000000000000002dc6c00000000000000000000000000000000000000000000000000000000000000000",
+      "expectedPostcondition": "position(trader,marketId) := (size, openNotional, lastCumFundingRate) AND OI updated via _updateMarketOpenInterest",
+      "manifestEntity": {
+        "kind": "position",
+        "marketId": 1,
+        "trader": "0x290bd12c93e467bf51c51f5273d35bddb19e9274"
+      },
+      "ordinal": 3,
+      "phase": "SEED_POSITION",
+      "precondition": "migrationState == OPEN AND _positionSeeded[trader][marketId] == false AND size1e8 != 0 AND sign(openNotional1e8)==sign(size1e8)",
+      "selector": "0x0ef3a5f7",
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)"
+    },
+    {
+      "args": {
+        "lastCumulativeFundingRate1e18": 0,
+        "marketId": 1,
+        "openNotional1e8": -6000,
+        "size1e8": -2,
+        "trader": "0x475fe397fa56884952d350aa9ee1c3946964bc0c"
+      },
+      "calldata": "0x0ef3a5f7000000000000000000000000475fe397fa56884952d350aa9ee1c3946964bc0c0000000000000000000000000000000000000000000000000000000000000001fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe8900000000000000000000000000000000000000000000000000000000000000000",
+      "expectedPostcondition": "position(trader,marketId) := (size, openNotional, lastCumFundingRate) AND OI updated via _updateMarketOpenInterest",
+      "manifestEntity": {
+        "kind": "position",
+        "marketId": 1,
+        "trader": "0x475fe397fa56884952d350aa9ee1c3946964bc0c"
+      },
+      "ordinal": 4,
+      "phase": "SEED_POSITION",
+      "precondition": "migrationState == OPEN AND _positionSeeded[trader][marketId] == false AND size1e8 != 0 AND sign(openNotional1e8)==sign(size1e8)",
+      "selector": "0x0ef3a5f7",
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)"
+    },
+    {
+      "args": {
+        "lastCumulativeFundingRate1e18": 0,
+        "marketId": 1,
+        "openNotional1e8": -2468310000,
+        "size1e8": -1000000,
+        "trader": "0x66858286feea78a05ea093673ea1535e0a52002d"
+      },
+      "calldata": "0x0ef3a5f700000000000000000000000066858286feea78a05ea093673ea1535e0a52002d0000000000000000000000000000000000000000000000000000000000000001fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0bdc0ffffffffffffffffffffffffffffffffffffffffffffffffffffffff6ce094100000000000000000000000000000000000000000000000000000000000000000",
+      "expectedPostcondition": "position(trader,marketId) := (size, openNotional, lastCumFundingRate) AND OI updated via _updateMarketOpenInterest",
+      "manifestEntity": {
+        "kind": "position",
+        "marketId": 1,
+        "trader": "0x66858286feea78a05ea093673ea1535e0a52002d"
+      },
+      "ordinal": 5,
+      "phase": "SEED_POSITION",
+      "precondition": "migrationState == OPEN AND _positionSeeded[trader][marketId] == false AND size1e8 != 0 AND sign(openNotional1e8)==sign(size1e8)",
+      "selector": "0x0ef3a5f7",
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)"
+    },
+    {
+      "args": {
+        "lastCumulativeFundingRate1e18": 0,
+        "marketId": 1,
+        "openNotional1e8": -3000000,
+        "size1e8": -1000,
+        "trader": "0x77ca9dd6ccce2d692fb23877a2db7178807b0020"
+      },
+      "calldata": "0x0ef3a5f700000000000000000000000077ca9dd6ccce2d692fb23877a2db7178807b00200000000000000000000000000000000000000000000000000000000000000001fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc18ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd239400000000000000000000000000000000000000000000000000000000000000000",
+      "expectedPostcondition": "position(trader,marketId) := (size, openNotional, lastCumFundingRate) AND OI updated via _updateMarketOpenInterest",
+      "manifestEntity": {
+        "kind": "position",
+        "marketId": 1,
+        "trader": "0x77ca9dd6ccce2d692fb23877a2db7178807b0020"
+      },
+      "ordinal": 6,
+      "phase": "SEED_POSITION",
+      "precondition": "migrationState == OPEN AND _positionSeeded[trader][marketId] == false AND size1e8 != 0 AND sign(openNotional1e8)==sign(size1e8)",
+      "selector": "0x0ef3a5f7",
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)"
+    },
+    {
+      "args": {
+        "lastCumulativeFundingRate1e18": 0,
+        "marketId": 1,
+        "openNotional1e8": 6000,
+        "size1e8": 2,
+        "trader": "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34"
+      },
+      "calldata": "0x0ef3a5f70000000000000000000000008b94a83d1ad3bd2337b1886e7962ca8e0bba9a340000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000017700000000000000000000000000000000000000000000000000000000000000000",
+      "expectedPostcondition": "position(trader,marketId) := (size, openNotional, lastCumFundingRate) AND OI updated via _updateMarketOpenInterest",
+      "manifestEntity": {
+        "kind": "position",
+        "marketId": 1,
+        "trader": "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34"
+      },
+      "ordinal": 7,
+      "phase": "SEED_POSITION",
+      "precondition": "migrationState == OPEN AND _positionSeeded[trader][marketId] == false AND size1e8 != 0 AND sign(openNotional1e8)==sign(size1e8)",
+      "selector": "0x0ef3a5f7",
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)"
+    },
+    {
+      "args": {
+        "lastCumulativeFundingRate1e18": 0,
+        "marketId": 1,
+        "openNotional1e8": 2468310000,
+        "size1e8": 1000000,
+        "trader": "0xff287410852b9328437eac353720e5476bc5f837"
+      },
+      "calldata": "0x0ef3a5f7000000000000000000000000ff287410852b9328437eac353720e5476bc5f837000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000f424000000000000000000000000000000000000000000000000000000000931f6bf00000000000000000000000000000000000000000000000000000000000000000",
+      "expectedPostcondition": "position(trader,marketId) := (size, openNotional, lastCumFundingRate) AND OI updated via _updateMarketOpenInterest",
+      "manifestEntity": {
+        "kind": "position",
+        "marketId": 1,
+        "trader": "0xff287410852b9328437eac353720e5476bc5f837"
+      },
+      "ordinal": 8,
+      "phase": "SEED_POSITION",
+      "precondition": "migrationState == OPEN AND _positionSeeded[trader][marketId] == false AND size1e8 != 0 AND sign(openNotional1e8)==sign(size1e8)",
+      "selector": "0x0ef3a5f7",
+      "signature": "adminSeedPosition(address,uint256,int256,int256,int256)"
+    }
+  ],
+  "preSeal": "prove all six tuples, market state, OI, indexes, zero debt and unchanged shared custody/ledger",
+  "sealCall": "0x05d5af5b039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d",
+  "sealSnapshotHash": "0x039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d",
+  "sourceManifestSha256": "4bfcf23520716532acf5aef967042f3fe7b19ca2182b19dc7e698c332d59337e"
+}

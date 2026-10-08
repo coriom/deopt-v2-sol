@@ -1,0 +1,71 @@
+{
+  "artifactSha256": {
+    "build_manifest.json": "1322a81caa734106cda3b625c3c31b7d322eb0e8a165c9b931077340b396493c",
+    "d1_pmr_deployment_review.json": "f4fcefc30018e5f7b62225d818152a2b9c739e81719e7b1acf3e42e78f64be5e",
+    "d2_fmv2_deployment_template.json": "209cf52b742314934eef93c432a48501072f954db26b558a87109652499da0e3",
+    "d3_seizer_deployment_template.json": "b0649f1829517589661c090dec82c3f964fd28afe2cf57a408390ec809436ad5",
+    "d4_engine_deployment_template.json": "25966b8a2d33b0d8fa184a86c4f1890873cc356bc189aa304919d77e386f4692",
+    "d5_risk_deployment_template.json": "321d4c6126fe3afad9857342378609784ddefee67b24f788bc28be5e41d5d931",
+    "d6_pme_deployment_template.json": "df0bf2335c0ec557140897ee55d9cc223eb08a94172f319d395b232794379b65",
+    "first_trade_guard_binding.json": "35706cf2bd294099e334a9426048154046cd0c3c87a818ea4fcfae91a1da190c",
+    "library_link_evidence.json": "1228c81f40e8ae53937e0448a3c263930d55b0185f0384fb212e318233ee9085",
+    "live_shared_state.json": "5096cf2960a0adac96d4a13cb603713f80b660e44d2f71d23b0a7c6e1029f8f0",
+    "local_rehearsal.json": "30e7b1580632674906f752e4045d8d67c7f4de00bda898100a4833229bbd94f0",
+    "migration_replay_package.json": "5f9fbfd7c2eb1b01042d6f2e9de37849575760db8bd6db56a4a66c3c1539bcbb",
+    "shared_acl_transition_manifest.json": "d427cdd8e9a994146e0d6acc1695b10961c8042bd53e88248d5287feb3683fd9",
+    "shared_runtime_comparison.json": "f6d6ab3d5f153322262eff7d5a03a6d26da3c47af40996f3d6dd0949a5b44ade",
+    "timelock_configuration_manifest.json": "9e3e10daad602bfd3831cab3ee469d74a0aa88cf321fcb49381381cb44fd2b6a"
+  },
+  "chainId": 84532,
+  "constructorRuntimeHashesResolved": false,
+  "deploymentAddressMode": "DIRECT_CREATE",
+  "deploymentSignerStatus": "NO_SIGNER_DESIGNATED",
+  "exactLibraryLinksResolved": true,
+  "futureAddressRule": "refresh signer nonce and verify every preceding canonical receipt; no nonce allocation now",
+  "pmrLiveRefresh": "PASS",
+  "publicBroadcastAuthorized": false,
+  "readiness": "BLOCKED_DEPLOYMENT_SIGNER_UNDESIGNATED",
+  "reviewBlockHash": "0x607e68bdceb65b18221606598dc7dbdc139f7bbfd05717bc62f56c1fd61e5763",
+  "reviewBlockNumber": 47829878,
+  "schema": "deopt.perps_v2_replacement_deployment.package.v1",
+  "sourceCommit": "25c36670883604c1ef5229642ee6548aea6796c3",
+  "stages": [
+    {
+      "contract": "PerpMarketRegistry",
+      "id": "D1",
+      "requiresPreviousCanonicalReceipt": false,
+      "reviewFile": "d1_pmr_deployment_review.json"
+    },
+    {
+      "contract": "FeesManagerV2",
+      "id": "D2",
+      "requiresPreviousCanonicalReceipt": true,
+      "reviewFile": "d2_fmv2_deployment_template.json"
+    },
+    {
+      "contract": "CollateralSeizer",
+      "id": "D3",
+      "requiresPreviousCanonicalReceipt": true,
+      "reviewFile": "d3_seizer_deployment_template.json"
+    },
+    {
+      "contract": "PerpEngineV2",
+      "id": "D4",
+      "requiresPreviousCanonicalReceipt": true,
+      "reviewFile": "d4_engine_deployment_template.json"
+    },
+    {
+      "contract": "PerpRiskModule",
+      "id": "D5",
+      "requiresPreviousCanonicalReceipt": true,
+      "reviewFile": "d5_risk_deployment_template.json"
+    },
+    {
+      "contract": "PerpMatchingEngineV2",
+      "id": "D6",
+      "requiresPreviousCanonicalReceipt": true,
+      "reviewFile": "d6_pme_deployment_template.json"
+    }
+  ],
+  "vaultInsuranceLiveAcl": "PASS"
+}

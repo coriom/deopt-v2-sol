@@ -1,0 +1,21 @@
+{
+  "comparisonBlockHash": "0x607e68bdceb65b18221606598dc7dbdc139f7bbfd05717bc62f56c1fd61e5763",
+  "comparisonBlockNumber": 47829878,
+  "immutableMask": "library_deploy_address only; all other bytes match linked frozen artifact",
+  "libraries": [
+    {
+      "address": "0xf0C5652277CF88B508E05F7aB54949fCDF0360A5",
+      "name": "PerpEngineSeizureLib",
+      "runtimeBytes": 3628,
+      "runtimeKeccak256": "0xf55a4667bd9b69f73fd6bd0f3e24ea48de8295293893673b2af9c9f0cdcb5f1d",
+      "unmaskedTemplateDifferences": 0
+    },
+    {
+      "address": "0x69F3868Ff47C8bCcC45211B787a6e15D0282E77D",
+      "name": "PerpEngineLiquidationLib",
+      "runtimeBytes": 6148,
+      "runtimeKeccak256": "0xd7e6ef4cfd0904c0736c7d0bc08d602a0b6218e14f6c4468841a46b849d4ed2c",
+      "unmaskedTemplateDifferences": 0
+    }
+  ]
+}

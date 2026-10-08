@@ -1,0 +1,17 @@
+{
+  "schema": "deopt.perps_v2_replacement_deployment.local_rehearsal.v1",
+  "sourceCommit": "25c36670883604c1ef5229642ee6548aea6796c3",
+  "scope": "Foundry local fork at Base Sepolia block 47829878; CREATEs by impersonated local actor 0x00000000000000000000000000000000000000d3; no public send or signer",
+  "test": "test/perp/PerpsV2ReplacementDeploymentPackageFork.t.sol:testD1ThroughD6LocalForkConstructorPostflight",
+  "result": {"passed": 1, "failed": 0, "skipped": 0},
+  "gasInterpretation": "gasleft deltas are local in-test observations excluding deployment transaction intrinsic gas; eth_estimateGas values below include RPC deployment transaction overhead. D4-D6 RPC estimates use synthetic local fixture dependency addresses and are conditional, not executable public calldata.",
+  "stages": [
+    {"stage": "D1", "localAddress": "0x0b107A4a63194CC053F8773a139E9CcC5fc193F5", "runtimeKeccak256": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5", "localGasObserved": 2773156, "rpcGasEstimate": 3034081, "estimateInput": "exact D1 constructor"},
+    {"stage": "D2", "localAddress": "0xb875Dbccf7C849Fc687AFb35801047D51B806473", "runtimeKeccak256": "0x732101d67fb112f6d3159f32852071bbf995f8bd1995335cf9a2b0f167d08726", "localGasObserved": 1800480, "rpcGasEstimate": 1984130, "estimateInput": "exact D2 constructor"},
+    {"stage": "D3", "localAddress": "0x51fc2DB3130D4899c9bf2942A83b463fC5d23ef5", "runtimeKeccak256": "0x6d199e027af598ee903513a1ab41e27e2937115c79b8ec85e386d739615befcb", "localGasObserved": 1417934, "rpcGasEstimate": 1564663, "estimateInput": "exact D3 constructor"},
+    {"stage": "D4", "localAddress": "0x28E241e780f147c1cE5D3C5dAC4b05940Ca03245", "runtimeKeccak256": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785", "localGasObserved": 5211675, "rpcGasEstimate": 5679125, "estimateInput": "conditional local D1 address"},
+    {"stage": "D5", "localAddress": "0xb0B10b88d9BB55Ea87e0251ad0d2B607Ec451a7E", "runtimeKeccak256": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c", "localGasObserved": 2135523, "rpcGasEstimate": 2344674, "estimateInput": "conditional local D4 address"},
+    {"stage": "D6", "localAddress": "0x0E2F3490a6880139E033D242B2878953Ed695Ce6", "runtimeKeccak256": "0xdafeca3bb64ea22a03b12f3868b96b272aa0b031a57297025444b51b4e2a9d5c", "localGasObserved": 2219207, "rpcGasEstimate": 2446882, "estimateInput": "conditional local D4 address", "localDomainSeparator": "0x426354fe64f3cb1f528755e722f155b24cc4f861524826c624f0bb59d882c007"}
+  ],
+  "source": "Targeted forge test -j 1 with explicit verified library links; six local constructor postflights asserted in strict sequence"
+}

@@ -1,0 +1,27 @@
+{
+  "schema": "deopt.perps_v2_replacement_deployment.shared_runtime_comparison.v1",
+  "comparisonBlockNumber": 47829878,
+  "comparisonBlockHash": "0x607e68bdceb65b18221606598dc7dbdc139f7bbfd05717bc62f56c1fd61e5763",
+  "vault": {
+    "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+    "liveRuntimeBytes": 15664,
+    "liveRuntimeKeccak256": "0xf834554ab8eea4ea97136a7c627a3f36bc166c94e5eb360b400d1f2d925b1349",
+    "matchingHistoricalSourceRevision": "2ee93cad8d4ecd092ae95bec84d7f1c7654375bb",
+    "historicalRuntimeKeccak256": "0xf834554ab8eea4ea97136a7c627a3f36bc166c94e5eb360b400d1f2d925b1349",
+    "historicalCompiler": "0.8.30",
+    "historicalBuildSettings": "optimizer enabled, runs 0, viaIR true, bytecode hash none, CBOR disabled",
+    "currentArtifactRuntimeBytes": 15755,
+    "currentArtifactRuntimeKeccak256": "0xd5019e8de23937c3a0dcd64900ec945fd7746452fcfe3f646233560678dfb0a5",
+    "sourceDeltaSinceHistorical": "Commit 5badb64 adds transferFromInternalAccount; transferBetweenAccounts and onlyMarginEngine/_isAuthorizedEngine are unchanged between the matching historical revision and frozen replacement source",
+    "aclPredicate": "transferBetweenAccounts calls onlyMarginEngine, which requires _isAuthorizedEngine(msg.sender); that accepts marginEngine or isAuthorizedEngine[caller]"
+  },
+  "insurance": {
+    "address": "0x009f38440F058d095b61E0E2ee7fAbDF05BE7500",
+    "liveRuntimeBytes": 9880,
+    "liveRuntimeKeccak256": "0x4d226bd7473b3c6d6842b4f3b04f251a3e7a218c2317a8dd5dd829440c486ee7",
+    "currentArtifactUnmaskedDifferences": 0,
+    "maskedReferences": "only artifact-declared collateralVault constructor immutables",
+    "payoutPath": "coverVaultShortfall calls shared Vault.transferBetweenAccounts as InsuranceFund address"
+  },
+  "conclusion": "live Vault historical runtime exactly reproduced; live Insurance runtime equals current artifact except declared constructor immutables; InsuranceFund is an effective Vault-authorized engine at the comparison block"
+}
