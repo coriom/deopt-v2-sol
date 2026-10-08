@@ -1,0 +1,158 @@
+{
+  "chainId": 84532,
+  "d1": {
+    "address": "0x6B3D846536116082dC4E7227861C341Bb85Ee963",
+    "configPaused": false,
+    "creationPaused": false,
+    "guardian": "0x0000000000000000000000000000000000000000",
+    "marketIds": [],
+    "nextMarketId": 1,
+    "owner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "paused": false,
+    "pendingOwner": "0x0000000000000000000000000000000000000000",
+    "receiptBlockHash": "0xb322ad08be5c04bbff8072ed31be17d3a195495cac3fcb7183c7123323c2d07f",
+    "receiptBlockNumber": 47840346,
+    "receiptCanonical": true,
+    "receiptStatus": 1,
+    "runtimeHash": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5",
+    "transactionHash": "0x8d361c5bc913deb9aa10c2638b8fc2a687c54998b3bf8c695a34c0548d921cba"
+  },
+  "d2": {
+    "addressMode": "DIRECT_CREATE",
+    "compilerVersion": "0.8.30+commit.73712a01",
+    "constructorAbi": {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "owner_",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "feeRecipient_",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    "constructorArgs": [
+      "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588"
+    ],
+    "constructorArgsEncoded": "0x000000000000000000000000a67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588000000000000000000000000a67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "creationBytecodeKeccak256": "0x906b8877876f8756432bcbebcd383b09e75d1b0c74ac473673fe210f5ba5e3b8",
+    "creationBytecodeLength": 9207,
+    "creationBytecodeSha256": "4a13dc2965c91d71debf33da355322ad3d8a90a19112bf46b9798417207c28a8",
+    "creationDataKeccak256": "0xe9eb51f9ea8910be2be794f5f69441bfefe68c8ec69ae424ebcd3ed051f78169",
+    "creationDataLength": 9271,
+    "creationDataSha256": "9fcc2a1d209f9f711f9028d14f79c669312b176a3fb9843d6b35e65100bb607c",
+    "evmVersion": "prague",
+    "feeRecipient": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "initcodeKeccak256": "0xe9eb51f9ea8910be2be794f5f69441bfefe68c8ec69ae424ebcd3ed051f78169",
+    "legacyClaimsImported": false,
+    "libraryLinkReferences": {},
+    "localExactCreationTest": "PASS",
+    "merkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "metadata": {
+      "appendCBOR": false,
+      "bytecodeHash": "none"
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 0
+    },
+    "owner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "predictedAddress": "0x9947F42cC29A32992bbf2030ee49E35C839EDEd5",
+    "predictedAddressCode": "0x",
+    "protocolFeeVault": "0x0000000000000000000000000000000000000000",
+    "rebateBudgetRawMUSDC": 0,
+    "rebateFundingAccount": "0x0000000000000000000000000000000000000000",
+    "replacementEngineFeeConsumerAtDeployment": false,
+    "rootValidFrom": 0,
+    "rootValidUntil": 0,
+    "runtimeHash": "0x732101d67fb112f6d3159f32852071bbf995f8bd1995335cf9a2b0f167d08726",
+    "runtimeImmutableReferences": {},
+    "runtimeLength": 6727,
+    "sourcePath": "src/fees/FeesManagerV2.sol",
+    "sourceSha256": "fa6187a52e74d702e42eb4173466704c7f29815fe01c2b16ca9405e80437c405",
+    "viaIR": true
+  },
+  "deployer": {
+    "address": "0xDA9146F7A0aAcC41EB7Fe7e0d27E3e7ff0ABb9C0",
+    "balanceWei": "1978936768993618",
+    "code": "0x",
+    "confirmedNonce": 1,
+    "pendingNonce": 1
+  },
+  "feeLiabilityManifestSha256": "5bf7cb0159054f4127e49501009c793fed9a240fa2d9a6fab8558c02fa9953fe",
+  "gasPlanning": {
+    "balanceSufficientForPlanning": true,
+    "baseFeePerGasWei": 5000000,
+    "exactLiveEstimateGas": 1984130,
+    "feeEnvelopeApproved": false,
+    "gasPriceWei": 6000000,
+    "planningOnlyFeeCapWei": 20000000,
+    "planningOnlyGasUnits": 2380956,
+    "planningOnlyL1AndVariationReserveWei": "500000000000000",
+    "planningOnlyTotalWei": "547619120000000",
+    "previousEstimateGas": 1984130,
+    "priorityFeePerGasWei": 1000000
+  },
+  "legacy": {
+    "address": "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f",
+    "claimsNote": "Legacy tier/claim mapping is not enumerable. Root window has expired, so new claims under that root are unavailable. Existing claimed tiers and accounting budget stay on legacy; no liabilities are copied. Owner key loss blocks root renewal.",
+    "feeRecipient": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "merkleRoot": "0xd8a627d7a9b600370e6f490fdd789150d7f9c4ea2f09752c88121d1f758fc2df",
+    "owner": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+    "protocolFeeVaultGetter": "UNAVAILABLE_IN_LEGACY_RUNTIME",
+    "rebateBudgetRawMUSDC": 999977,
+    "rebateFundingAccount": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "rootExpiredAtReview": true,
+    "rootValidFrom": 1780099200,
+    "rootValidUntil": 1781913600,
+    "settlementAsset": "0x6eAe407f5640B006faC9965182e238582A3B412E"
+  },
+  "policy": {
+    "d1PmrConstructorDependency": false,
+    "feeRecipient": "ProtocolTimelock as committed constructor argument and live legacy fee recipient",
+    "fmv2Implementation": "CURRENT_SOURCE",
+    "futureEngineConsumerGrant": "SEPARATE_TIMELOCK_REVIEW_AFTER_REPLACEMENT_ENGINE_EXISTS",
+    "legacyLiabilityStrategy": "KEEP_ON_LEGACY",
+    "protocolFeeVault": "UNSET_ZERO_ADDRESS"
+  },
+  "reviewBlockHash": "0x91ac056a8c988b37c9c9eb495935152e21fc965d98215ef3540e368e7de6c991",
+  "reviewBlockNumber": 47840671,
+  "reviewBlockTimestamp": 1791449630,
+  "schema": "perps-v2-replacement-d2-fmv2-preparation-v1",
+  "sourceCommit": "25c36670883604c1ef5229642ee6548aea6796c3",
+  "sourceManifestSha256": "2526f2fcfa8386b34d6b44638929e8b68d90875754d4dce636f0924ccdcdfc1b",
+  "startingRepositoryCommit": "f95651ca71e77c62de59a8fa12857d6b75e01c48",
+  "status": "PASS_PREPARATION_ONLY_NO_BROADCAST_AUTHORIZATION",
+  "templatePath": "artifacts/perps_v2_replacement_deployment/d2_fmv2_deployment_template.json",
+  "templateSha256": "209cf52b742314934eef93c432a48501072f954db26b558a87109652499da0e3",
+  "validation": {
+    "buildReproduced": true,
+    "constructorArgsExact": true,
+    "doubleLiabilityCheck": "PASS",
+    "localRuntimeHashMatched": true,
+    "publicTransactionSent": false,
+    "tests": {
+      "exactCreation": {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0
+      },
+      "feeManagerUnit": {
+        "failed": 0,
+        "passed": 89,
+        "skipped": 0
+      },
+      "legacyLiability": {
+        "failed": 0,
+        "passed": 1,
+        "skipped": 0
+      }
+    }
+  }
+}
