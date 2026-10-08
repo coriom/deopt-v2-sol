@@ -1,0 +1,157 @@
+{
+  "broadcastAuthorized": false,
+  "build": {
+    "compiler": "0.8.30+commit.73712a01",
+    "constructorAbi": [
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "_owner",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+      }
+    ],
+    "constructorAbiEncoding": "0x000000000000000000000000a67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "constructorArgs": [
+      "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588"
+    ],
+    "contract": "PerpMarketRegistry",
+    "creationBytecodeKeccak256": "0x33e91b43bb9cbb7ee949d94c3675984ec10186d7e8f23318679c6fd1540584e5",
+    "creationBytecodeLength": 13634,
+    "creationBytecodeSha256": "423ca7c2c4d63b63eb4650d4a49733ab060cdd9ecc5cd0cc64c955036d94c9c1",
+    "creationDataKeccak256": "0x04e445c4ce66e0e221f706cb58c7a55b41f6d98a1de85701d8531f9aa2d074b1",
+    "creationDataLength": 13666,
+    "creationDataSha256": "0910361c3baefddc9beb2aa3264bc60b10a7d0e881f8d4e6dc9cfdb7774a8897",
+    "evmVersion": "prague",
+    "expectedRuntimeKeccak256": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5",
+    "linkReferences": {},
+    "metadata": {
+      "appendCBOR": false,
+      "bytecodeHash": "none"
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 0
+    },
+    "runtimeLinkReferences": {},
+    "sourceFile": "src/perp/PerpMarketRegistry.sol",
+    "viaIR": true
+  },
+  "canonicalD1ReviewPath": "artifacts/perps_v2_replacement_deployment/d1_pmr_deployer_bound_review.json",
+  "canonicalD1ReviewSha256": "78bc03524a25990ed1b1beebd26f9b62a4b514b9b1b01b38f29dba2d2c005920",
+  "chain": {
+    "canonicalHashBeforeAfterMatched": true,
+    "chainId": 84532,
+    "pinMode": "EIP1898_BLOCK_HASH_REQUIRE_CANONICAL",
+    "reviewBlockHash": "0x8b28cce63ae06227aa935cf04196081c0ff00501f237093d026ced1fbae8e447",
+    "reviewBlockNumber": 47838848,
+    "reviewBlockTimestamp": 1791445984
+  },
+  "deployer": {
+    "address": "0xDA9146F7A0aAcC41EB7Fe7e0d27E3e7ff0ABb9C0",
+    "balanceWei": 2000000000000000,
+    "code": "0x",
+    "confirmedNonce": 0,
+    "independentCreateAddressMethod": "cast compute-address --nonce 0 and package RLP derivation",
+    "pendingNonce": 0,
+    "predictedD1Address": "0x6B3D846536116082dC4E7227861C341Bb85Ee963",
+    "predictedD1Code": "0x"
+  },
+  "fees": {
+    "balanceSufficient": true,
+    "baseFeePerGasWei": 5000000,
+    "estimateGasWeiEquivalentUnits": 3034081,
+    "gasPriceRecommendationWei": 6000000,
+    "headroomPercent": 21.948,
+    "historicalEstimateGasUnits": 3034081,
+    "l1FeePlanningAllowanceWei": 100000000000000,
+    "l1FeeUpperBoundQuoteWei": 10730,
+    "l1QuotePayloadBytes": 13794,
+    "maxExecutionGasCostWei": 74000000000000,
+    "maxFeePerGasWei": 20000000,
+    "maxPriorityFeePerGasWei": 2000000,
+    "maxTotalCostPlanningWei": 174000000000000,
+    "note": "L1 allowance is a planning reserve, not a protocol-enforced future maximum; refresh at execution review",
+    "observationBlockHash": "0xb85ffd6a461e958a5716514b11dda8850e899e31459a1af9345acd8c20f8141f",
+    "observationBlockNumber": 47838934,
+    "priorityRecommendationWei": 1000000,
+    "projectedBalanceAfterPlanningMaxWei": 1826000000000000,
+    "proposedGasLimit": 3700000,
+    "recentFeeHistory": "5 of 5 base fees 5000000 wei; 25/50/75th percentile priority 1000000 wei"
+  },
+  "focusedTests": {
+    "forgeExactCreation": {
+      "failed": 0,
+      "passed": 1,
+      "skipped": 0
+    },
+    "forgeGuardian": {
+      "failed": 0,
+      "passed": 5,
+      "skipped": 0
+    },
+    "pythonPackage": {
+      "failed": 0,
+      "passed": 10,
+      "skipped": 0
+    }
+  },
+  "frozenSourceCommit": "25c36670883604c1ef5229642ee6548aea6796c3",
+  "guardianPolicy": {
+    "focusedTestsPassed": 5,
+    "guardianCanRelease": false,
+    "ownerCanRelease": true,
+    "status": "PAUSE_ONLY"
+  },
+  "localRehearsal": {
+    "configPaused": false,
+    "creationPaused": false,
+    "deployerIsMarketCreator": false,
+    "guardian": "0x0000000000000000000000000000000000000000",
+    "marketIds": [],
+    "nextMarketId": 1,
+    "owner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "paused": false,
+    "pendingOwner": "0x0000000000000000000000000000000000000000",
+    "result": "PASS",
+    "runtimeKeccak256": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5",
+    "scope": "isolated local EVM exact committed creationTransactionData; no public deploy",
+    "timelockIsMarketCreator": true
+  },
+  "originalPackageSha256": "4d2940751d06471e3cd6ca3a298db4e68c1a4b1872d9ca51f3371b69a42ea8b9",
+  "pmrConfiguration": {
+    "drift": "NONE",
+    "liveDifferenceCount": 0,
+    "liveMarketIds": [
+      1,
+      2
+    ],
+    "liveNextMarketId": 3,
+    "manifestSha256": "accf5770fed96c52cb869c868822697e98a3acc2b6b9f35ab6922e2fc945d20c",
+    "marketsNotCreatedByD1": true
+  },
+  "postflightChecklist": [
+    "fresh chainId 84532 and deployer confirmed/pending nonce 0 before any separately authorized signing",
+    "canonical public receipt status 1 with sender, nonce 0, type-2 fees, value 0 and exact initcode equality",
+    "receipt contractAddress equals predicted D1 address; transaction hash, receipt and block agree",
+    "code exists and runtime Keccak equals expected",
+    "owner is ProtocolTimelock; pendingOwner zero; guardian zero; deployer has no authority",
+    "paused, creationPaused and configPaused false; nextMarketId 1; market IDs empty; Timelock market creator true; deployer market creator false",
+    "no shared Vault, Insurance, Oracle or legacy PMR state mutation attributable to D1",
+    "no D2 preparation or execution until public D1 postflight passes"
+  ],
+  "reviewStartingCommit": "fb68ccf3fa441e6965ce1ede59ef3c94592a7681",
+  "schema": "deopt.perps_v2.d1_final_review.v1",
+  "signerBoundPackageSha256": "672ed9b2d0341041816f496df41f796042673996ff7604253b81651d7aeb8b71",
+  "sourceManifestSha256": "2526f2fcfa8386b34d6b44638929e8b68d90875754d4dce636f0924ccdcdfc1b",
+  "status": "PASS_AT_RECORDED_BLOCK_ONLY",
+  "unsignedIntent": {
+    "notATransactionHash": true,
+    "path": "artifacts/perps_v2_replacement_deployment/d1_pmr_unsigned_intent.json",
+    "sha256": "2614b39d7d0163fc7312cd2b6a5fac5f1b8db1e2d7d372d188265694ce4d4454"
+  }
+}
