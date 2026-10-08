@@ -1,0 +1,218 @@
+{
+  "chainId": 84532,
+  "d1": {
+    "configPaused()": 0,
+    "creationPaused()": 0,
+    "getAllMarketIds()": "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000",
+    "guardian()": "0x0000000000000000000000000000000000000000",
+    "isMarketCreator(0xDA9146F7A0aAcC41EB7Fe7e0d27E3e7ff0ABb9C0)": 0,
+    "isMarketCreator(0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588)": 1,
+    "nextMarketId()": 1,
+    "owner()": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "paused()": 0,
+    "pendingOwner()": "0x0000000000000000000000000000000000000000",
+    "runtimeHash": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5",
+    "runtimeLength": 13317
+  },
+  "d1Receipt": {
+    "blockHash": "0xb322ad08be5c04bbff8072ed31be17d3a195495cac3fcb7183c7123323c2d07f",
+    "blockNumber": 47840346,
+    "canonical": true,
+    "contractAddress": "0x6b3d846536116082dc4e7227861c341bb85ee963",
+    "from": "0xda9146f7a0aacc41eb7fe7e0d27e3e7ff0abb9c0",
+    "nonce": 0,
+    "status": 1
+  },
+  "d2": {
+    "compilerVersion": "0.8.30+commit.73712a01",
+    "constructorAbi": {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "owner_",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "feeRecipient_",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    "constructorArgs": [
+      "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588"
+    ],
+    "constructorArgsEncoded": "0x000000000000000000000000a67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588000000000000000000000000a67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "creationBytecodeKeccak256": "0x906b8877876f8756432bcbebcd383b09e75d1b0c74ac473673fe210f5ba5e3b8",
+    "creationBytecodeLength": 9207,
+    "creationBytecodeSha256": "4a13dc2965c91d71debf33da355322ad3d8a90a19112bf46b9798417207c28a8",
+    "creationDataKeccak256": "0xe9eb51f9ea8910be2be794f5f69441bfefe68c8ec69ae424ebcd3ed051f78169",
+    "creationDataLength": 9271,
+    "creationDataSha256": "9fcc2a1d209f9f711f9028d14f79c669312b176a3fb9843d6b35e65100bb607c",
+    "evmVersion": "prague",
+    "expectedRuntimeHash": "0x732101d67fb112f6d3159f32852071bbf995f8bd1995335cf9a2b0f167d08726",
+    "feeRecipientArgument": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "legacyClaimsImported": false,
+    "libraryLinkReferences": {},
+    "localExactRehearsal": "PASS",
+    "localRuntimeHash": "0x732101d67fb112f6d3159f32852071bbf995f8bd1995335cf9a2b0f167d08726",
+    "merkleRootInitial": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "metadata": {
+      "appendCBOR": false,
+      "bytecodeHash": "none"
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 0
+    },
+    "ownerArgument": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "predictedAddress": "0x9947F42cC29A32992bbf2030ee49E35C839EDEd5",
+    "predictedAddressCode": "0x",
+    "protocolFeeVaultInitial": "0x0000000000000000000000000000000000000000",
+    "rebateBudgetInitialRawMUSDC": 0,
+    "rebateFundingAccountInitial": "0x0000000000000000000000000000000000000000",
+    "replacementEngineFeeConsumerInitial": false,
+    "runtimeImmutableReferences": {},
+    "sourceFile": "src/fees/FeesManagerV2.sol",
+    "sourceSha256": "fa6187a52e74d702e42eb4173466704c7f29815fe01c2b16ca9405e80437c405",
+    "viaIR": true
+  },
+  "deployer": {
+    "balanceWei": 1978936768993618,
+    "code": "0x",
+    "confirmedNonce": 1,
+    "pendingNonce": 1
+  },
+  "feeReview": {
+    "balanceSufficient": true,
+    "baseFeeWei": 5000000,
+    "feeEnvelopeAuthorized": false,
+    "feeHistory": {
+      "baseFeePerGasWei": [
+        5000000,
+        5000000,
+        5000000,
+        5000000,
+        5000000,
+        5000000
+      ],
+      "oldestBlock": 47842213,
+      "rewardWei": [
+        [
+          1000000,
+          1000000,
+          1000000
+        ],
+        [
+          1000000,
+          1000000,
+          1000000
+        ],
+        [
+          1000000,
+          1000000,
+          1000000
+        ],
+        [
+          1000000,
+          1000000,
+          1000000
+        ],
+        [
+          1000000,
+          1000000,
+          1000000
+        ]
+      ]
+    },
+    "gasEstimate": 1984130,
+    "gasHeadroomPercent": 20.9598,
+    "gasPriceRecommendationWei": 6000000,
+    "l1Caveat": "L1 allowance is a planning reserve, not a hard bound on a later fee",
+    "l1FeePlanningAllowanceWei": "100000000000000",
+    "l1FeeUpperBoundAtReviewWei": "7934",
+    "l1Oracle": "0x420000000000000000000000000000000000000F",
+    "l1OracleMethod": "getL1FeeUpperBound(uint256)",
+    "l1QuoteBytes": 10000,
+    "maxExecutionGasCostWei": "48000000000000",
+    "maxTotalPlanningCostWei": "148000000000000",
+    "priorGasEstimate": 1984130,
+    "priorityFeeRecommendationWei": 1000000,
+    "projectedBalanceAfterMaxPlanningCostWei": "1830936768993618",
+    "proposedGasLimit": 2400000,
+    "proposedMaxFeePerGasWei": 20000000,
+    "proposedMaxPriorityFeePerGasWei": 2000000
+  },
+  "focusedTests": {
+    "d2ExactCreation": {
+      "failed": 0,
+      "passed": 1,
+      "skipped": 0
+    },
+    "feeManagerUnit": {
+      "failed": 0,
+      "passed": 89,
+      "skipped": 0
+    },
+    "legacyLiability": {
+      "failed": 0,
+      "passed": 1,
+      "skipped": 0
+    }
+  },
+  "frozenSourceCommit": "25c36670883604c1ef5229642ee6548aea6796c3",
+  "legacyLiability": {
+    "claimsRemainLegacy": true,
+    "notes": "Budget is accounting only; existing claimed tiers stay on legacy. Root window expired and lost owner cannot renew it. Claim mapping is not enumerable. D2 copies no entitlement.",
+    "rootExpiredAtReview": true,
+    "state": {
+      "feeRecipient()": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "isFeeConsumer(address)": 0,
+      "merkleRoot()": "0xd8a627d7a9b600370e6f490fdd789150d7f9c4ea2f09752c88121d1f758fc2df",
+      "owner()": "0xc35F7A8A103A9A4464adfaa76B9B514093D23C27",
+      "protocolFeeVault()": "UNREADABLE:eth_call:3:execution reverted",
+      "rebateBudget(address)": 999977,
+      "rebateFundingAccount()": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "rootValidFrom()": 1780099200,
+      "rootValidUntil()": 1781913600
+    },
+    "strategy": "KEEP_ON_LEGACY"
+  },
+  "policies": {
+    "doubleLiabilityCheck": "PASS",
+    "feeRecipient": "PROTOCOL_TIMELOCK_CONSTRUCTOR_ARG",
+    "noEngineConsumerAtDeployment": true,
+    "protocolFeeVault": "UNSET_ZERO_ADDRESS"
+  },
+  "postflightChecklist": [
+    "canonical Base Sepolia receipt status 1 and block/receipt/transaction agreement",
+    "from exact deployer; type 2; nonce 1; to null; value zero; exact 9271-byte initcode and authorized fee/gas fields",
+    "contractAddress equals 0x9947F42cC29A32992bbf2030ee49E35C839EDEd5",
+    "runtime code exists and Keccak-256 equals 0x732101d67fb112f6d3159f32852071bbf995f8bd1995335cf9a2b0f167d08726",
+    "owner and feeRecipient equal ProtocolTimelock; protocolFeeVault and rebateFundingAccount zero",
+    "rebateBudget(mUSDC) zero, Merkle root/window zero, no imported claims, replacement Engine fee consumer false",
+    "deployer confirmed nonce 2 and pending nonce consistent; record remaining balance",
+    "D1 PMR unchanged; legacy FMV2 liabilities unchanged; Vault, Insurance, Clearing, OracleRouter, stranded NEW_ENGINE unchanged beyond normal sender effects"
+  ],
+  "preparationPath": "artifacts/perps_v2_replacement_deployment/d2_fmv2_preparation.json",
+  "preparationSha256": "0f66c7fb27ab04d904e523651452d97a95b43a3fe089db7da2d4bcbb654139ad",
+  "publicTransactionsBroadcast": 0,
+  "publicTransactionsSigned": 0,
+  "reviewBlockHash": "0xd62b80bf021f9a29481ec278c8b5e2b6fe055f0d8aef2ff789943e2c1b2f2be3",
+  "reviewBlockNumber": 47842198,
+  "reviewBlockTimestamp": 1791452684,
+  "schema": "deopt.perps_v2.d2_fmv2_final_read_only_review.v1",
+  "sourceManifestSha256": "2526f2fcfa8386b34d6b44638929e8b68d90875754d4dce636f0924ccdcdfc1b",
+  "startingCommit": "d375e7e9525dd0d471de6fb8f3230bea1edfa2ac",
+  "status": "PASS_READ_ONLY_NO_BROADCAST_AUTHORIZATION",
+  "templatePath": "artifacts/perps_v2_replacement_deployment/d2_fmv2_deployment_template.json",
+  "templateSha256": "209cf52b742314934eef93c432a48501072f954db26b558a87109652499da0e3",
+  "unsignedIntent": {
+    "notPublicTransactionHash": true,
+    "path": "artifacts/perps_v2_replacement_deployment/d2_fmv2_unsigned_intent.json",
+    "sha256": "11943e2f90d088d9aadc7259c2ac6b264064df8cb6615d8357d1cf7cb3e17d7d"
+  }
+}
