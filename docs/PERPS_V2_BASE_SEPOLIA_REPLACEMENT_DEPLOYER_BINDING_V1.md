@@ -1,0 +1,35 @@
+# PERPS_V2_BASE_SEPOLIA_REPLACEMENT_DEPLOYER_BINDING_V1
+
+**Binding verdict: PASS; deployment funding: NO.** This is a read-only Base Sepolia observation and local D1 package binding. It authorizes no funding, signing, deployment, Safe transaction, Timelock operation or migration. The deployment signer address below was supplied by the operator; this task did not decrypt the keystore or independently derive its address. A future final review must refresh the nonce, balance, fees, code and signer identity as appropriate before requesting separate execution authorization.
+
+## Provenance and immutable package boundary
+
+Frozen source: `25c36670883604c1ef5229642ee6548aea6796c3`. Starting package commit: `8d701398e7c53e2700448a9296be67861e163dd6`. The original [`deployment_package.json`](../artifacts/perps_v2_replacement_deployment/deployment_package.json) remains unchanged with SHA-256 `4d2940751d06471e3cd6ca3a298db4e68c1a4b1872d9ca51f3371b69a42ea8b9` and retains its historical `BLOCKED_DEPLOYMENT_SIGNER_UNDESIGNATED` result. The original D1 review and all D2–D6 templates remain unchanged. The separate [`d1_pmr_deployer_bound_review.json`](../artifacts/perps_v2_replacement_deployment/d1_pmr_deployer_bound_review.json) is SHA-256 `78bc03524a25990ed1b1beebd26f9b62a4b514b9b1b01b38f29dba2d2c005920`. The new [`deployment_package_signer_bound.json`](../artifacts/perps_v2_replacement_deployment/deployment_package_signer_bound.json) is SHA-256 `672ed9b2d0341041816f496df41f796042673996ff7604253b81651d7aeb8b71` and binds both predecessors. These are file-byte hashes, not Ethereum transaction hashes.
+
+## Signer and chain observation
+
+The operator-provided deployment-only candidate is `0xDA9146F7A0aAcC41EB7Fe7e0d27E3e7ff0ABb9C0`. Its designated keystore path is `/home/corio/.deopt/keystores/perps-v2-replacement-deployer-base-sepolia`. `lstat` found a regular nonsymlink file owned by `corio:corio` with mode `0600`; the containing directory is owned by `corio:corio` with mode `0700`. No encrypted contents or password were read. File metadata does not independently prove key/address identity.
+
+The pinned read used Base Sepolia chain ID `84532`, block `47,832,472`, hash `0x1f292ffe37008a881a1e963e78aebd29d635df1b63e0d53b9d364de9572a8e79`, with EIP-1898 block-hash canonical pinning. The block hash was rechecked after collection. The candidate has `eth_getCode = 0x`, balance **0 wei**, confirmed nonce **0** and pending nonce **0**. Pending nonce visibility is limited to the chosen RPC provider. This is a snapshot, not a reservation of nonce 0.
+
+The signer differs from ProtocolTimelock, OPS Safe, the lost OWNER, runtime executor and both proposed traders. It is not one of the three live Safe owners. In the recorded scope it is neither an owner nor guardian of Timelock, Vault, Insurance, OracleRouter, current PMR or current PME; it is not a Timelock proposer/executor, Vault authorized Engine, Insurance backstop caller or current PME executor. This supports **no intended protocol authority within the checked architecture**; it is not a proof about every contract on the network. Safe threshold readback was 2, nonce 19. No protocol role was assigned to this signer.
+
+## D1 direct CREATE binding and constructor state
+
+`DIRECT_CREATE` from the candidate at nonce **0** yields `0x6B3D846536116082dC4E7227861C341Bb85Ee963`. Local Ethereum Keccak/RLP derivation and installed `cast compute-address --nonce 0` agree. `eth_getCode` at that predicted address was `0x` at the review block. This is a planning address only; it must be refreshed before any future D1 execution review.
+
+Frozen D1 `PerpMarketRegistry` creation bytecode SHA-256 is `423ca7c2c4d63b63eb4650d4a49733ab060cdd9ecc5cd0cc64c955036d94c9c1`; creation bytecode Keccak is `0x33e91b43bb9cbb7ee949d94c3675984ec10186d7e8f23318679c6fd1540584e5`. The sole constructor argument is ProtocolTimelock `0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588`, ABI-encoded as `0x000000000000000000000000a67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588`. Complete creation transaction data Keccak is `0x04e445c4ce66e0e221f706cb58c7a55b41f6d98a1de85701d8531f9aa2d074b1`. Constructor-independent expected runtime Keccak is `0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5`.
+
+The frozen constructor assigns ownership and initial market-creator authority to Timelock. Pending owner and guardian begin at zero; `nextMarketId` begins at 1. `paused`, `creationPaused` and `configPaused` begin **false**. This is not an assertion that PMR itself starts paused: it has no configured markets or settlement allowance and no replacement Engine exists at D1. Deployer gets no owner, guardian or market-creator role. D1 construction alone changes no Vault or Insurance ACL. The future maintenance-closure/configuration ordering in the original package remains mandatory before shared Engine authorization. D2–D6 public addresses, nonces and D6 runtime hash remain conditional on verified preceding canonical receipts.
+
+## Gas and funding, planning only
+
+Committed D1 gas estimate is **3,034,081 units**, not an approved gas limit. The six-stage estimate sums to **17,053,555 units**. At the review block, base fee was **5,000,000 wei/gas**, `eth_maxPriorityFeePerGas` returned **1,000,000 wei/gas**, and `eth_gasPrice` returned **6,000,000 wei/gas**. `eth_feeHistory` was unavailable through the configured read-only RPC guard (`GuardRejected`). The deployed Base GasPriceOracle's instantaneous `getL1FeeUpperBound(13794)` quote was **10,525 wei**; this quote is not a future L1 fee guarantee or transaction-level maximum.
+
+For a conservative funding plan, use 25% more gas units, a provisional **20,000,000 wei/gas** calculation rate and a separate **0.001 ETH** L1/variation reserve. The arithmetic yields D1 **1,075,852,040,000,000 wei (0.00107585204 ETH)** and all six **1,426,338,880,000,000 wei (0.00142633888 ETH)**. Recommended minimum balance remains **0.005 ETH**; it is a planning cushion, not an authorized transfer or fee envelope. Current balance **0 wei** is insufficient for D1 and the full sequence. Future fee envelopes and any funding require separate operator review and authorization.
+
+## Validation and stop boundary
+
+The original five offline package tests and five new binding tests passed (10/10). The new tests verify the original file hashes, preservation of all non-signer D1 fields, constructor encoding and creation hashes, expected runtime hash, exact RLP/CREATE address against independent `cast`, checked role exclusions and funding arithmetic. No public transaction, signer operation or keystore decryption was run. The frozen Solidity source remained unchanged.
+
+The next authorized work, if separately requested, is a **deployer funding review**. D1 final review still requires a fresh canonical block, signer identity assurance, confirmed/pending nonce equality, D1 address nonexistence, code/runtime and constructor identity, current fees and balance, and independently approved public execution parameters. No D1 deployment or funding is authorized by this binding.
