@@ -477,6 +477,25 @@ contract PerpsV2ReplacementTopologyTest is Test {
         assertEq(risk.computeCollateralEquity(address(this)), 0);
     }
 
+    function testZeroRiskOracleDelayDisablesAdditionalFreshnessCheck() public {
+        ReplacementToken secondary = new ReplacementToken();
+        vm.startPrank(address(timelock));
+        vault.setCollateralToken(address(secondary), true, 6, 10_000);
+        risk.setMaxOracleDelay(0);
+        vm.stopPrank();
+        secondary.mint(address(this), 1_000);
+        secondary.approve(address(vault), 1_000);
+        vault.deposit(address(secondary), 1_000);
+
+        vm.warp(oracle.updatedAt() + 601);
+        assertEq(risk.maxOracleDelay(), 0);
+        assertEq(risk.computeCollateralEquity(address(this)), 2_500_000);
+
+        vm.prank(address(timelock));
+        risk.setMaxOracleDelay(600);
+        assertEq(risk.computeCollateralEquity(address(this)), 0);
+    }
+
     function testReplacementRiskMarginEquityAndWithdrawableAgainstSeededPosition() public {
         address trader = address(0xD501);
         usdc.mint(trader, 100_000_000);

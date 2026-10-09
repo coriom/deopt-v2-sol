@@ -1,0 +1,415 @@
+{
+  "asymmetricWiring": {
+    "d4ToD5": "0x0000000000000000000000000000000000000000",
+    "d5ToD4": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+    "safeWhileD4OpenAndDisconnected": true
+  },
+  "blockingReasons": [
+    "Committed Timelock configuration manifest lists C12 D4.setRiskModule(D5) before C20 D5.setMaxOracleDelay(600); C12 prerequisite only requires D4 and D5 deployed, so the required 600-second readback is not guaranteed before reciprocal wiring."
+  ],
+  "build": {
+    "compilerVersion": "0.8.30+commit.73712a01",
+    "creationBytecodeKeccak256": "0x0a7821cde9a8d677635576ec7984957c6ee5b5b78e96aa03d08972d9b76b2929",
+    "creationBytecodeLength": 10537,
+    "creationBytecodeSha256": "f4bcd2ef9d8852f539aff017c7d78752326454af946f29ee8e80a6ac58a11836",
+    "creationLinkReferences": {},
+    "deterministicNoCacheBuild": true,
+    "evmVersion": "prague",
+    "metadataSettings": {
+      "appendCBOR": false,
+      "bytecodeHash": "none"
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 0
+    },
+    "runtimeImmutableReferences": {},
+    "runtimeLinkReferences": {},
+    "runtimeTemplateKeccak256": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c",
+    "runtimeTemplateLength": 9894,
+    "runtimeTemplateSha256": "3b08d9413a62679bd6c5e09a04ffea6fa15973eb0c71a4502fd7ec9efd51df6a",
+    "sourceDependencySha256": {
+      "lib/openzeppelin-contracts/contracts/utils/Panic.sol": "0x270fc8401c1a13fae6a7a4a2dd6e381b95d658896701e51f0d3e2688acab3dec",
+      "lib/openzeppelin-contracts/contracts/utils/math/Math.sol": "0x8219debc76137c8103ea66340ae04185e34d6f33d1d735d2e9a88288cc435f10",
+      "lib/openzeppelin-contracts/contracts/utils/math/SafeCast.sol": "0x9769274bf53f26a7c7896c526ea1980dc9bea5bf5c2a5fd04870008c4afc1de9",
+      "src/oracle/IOracle.sol": "0x15182928b7034fbd358d03d8e54e6ee1e0e2a37c06f3681512fd8181ec3083da",
+      "src/perp/PerpRiskModule.sol": "0xd796b59d40f47ad58dfe3becdff05749237a3c032933f6c890ac421f21ffb457"
+    },
+    "sourceFile": "src/perp/PerpRiskModule.sol",
+    "viaIR": true
+  },
+  "buildReproducible": true,
+  "canonicalStages": {
+    "D1": {
+      "canonicalStateCheck": "PASS",
+      "contractAddress": "0x6B3D846536116082dC4E7227861C341Bb85Ee963",
+      "freshStateCheck": "PASS",
+      "owner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "publicTxHash": "0x8d361c5bc913deb9aa10c2638b8fc2a687c54998b3bf8c695a34c0548d921cba",
+      "receiptBlockHash": "0xb322ad08be5c04bbff8072ed31be17d3a195495cac3fcb7183c7123323c2d07f",
+      "receiptBlockNumber": 47840346,
+      "runtimeKeccak256": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5"
+    },
+    "D2": {
+      "canonicalStateCheck": "PASS",
+      "contractAddress": "0x9947F42cC29A32992bbf2030ee49E35C839EDEd5",
+      "freshStateCheck": "PASS",
+      "owner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "publicTxHash": "0x5bfcaf662296abae3c2b95bbe144fdf73015dd666c7502cce5a717c00e299b85",
+      "receiptBlockHash": "0x5cd740de878c1f79d27dc0a756456ac685cfa53b3042d6b698910a6593749869",
+      "receiptBlockNumber": 47872615,
+      "runtimeKeccak256": "0x732101d67fb112f6d3159f32852071bbf995f8bd1995335cf9a2b0f167d08726"
+    },
+    "D3": {
+      "canonicalStateCheck": "PASS",
+      "contractAddress": "0x43Ac3782e75018981a8F8d210049f2A185b07331",
+      "freshStateCheck": "PASS",
+      "owner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "publicTxHash": "0x6708dea09dd9620fca4323feb94394c7d1e40e9fd1ffae7d9883f93742a5eed7",
+      "receiptBlockHash": "0x5a2dd0ef579410fa53998038c3be2f17caf52a7f555515a6e1a096d3761c4da1",
+      "receiptBlockNumber": 47875648,
+      "runtimeKeccak256": "0x6d199e027af598ee903513a1ab41e27e2937115c79b8ec85e386d739615befcb"
+    },
+    "D4": {
+      "canonicalStateCheck": "PASS",
+      "contractAddress": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+      "freshStateCheck": "PASS",
+      "owner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "publicTxHash": "0xd77b5b6c74a6709fc8a5040318ced23f7033c69f7720b4fb4c74e200e306fae0",
+      "receiptBlockHash": "0x6ebf5eb5b14d7c1689ba9fcadc9becf278ee1d53e72406258fa2c3a1c5d166f4",
+      "receiptBlockNumber": 47878321,
+      "runtimeKeccak256": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785"
+    }
+  },
+  "chainId": 84532,
+  "constructorAbi": {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_owner",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_vault",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_perpEngine",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_oracle",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_baseCollateralToken",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  "constructorAbiEncoding": "0x000000000000000000000000a67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b58800000000000000000000000000340c360353a5ab784c5bc5c44322a6af0625d3000000000000000000000000d0901de8f6de72aecc716ca1465c4cf58a0b99fb000000000000000000000000b416406f200b2ef3d7a86a5d5877ed41d9b1a5810000000000000000000000006eae407f5640b006fac9965182e238582a3b412e",
+  "constructorArgumentOrder": [
+    "owner",
+    "vault",
+    "engine",
+    "oracle",
+    "baseToken"
+  ],
+  "constructorArguments": {
+    "baseToken": "0x6eAe407f5640B006faC9965182e238582A3B412E",
+    "engine": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+    "oracle": "0xB416406F200B2Ef3D7a86A5D5877Ed41D9B1A581",
+    "owner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "vault": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3"
+  },
+  "constructorArgumentsExact": true,
+  "creationBytecodeKeccak256": "0x0a7821cde9a8d677635576ec7984957c6ee5b5b78e96aa03d08972d9b76b2929",
+  "creationData": {
+    "keccak256": "0xf13dc356f5a7a61cc5528392334339694a67907c05230f5955cedf0feaddfb49",
+    "lengthBytes": 10697,
+    "sha256": "bbca0c9949993ffbaaf352f4d9fd9c6bb6af0514a6e05ffecb09b986fe7a3b99"
+  },
+  "d3TokenGatePreserved": true,
+  "d5ExecutionAuthorized": false,
+  "d6PreparationAuthorized": false,
+  "deployer": {
+    "address": "0xDA9146F7A0aAcC41EB7Fe7e0d27E3e7ff0ABb9C0",
+    "balanceWei": "1914874287968257",
+    "codeEmpty": true,
+    "confirmedNonce": 4,
+    "pendingNonce": 4
+  },
+  "emptyEngineInteraction": "PASS",
+  "expectedClosePnlRawMUSDC": {
+    "negative": -244274,
+    "positive": 244274
+  },
+  "expectedPublicRuntimeHash": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c",
+  "feeReview": {
+    "balanceSufficient": true,
+    "baseFeeWei": 5000000,
+    "deployerBalanceWei": "1914874287968257",
+    "feeHistorySupported": true,
+    "freshGasEstimate": 2344674,
+    "gasAndFeeEnvelopeAuthorized": false,
+    "gasHeadroomPercent": 21.55208,
+    "gasPriceWei": 6000000,
+    "historicalEstimate": 2344674,
+    "l1AllowanceIsGuaranteedMaximum": false,
+    "l1FeePlanningAllowanceWei": "100000000000000",
+    "l1FeeUpperBoundAtReviewWei": "19111",
+    "l1Oracle": "0x420000000000000000000000000000000000000F",
+    "l1OracleMethod": "getL1FeeUpperBound(uint256)",
+    "l1QuoteBytes": 11209,
+    "maxExecutionGasCostWei": "57000000000000",
+    "maxTotalPlanningCostWei": "157000000000000",
+    "priorityRecommendationWei": 1000000,
+    "projectedBalanceAfterMaxPlanningCostWei": "1757874287968257",
+    "proposedGasLimit": 2850000,
+    "proposedMaxFeePerGasWei": 20000000,
+    "proposedMaxPriorityFeePerGasWei": 2000000
+  },
+  "focusedTests": {
+    "failed": 0,
+    "packageVerifier": "PASS",
+    "passed": 22,
+    "scope": [
+      "exact D5 fork rehearsal",
+      "replacement topology including oracle zero/599/600/601 and margin",
+      "production close-PnL regression"
+    ],
+    "skipped": 0
+  },
+  "frozenSourceCommit": "25c36670883604c1ef5229642ee6548aea6796c3",
+  "futureCutoverGates": {
+    "beforeD4RiskWiring": [
+      "D5 maxOracleDelay set to 600 by separate Timelock operation",
+      "read back D5 maxOracleDelay == 600",
+      "D4 migration remains OPEN",
+      "D4 execution route unavailable",
+      "Engine maintenance restrictions reviewed and applied"
+    ],
+    "beforeLiquidationUse": [
+      "D3 token configs explicitly set and read back",
+      "D5 600-second Risk freshness active",
+      "liquidation authorization and maintenance release separately reviewed"
+    ],
+    "beforeMigrationSeal": [
+      "exact canonical replay complete",
+      "positions, OI, funding, debt, clearing invariants checked",
+      "economic equivalence proven"
+    ],
+    "beforeVaultOrInsuranceGrant": [
+      "all four D4 emergency restrictions active and read back",
+      "PME execution route unavailable",
+      "backend stopped",
+      "migration OPEN",
+      "no economic route"
+    ]
+  },
+  "governanceManifestPath": "artifacts/perps_v2_replacement_deployment/timelock_configuration_manifest.json",
+  "governanceManifestSha256": "9e3e10daad602bfd3831cab3ee469d74a0aa88cf321fcb49381381cb44fd2b6a",
+  "governanceSequenceReview": {
+    "C12": {
+      "canShareQueueDelayWindow": true,
+      "manifestIndex": 11,
+      "prerequisite": "D4 and D5 deployed",
+      "signature": "setRiskModule(address)"
+    },
+    "C20": {
+      "decodedArgs": [
+        600
+      ],
+      "manifestIndex": 19,
+      "separatePostflightRequired": true,
+      "signature": "setMaxOracleDelay(uint256)"
+    },
+    "committedManifestEnforcesRequiredOrder": false,
+    "requiredOrder": [
+      "C20 executed",
+      "D5 maxOracleDelay() read back as 600",
+      "separate C12 review/authorization",
+      "C12 executed"
+    ]
+  },
+  "initcodeKeccak256": "0xf13dc356f5a7a61cc5528392334339694a67907c05230f5955cedf0feaddfb49",
+  "initialAuthority": {
+    "deployerAuthority": "NONE",
+    "engineRebindAuthority": "PROTOCOL_TIMELOCK_ONLY",
+    "eventualGuardian": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "executorAdministrativeAuthority": "NONE",
+    "guardian": "0x0000000000000000000000000000000000000000",
+    "guardianHandoffRequiredLater": true,
+    "guardianPolicy": "PAUSE_ONLY",
+    "lostOwnerAuthority": "NONE",
+    "owner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "pendingOwner": "0x0000000000000000000000000000000000000000"
+  },
+  "initialRiskState": {
+    "baseToken": "0x6eAe407f5640B006faC9965182e238582A3B412E",
+    "collateralWeightSource": "READ_FROM_VAULT",
+    "engine": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+    "guardian": "0x0000000000000000000000000000000000000000",
+    "liquidationParameterSource": "READ_FROM_PMR_THROUGH_ENGINE",
+    "marginParameterSource": "READ_FROM_PMR_THROUGH_ENGINE",
+    "maxOracleDelayOrigin": "DEFAULT_ZERO",
+    "maxOracleDelaySeconds": 0,
+    "oracle": "0xB416406F200B2Ef3D7a86A5D5877Ed41D9B1A581",
+    "owner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "paused": false,
+    "pendingOwner": "0x0000000000000000000000000000000000000000",
+    "riskComputationPaused": false,
+    "tokenSpecificRiskConfiguration": "NONE_IN_D5",
+    "vault": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+    "withdrawPreviewPaused": false,
+    "withdrawalMarginSource": "RISK_INITIAL_MARGIN_AND_VAULT_COLLATERAL_FACTOR"
+  },
+  "localExactRehearsal": "PASS",
+  "localRuntimeHash": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c",
+  "migrationReplayAuthorized": false,
+  "milestone": "PERPS_V2_BASE_SEPOLIA_REPLACEMENT_D5_RISK_FINAL_REVIEW",
+  "oracleFeedReadback": {
+    "globalMaxDelaySeconds": 1500,
+    "market1": {
+      "isActive": true,
+      "maxDelaySeconds": 1500,
+      "maxDeviationBps": 100,
+      "primary": "0x09BCd126FEB91e13007b2C69644c12AB56260473",
+      "secondary": "0x1a6302eDC9e9DC5EFaE8Dd5e931089ac6Dc5322b"
+    },
+    "market2": {
+      "isActive": true,
+      "maxDelaySeconds": 1500,
+      "maxDeviationBps": 100,
+      "primary": "0x78BFe7a71bD7C39d53d71b8A688BfB4AFB216867",
+      "secondary": "0x690821211CA653b966DB07deD385cFa4c547a6c2"
+    },
+    "pinnedBlockVerification": "PASS"
+  },
+  "oracleFreshness": {
+    "boundaryTests": {
+      "age599": "ACCEPTED",
+      "age600": "ACCEPTED",
+      "age601": "REJECTED_AFTER_LOCAL_TIMELOCK_CONFIGURATION",
+      "age601WithZeroDelay": "ACCEPTED_BY_D5_CHECK"
+    },
+    "future600RequiredBeforeD4Wiring": true,
+    "initialMaxDelaySeconds": 0,
+    "operationalMaxDelaySeconds": 600,
+    "policyCheck": "FAIL_GOVERNANCE_SEQUENCE_NOT_ENFORCED",
+    "publicConfigurationPerformed": false,
+    "zeroMeaning": "D5-specific freshness check disabled"
+  },
+  "pnlRegression": "PASS",
+  "postflightChecklist": {
+    "contract": {
+      "baseToken": "0x6eAe407f5640B006faC9965182e238582A3B412E",
+      "engine": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+      "guardian": "0x0000000000000000000000000000000000000000",
+      "maxOracleDelaySeconds": 0,
+      "oracle": "0xB416406F200B2Ef3D7a86A5D5877Ed41D9B1A581",
+      "owner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "runtimeKeccak256": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c",
+      "vault": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3"
+    },
+    "deployerConfirmedNonceAfterSuccess": 5,
+    "futureRiskFreshnessGate": "Timelock must set D5 maxOracleDelay to 600 and independent on-chain readback must confirm before any D4 Risk pointer wiring",
+    "receipt": {
+      "chainId": 84532,
+      "contractAddress": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110",
+      "dataKeccak256": "0xf13dc356f5a7a61cc5528392334339694a67907c05230f5955cedf0feaddfb49",
+      "dataSha256": "bbca0c9949993ffbaaf352f4d9fd9c6bb6af0514a6e05ffecb09b986fe7a3b99",
+      "gasLimit": 2850000,
+      "maxFeePerGasWei": 20000000,
+      "maxPriorityFeePerGasWei": 2000000,
+      "nonce": 4,
+      "sender": "0xDA9146F7A0aAcC41EB7Fe7e0d27E3e7ff0ABb9C0",
+      "status": "SUCCESS",
+      "to": null,
+      "transactionType": 2,
+      "valueWei": "0"
+    },
+    "sharedState": {
+      "d1D2D3D4AndClearingUnchanged": true,
+      "d4InsuranceAuthorization": false,
+      "d4MigrationState": "OPEN",
+      "d4RiskPointer": "ZERO",
+      "d4VaultAuthorization": false,
+      "legacyFmv2LiabilitiesUnchanged": true
+    }
+  },
+  "preSealEconomicBypass": false,
+  "predictedAddress": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110",
+  "predictedAddressEmpty": true,
+  "predictedAddressMatchesIndependentDerivation": true,
+  "preparationPath": "artifacts/perps_v2_replacement_deployment/d5_risk_preparation.json",
+  "preparationSha256": "69df1563e3ca6c0a2d10cd34aefd7b9a96d1bfa96511b0f17120f944a8948351",
+  "publicTradingAuthorized": false,
+  "publicTransactionsBroadcast": 0,
+  "publicTransactionsSigned": 0,
+  "readyForSeparateD5ExecutionAuthorization": false,
+  "reviewBlockHash": "0xf6abf3143c8af7166e8ac106c77f3bfd6f43c81e22e1006469a2b4cddb8293a4",
+  "reviewBlockNumber": 47881675,
+  "riskRegression": "PASS",
+  "runtimeMatchesHistoricalFixture": true,
+  "safeTransactionAuthorized": false,
+  "schema": "perps_v2_replacement_d5_risk_final_review_v1",
+  "sharedAccountingSideEffects": "NONE",
+  "sharedDependencies": {
+    "baseToken": {
+      "address": "0x6eAe407f5640B006faC9965182e238582A3B412E",
+      "codeLength": 1924,
+      "decimals": 6,
+      "name": "Mock USDC",
+      "symbol": "mUSDC"
+    },
+    "engine": {
+      "address": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+      "migrationState": "OPEN",
+      "oldAndStrandedEngineExcluded": true,
+      "riskPointer": "ZERO",
+      "runtimeKeccak256": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785"
+    },
+    "oracle": {
+      "address": "0xB416406F200B2Ef3D7a86A5D5877Ed41D9B1A581",
+      "guardian": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "runtimeKeccak256": "0x1684ec8825d72e4f59c05a6198fd6eb5ba06ff9d2914bbb00ff108796559fb14"
+    },
+    "timelock": {
+      "address": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "codeLength": 4228,
+      "minDelaySeconds": 86400
+    },
+    "vault": {
+      "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "baseTokenConfig": [
+        true,
+        6,
+        10000
+      ],
+      "clearingLedgerRawMUSDC": 1000000000,
+      "d4EngineAuthorized": false,
+      "guardian": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "runtimeKeccak256": "0xf834554ab8eea4ea97136a7c627a3f36bc166c94e5eb360b400d1f2d925b1349"
+    }
+  },
+  "sharedDependencyCheck": "PASS",
+  "sourceManifestSha256": "1322a81caa734106cda3b625c3c31b7d322eb0e8a165c9b931077340b396493c",
+  "startingRepositoryCommit": "0c23944053e4994e25cf979883c7d9ec311e35b9",
+  "status": "BLOCKED_GOVERNANCE_SEQUENCE",
+  "timelockOperationAuthorized": false,
+  "unsignedIntent": {
+    "isPublicTransactionHash": false,
+    "path": "artifacts/perps_v2_replacement_deployment/d5_risk_unsigned_intent.json",
+    "sha256": "3da6a70882b7472c0c999f1c7715630813a5e663d8fb2ef74294904dc42e856a"
+  }
+}
