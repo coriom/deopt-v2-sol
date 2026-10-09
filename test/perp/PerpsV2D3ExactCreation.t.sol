@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {CollateralSeizer} from "../../src/liquidation/CollateralSeizer.sol";
+import {CollateralVault} from "../../src/collateral/CollateralVault.sol";
 
 /// @notice Isolated EVM rehearsal of the frozen D3 creation bytes; no public send.
 contract PerpsV2D3ExactCreationTest is Test {
@@ -15,6 +16,11 @@ contract PerpsV2D3ExactCreationTest is Test {
     address constant LOST_OWNER = 0xc35F7A8A103A9A4464adfaa76B9B514093D23C27;
     address constant EXECUTOR = 0x58Ad437Cb9E32B0fAEe810ef05810d5Ba2aE52B8;
     address constant TOKEN = 0x6eAe407f5640B006faC9965182e238582A3B412E;
+    address constant D1_PMR = 0x6B3D846536116082dC4E7227861C341Bb85Ee963;
+    address constant D2_FMV2 = 0x9947F42cC29A32992bbf2030ee49E35C839EDEd5;
+    address constant INSURANCE = 0x009f38440F058d095b61E0E2ee7fAbDF05BE7500;
+    address constant CLEARING = 0x54d49c088DD27cFc82685b867c182b4bB4aC435c;
+    address constant STRANDED_ENGINE = 0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15;
     bytes32 constant INITCODE_HASH = 0x55842c43456d4e17e1b10543fafa97c2d867b688952264d7388052566f4c9699;
     bytes32 constant RUNTIME_HASH = 0x6d199e027af598ee903513a1ab41e27e2937115c79b8ec85e386d739615befcb;
 
@@ -36,13 +42,15 @@ contract PerpsV2D3ExactCreationTest is Test {
 
     function testCommittedExactD3CreationAndInitialState() public {
         // Constructor assigns only local storage and emits events; these sentinels prove no external writes.
-        vm.store(VAULT, bytes32(uint256(123)), bytes32(uint256(456)));
-        vm.store(ORACLE, bytes32(uint256(123)), bytes32(uint256(789)));
-        vm.store(COLLATERAL_RISK, bytes32(uint256(123)), bytes32(uint256(101112)));
+        address[8] memory shared =
+            [VAULT, ORACLE, COLLATERAL_RISK, D1_PMR, D2_FMV2, INSURANCE, CLEARING, STRANDED_ENGINE];
+        for (uint256 i = 0; i < shared.length; i++) {
+            vm.store(shared[i], bytes32(uint256(123)), bytes32(i + 1));
+        }
         CollateralSeizer seizer = _deploy();
-        assertEq(vm.load(VAULT, bytes32(uint256(123))), bytes32(uint256(456)));
-        assertEq(vm.load(ORACLE, bytes32(uint256(123))), bytes32(uint256(789)));
-        assertEq(vm.load(COLLATERAL_RISK, bytes32(uint256(123))), bytes32(uint256(101112)));
+        for (uint256 i = 0; i < shared.length; i++) {
+            assertEq(vm.load(shared[i], bytes32(uint256(123))), bytes32(i + 1));
+        }
         assertEq(seizer.owner(), TIMELOCK);
         assertEq(seizer.pendingOwner(), address(0));
         assertEq(address(seizer.collateralVault()), VAULT);
@@ -71,5 +79,59 @@ contract PerpsV2D3ExactCreationTest is Test {
         seizer.setOracleMaxDelay(300);
         assertEq(seizer.oracleMaxDelay(), 300);
         assertEq(address(seizer.riskModule()), COLLATERAL_RISK);
+    }
+
+    function testUnsetTokenProducesOnlyAViewPlanUntilTimelockConfiguresIt() public {
+        CollateralSeizer seizer = _deploy();
+        address trader = address(0xB0B);
+        vm.mockCall(COLLATERAL_RISK, abi.encodeWithSignature("baseCollateralToken()"), abi.encode(TOKEN));
+        vm.mockCall(
+            COLLATERAL_RISK,
+            abi.encodeWithSignature("collateralConfigs(address)", TOKEN),
+            abi.encode(uint64(10_000), true)
+        );
+        vm.mockCall(VAULT, abi.encodeWithSignature("getCollateralTokens()"), abi.encode(new address[](0)));
+        vm.mockCall(
+            VAULT,
+            abi.encodeWithSignature("getCollateralConfig(address)", TOKEN),
+            abi.encode(true, uint8(6), uint16(10_000))
+        );
+        vm.mockCall(VAULT, abi.encodeWithSignature("balanceWithYield(address,address)", trader, TOKEN), abi.encode(200));
+
+        // Unset storage means the legacy risk weight applies without additional spread.
+        assertEq(seizer.tokenDiscountBps(TOKEN), 10_000);
+        (address[] memory tokens, uint256[] memory amounts, uint256 covered) = seizer.computeSeizurePlan(trader, 100);
+        assertEq(tokens.length, 1);
+        assertEq(tokens[0], TOKEN);
+        assertEq(amounts[0], 100);
+        assertEq(covered, 100);
+        (uint16 spread, bool enabled, bool isSet) = seizer.seizeConfigs(TOKEN);
+        assertEq(spread, 0);
+        assertFalse(enabled);
+        assertFalse(isSet);
+
+        vm.prank(DEPLOYER);
+        vm.expectRevert(CollateralSeizer.NotAuthorized.selector);
+        seizer.setTokenSeizeConfig(TOKEN, 100, false);
+        vm.prank(TIMELOCK);
+        seizer.setTokenSeizeConfig(TOKEN, 100, false);
+        (spread, enabled, isSet) = seizer.seizeConfigs(TOKEN);
+        assertEq(spread, 100);
+        assertFalse(enabled);
+        assertTrue(isSet);
+        assertEq(seizer.tokenDiscountBps(TOKEN), 0);
+        (tokens, amounts, covered) = seizer.computeSeizurePlan(trader, 100);
+        assertEq(tokens.length, 0);
+        assertEq(amounts.length, 0);
+        assertEq(covered, 0);
+    }
+
+    function testSeizerCannotMoveVaultCollateralWithoutVaultEngineAuthorization() public {
+        CollateralSeizer seizer = _deploy();
+        CollateralVault vault = new CollateralVault(TIMELOCK);
+        assertFalse(vault.isEngineAuthorized(address(seizer)));
+        vm.prank(address(seizer));
+        vm.expectRevert(bytes4(keccak256("NotAuthorized()")));
+        vault.transferBetweenAccounts(TOKEN, address(0xB0B), address(0xCAFE), 1);
     }
 }

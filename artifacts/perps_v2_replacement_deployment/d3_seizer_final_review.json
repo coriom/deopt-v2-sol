@@ -1,0 +1,297 @@
+{
+  "chainId": 84532,
+  "d1": {
+    "canonicalCheck": "PASS",
+    "receipt": {
+      "blockHash": "0xb322ad08be5c04bbff8072ed31be17d3a195495cac3fcb7183c7123323c2d07f",
+      "blockNumber": 47840346,
+      "contractAddress": "0x6b3d846536116082dc4e7227861c341bb85ee963",
+      "status": 1,
+      "txHash": "0x8d361c5bc913deb9aa10c2638b8fc2a687c54998b3bf8c695a34c0548d921cba"
+    },
+    "state": {
+      "code": {
+        "keccak": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5",
+        "length": 13317
+      },
+      "configPaused": false,
+      "creationPaused": false,
+      "guardian": "0x0000000000000000000000000000000000000000",
+      "marketIds": [],
+      "nextMarketId": 1,
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "paused": false,
+      "pendingOwner": "0x0000000000000000000000000000000000000000"
+    }
+  },
+  "d2": {
+    "canonicalCheck": "PASS",
+    "legacyLiability": {
+      "budget": 999977,
+      "code": {
+        "keccak": "0x93737c8d365c861efe6b01aeaf4a3dc930f2b08160b19dcff537c71d99a288f9",
+        "length": 6204
+      },
+      "owner": "0xc35f7a8a103a9a4464adfaa76b9b514093d23c27",
+      "root": "0xd8a627d7a9b600370e6f490fdd789150d7f9c4ea2f09752c88121d1f758fc2df",
+      "rootValidUntil": 1781913600
+    },
+    "receipt": {
+      "blockHash": "0x5cd740de878c1f79d27dc0a756456ac685cfa53b3042d6b698910a6593749869",
+      "blockNumber": 47872615,
+      "contractAddress": "0x9947f42cc29a32992bbf2030ee49e35c839eded5",
+      "status": 1,
+      "txHash": "0x5bfcaf662296abae3c2b95bbe144fdf73015dd666c7502cce5a717c00e299b85"
+    },
+    "state": {
+      "code": {
+        "keccak": "0x732101d67fb112f6d3159f32852071bbf995f8bd1995335cf9a2b0f167d08726",
+        "length": 6727
+      },
+      "feeRecipient": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "merkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "protocolFeeVault": "0x0000000000000000000000000000000000000000",
+      "rebateBudget": 0,
+      "rootValidFrom": 0,
+      "rootValidUntil": 0,
+      "strandedEngineConsumer": false
+    }
+  },
+  "d3": {
+    "addressEmpty": true,
+    "build": {
+      "compilerVersion": "0.8.30+commit.73712a01",
+      "creationBytecodeKeccak256": "0x67333de506052e7d3b93ff826997b7028e623489928456a8713758f152300f5e",
+      "creationDataLengthBytes": 7136,
+      "creationDataSha256": "3669e07ce6c200cf1d13b1271744f0f656f10750c60e4108be2304dc697b808a",
+      "evmVersion": "prague",
+      "initcodeKeccak256": "0x55842c43456d4e17e1b10543fafa97c2d867b688952264d7388052566f4c9699",
+      "linkReferences": {},
+      "metadataSettings": {
+        "appendCBOR": false,
+        "bytecodeHash": "none"
+      },
+      "optimizer": {
+        "enabled": true,
+        "runs": 0
+      },
+      "runtimeImmutableReferences": {},
+      "runtimeKeccak256": "0x6d199e027af598ee903513a1ab41e27e2937115c79b8ec85e386d739615befcb",
+      "source": "src/liquidation/CollateralSeizer.sol",
+      "sourceSha256": "0x6eb96240e44d8354766678b47c2e997bef979e261076d5b6f4ba25b5a7214854",
+      "viaIR": true
+    },
+    "constructorAbi": {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_owner",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_vault",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_oracle",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_riskModule",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    "constructorArgs": [
+      "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+      "0xB416406F200B2Ef3D7a86A5D5877Ed41D9B1A581",
+      "0xc0f019005a25524a34f2ee8839dcdcc50715dd7b"
+    ],
+    "constructorArgsEncoded": "0x000000000000000000000000a67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b58800000000000000000000000000340c360353a5ab784c5bc5c44322a6af0625d3000000000000000000000000b416406f200b2ef3d7a86a5d5877ed41d9b1a581000000000000000000000000c0f019005a25524a34f2ee8839dcdcc50715dd7b",
+    "dependencies": {
+      "collateralRisk": {
+        "address": "0xc0f019005a25524a34f2ee8839dcdcc50715dd7b",
+        "baseCollateralConfig": [
+          10000,
+          true
+        ],
+        "baseCollateralToken": "0x6eae407f5640b006fac9965182e238582a3b412e",
+        "code": {
+          "keccak": "0x6e17b8bcb36e4ced1b705cacb511df1640d183c58049d703be1980caf5b0d138",
+          "length": 18323
+        },
+        "oracle": "0xb416406f200b2ef3d7a86a5d5877ed41d9b1a581",
+        "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "vault": "0x00340c360353a5ab784c5bc5c44322a6af0625d3"
+      },
+      "oracle": {
+        "address": "0xB416406F200B2Ef3D7a86A5D5877Ed41D9B1A581",
+        "code": {
+          "keccak": "0x1684ec8825d72e4f59c05a6198fd6eb5ba06ff9d2914bbb00ff108796559fb14",
+          "length": 6982
+        },
+        "guardian": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+        "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588"
+      },
+      "timelock": {
+        "address": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+        "code": {
+          "keccak": "0xb20f9fa764b46a832c7665f07c1b9c3cd6506a58f6885c0e12e88e9bbc55233c",
+          "length": 4228
+        },
+        "minDelaySeconds": 86400
+      },
+      "vault": {
+        "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+        "clearingLedger": 1000000000,
+        "code": {
+          "keccak": "0xf834554ab8eea4ea97136a7c627a3f36bc166c94e5eb360b400d1f2d925b1349",
+          "length": 15664
+        },
+        "guardian": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+        "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "strandedEngineAuthorized": true
+      }
+    },
+    "dependencyRecheck": "PASS",
+    "deploymentSharedSideEffects": "NONE",
+    "initialState": {
+      "collateralRiskModule": "0xc0f019005a25524a34f2ee8839dcdcc50715dd7b",
+      "effectiveUnset": {
+        "enabled": true,
+        "riskWeightBpsFromLegacyModule": 10000,
+        "spreadBps": 0
+      },
+      "engineBinding": "NONE",
+      "guardian": "NOT_SUPPORTED",
+      "oracle": "0xB416406F200B2Ef3D7a86A5D5877Ed41D9B1A581",
+      "oracleMaxDelaySeconds": 600,
+      "owner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "seizeConfigStorage": {
+        "isEnabled": false,
+        "isSet": false,
+        "spreadBps": 0
+      },
+      "vault": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3"
+    },
+    "legacyCollateralRiskGovernable": true,
+    "localExactRehearsal": "PASS",
+    "nonce": 2,
+    "ownerArgument": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "predictedAddress": "0x43Ac3782e75018981a8F8d210049f2A185b07331",
+    "unsetTokenPolicy": {
+      "directEconomicAuthority": false,
+      "enforcement": "Operational go/no-go gate: read back every intended token seizeConfigs.isSet and intended values; keep replacement Engine liquidationPaused true until governance verification. Source does not require isSet at runtime.",
+      "representativeViewPlan": "Mocked base collateral: 100 target gives 100 planned token units and 100 covered at 10000 bps; after Timelock disables token plan is empty. No transfer.",
+      "requiresTimelockTokenConfigurationAndReadbackBeforeEngineLiquidationUse": true
+    },
+    "vaultAuthorizedEngine": false
+  },
+  "d4Prepared": false,
+  "deployer": {
+    "address": "0xDA9146F7A0aAcC41EB7Fe7e0d27E3e7ff0ABb9C0",
+    "balanceWei": 1965165325988737,
+    "code": "0x",
+    "confirmedNonce": 2,
+    "pendingNonce": 2
+  },
+  "feeReview": {
+    "balanceSufficient": true,
+    "baseFeeWei": 5000000,
+    "feeEnvelopeAuthorized": false,
+    "feeHistory": {
+      "baseFeePerGasWei": [
+        5000000,
+        5000000,
+        5000000,
+        5000000,
+        5000000,
+        5000000
+      ],
+      "oldestBlock": 47875011,
+      "rewardMedianWei": [
+        1000000,
+        1000000,
+        1000000,
+        1000000,
+        1000000
+      ]
+    },
+    "gasEstimate": 1564663,
+    "gasHeadroomPercent": 21.431899,
+    "gasPriceRecommendationWei": 6000000,
+    "l1Caveat": "Planning allowance is not a hard bound on future L1 fee",
+    "l1FeePlanningAllowanceWei": "100000000000000",
+    "l1FeeUpperBoundAtReviewWei": "5960",
+    "l1Oracle": "0x420000000000000000000000000000000000000F",
+    "l1OracleMethod": "getL1FeeUpperBound(uint256)",
+    "l1QuoteBytes": 7648,
+    "maxExecutionGasCostWei": "38000000000000",
+    "maxTotalPlanningCostWei": "138000000000000",
+    "priorEstimate": 1564663,
+    "priorityFeeRecommendationWei": 1000000,
+    "projectedBalanceAfterMaxPlanningCostWei": "1827165325988737",
+    "proposedGasLimit": 1900000,
+    "proposedMaxFeePerGasWei": 20000000,
+    "proposedMaxPriorityFeePerGasWei": 2000000
+  },
+  "focusedTests": {
+    "collateralSeizerUnit": {
+      "failed": 0,
+      "passed": 8,
+      "skipped": 0
+    },
+    "exactD3CreationAndPolicy": {
+      "failed": 0,
+      "passed": 4,
+      "skipped": 0
+    },
+    "replacementTopology": {
+      "failed": 0,
+      "passed": 2,
+      "skipped": 0
+    },
+    "total": {
+      "failed": 0,
+      "passed": 14,
+      "skipped": 0
+    }
+  },
+  "frozenSourceCommit": "25c36670883604c1ef5229642ee6548aea6796c3",
+  "postflightChecklist": [
+    "Fresh Base Sepolia chainId 84532, deployer confirmed/pending nonce 2/2, sufficient balance, predicted D3 code empty; recheck fees and exact unsigned-intent bytes before any separately authorized signing.",
+    "Canonical receipt status 1; sender exact deployer; type 2; nonce 2; to null; value zero; exact 7136-byte initcode and separately authorized gas/fee fields.",
+    "contractAddress 0x43Ac3782e75018981a8F8d210049f2A185b07331; runtime code exists and Keccak-256 0x6d199e027af598ee903513a1ab41e27e2937115c79b8ec85e386d739615befcb.",
+    "owner ProtocolTimelock; pendingOwner zero; Vault, OracleRouter, legacy collateral RiskModule pointers exact; oracleMaxDelay 600; no guardian or Engine binding.",
+    "Representative seizeConfigs remain unset (spread 0, isEnabled false, isSet false); no token configuration is performed during D3 deployment.",
+    "D3 not Vault authorized Engine or primary marginEngine; D3 has no Vault transfer authority; deployer and lost owner have no D3 governance authority.",
+    "D1 PMR, D2 FMV2, Vault, InsuranceFund, Clearing, OracleRouter, collateral RiskModule and stranded NEW_ENGINE unchanged except normal deployer balance/nonce effects.",
+    "Deployer confirmed nonce 3, pending consistent, remaining balance recorded; do not bind nonce 3 to D4 in this milestone."
+  ],
+  "preparationPath": "artifacts/perps_v2_replacement_deployment/d3_seizer_preparation.json",
+  "preparationSha256": "4f38f59b76ad31ced29ec6b500369b9534c08607ab4665e7f9eaf0de04a8b8fb",
+  "publicTransactionsBroadcast": 0,
+  "publicTransactionsSigned": 0,
+  "reviewBlockHash": "0x23eadae6d8e1dc527335b6b23a5e312d4d51d636d6067756679408fad5d6571a",
+  "reviewBlockNumber": 47875015,
+  "reviewBlockTimestamp": 1791518318,
+  "schema": "deopt.perps_v2.d3_seizer_final_review.v1",
+  "sourceManifestSha256": "2526f2fcfa8386b34d6b44638929e8b68d90875754d4dce636f0924ccdcdfc1b",
+  "startingRepositoryCommit": "458e3b4c19204cc747003b0b3de3cedf17f25b2f",
+  "status": "PASS",
+  "templatePath": "artifacts/perps_v2_replacement_deployment/d3_seizer_deployment_template.json",
+  "templateSha256": "b0649f1829517589661c090dec82c3f964fd28afe2cf57a408390ec809436ad5",
+  "unsignedIntent": {
+    "notPublicTransactionHash": true,
+    "path": "artifacts/perps_v2_replacement_deployment/d3_seizer_unsigned_intent.json",
+    "sha256": "2eb207c05415076741d5d2d500b9987a6e6b5a988c7c0fbf4c0604030d297514"
+  }
+}
