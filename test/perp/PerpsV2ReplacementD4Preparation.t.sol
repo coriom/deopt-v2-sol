@@ -25,7 +25,7 @@ contract PerpsV2ReplacementD4PreparationTest is Test {
     bytes32 constant INITCODE_HASH = 0xa5e5dd10ae2aa241993192c0fcb13c817ecf98cd804fb1bc5b14f6f6068c6e7c;
 
     function testExactD4LocalCreationAndInitialSafety() public {
-        vm.createSelectFork(vm.envString("DEOPT_REPLACEMENT_RPC"), 47_875_958);
+        vm.createSelectFork(vm.envString("DEOPT_REPLACEMENT_RPC"), vm.envUint("D4_REVIEW_BLOCK"));
         assertEq(block.chainid, 84532);
 
         bytes memory initcode = vm.envBytes("D4_CREATION_DATA");
@@ -69,6 +69,10 @@ contract PerpsV2ReplacementD4PreparationTest is Test {
         assertEq(engine.migrationSnapshotHash(), bytes32(0));
         assertEq(engine.getTraderMarketsLength(DEPLOYER), 0);
         assertEq(engine.positions(DEPLOYER, 1).size1e8, 0);
+        assertEq(engine.positions(TIMELOCK, 2).size1e8, 0);
+        assertEq(engine.totalAbsLongSize1e8(DEPLOYER), 0);
+        assertEq(engine.totalAbsShortSize1e8(DEPLOYER), 0);
+        assertEq(engine.getResidualBadDebt(DEPLOYER), 0);
         assertEq(engine.totalResidualBadDebtBase(), 0);
         assertFalse(engine.tradingPaused());
         assertFalse(engine.liquidationPaused());
