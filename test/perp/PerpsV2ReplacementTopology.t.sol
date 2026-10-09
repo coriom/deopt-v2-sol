@@ -460,6 +460,42 @@ contract PerpsV2ReplacementTopologyTest is Test {
         assertEq(risk.computeCollateralEquity(address(this)), 0);
     }
 
+    function testRiskFreshnessBoundaryAccepts600AndRejects601Seconds() public {
+        ReplacementToken secondary = new ReplacementToken();
+        vm.prank(address(timelock));
+        vault.setCollateralToken(address(secondary), true, 6, 10_000);
+        secondary.mint(address(this), 1_000);
+        secondary.approve(address(vault), 1_000);
+        vault.deposit(address(secondary), 1_000);
+
+        uint256 pricedAt = oracle.updatedAt();
+        vm.warp(pricedAt + 599);
+        assertEq(risk.computeCollateralEquity(address(this)), 2_500_000);
+        vm.warp(pricedAt + 600);
+        assertEq(risk.computeCollateralEquity(address(this)), 2_500_000);
+        vm.warp(pricedAt + 601);
+        assertEq(risk.computeCollateralEquity(address(this)), 0);
+    }
+
+    function testReplacementRiskMarginEquityAndWithdrawableAgainstSeededPosition() public {
+        address trader = address(0xD501);
+        usdc.mint(trader, 100_000_000);
+        vm.startPrank(trader);
+        usdc.approve(address(vault), 100_000_000);
+        vault.deposit(address(usdc), 100_000_000);
+        vm.stopPrank();
+
+        vm.prank(address(timelock));
+        engine.adminSeedPosition(trader, 1, 1_000_000, 2_500_000_000, 0);
+
+        PerpRiskModule.AccountRisk memory account = risk.computeAccountRisk(trader);
+        assertEq(account.equityBase, 100_000_000);
+        assertEq(account.initialMarginBase, 2_500_000);
+        assertEq(account.maintenanceMarginBase, 1_875_000);
+        assertEq(risk.computeFreeCollateral(trader), 97_500_000);
+        assertEq(risk.getWithdrawableAmount(trader, address(usdc)), 97_500_000);
+    }
+
     function testRouter1500SecondQuoteStillFailsRisk600SecondGate() public {
         ReplacementToken secondary = new ReplacementToken();
         MockPriceSource primary = new MockPriceSource(2500e8, block.timestamp);
