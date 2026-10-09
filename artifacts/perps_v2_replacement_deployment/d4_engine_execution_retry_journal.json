@@ -1,0 +1,211 @@
+{
+  "authorizedAttempt": "NEW_SEPARATE_PROMPT_AFTER_ZERO_SIGNING_ZERO_SEND_PRE_SEND_BLOCK",
+  "autoRetry": false,
+  "canonicalReceipt": {
+    "blockHash": "0x6ebf5eb5b14d7c1689ba9fcadc9becf278ee1d53e72406258fa2c3a1c5d166f4",
+    "blockNumber": 47878321,
+    "contractAddress": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+    "effectiveGasPriceWei": 7000000,
+    "gasUsed": 5633249,
+    "status": 1,
+    "transactionHash": "0xd77b5b6c74a6709fc8a5040318ced23f7033c69f7720b4fb4c74e200e306fae0"
+  },
+  "canonicalStagesCheck": "PASS",
+  "cliSyntaxValidation": "PASS",
+  "currentHead": "53c8d21b161fb6523d762f9c6f2bab518ac36d7e",
+  "d4": {
+    "address": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+    "initialState": {
+      "clearingAccount": "0x0000000000000000000000000000000000000000",
+      "collateralOpsPaused": false,
+      "collateralSeizer": "0x0000000000000000000000000000000000000000",
+      "collateralVault": "0x00340c360353a5ab784c5bc5c44322a6af0625d3",
+      "feesManagerV2": "0x0000000000000000000000000000000000000000",
+      "fundingPaused": false,
+      "guardian": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "impactMidSource": "0x0000000000000000000000000000000000000000",
+      "insuranceFund": "0x0000000000000000000000000000000000000000",
+      "liquidationPaused": false,
+      "marketRegistry": "0x6b3d846536116082dc4e7227861c341bb85ee963",
+      "matchingEngine": "0x0000000000000000000000000000000000000000",
+      "migrationSnapshotHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "migrationState": 0,
+      "oracle": "0xb416406f200b2ef3d7a86a5d5877ed41d9b1a581",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "pendingOwner": "0x0000000000000000000000000000000000000000",
+      "riskModule": "0x0000000000000000000000000000000000000000",
+      "totalResidualBadDebtBase": 0,
+      "tradingPaused": false,
+      "useFeesManagerV2": false
+    },
+    "runtimeHash": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785",
+    "runtimeLength": 24563
+  },
+  "deployerAfter": {
+    "balanceWei": 1914874287968257,
+    "confirmedNonce": 4,
+    "pendingNonce": 4
+  },
+  "emptyEconomicStateCheck": "PASS",
+  "finalPreBroadcast": {
+    "balanceWei": 1954307030981824,
+    "blockHash": "0xbe1372ee973e16d073a417b91e747844a7581413662fba891d9a2bf4ca557093",
+    "blockNumber": 47878318,
+    "confirmedNonce": 3,
+    "insuranceAuthorized": false,
+    "pendingNonce": 3,
+    "vaultAuthorized": false
+  },
+  "finalPreBroadcastNonceGate": "PASS",
+  "futureGates": {
+    "beforeLiquidationUse": "D3 token configuration explicit and read back",
+    "beforeMigrationSeal": "Canonical replay complete and equality proven",
+    "beforeVaultOrInsuranceAcl": "Four Engine emergency flags active, migration OPEN, no execution route, backend stopped",
+    "d3TokenConfigurationBeforeLiquidation": true,
+    "d5BroadcastAuthorized": false,
+    "migrationEqualityBeforeSeal": true,
+    "preAclMaintenanceRequired": true
+  },
+  "globalEmergencyStateProof": {
+    "allFalse": true,
+    "layout": {
+      "_paused": 0,
+      "collateralOpsPaused": 4,
+      "fundingPaused": 3,
+      "liquidationPaused": 2,
+      "tradingPaused": 1
+    },
+    "receiptBlockHash": "0x6ebf5eb5b14d7c1689ba9fcadc9becf278ee1d53e72406258fa2c3a1c5d166f4",
+    "receiptBlockNumber": 47878321,
+    "storageSlot": 24,
+    "storageValue": "0x0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "initialReceiptObservation": "PROVISIONAL_NONCANONICAL_READ_RECONCILED_READ_ONLY_WITHOUT_RESEND",
+  "initialWiringCheck": "PASS",
+  "insuranceAuthorized": false,
+  "milestone": "PERPS_V2_BASE_SEPOLIA_REPLACEMENT_D4_ENGINE_EXECUTION",
+  "originalReviewedHead": "0f687a66100095392dc4e6d58229f0e769e79edc",
+  "passwordFileRemoved": true,
+  "postflight": "PASS",
+  "preConfigurationOperationalPathExists": false,
+  "preSend": {
+    "balanceWei": 1954307030981824,
+    "baseFeeWei": 5000000,
+    "blockHash": "0x4905ef75fb527e7ca7ea9af5d750aeaa04a586ab46cc86aa6042eff7a2fabf19",
+    "blockNumber": 47878308,
+    "confirmedNonce": 3,
+    "gasEstimate": 5679125,
+    "gasPriceWei": 6000000,
+    "pendingNonce": 3,
+    "priorityRecommendationWei": 1000000
+  },
+  "preSendGate": "PASS",
+  "preSignPayloadCheck": "PASS",
+  "publicSendInvocations": 1,
+  "rawSignedTransactionPersisted": false,
+  "readOnlyReconciliation": {
+    "confirmedNonce": 4,
+    "d4Code": false,
+    "pendingNonce": 4,
+    "receipt": {
+      "blockHash": "0x6ebf5eb5b14d7c1689ba9fcadc9becf278ee1d53e72406258fa2c3a1c5d166f4",
+      "contractAddress": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+      "hash": null,
+      "status": "0x1"
+    },
+    "transaction": {
+      "blockHash": "0x6ebf5eb5b14d7c1689ba9fcadc9becf278ee1d53e72406258fa2c3a1c5d166f4",
+      "contractAddress": null,
+      "hash": "0xd77b5b6c74a6709fc8a5040318ced23f7033c69f7720b4fb4c74e200e306fae0",
+      "status": null
+    }
+  },
+  "readOnlyReconciliationAfterProvisionalReceipt": "PASS",
+  "rpcAcknowledgement": "0xd77b5b6c74a6709fc8a5040318ced23f7033c69f7720b4fb4c74e200e306fae0",
+  "sharedAccountProof": {
+    "accounts": {
+      "clearing": {
+        "address": "0x54d49c088DD27cFc82685b867c182b4bB4aC435c",
+        "codeHash": "0xc010101099ca99f9376c227066f4259fcecc840bfca6a0ceb7328333fe9db591",
+        "storageHash": "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+        "unchanged": true
+      },
+      "d1": {
+        "address": "0x6B3D846536116082dC4E7227861C341Bb85Ee963",
+        "codeHash": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5",
+        "storageHash": "0x9ab2cd9a7cea174ecd7a2edea4dc8b541503198cb537faae3d7da8757eec1530",
+        "unchanged": true
+      },
+      "d2": {
+        "address": "0x9947F42cC29A32992bbf2030ee49E35C839EDEd5",
+        "codeHash": "0x732101d67fb112f6d3159f32852071bbf995f8bd1995335cf9a2b0f167d08726",
+        "storageHash": "0x38857dfc3de6c437cee1b1bbe2cd51299499eaddbdc9b55ef76eb10c4f0703fd",
+        "unchanged": true
+      },
+      "d3": {
+        "address": "0x43Ac3782e75018981a8F8d210049f2A185b07331",
+        "codeHash": "0x6d199e027af598ee903513a1ab41e27e2937115c79b8ec85e386d739615befcb",
+        "storageHash": "0x4c7092da575a6cdbc314f9b5dfc8be943ec41bc5e0e0524f07e914ba5ad1ae92",
+        "unchanged": true
+      },
+      "insurance": {
+        "address": "0x009f38440F058d095b61E0E2ee7fAbDF05BE7500",
+        "codeHash": "0x4d226bd7473b3c6d6842b4f3b04f251a3e7a218c2317a8dd5dd829440c486ee7",
+        "storageHash": "0x70a4aa27d95d01d4ff0a4501e9c4d561ccf2cdca41eca50505648857c1d89092",
+        "unchanged": true
+      },
+      "legacyCollateralRisk": {
+        "address": "0xc0f019005a25524a34F2Ee8839DCDCC50715DD7B",
+        "codeHash": "0x6e17b8bcb36e4ced1b705cacb511df1640d183c58049d703be1980caf5b0d138",
+        "storageHash": "0x006f1bd2281cd8be7e0c2b768b264fa04eba4a68d0b0890cb16311ea7f4c1d23",
+        "unchanged": true
+      },
+      "oracle": {
+        "address": "0xB416406F200B2Ef3D7a86A5D5877Ed41D9B1A581",
+        "codeHash": "0x1684ec8825d72e4f59c05a6198fd6eb5ba06ff9d2914bbb00ff108796559fb14",
+        "storageHash": "0xb14859d4616d79871d212862123e1025c4ce1d795c9db3533459be5faa99efd7",
+        "unchanged": true
+      },
+      "strandedNewEngine": {
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "codeHash": "0xc0ac9015866a36d0c9c25920387af78cb59cc24f66170728ade1a835d1211a2a",
+        "storageHash": "0x4d088579e6176c8e9ecd67d05f85d35eee3bec1328267aa36d3ccfcb549c6425",
+        "unchanged": true
+      },
+      "vault": {
+        "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+        "codeHash": "0xf834554ab8eea4ea97136a7c627a3f36bc166c94e5eb360b400d1f2d925b1349",
+        "storageHash": "0x4757bad3fb21c7def43b8a7dc65f6f8f4437e2ff2fe0ba171e0fecc1b169a45b",
+        "unchanged": true
+      }
+    },
+    "allCodeAndStorageRootsUnchanged": true,
+    "postBlock": 47878321,
+    "preBlock": 47878318
+  },
+  "sharedAclPreSignCheck": "PASS",
+  "sharedStateSideEffectCheck": "PASS",
+  "signedFields": {
+    "accessListLength": 0,
+    "chainId": 84532,
+    "createAddress": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+    "dataKeccak256": "0xa5e5dd10ae2aa241993192c0fcb13c817ecf98cd804fb1bc5b14f6f6068c6e7c",
+    "dataLength": 25431,
+    "dataSha256": "fa0bef3020188b166b626974af84c7ac869e253023bade16e680bf1d197bf801",
+    "from": "0xDA9146F7A0aAcC41EB7Fe7e0d27E3e7ff0ABb9C0",
+    "gasLimit": 6900000,
+    "maxFeePerGasWei": 20000000,
+    "maxPriorityFeePerGasWei": 2000000,
+    "nonce": 3,
+    "to": null,
+    "type": 2,
+    "valueWei": 0
+  },
+  "signedTxHash": "0xd77b5b6c74a6709fc8a5040318ced23f7033c69f7720b4fb4c74e200e306fae0",
+  "signedTxValidation": "PASS",
+  "signerValidation": "PASS",
+  "signingInvocations": 1,
+  "status": "VERIFIED_SUCCESS",
+  "unsignedIntentSha256": "681c624502bee81c7a122225a3410c1e0934bb8da7e058a7dd2c663173c33f5d",
+  "vaultAuthorized": false
+}
