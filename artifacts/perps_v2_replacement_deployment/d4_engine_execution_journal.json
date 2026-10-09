@@ -1,0 +1,41 @@
+{
+  "autoRetry": false,
+  "blocker": "A local verifier generated untracked tools/perps_v2_cutover/__pycache__ after the initial clean-worktree check; the one-shot runner halted on its own clean-worktree gate before signer access, signing, or RPC submission. The generated cache was removed after the terminal halt.",
+  "broadcastOccurred": false,
+  "cliSyntaxValidation": "PASS_SYNTHETIC_PRIOR_TO_RUN",
+  "errorCategory": "worktree drift",
+  "finalPreBroadcastGate": "NOT_REACHED",
+  "futureGates": {
+    "d3TokenConfigurationBeforeLiquidation": true,
+    "d5BroadcastAuthorized": false,
+    "migrationEqualityBeforeSeal": true,
+    "preAclMaintenanceRequired": true
+  },
+  "milestone": "PERPS_V2_BASE_SEPOLIA_REPLACEMENT_D4_ENGINE_EXECUTION",
+  "passwordFileRemoved": true,
+  "preSendGate": "NOT_REACHED",
+  "preSignPayloadCheck": "PASS_PRIOR_TO_RUN",
+  "publicSendInvocations": 0,
+  "rawSignedTransactionPersisted": false,
+  "readOnlyObservationBeforeHalt": {
+    "balanceWei": 1954307030981824,
+    "baseFeeWei": 5000000,
+    "blockHash": "0x8876dc48a34a06ffbfc503103259b6f78e6e43853d11c6f8736b91b8f16c1214",
+    "blockNumber": 47876761,
+    "confirmedNonce": 3,
+    "d4AddressEmpty": true,
+    "exactPayloadEstimateGas": 5679125,
+    "gasPriceWei": 6000000,
+    "insuranceD4Authorized": false,
+    "pendingNonce": 3,
+    "priorityRecommendationWei": 1000000,
+    "simulatedRuntimeHash": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785",
+    "vaultD4Authorized": false
+  },
+  "signedTxValidation": "NOT_ATTEMPTED",
+  "signerAddressValidation": "PASS_PRIOR_TO_RUN",
+  "signingInvocations": 0,
+  "sourcePackageIntegrity": "PASS",
+  "status": "BLOCKED_PRE_SEND",
+  "unsignedIntentSha256": "681c624502bee81c7a122225a3410c1e0934bb8da7e058a7dd2c663173c33f5d"
+}
