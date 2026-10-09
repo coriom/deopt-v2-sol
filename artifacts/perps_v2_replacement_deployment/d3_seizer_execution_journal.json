@@ -1,0 +1,174 @@
+{
+  "autoRetry": false,
+  "canonicalReceipt": {
+    "blockHash": "0x5a2dd0ef579410fa53998038c3be2f17caf52a7f555515a6e1a096d3761c4da1",
+    "blockNumber": 47875648,
+    "contractAddress": "0x43ac3782e75018981a8f8d210049f2a185b07331",
+    "effectiveGasPriceWei": 7000000,
+    "gasUsed": 1551185,
+    "status": 1,
+    "transactionHash": "0x6708dea09dd9620fca4323feb94394c7d1e40e9fd1ffae7d9883f93742a5eed7"
+  },
+  "cliSyntaxValidation": "PASS",
+  "d1CanonicalStateCheck": "PASS",
+  "d2CanonicalStateCheck": "PASS",
+  "d3": {
+    "oracle": "0xb416406f200b2ef3d7a86a5d5877ed41d9b1a581",
+    "oracleMaxDelay": 600,
+    "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "pendingOwner": "0x0000000000000000000000000000000000000000",
+    "risk": "0xc0f019005a25524a34f2ee8839dcdcc50715dd7b",
+    "runtimeHash": "0x6d199e027af598ee903513a1ab41e27e2937115c79b8ec85e386d739615befcb",
+    "runtimeLength": 6432,
+    "tokenConfig": [
+      0,
+      false,
+      false
+    ],
+    "vault": "0x00340c360353a5ab784c5bc5c44322a6af0625d3"
+  },
+  "d3UnsetTokenPreSignCheck": "PASS",
+  "d4BroadcastAuthorized": false,
+  "dependencyPreSignCheck": "PASS",
+  "deployerAfter": {
+    "balanceWei": 1954307030981824,
+    "confirmedNonce": 3,
+    "pendingNonce": 3
+  },
+  "expectedD3Address": "0x43Ac3782e75018981a8F8d210049f2A185b07331",
+  "finalPreBroadcast": {
+    "confirmedNonce": 2,
+    "d3AddressEmpty": true,
+    "deployerBalanceWei": 1965165325988737,
+    "pendingNonce": 2
+  },
+  "finalPreBroadcastNonceGate": "PASS",
+  "immediatePreSign": {
+    "balanceWei": 1965165325988737,
+    "baseFeeWei": 5000000,
+    "blockHash": "0x8ca8235a64bb3802cb840c2681484ad08c0e13258c9545273147046de270623e",
+    "blockNumber": 47875642,
+    "confirmedNonce": 2,
+    "estimateGas": 1564663,
+    "pendingNonce": 2
+  },
+  "milestone": "PERPS_V2_BASE_SEPOLIA_REPLACEMENT_D3_SEIZER_EXECUTION",
+  "passwordFileRemoved": true,
+  "postflight": "PASS",
+  "postflightErrorCategory": "noncanonical receipt/transaction",
+  "preSend": {
+    "balanceWei": 1965165325988737,
+    "baseFeeWei": 5000000,
+    "blockHash": "0x3a29d6611571592a66b3a737316b6ea5cdf6c4342946a7a0d43e51c85a858019",
+    "blockNumber": 47875616,
+    "confirmedNonce": 2,
+    "estimateGas": 1564663,
+    "gasPriceWei": 6000000,
+    "pendingNonce": 2,
+    "priorityFeeWei": 1000000
+  },
+  "preSendGate": "PASS",
+  "preSignPayloadCheck": "PASS",
+  "publicSendInvocations": 1,
+  "rawSignedTransactionPersisted": false,
+  "readOnlyReconciliation": "canonical receipt and full D3 postflight verified after provisional first observation; no second signing or send",
+  "rpcAcknowledgement": "0x6708dea09dd9620fca4323feb94394c7d1e40e9fd1ffae7d9883f93742a5eed7",
+  "sharedAccountProof": {
+    "accounts": {
+      "clearing": {
+        "address": "0x54d49c088DD27cFc82685b867c182b4bB4aC435c",
+        "codeHashAfter": "0xc010101099ca99f9376c227066f4259fcecc840bfca6a0ceb7328333fe9db591",
+        "codeHashBefore": "0xc010101099ca99f9376c227066f4259fcecc840bfca6a0ceb7328333fe9db591",
+        "same": true,
+        "storageRootAfter": "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+        "storageRootBefore": "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"
+      },
+      "d1Pmr": {
+        "address": "0x6B3D846536116082dC4E7227861C341Bb85Ee963",
+        "codeHashAfter": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5",
+        "codeHashBefore": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5",
+        "same": true,
+        "storageRootAfter": "0x9ab2cd9a7cea174ecd7a2edea4dc8b541503198cb537faae3d7da8757eec1530",
+        "storageRootBefore": "0x9ab2cd9a7cea174ecd7a2edea4dc8b541503198cb537faae3d7da8757eec1530"
+      },
+      "d2Fmv2": {
+        "address": "0x9947F42cC29A32992bbf2030ee49E35C839EDEd5",
+        "codeHashAfter": "0x732101d67fb112f6d3159f32852071bbf995f8bd1995335cf9a2b0f167d08726",
+        "codeHashBefore": "0x732101d67fb112f6d3159f32852071bbf995f8bd1995335cf9a2b0f167d08726",
+        "same": true,
+        "storageRootAfter": "0x38857dfc3de6c437cee1b1bbe2cd51299499eaddbdc9b55ef76eb10c4f0703fd",
+        "storageRootBefore": "0x38857dfc3de6c437cee1b1bbe2cd51299499eaddbdc9b55ef76eb10c4f0703fd"
+      },
+      "insurance": {
+        "address": "0x009f38440F058d095b61E0E2ee7fAbDF05BE7500",
+        "codeHashAfter": "0x4d226bd7473b3c6d6842b4f3b04f251a3e7a218c2317a8dd5dd829440c486ee7",
+        "codeHashBefore": "0x4d226bd7473b3c6d6842b4f3b04f251a3e7a218c2317a8dd5dd829440c486ee7",
+        "same": true,
+        "storageRootAfter": "0x70a4aa27d95d01d4ff0a4501e9c4d561ccf2cdca41eca50505648857c1d89092",
+        "storageRootBefore": "0x70a4aa27d95d01d4ff0a4501e9c4d561ccf2cdca41eca50505648857c1d89092"
+      },
+      "legacyCollateralRisk": {
+        "address": "0xc0f019005a25524a34F2Ee8839DCDCC50715DD7B",
+        "codeHashAfter": "0x6e17b8bcb36e4ced1b705cacb511df1640d183c58049d703be1980caf5b0d138",
+        "codeHashBefore": "0x6e17b8bcb36e4ced1b705cacb511df1640d183c58049d703be1980caf5b0d138",
+        "same": true,
+        "storageRootAfter": "0x006f1bd2281cd8be7e0c2b768b264fa04eba4a68d0b0890cb16311ea7f4c1d23",
+        "storageRootBefore": "0x006f1bd2281cd8be7e0c2b768b264fa04eba4a68d0b0890cb16311ea7f4c1d23"
+      },
+      "oracle": {
+        "address": "0xB416406F200B2Ef3D7a86A5D5877Ed41D9B1A581",
+        "codeHashAfter": "0x1684ec8825d72e4f59c05a6198fd6eb5ba06ff9d2914bbb00ff108796559fb14",
+        "codeHashBefore": "0x1684ec8825d72e4f59c05a6198fd6eb5ba06ff9d2914bbb00ff108796559fb14",
+        "same": true,
+        "storageRootAfter": "0xb14859d4616d79871d212862123e1025c4ce1d795c9db3533459be5faa99efd7",
+        "storageRootBefore": "0xb14859d4616d79871d212862123e1025c4ce1d795c9db3533459be5faa99efd7"
+      },
+      "strandedNewEngine": {
+        "address": "0xA2bDc0EfE80806FFda20189294dd8A5a1B426f15",
+        "codeHashAfter": "0xc0ac9015866a36d0c9c25920387af78cb59cc24f66170728ade1a835d1211a2a",
+        "codeHashBefore": "0xc0ac9015866a36d0c9c25920387af78cb59cc24f66170728ade1a835d1211a2a",
+        "same": true,
+        "storageRootAfter": "0x4d088579e6176c8e9ecd67d05f85d35eee3bec1328267aa36d3ccfcb549c6425",
+        "storageRootBefore": "0x4d088579e6176c8e9ecd67d05f85d35eee3bec1328267aa36d3ccfcb549c6425"
+      },
+      "vault": {
+        "address": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+        "codeHashAfter": "0xf834554ab8eea4ea97136a7c627a3f36bc166c94e5eb360b400d1f2d925b1349",
+        "codeHashBefore": "0xf834554ab8eea4ea97136a7c627a3f36bc166c94e5eb360b400d1f2d925b1349",
+        "same": true,
+        "storageRootAfter": "0x4757bad3fb21c7def43b8a7dc65f6f8f4437e2ff2fe0ba171e0fecc1b169a45b",
+        "storageRootBefore": "0x4757bad3fb21c7def43b8a7dc65f6f8f4437e2ff2fe0ba171e0fecc1b169a45b"
+      }
+    },
+    "allCodeAndStorageRootsUnchanged": true,
+    "postBlock": 47875648,
+    "postBlockHash": "0x5a2dd0ef579410fa53998038c3be2f17caf52a7f555515a6e1a096d3761c4da1",
+    "preBlock": 47875642,
+    "preBlockHash": "0x8ca8235a64bb3802cb840c2681484ad08c0e13258c9545273147046de270623e"
+  },
+  "sharedStateSideEffectCheck": "PASS",
+  "signedFields": {
+    "accessListLength": 0,
+    "chainId": 84532,
+    "createAddress": "0x43Ac3782e75018981a8F8d210049f2A185b07331",
+    "dataKeccak256": "0x55842c43456d4e17e1b10543fafa97c2d867b688952264d7388052566f4c9699",
+    "dataLength": 7136,
+    "dataSha256": "3669e07ce6c200cf1d13b1271744f0f656f10750c60e4108be2304dc697b808a",
+    "from": "0xDA9146F7A0aAcC41EB7Fe7e0d27E3e7ff0ABb9C0",
+    "gasLimit": 1900000,
+    "maxFeePerGasWei": 20000000,
+    "maxPriorityFeePerGasWei": 2000000,
+    "nonce": 2,
+    "to": null,
+    "type": 2,
+    "valueWei": 0
+  },
+  "signedTxHash": "0x6708dea09dd9620fca4323feb94394c7d1e40e9fd1ffae7d9883f93742a5eed7",
+  "signedTxValidation": "PASS",
+  "signerValidation": "PASS",
+  "signingInvocations": 1,
+  "status": "VERIFIED_SUCCESS",
+  "submissionMarkedAtBlock": 47875616,
+  "tokenConfigurationRequiredBeforeEngineUse": true,
+  "unsignedIntentSha256": "2eb207c05415076741d5d2d500b9987a6e6b5a988c7c0fbf4c0604030d297514"
+}
