@@ -1,0 +1,192 @@
+{
+  "C12": {
+    "authorizationAndExecutionPreflight": "tools/perps_v2_cutover/c12_c20_preflight.py",
+    "calldata": "0x04f6f5b200000000000000000000000090caa6d5bc628577bc76d6cc8b775f983c75e110",
+    "canShareQueueDelayWindow": false,
+    "dependsOn": [
+      "C20_EXECUTED_AND_READ_BACK"
+    ],
+    "function": "setRiskModule(address)",
+    "liveGate": {
+      "backendStopped": true,
+      "c20ExecutedEventAndClearedQueue": true,
+      "canonicalC20QueueAndExecutionReceipts": true,
+      "chainId": 84532,
+      "d4EmergencyFlagsAllTrue": true,
+      "d4MigrationOpen": true,
+      "d4RiskPointerZero": true,
+      "d4VaultInsuranceAclFalse": true,
+      "d5EnginePointer": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+      "d5MaxOracleDelaySeconds": 600,
+      "d5Owner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "freshReadbackAtAuthorizationAndExecution": true,
+      "independentReadbackBeforeC12Queue": true,
+      "pmeAbsentOrPaused": true
+    },
+    "newPrerequisite": "D4 and D5 deployed; canonical successful D4/D5 deployment receipts; C20 separately executed on Base Sepolia with canonical successful receipt and Timelock TransactionExecuted proof; fresh D5.maxOracleDelay()==600 readback; D5 owner Timelock and perpEngine()==canonical D4; D4 riskModule()==zero and migrationState()==OPEN; four Engine maintenance flags true, D4 Vault/Insurance ACL false, PME route unavailable, backend stopped",
+    "oldPrerequisite": "D4 and D5 deployed",
+    "separateAuthorizationRequired": true,
+    "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB"
+  },
+  "C20": {
+    "boundary": "age <= 600 accepted; age >= 601 rejected",
+    "calldata": "0xcd3b691c0000000000000000000000000000000000000000000000000000000000000258",
+    "function": "setMaxOracleDelay(uint256)",
+    "futureOperationStatus": "NOT_PREPARED_OR_SCHEDULED_OR_EXECUTED",
+    "getter": "maxOracleDelay()",
+    "initialValueSeconds": 0,
+    "inputRangeSeconds": [
+      0,
+      3600
+    ],
+    "newPrerequisite": "D5 deployed; canonical D5 deployment and independent Timelock review/approval",
+    "oldPrerequisite": "D5 deployed",
+    "ownerOnly": true,
+    "requiredValueSeconds": 600,
+    "target": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110",
+    "zeroDisablesAdditionalRiskFreshnessCheck": true
+  },
+  "authorization": {
+    "C12": false,
+    "C20": false,
+    "D5Broadcast": false,
+    "D6Broadcast": false,
+    "Migration": false,
+    "PublicTrading": false,
+    "Safe": false,
+    "Timelock": false
+  },
+  "chainId": 84532,
+  "correctedManifest": {
+    "path": "artifacts/perps_v2_replacement_deployment/timelock_configuration_manifest_c12_c20_v2.json",
+    "sha256": "745e7a2fad6a77fef6e35f10a1a431b75615524f51fe13c881c191351ad591fe",
+    "status": "FUTURE_C12_C20_SOURCE_OF_TRUTH"
+  },
+  "d5FrozenDeployment": {
+    "deploymentStatus": "NOT_DEPLOYED",
+    "engine": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+    "initcodeKeccak256": "0xf13dc356f5a7a61cc5528392334339694a67907c05230f5955cedf0feaddfb49",
+    "initcodeSha256": "bbca0c9949993ffbaaf352f4d9fd9c6bb6af0514a6e05ffecb09b986fe7a3b99",
+    "initialMaxOracleDelaySeconds": 0,
+    "owner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "predictedAddress": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110",
+    "runtimeKeccak256": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c"
+  },
+  "downstreamHashBindings": {
+    "futureC12C20MustUseVersionedManifest": true,
+    "historicalBlockedD5Review": "UNCHANGED_AND_VALID",
+    "historicalBuilderRefusesOverwrite": true,
+    "historicalDeploymentPackage": "UNCHANGED_AND_VALID"
+  },
+  "finalReadOnlyObservation": {
+    "blockHash": "0xdb5d9ef86513f8d3cef39860263dca0dfcf2909329db9a503836754a487b5335",
+    "blockNumber": 47884119,
+    "chainId": 84532,
+    "d4ReviewedStateUnchanged": true,
+    "d5CodeEmpty": true,
+    "publicWrites": 0
+  },
+  "frozenSourceCommit": "25c36670883604c1ef5229642ee6548aea6796c3",
+  "governanceSequence": [
+    "canonical D5 deployment",
+    "C20 independent review and approval",
+    "C20 queue after deployment",
+    "live Timelock delay elapses",
+    "C20 canonical successful execution",
+    "fresh D5.maxOracleDelay()==600 readback",
+    "separate C12 review/authorization",
+    "C12 separate queue/delay",
+    "fresh C12 execution preflight"
+  ],
+  "historicalManifest": {
+    "path": "artifacts/perps_v2_replacement_deployment/timelock_configuration_manifest.json",
+    "sha256": "9e3e10daad602bfd3831cab3ee469d74a0aa88cf321fcb49381381cb44fd2b6a",
+    "status": "PRESERVED_HISTORICAL_UNSAFE_ORDER"
+  },
+  "limitations": [
+    "off-chain operational gate only; no on-chain C12 dependency enforcement",
+    "RPC canonicality and independent governance review must be refreshed at execution",
+    "local backend check cannot prove remote clients stopped",
+    "authorization and execution preflights are separate read-only runs; state may change between checks"
+  ],
+  "liveReadOnlyObservation": {
+    "blockHash": "0xec06520d4383aabb823ca062786567c424f51b36046672e22981b74d64a8a121",
+    "blockNumber": 47883802,
+    "d4EmergencyFlags": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "d4InsuranceAuthorized": false,
+    "d4MigrationState": "OPEN",
+    "d4Owner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "d4RiskPointer": "0x0000000000000000000000000000000000000000",
+    "d4RuntimeHash": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785",
+    "d4VaultAuthorized": false,
+    "d5CodeEmpty": true,
+    "timelockMinDelaySeconds": 86400,
+    "timelockOwner": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "timelockSafeIsExecutor": true,
+    "timelockSafeIsProposer": true
+  },
+  "milestone": "PERPS_V2_BASE_SEPOLIA_REPLACEMENT_GOVERNANCE_C12_C20_ORDER_FIX_V1",
+  "preservedHistoricalEvidence": {
+    "d5_risk_final_review.json": "6e2851fb3890478eef32a29d4bafbcb225d5d46f3302970a7a327453d2cbf156",
+    "d5_risk_preparation.json": "69df1563e3ca6c0a2d10cd34aefd7b9a96d1bfa96511b0f17120f944a8948351",
+    "d5_risk_unsigned_intent.json": "3da6a70882b7472c0c999f1c7715630813a5e663d8fb2ef74294904dc42e856a",
+    "deployment_package.json": "4d2940751d06471e3cd6ca3a298db4e68c1a4b1872d9ca51f3371b69a42ea8b9"
+  },
+  "runtimeGate": {
+    "acceptedTimelockEnvelope": [
+      "exact direct Timelock call",
+      "OPS Safe execTransaction with single ordinary CALL to exact Timelock method"
+    ],
+    "path": "tools/perps_v2_cutover/c12_c20_preflight.py",
+    "phases": [
+      "authorization",
+      "execution"
+    ],
+    "publicWrites": 0,
+    "rejectsBatch": true,
+    "rejectsSafeDelegateCallOrMultiSend": true,
+    "requiresAllFourEngineMaintenanceFlags": true,
+    "requiresCanonicalReceipts": true,
+    "requiresD4MigrationOpen": true,
+    "requiresD4RiskPointerZero": true,
+    "requiresD4VaultAndInsuranceAuthorizationFalse": true,
+    "requiresExactTimelockQueueAndExecutionEvents": true,
+    "requiresFreshD5DelaySeconds": 600,
+    "requiresIndependentReadbackBeforeC12Queue": true,
+    "requiresLocalBackendStopped": true,
+    "requiresNoSubsequentRiskDelayChange": true,
+    "requiresPMEUnavailableOrPaused": true,
+    "requiresUnqueuedC20": true
+  },
+  "schema": "deopt.perps_v2_replacement_deployment.governance_c12_c20_order_fix.v1",
+  "startingHead": "43972aa000cb0f39f5093056f1891e26ba7893e1",
+  "tests": {
+    "d5FrozenSourceRebuild": "PASS",
+    "historicalBlockedReviewVerifier": "PASS",
+    "historicalPackageRegression": {
+      "failed": 0,
+      "passed": 5,
+      "skipped": 0
+    },
+    "pythonAdversarial": {
+      "failed": 0,
+      "passed": 19,
+      "skipped": 0
+    },
+    "solidityOracleBoundaries": {
+      "failed": 0,
+      "passed": 2,
+      "skipped": 0
+    },
+    "solidityTimelockRehearsal": {
+      "failed": 0,
+      "passed": 1,
+      "skipped": 0
+    }
+  }
+}

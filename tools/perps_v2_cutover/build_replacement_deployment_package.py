@@ -99,6 +99,11 @@ def jsonable(value):
 
 
 def main():
+    # V1 is hash-bound historical evidence. Once the C12/C20 V2 correction is
+    # present, rebuilding V1 here would overwrite the preserved blocked review's
+    # source of truth and could reintroduce the unsafe order.
+    if (OUT / "timelock_configuration_manifest_c12_c20_v2.json").exists():
+        raise RuntimeError("historical V1 package is frozen; use the versioned C12/C20 governance manifest")
     OUT.mkdir(parents=True, exist_ok=True)
     for name, expected in zip(FILES, EXPECTED):
         actual = sha((FROZEN / f"{name}_manifest.json").read_bytes())
