@@ -1,0 +1,121 @@
+{
+  "C12Authorized": false,
+  "C12ExecutedByThisRun": false,
+  "C20ExecutedByThisRun": false,
+  "C20Required": true,
+  "D4EmergencyAfter": {
+    "collateralOpsPaused": false,
+    "fundingPaused": false,
+    "liquidationPaused": false,
+    "tradingPaused": false
+  },
+  "D4MigrationAfter": "OPEN",
+  "D4RiskAfter": "0x0000000000000000000000000000000000000000",
+  "D5": {
+    "baseCollateralToken": "0x6eae407f5640b006fac9965182e238582a3b412e",
+    "collateralVault": "0x00340c360353a5ab784c5bc5c44322a6af0625d3",
+    "guardian": "0x0000000000000000000000000000000000000000",
+    "maxOracleDelay": 0,
+    "oracle": "0xb416406f200b2ef3d7a86a5d5877ed41d9b1a581",
+    "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "pendingOwner": "0x0000000000000000000000000000000000000000",
+    "perpEngine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb"
+  },
+  "D5MaxOracleDelay": 0,
+  "D5OperationalRiskReady": false,
+  "D5Postflight": "PASS",
+  "D5RuntimeHash": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c",
+  "D6BroadcastAuthorized": false,
+  "autoRetry": false,
+  "canonicalReceipt": {
+    "blockHash": "0x0b22f8b281401e1d46e8ea640a51b74a8bc2f7758efb9cbe7a0bf59442c8c490",
+    "blockNumber": 47924646,
+    "contractAddress": "0x90caa6d5bc628577bc76d6cc8b775f983c75e110",
+    "effectiveGasPriceWei": 7000000,
+    "gasUsed": 2325054,
+    "status": "SUCCESS",
+    "transactionHash": "0x243f693e7c7aedcf972a62eee9a84660916194736379020501e25e7303dd06b3"
+  },
+  "canonicalReceiptRecheck": "PASS",
+  "cliSyntaxValidation": "PASS",
+  "creationPayloadVerified": {
+    "constructorOrder": [
+      "owner",
+      "vault",
+      "engine",
+      "oracle",
+      "baseToken"
+    ],
+    "keccak256": "0xf13dc356f5a7a61cc5528392334339694a67907c05230f5955cedf0feaddfb49",
+    "lengthBytes": 10697,
+    "publicInputByteForByteMatch": true,
+    "sha256": "bbca0c9949993ffbaaf352f4d9fd9c6bb6af0514a6e05ffecb09b986fe7a3b99"
+  },
+  "deployerAfter": {
+    "balanceWei": 1898598909963032,
+    "confirmedNonce": 5,
+    "pendingNonce": 5
+  },
+  "finalPreBroadcastGate": {
+    "balanceWei": 1914874287968257,
+    "blockHash": "0x5c48861908e53d407ad0c21d5a8b060b2b43fb2041aa5295c0ecf302b605deb7",
+    "blockNumber": 47924636,
+    "confirmedNonce": 4,
+    "pendingNonce": 4
+  },
+  "futureC20RequiredBeforeC12": true,
+  "migrationReplayAuthorized": false,
+  "milestone": "PERPS_V2_BASE_SEPOLIA_REPLACEMENT_D5_RISK_EXECUTION",
+  "oneShotPublicSubmission": true,
+  "passwordFileRemoved": true,
+  "postflightEvidenceScope": "Pinned receipt block and subsequent read-only canonical receipt/runtime/nonce recheck; no public configuration",
+  "preSignGate": {
+    "balanceWei": 1914874287968257,
+    "baseFeeWei": 5000000,
+    "blockHash": "0xcec6cae2ab21fa60d3635c586ebb14c52ff2ee7a5a62ed9c3ed6f33013923fee",
+    "blockNumber": 47924614,
+    "confirmedNonce": 4,
+    "gasEstimate": 2344674,
+    "gasPriceWei": 6000000,
+    "pendingNonce": 4,
+    "priorityFeeWei": 1000000
+  },
+  "preSignPayloadCheck": "PASS",
+  "publicSendInvocations": 1,
+  "publicTradingAuthorized": false,
+  "rawSignedTransactionPersisted": false,
+  "reviewArtifactSha256": "652175d0a5025c298b5f7399ee27db0e7375a7ccf7d620f040a97f582f9f458a",
+  "rpcAcknowledgement": "0x243f693e7c7aedcf972a62eee9a84660916194736379020501e25e7303dd06b3",
+  "safeTransactionAuthorized": false,
+  "schema": "perps_v2_replacement_d5_risk_execution_journal_v1",
+  "sharedStateSideEffectCheck": "PASS",
+  "signedFields": {
+    "accessListLength": 0,
+    "chainId": 84532,
+    "from": "0xDA9146F7A0aAcC41EB7Fe7e0d27E3e7ff0ABb9C0",
+    "gasLimit": "2850000",
+    "maxFeePerGas": "20000000",
+    "maxPriorityFeePerGas": "2000000",
+    "nonce": 4,
+    "serializedLengthBytes": 10792,
+    "to": null,
+    "transactionHash": "0x243f693e7c7aedcf972a62eee9a84660916194736379020501e25e7303dd06b3",
+    "type": "eip1559",
+    "valueWei": "0"
+  },
+  "signedTxHash": "0x243f693e7c7aedcf972a62eee9a84660916194736379020501e25e7303dd06b3",
+  "signedTxValidation": "PASS",
+  "signerValidation": "PASS",
+  "signingInvocations": 1,
+  "status": "VERIFIED_SUCCESS",
+  "submissionIntentRecordedBeforeRpcSend": true,
+  "timelockOperationAuthorized": false,
+  "unsignedIntentSha256": "3da6a70882b7472c0c999f1c7715630813a5e663d8fb2ef74294904dc42e856a",
+  "vaultMUSDCBalanceBeforeAfter": {
+    "preSignBlock": 47924614,
+    "preSignRaw": 224066000000,
+    "receiptBlock": 47924646,
+    "receiptRaw": 224066000000,
+    "unchanged": true
+  }
+}
