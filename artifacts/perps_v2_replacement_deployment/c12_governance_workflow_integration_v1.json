@@ -1,0 +1,96 @@
+{
+  "schema": "deopt.perps_v2_replacement.c12_governance_workflow_integration_v1",
+  "milestone": "PERPS_V2_BASE_SEPOLIA_C12_GOVERNANCE_WORKFLOW_INTEGRATION_V1",
+  "result": "PASS",
+  "startingHead": "41f84c148c0c85f62a5bc6d7d2240a2fe356d3b4",
+  "previousBlocker": "D5 final review V2 found no active C12 workflow enforcing the C20 preflight",
+  "chainId": 84532,
+  "frozenSourceCommit": "25c36670883604c1ef5229642ee6548aea6796c3",
+  "canonicalManifest": {
+    "path": "artifacts/perps_v2_replacement_deployment/timelock_configuration_manifest_c12_c20_v2.json",
+    "sha256": "745e7a2fad6a77fef6e35f10a1a431b75615524f51fe13c881c191351ad591fe",
+    "historicalManifestRejectedByNewWorkflow": true
+  },
+  "existingC12WorkflowsBeforeChange": [],
+  "existingC12ExecutionAdapterBeforeChange": false,
+  "bypassSurfaces": [
+    "Historical manifest remains preserved in the old deployment package and historical verifiers, but the historical builder refuses to overwrite it",
+    "Generic governance authority and manually constructed Safe or Timelock transactions exist outside this repository workflow; off-chain tooling cannot prevent them"
+  ],
+  "canonicalEntrypoint": "tools/perps_v2_cutover/c12_governance_workflow.py",
+  "preflightLibrary": "tools/perps_v2_cutover/c12_c20_preflight.py",
+  "supportedStageValidations": ["PREPARE", "REVIEW", "AUTHORIZE", "SCHEDULE", "EXECUTE", "POSTFLIGHT"],
+  "stageSemantics": {
+    "PREPARE": "fresh authorization-phase C20 and D4/D5 readback only; no transaction built",
+    "REVIEW": "fresh authorization-phase readback only; no governance review decision recorded",
+    "AUTHORIZE": "fresh authorization-phase readback and prior-readback evidence for later scheduling; no authorization granted",
+    "SCHEDULE": "fresh authorization-phase readback plus independently checked earlier authorization readback; no queue transaction built or submitted",
+    "EXECUTE": "fresh execution-phase readback with separately queued C12 receipt and elapsed delay; no execution transaction built or submitted",
+    "POSTFLIGHT": "disabled until a separately reviewed public C12 sender and canonical postflight are implemented"
+  },
+  "callGraph": [
+    "CLI main -> require_c12_governance_readiness -> pinned V2 manifest SHA-256 -> c12_c20_preflight.validate -> canonical chain/receipts/Timelock events/live D4-D5 readback",
+    "SCHEDULE -> prior canonical authorization block and historical D5 delay/D4 Risk/migration readback",
+    "EXECUTE -> independent prior authorization readback, separate C12 queue receipt and delay, fresh current state",
+    "CLI -> exclusive local JSON evidence file only after all applicable checks pass"
+  ],
+  "mandatoryGate": {
+    "C20SuccessfulExecution": true,
+    "C20TimelockOperationCompleted": true,
+    "D5LiveMaxOracleDelaySeconds": 600,
+    "canonicalD4AndD5": true,
+    "D4RiskZeroAndMigrationOpen": true,
+    "maintenanceAndACLs": true,
+    "backendStopped": true,
+    "unsafeBatchRejected": true,
+    "freshCheckAtEverySupportedStage": true,
+    "publicSubmissionImplemented": false,
+    "publicSubmissionEnabled": false
+  },
+  "liveReadOnlyObservation": {
+    "blockNumber": 47921793,
+    "blockHash": "0xd151ad156971124ea75becff74ec6099e9a123993d6fd66685117b103944d4a2",
+    "D4RuntimeOwnerAndOpenMigration": "PASS",
+    "D4RiskPointerZero": true,
+    "D4VaultAuthorized": false,
+    "D4InsuranceAuthorized": false,
+    "D5PublicDeployed": false,
+    "C20Executed": false,
+    "C12CurrentlyReady": false
+  },
+  "frozenD5": {
+    "predictedAddress": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110",
+    "initcodeKeccak256": "0xf13dc356f5a7a61cc5528392334339694a67907c05230f5955cedf0feaddfb49",
+    "creationDataSha256": "bbca0c9949993ffbaaf352f4d9fd9c6bb6af0514a6e05ffecb09b986fe7a3b99",
+    "runtimeKeccak256": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c",
+    "unsignedIntentSha256": "3da6a70882b7472c0c999f1c7715630813a5e663d8fb2ef74294904dc42e856a",
+    "sourceAndHistoricalBlockedReviewsUnchanged": true
+  },
+  "tests": {
+    "newWorkflowIntegration": {"passed": 12, "failed": 0, "skipped": 0},
+    "existingPreflightUnit": {"passed": 19, "failed": 0, "skipped": 0},
+    "isolatedLocalTimelock": {"passed": 1, "failed": 0, "skipped": 0},
+    "publicForkTests": {"passed": 0, "failed": 0, "skipped": 0},
+    "offlineFrozenD5AndGovernanceVerifier": "PASS"
+  },
+  "limits": [
+    "This is off-chain enforcement within the new supported C12 workflow, not a Solidity or Timelock invariant",
+    "No public submission adapter, Safe proposal builder, or automatic postflight exists; these require separate security review and authorization",
+    "The existing local Timelock lifecycle test and synthetic-RPC workflow tests exercise complementary layers, not a single public fork transaction",
+    "A prior preflight does not remove time-of-check/time-of-use or reorg risk; the execution-phase check must be rerun immediately before any future separately authorized sender"
+  ],
+  "publicTransactionsSigned": 0,
+  "publicTransactionsBroadcast": 0,
+  "authorization": {
+    "D5Broadcast": false,
+    "D6Broadcast": false,
+    "C12": false,
+    "C20": false,
+    "TimelockOperation": false,
+    "SafeTransaction": false,
+    "MigrationReplay": false,
+    "PublicTrading": false
+  },
+  "readyForD5FinalReviewV3": true,
+  "nextMilestone": "PERPS_V2_BASE_SEPOLIA_REPLACEMENT_D5_RISK_FINAL_REVIEW_V3"
+}
