@@ -1,0 +1,48 @@
+{
+  "schema": "deopt.perps_v2_replacement.d5_risk_final_review_v2.v1",
+  "milestone": "PERPS_V2_BASE_SEPOLIA_REPLACEMENT_D5_RISK_FINAL_REVIEW_V2",
+  "verdict": "BLOCKED",
+  "startingHead": "b534233203af2c87489400b723c2d0cda2bf303b",
+  "frozenSourceCommit": "25c36670883604c1ef5229642ee6548aea6796c3",
+  "chainId": 84532,
+  "reviewBlockNumber": 47916957,
+  "reviewBlockHash": "0x47c4032a4a4566bad1112e7ecb0326e2ca8e1974011bc0d5bfd6f432fba9bce4",
+  "preservedHistoricalEvidenceSha256": {
+    "d5_risk_preparation.json": "69df1563e3ca6c0a2d10cd34aefd7b9a96d1bfa96511b0f17120f944a8948351",
+    "d5_risk_final_review.json": "6e2851fb3890478eef32a29d4bafbcb225d5d46f3302970a7a327453d2cbf156",
+    "d5_risk_unsigned_intent.json": "3da6a70882b7472c0c999f1c7715630813a5e663d8fb2ef74294904dc42e856a"
+  },
+  "governanceCorrection": {
+    "commit": "b534233203af2c87489400b723c2d0cda2bf303b",
+    "manifestPath": "artifacts/perps_v2_replacement_deployment/timelock_configuration_manifest_c12_c20_v2.json",
+    "manifestSha256": "745e7a2fad6a77fef6e35f10a1a431b75615524f51fe13c881c191351ad591fe",
+    "correctionArtifactSha256": "8685e98144ec2d227569c76abc52fcca0e3dc430511c0f1de6335699a0af551e",
+    "validator": "tools/perps_v2_cutover/c12_c20_preflight.py",
+    "manifestAndStandaloneValidatorIntegrity": "PASS",
+    "c20ExecutedOnPublicChain": false,
+    "c12AuthorizedNow": false,
+    "c20RequiredBeforeC12": true,
+    "activeGovernanceManifest": "NONE_ENFORCED_BY_AN_ACTIVE_C12_PREPARATION_OR_EXECUTION_TOOL",
+    "legacyUnsafeManifestExecutableByRepositoryTool": false,
+    "legacyUnsafeManifestSelectableOutsideRepositoryGate": "NOT_EXCLUDED_BY_ENFORCED_WORKFLOW",
+    "c12FailClosedIntegration": "FAIL",
+    "integrationEvidence": "Only the versioned builder, verifier and standalone preflight reference the corrected manifest; no C12 preparation, scheduling or execution entry point invokes the preflight or rejects a bypass of it.",
+    "requiredRemediation": "Make future C12 authorization, scheduling and execution tooling consume the V2 manifest and require successful fresh authorization/execution preflight results; add an integration test that the historical manifest and omitted preflight fail closed."
+  },
+  "canonicalState": {
+    "D1": {"check": "PASS", "address": "0x6B3D846536116082dC4E7227861C341Bb85Ee963", "runtimeHash": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5", "ownerTimelock": true, "pendingOwnerZero": true, "guardianZero": true, "marketCount": 0},
+    "D2": {"check": "PASS", "address": "0x9947F42cC29A32992bbf2030ee49E35C839EDEd5", "runtimeHash": "0x732101d67fb112f6d3159f32852071bbf995f8bd1995335cf9a2b0f167d08726", "ownerAndFeeRecipientTimelock": true, "protocolFeeVaultZero": true, "rebateBudgetRawMUSDC": 0, "merkleRootZero": true, "D4FeeConsumer": false, "legacyRebateBudgetRawMUSDC": 999977},
+    "D3": {"check": "PASS", "address": "0x43Ac3782e75018981a8F8d210049f2A185b07331", "runtimeHash": "0x6d199e027af598ee903513a1ab41e27e2937115c79b8ec85e386d739615befcb", "ownerTimelock": true, "vault": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3", "oracle": "0xB416406F200B2Ef3D7a86A5D5877Ed41D9B1A581", "legacyCollateralRisk": "0xc0f019005a25524a34F2Ee8839DCDCC50715DD7B", "mUSDCTokenConfigUnset": true},
+    "D4": {"check": "PASS", "address": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB", "runtimeHash": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785", "ownerAndGuardianTimelock": true, "migrationOpen": true, "snapshotHashZero": true, "riskPointerZero": true, "matchingEnginePointerZero": true, "otherReplacementPointersZero": true, "tradingPaused": false, "liquidationPaused": false, "fundingPaused": false, "collateralOpsPaused": false, "totalResidualBadDebtBase": 0, "vaultAuthorized": false, "insuranceAuthorized": false, "clearingLedgerRawMUSDC": 1000000000, "economicallyUsableRoute": false}
+  },
+  "deployer": {"address": "0xDA9146F7A0aAcC41EB7Fe7e0d27E3e7ff0ABb9C0", "confirmedNonce": 4, "pendingNonce": 4, "balanceWei": "1914874287968257", "codeEmpty": true},
+  "D5": {"address": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110", "addressEmpty": true, "predictedAddressMatch": true, "creationDataBytes": 10697, "creationDataKeccak256": "0xf13dc356f5a7a61cc5528392334339694a67907c05230f5955cedf0feaddfb49", "creationDataSha256": "bbca0c9949993ffbaaf352f4d9fd9c6bb6af0514a6e05ffecb09b986fe7a3b99", "expectedRuntimeHash": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c", "frozenBuildIntegrity": "PASS", "initialOracleDelaySeconds": 0, "operationalOracleDelaySeconds": 600, "localExactRehearsal": "PASS_REUSED_FROM_PRESERVED_REVIEW_WITH_UNCHANGED_DEPENDENCIES", "D5ToD4PointerAfterDeployment": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB", "D4ToD5PointerAfterDeployment": "ZERO", "sharedStateSideEffects": "NONE_IN_LOCAL_REHEARSAL"},
+  "gasAndFees": {"freshGasEstimate": 2344674, "proposedGasLimit": 2850000, "gasHeadroomPercent": 21.55208, "baseFeeWei": 5000000, "priorityRecommendationWei": 1000000, "gasPriceWei": 6000000, "feeHistorySupported": true, "maxFeePerGasWei": 20000000, "maxPriorityFeePerGasWei": 2000000, "maxExecutionGasCostWei": "57000000000000", "l1OracleUpperBoundObservationWei": "8724", "l1PlanningAllowanceWei": "100000000000000", "l1AllowanceIsGuaranteedMaximum": false, "maxTotalPlanningCostWei": "157000000000000", "balanceSufficient": true, "projectedBalanceAfterMaxPlanningCostWei": "1757874287968257", "unsignedIntentSha256": "3da6a70882b7472c0c999f1c7715630813a5e663d8fb2ef74294904dc42e856a", "unsignedIntentUnchanged": true},
+  "focusedTests": {"passed": 22, "failed": 0, "skipped": 0, "suites": ["19 C12/C20 Python adversarial tests", "1 isolated Timelock delay test", "2 oracle freshness boundary tests"], "offlineIntegrityVerifier": "PASS"},
+  "futureD5Postflight": ["Canonical successful Base Sepolia receipt from exact deployer nonce 4, type 2, null destination, zero value and unchanged creation payload", "Contract at predicted D5 address with expected runtime, Timelock owner, zero pending owner and guardian, D4 Engine, exact Vault/Oracle/mUSDC pointers and initial maxOracleDelay zero", "D4 Risk pointer zero and migration OPEN; D4 emergency state and Vault/Insurance ACLs unchanged; no shared accounting change", "Deployer confirmed nonce 5 after canonical success; C20 remains separate and mandatory before C12"],
+  "authorization": {"D5Broadcast": false, "D6Broadcast": false, "C12": false, "C20": false, "TimelockOperation": false, "SafeTransaction": false, "MigrationReplay": false, "PublicTrading": false},
+  "publicTransactionsSigned": 0,
+  "publicTransactionsBroadcast": 0,
+  "readyForSeparateD5ExecutionAuthorization": false,
+  "nextMilestone": "REMAIN_BLOCKED_WITH_EXACT_BLOCKERS"
+}
