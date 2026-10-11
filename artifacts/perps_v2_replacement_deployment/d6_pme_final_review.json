@@ -1,0 +1,461 @@
+{
+  "authorization": "READ_ONLY_REVIEW_ONLY",
+  "build": {
+    "compiler": "0.8.30+commit.73712a01",
+    "constructorAbi": {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_owner",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_engine",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    "constructorAbiEncoding": "0x000000000000000000000000a67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588000000000000000000000000d0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+    "constructorArgs": [
+      "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB"
+    ],
+    "creationBytecodeKeccak256": "0x7cd4f1444ca222b85d8643053992e2b604f743bb63556bf056f4011a61867eae",
+    "creationDataKeccak256": "0x78c2b65e7bb1f36054e093845b6d97d51e7335698c5f16fada43b7b597a73e18",
+    "creationDataLength": 11949,
+    "creationDataSha256": "7e2cbb79ef1f937465307780f3cd82dbdb0f5d327713f6d7880b9cd936b1fec5",
+    "exactNoWrapperFactoryCreate2BatchOrTrailingBytes": true,
+    "inheritance": [
+      "ReentrancyGuard",
+      "EIP712"
+    ],
+    "libraries": {},
+    "settings": {
+      "compilationTarget": {
+        "src/matching/PerpMatchingEngineV2.sol": "PerpMatchingEngineV2"
+      },
+      "evmVersion": "prague",
+      "libraries": {},
+      "metadata": {
+        "appendCBOR": false,
+        "bytecodeHash": "none"
+      },
+      "optimizer": {
+        "enabled": true,
+        "runs": 0
+      },
+      "remappings": [
+        "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
+        "erc4626-tests/=lib/openzeppelin-contracts/lib/erc4626-tests/",
+        "forge-std/=lib/forge-std/src/",
+        "halmos-cheatcodes/=lib/openzeppelin-contracts/lib/halmos-cheatcodes/src/",
+        "openzeppelin-contracts/=lib/openzeppelin-contracts/"
+      ],
+      "viaIR": true
+    },
+    "source": "src/matching/PerpMatchingEngineV2.sol"
+  },
+  "canonicalDependencies": {
+    "D4MigrationEventScanBlocks": [
+      47878321,
+      47958718
+    ],
+    "D4MigrationSeedAndSealEventsSinceDeployment": 0,
+    "D4ResidualBadDebtBase": 0,
+    "D5Receipt": {
+      "blockHash": "0x0b22f8b281401e1d46e8ea640a51b74a8bc2f7758efb9cbe7a0bf59442c8c490",
+      "blockNumber": "0x2db45a6",
+      "contractAddress": "0x90caa6d5bc628577bc76d6cc8b775f983c75e110",
+      "from": "0xda9146f7a0aacc41eb7fe7e0d27e3e7ff0abb9c0",
+      "gasUsed": "0x237a3e",
+      "status": "0x1",
+      "to": null,
+      "transactionHash": "0x243f693e7c7aedcf972a62eee9a84660916194736379020501e25e7303dd06b3"
+    },
+    "addresses": {
+      "D1": "0x6B3D846536116082dC4E7227861C341Bb85Ee963",
+      "D2": "0x9947F42cC29A32992bbf2030ee49E35C839EDEd5",
+      "D3": "0x43Ac3782e75018981a8F8d210049f2A185b07331",
+      "D4": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+      "D5": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110"
+    },
+    "narrowState": {
+      "Clearing": {
+        "vault": "0x00340c360353a5ab784c5bc5c44322a6af0625d3"
+      },
+      "D1": {
+        "configPaused": false,
+        "creationPaused": false,
+        "getAllMarketIds": [],
+        "guardian": "0x0000000000000000000000000000000000000000",
+        "nextMarketId": 1,
+        "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "paused": false,
+        "pendingOwner": "0x0000000000000000000000000000000000000000",
+        "totalMarkets": 0
+      },
+      "D2": {
+        "D4FeeConsumer": false,
+        "feeRecipient": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "merkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "protocolFeeVault": "0x0000000000000000000000000000000000000000",
+        "rebateBudget": 0,
+        "rebateFundingAccount": "0x0000000000000000000000000000000000000000"
+      },
+      "D3": {
+        "baseTokenConfig": [
+          0,
+          false,
+          false
+        ],
+        "collateralVault": "0x00340c360353a5ab784c5bc5c44322a6af0625d3",
+        "oracle": "0xb416406f200b2ef3d7a86a5d5877ed41d9b1a581",
+        "oracleMaxDelay": 600,
+        "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "pendingOwner": "0x0000000000000000000000000000000000000000",
+        "riskModule": "0xc0f019005a25524a34f2ee8839dcdcc50715dd7b"
+      },
+      "D4": {
+        "clearingAccount": "0x0000000000000000000000000000000000000000",
+        "collateralOpsPaused": false,
+        "collateralSeizer": "0x0000000000000000000000000000000000000000",
+        "collateralVault": "0x00340c360353a5ab784c5bc5c44322a6af0625d3",
+        "feesManagerV2": "0x0000000000000000000000000000000000000000",
+        "fundingPaused": false,
+        "guardian": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "impactMidSource": "0x0000000000000000000000000000000000000000",
+        "insuranceFund": "0x0000000000000000000000000000000000000000",
+        "liquidationPaused": false,
+        "marketRegistry": "0x6b3d846536116082dc4e7227861c341bb85ee963",
+        "matchingEngine": "0x0000000000000000000000000000000000000000",
+        "migrationSnapshotHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "migrationState": 0,
+        "oracle": "0xb416406f200b2ef3d7a86a5d5877ed41d9b1a581",
+        "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "pendingOwner": "0x0000000000000000000000000000000000000000",
+        "riskModule": "0x0000000000000000000000000000000000000000",
+        "traderMarketsDeployer": 0,
+        "tradingPaused": false,
+        "useFeesManagerV2": false
+      },
+      "D5": {
+        "baseCollateralToken": "0x6eae407f5640b006fac9965182e238582a3b412e",
+        "collateralVault": "0x00340c360353a5ab784c5bc5c44322a6af0625d3",
+        "guardian": "0x0000000000000000000000000000000000000000",
+        "maxOracleDelay": 0,
+        "oracle": "0xb416406f200b2ef3d7a86a5d5877ed41d9b1a581",
+        "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "pendingOwner": "0x0000000000000000000000000000000000000000",
+        "perpEngine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb"
+      },
+      "Insurance": {
+        "D4Authorized": false,
+        "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588"
+      },
+      "Oracle": {
+        "guardian": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+        "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588"
+      },
+      "Vault": {
+        "D3Authorized": false,
+        "D4Authorized": false,
+        "clearingLedger": 1000000000,
+        "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588"
+      }
+    },
+    "result": "PASS",
+    "runtimeHashes": {
+      "D1": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5",
+      "D2": "0x732101d67fb112f6d3159f32852071bbf995f8bd1995335cf9a2b0f167d08726",
+      "D3": "0x6d199e027af598ee903513a1ab41e27e2937115c79b8ec85e386d739615befcb",
+      "D4": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785",
+      "D5": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c"
+    }
+  },
+  "deployer": {
+    "address": "0xDA9146F7A0aAcC41EB7Fe7e0d27E3e7ff0ABb9C0",
+    "balanceWei": 1898598909963032,
+    "codeEmpty": true,
+    "confirmedNonce": 5,
+    "createAddressCrossCheck": [
+      "cast compute-address",
+      "independent RLP/Keccak"
+    ],
+    "pendingNonce": 5,
+    "predictedAddress": "0xeeA4e5d891B90D3d99E9C4e2c61069911477110E",
+    "predictedAddressEmpty": true
+  },
+  "eip712": {
+    "chainId": 84532,
+    "historicalSignatureReuse": "FORBIDDEN",
+    "independentSeparatorMatchesLocal": true,
+    "name": "DeOptV2-PerpMatchingEngine",
+    "nonceReplay": "PASS",
+    "partialFill": "PASS",
+    "separator": "0x1ff87de391024af5fcccddf4e4a83e9fb5acc5ddf28cf85f76eefc96d5d4d0f5",
+    "signatureIsolation": "PASS",
+    "verifyingContract": "0xeeA4e5d891B90D3d99E9C4e2c61069911477110E",
+    "version": "2"
+  },
+  "firstTradeGuard": {
+    "exactSelectorMarket1BuyerSellerCloseOnlyDeadlineSignaturesNoncesPriceBoundsNoBatchNoWrapperNoTrailingBytesOneShotUnknownNoRetry": true,
+    "futureGuardRequiredBeforeLiveTest": true,
+    "liveSenderArmed": false,
+    "requiredRebindFields": [
+      "PME address",
+      "D4 Engine address and runtime",
+      "D6 PME runtime hash and size",
+      "EIP712 verifyingContract and domain separator",
+      "executor inventory",
+      "historical event baseline",
+      "bilateral and intent nonce readback source",
+      "trade package and deployment-policy hashes",
+      "policy-bound chain state"
+    ],
+    "status": "REQUIRES_CHANGES"
+  },
+  "futurePolicy": [
+    "before D4 PME wiring or shared execution route: D6 paused true and read back",
+    "before shared ACL: D4 trading/liquidation/funding/collateralOps restrictions true and read back, migration OPEN, backend stopped",
+    "before activation: Timelock bootstrap executor revoked; reviewed runtime executor inventory and narrow grant",
+    "C20 canonical Timelock execution and fresh D5 maxOracleDelay=600 before C12 Risk wiring",
+    "D3 collateral-token configs read back before liquidation",
+    "PMR markets, D2 fee authorization, Vault/Insurance ACL, migration replay/equality/seal each require separate governance",
+    "first-trade guard D6 rebinding and fresh signatures before restricted live testing"
+  ],
+  "futurePublicPostflight": [
+    "canonical Base Sepolia receipt status 1 and canonical block hash",
+    "sender 0xDA9146F7A0aAcC41EB7Fe7e0d27E3e7ff0ABb9C0; nonce 5; type 2; to null; value 0",
+    "exact 11949-byte creation input and authorized gas/fee caps",
+    "gasUsed <= 2950000; contract address 0xeeA4e5d891B90D3d99E9C4e2c61069911477110E",
+    "runtime Keccak 0x3bad813e8654fddf86fb459a738d912b0c6c4dd4ad20119c52a4cc0dc1db834f",
+    "EIP-712 separator 0x1ff87de391024af5fcccddf4e4a83e9fb5acc5ddf28cf85f76eefc96d5d4d0f5",
+    "owner Timelock; pendingOwner zero; guardian zero; Engine D4",
+    "Timelock executor true; runtime executor false; paused false; nonces/fills clean",
+    "D4 PME and Risk pointers zero; migration OPEN; emergency state unchanged",
+    "no Vault/Insurance ACL or shared accounting effects; deployer confirmed nonce 6",
+    "D6_OPERATIONAL_READY = NO; no configuration piggybacked"
+  ],
+  "gasAndFees": {
+    "balanceSufficient": true,
+    "deployerBalanceWei": 1898598909963032,
+    "feeHistoryBaseFeesWei": [
+      5000000,
+      5000000,
+      5000000,
+      5000000,
+      5000000,
+      5000000
+    ],
+    "feeHistoryMedianRewardsWei": [
+      1000000,
+      1000000,
+      1000000,
+      1000000,
+      1000000
+    ],
+    "freshEstimateGas": 2446882,
+    "headroomGas": 503118,
+    "headroomPercent": 20.5616,
+    "historicalEstimateGas": 2446882,
+    "l1FeeUpperBoundObservationWei": 9695,
+    "l1ObservationPayloadBytes": 12461,
+    "l1PlanningAllowanceEth": "0.0001",
+    "l1PlanningAllowanceWei": 100000000000000,
+    "l1ReserveIsNotGuaranteedCap": true,
+    "liveBaseFeeWei": 5000000,
+    "liveGasPriceWei": 6000000,
+    "livePriorityRecommendationWei": 1000000,
+    "maxExecutionGasCostEth": "0.000059",
+    "maxExecutionGasCostWei": 59000000000000,
+    "maxFeePerGasWei": 20000000,
+    "maxPriorityFeePerGasWei": 2000000,
+    "maxTotalPlanningCostEth": "0.000159",
+    "maxTotalPlanningCostWei": 159000000000000,
+    "projectedResidualEth": "0.001739598909963032",
+    "projectedResidualWei": 1739598909963032,
+    "proposedGasLimit": 2950000,
+    "requiresFreshExecutionGate": true
+  },
+  "governance": {
+    "C12Authorized": false,
+    "C12PublicSubmissionEnabled": false,
+    "C20PublicExecuted": false,
+    "D4RiskPointer": "0x0000000000000000000000000000000000000000",
+    "D5MaxOracleDelaySeconds": 0,
+    "correctedManifestPath": "artifacts/perps_v2_replacement_deployment/timelock_configuration_manifest_c12_c20_v2.json",
+    "correctedManifestSha256": "745e7a2fad6a77fef6e35f10a1a431b75615524f51fe13c881c191351ad591fe",
+    "eventScanBlocks": [
+      47924646,
+      47958718
+    ],
+    "futureC12RequiresC20CanonicalExecutionAndFreshDelay600": true,
+    "integrity": "PASS",
+    "preflight": "tools/perps_v2_cutover/c12_c20_preflight.py",
+    "preflightSha256": "371ac6a893078571f0702f324fbb245f7ab03f3a372b017b6e386f4d6b42b1a5",
+    "timelockExecutedEventsTargetingD5SinceD5Deployment": 0,
+    "workflow": "tools/perps_v2_cutover/c12_governance_workflow.py",
+    "workflowSha256": "8f69c2e6c3c66cb337a58478b45c4923078b1ef3fc028de5f2a29174fbbe66c8"
+  },
+  "initialStateAndReachability": {
+    "D4Migration": "OPEN",
+    "D4Risk": "0x0000000000000000000000000000000000000000",
+    "D4ToD6": "0x0000000000000000000000000000000000000000",
+    "TimelockBootstrapExecutorCanCall": true,
+    "bilateralNonceRollback": "PASS",
+    "bilateralTradeRevert": "MigrationNotSealed()",
+    "economicallyUsablePath": false,
+    "engine": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+    "executorMappingEnumerable": false,
+    "guardian": "0x0000000000000000000000000000000000000000",
+    "intentFillAndNonceRollback": "PASS",
+    "intentTradeRevert": "MigrationNotSealed()",
+    "isExecutorKnownPrincipals": {
+      "Timelock": true,
+      "deployer": false,
+      "lostOwner": false,
+      "runtimeExecutor": false
+    },
+    "operationalReady": false,
+    "owner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "paused": false,
+    "pendingOwner": "0x0000000000000000000000000000000000000000",
+    "sharedStateSideEffects": "NONE"
+  },
+  "milestone": "PERPS_V2_BASE_SEPOLIA_REPLACEMENT_D6_PME_FINAL_REVIEW",
+  "nextMilestone": "PERPS_V2_BASE_SEPOLIA_REPLACEMENT_D6_PME_EXECUTION_AUTHORIZATION",
+  "permissions": {
+    "C12": false,
+    "C20": false,
+    "D6Broadcast": false,
+    "MigrationReplay": false,
+    "PublicTrading": false,
+    "SafeTransaction": false,
+    "TimelockOperation": false
+  },
+  "preparation": {
+    "integrity": "PASS",
+    "path": "artifacts/perps_v2_replacement_deployment/d6_pme_preparation.json",
+    "sha256": "714ea57e298f34981f1f1a7cbb4387559e795ff38b7e92b486a2a88738b60a59"
+  },
+  "repository": {
+    "branch": "main",
+    "frozenSourceCommit": "25c36670883604c1ef5229642ee6548aea6796c3",
+    "frozenSourceDiffEmpty": true,
+    "remote": "git@github.com:coriom/deopt-v2-sol.git",
+    "startingHead": "96f06638cf430393987f75a417a9d9982b6d8ff9"
+  },
+  "reviewBlock": {
+    "chainId": 84532,
+    "hash": "0xb50a09d5017400f8ee064f5a735c7298b47e1aa1c76551fb8d0c2950676cdc3f",
+    "hashRechecked": true,
+    "number": 47958718
+  },
+  "runtime": {
+    "addressDependent": true,
+    "diffFromTemplateOnlyImmutableReferences": true,
+    "exactAddressForkRehearsal": "PASS",
+    "expectedPublicKeccak256": "0x3bad813e8654fddf86fb459a738d912b0c6c4dd4ad20119c52a4cc0dc1db834f",
+    "immutableReferences": [
+      {
+        "compilerReferenceId": "3214",
+        "length": 32,
+        "offset": 3238,
+        "runtimeWord": "0x44654f707456322d506572704d61746368696e67456e67696e6500000000001a"
+      },
+      {
+        "compilerReferenceId": "3217",
+        "length": 32,
+        "offset": 3279,
+        "runtimeWord": "0x3200000000000000000000000000000000000000000000000000000000000001"
+      },
+      {
+        "compilerReferenceId": "3207",
+        "length": 32,
+        "offset": 8482,
+        "runtimeWord": "0x000000000000000000000000eea4e5d891b90d3d99e9c4e2c61069911477110e"
+      },
+      {
+        "compilerReferenceId": "3203",
+        "length": 32,
+        "offset": 8536,
+        "runtimeWord": "0x1ff87de391024af5fcccddf4e4a83e9fb5acc5ddf28cf85f76eefc96d5d4d0f5"
+      },
+      {
+        "compilerReferenceId": "3209",
+        "length": 32,
+        "offset": 8615,
+        "runtimeWord": "0x57511e5641e51641dbe51521a2d07f8c8dad95786a4f21e13cdf171e29f8a640"
+      },
+      {
+        "compilerReferenceId": "3211",
+        "length": 32,
+        "offset": 8653,
+        "runtimeWord": "0xad7c5bef027816a800da1736444fb58a807ef4c9603b7848673f7e3a68eb14a5"
+      },
+      {
+        "compilerReferenceId": "3205",
+        "length": 32,
+        "offset": 8725,
+        "runtimeWord": "0x0000000000000000000000000000000000000000000000000000000000014a34"
+      }
+    ],
+    "localContractAddress": "0xeeA4e5d891B90D3d99E9C4e2c61069911477110E",
+    "localExactAddressKeccak256": "0x3bad813e8654fddf86fb459a738d912b0c6c4dd4ad20119c52a4cc0dc1db834f",
+    "runtimeLength": 10441
+  },
+  "schema": "PERPS_V2_BASE_SEPOLIA_REPLACEMENT_D6_PME_FINAL_REVIEW_V1",
+  "tests": {
+    "forgeDomain": {
+      "failed": 0,
+      "passed": 7,
+      "skipped": 0
+    },
+    "forgeExactAddressForkAtPreparationAndFreshBlocks": {
+      "failed": 0,
+      "passed": 2,
+      "skipped": 0
+    },
+    "forgeIntent": {
+      "failed": 0,
+      "passed": 21,
+      "skipped": 0
+    },
+    "forgeTopology": {
+      "failed": 0,
+      "passed": 4,
+      "skipped": 0
+    },
+    "forkTestSha256": "6f3b4dfcfaaac0169b56f2517321a1657fba895aea142b44085c015b93bd1434",
+    "pythonGovernanceAndGuard": {
+      "failed": 0,
+      "passed": 49,
+      "skipped": 0
+    },
+    "total": {
+      "failed": 0,
+      "passed": 83,
+      "skipped": 0
+    }
+  },
+  "unsignedIntent": {
+    "chainId": 84532,
+    "dataKeccak256": "0x78c2b65e7bb1f36054e093845b6d97d51e7335698c5f16fada43b7b597a73e18",
+    "gasLimit": 2950000,
+    "maxFeePerGasWei": 20000000,
+    "maxPriorityFeePerGasWei": 2000000,
+    "nonce": 5,
+    "path": "artifacts/perps_v2_replacement_deployment/d6_pme_unsigned_intent.json",
+    "publicTransactionHash": null,
+    "sha256": "a27f440452f532c8fac9a871e726801c5e5145d1c1d5ae8ce1e71be34841e8a2",
+    "signed": false,
+    "to": null,
+    "type": 2,
+    "valueWei": 0
+  },
+  "verdict": "PASS"
+}

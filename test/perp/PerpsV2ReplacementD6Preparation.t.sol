@@ -34,6 +34,58 @@ contract PerpsV2ReplacementD6PreparationTest is Test {
         value = abi.decode(result, (bytes32));
     }
 
+    function _assertIntentPathRevertsWithoutFills(PerpMatchingEngineV2 pme) internal {
+        uint256 buyerKey = 0xB0B0;
+        uint256 sellerKey = 0xA11CE;
+        PerpMatchingEngineV2.PerpOrderIntent memory buy = PerpMatchingEngineV2.PerpOrderIntent({
+            intentId: keccak256("D6 local buyer intent"),
+            trader: vm.addr(buyerKey),
+            subaccountId: 1,
+            marketId: 1,
+            side: 0,
+            size1e8: 1_000_000,
+            limitPrice1e8: 0,
+            maxExecPrice1e8: 2500e8,
+            minExecPrice1e8: 0,
+            nonce: 7,
+            deadline: block.timestamp + 900
+        });
+        PerpMatchingEngineV2.PerpOrderIntent memory sell = PerpMatchingEngineV2.PerpOrderIntent({
+            intentId: keccak256("D6 local seller intent"),
+            trader: vm.addr(sellerKey),
+            subaccountId: 2,
+            marketId: 1,
+            side: 1,
+            size1e8: 1_000_000,
+            limitPrice1e8: 0,
+            maxExecPrice1e8: 0,
+            minExecPrice1e8: 2400e8,
+            nonce: 9,
+            deadline: block.timestamp + 900
+        });
+        bytes32 buyerHash = pme.hashOrderIntent(buy);
+        bytes32 sellerHash = pme.hashOrderIntent(sell);
+        (uint8 bv, bytes32 br, bytes32 bs) = vm.sign(buyerKey, buyerHash);
+        (uint8 sv, bytes32 sr, bytes32 ss) = vm.sign(sellerKey, sellerHash);
+        PerpMatchingEngineV2.TradeFromIntents memory fill = PerpMatchingEngineV2.TradeFromIntents({
+            marketId: 1,
+            buyerSubaccountId: 1,
+            sellerSubaccountId: 2,
+            size1e8: 1_000_000,
+            executionPrice1e8: 2468e8,
+            buyerIsMaker: true,
+            buyerIntentId: buy.intentId,
+            sellerIntentId: sell.intentId
+        });
+        vm.prank(TIMELOCK);
+        vm.expectRevert(bytes4(keccak256("MigrationNotSealed()")));
+        pme.executeTradeFromIntents(buy, abi.encodePacked(br, bs, bv), sell, abi.encodePacked(sr, ss, sv), fill);
+        assertEq(pme.intentFilled(buyerHash), 0);
+        assertEq(pme.intentFilled(sellerHash), 0);
+        assertFalse(pme.intentNonceUsed(buy.trader, buy.nonce));
+        assertFalse(pme.intentNonceUsed(sell.trader, sell.nonce));
+    }
+
     function testExactAddressConstructionAndInertTopology() public {
         vm.createSelectFork(vm.envString("D6_RPC_URL"), vm.envUint("D6_REVIEW_BLOCK"));
         assertEq(block.chainid, 84532);
@@ -134,6 +186,7 @@ contract PerpsV2ReplacementD6PreparationTest is Test {
         pme.executeTrade(trade, abi.encodePacked(br, bs, bv), abi.encodePacked(sr, ss, sv));
         assertEq(pme.nonces(trade.buyer), 0);
         assertEq(pme.nonces(trade.seller), 0);
+        _assertIntentPathRevertsWithoutFills(pme);
         vm.prank(EXECUTOR);
         vm.expectRevert(PerpMatchingEngineV2.NotAuthorized.selector);
         pme.setExecutor(EXECUTOR, true);
