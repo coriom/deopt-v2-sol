@@ -1,0 +1,117 @@
+{
+  "chainId": 84532,
+  "interpretation": "The outer Redeem Delegations call invoked the Safe execTransaction, which directly called ProtocolTimelock.queueTransaction. The Safe ExecutionSuccess and Timelock TransactionQueued logs plus before/after queue and nonce storage prove S1 scheduling; D6.pause itself was not called.",
+  "limits": [
+    "No public M1 Timelock execution or D6 pause occurred.",
+    "Shared non-drift is bounded to receipt logs, transaction trace, checked ACLs and balances; it is not an exhaustive audit of all possible storage slots.",
+    "Queued does not mean ready or executed. Future M1 execution requires separate final review and authorization."
+  ],
+  "milestone": "PERPS_V2_BASE_SEPOLIA_M1_S1_PUBLIC_POSTFLIGHT_RECONCILIATION_V1",
+  "nextMilestone": "PERPS_V2_BASE_SEPOLIA_D6_INITIAL_PAUSE_TIMELOCK_EXECUTION_FINAL_REVIEW_V1",
+  "postflight": {
+    "checkedProtocolLogEmittersAbsent": true,
+    "d4EmergencyFlagsBeforeAfterLatest": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "d4InsuranceAuthorized": false,
+    "d4Migration": "OPEN",
+    "d4PMEPointer": "0x0000000000000000000000000000000000000000",
+    "d4RiskPointer": "0x0000000000000000000000000000000000000000",
+    "d4SnapshotHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "d4VaultAuthorized": false,
+    "d6Engine": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+    "d6Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "d6PausedAtReceipt": false,
+    "d6PausedLatest": false,
+    "d6RuntimeExecutor": false,
+    "d6RuntimeHashAtReceipt": "0x3bad813e8654fddf86fb459a738d912b0c6c4dd4ad20119c52a4cc0dc1db834f",
+    "d6TimelockExecutor": true,
+    "latestReviewBlockHash": "0x85ffbef570de19fd817515e27e0d3c9159e70ed225b53498acb91a2023343c5b",
+    "latestReviewBlockNumber": 48012529,
+    "latestReviewTimestamp": 1791793346,
+    "sharedBalancesBeforeAfterLatestRaw": {
+      "tokenClearingBalance": 0,
+      "tokenInsuranceBalance": 0,
+      "tokenVaultBalance": 224066000000,
+      "vaultClearingBalance": 1000000000
+    },
+    "sharedEconomicNonDrift": "PASS"
+  },
+  "publicTransaction": {
+    "blockHash": "0xe3f626a3b0a827c3dd5e41373c06ebdf44994ca92a27d3068a46fd0467f87c14",
+    "blockNumber": 48012200,
+    "blockTimestamp": 1791792688,
+    "canonicalBlockContainsTransaction": true,
+    "effectiveGasPriceWei": 6000001,
+    "gasUsed": 234327,
+    "hash": "0x96c83640fadbe7ad0e339c6f590fb97e9837bc4d629706be61e56c6bb469eda8",
+    "outerLabel": "Redeem Delegations via MetaMask Delegation Manager",
+    "outerSelector": "0xcef6d209",
+    "outerSender": "0xb01caea8c6c47bbf4f4b4c5080ca642043359c2e",
+    "outerTo": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+    "receiptStatus": 1,
+    "transactionIndex": 77
+  },
+  "repositoryHeadAtReview": "b7ed1bc1bd5faed83424e3d304b1ae9795d262d6",
+  "safe": {
+    "address": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "executionFailureAbsent": true,
+    "executionSuccessLogIndex": 162,
+    "nestedTimelockQueueCallCount": 1,
+    "nonceAtLatestReviewBlock": 20,
+    "nonceAtReceiptBlock": 20,
+    "nonceBefore": 19,
+    "owners": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "publicSignatureBytes": 130,
+    "reviewedCallFieldsMatch": {
+      "baseGas": true,
+      "data": true,
+      "gasPrice": true,
+      "gasToken": true,
+      "operation": true,
+      "refundReceiver": true,
+      "safeTxGas": true,
+      "to": true,
+      "value": true
+    },
+    "safeTxHash": "0x3fb35cf8215315d5da8d157c5f2631a251f59a525a4a55eb9a6df9eed951320b",
+    "threshold": 2,
+    "traceExecTransactionCallCount": 1
+  },
+  "schema": "deopt.perps_v2_replacement_deployment.m1_d6_pause_s1_public_postflight_reconciliation.v1",
+  "sourceArtifactsSha256": {
+    "schedulingFinalReview": "24991a9478a1de05a9bdc70f5bd455c157bb77bffd4651fb13e4629287012848",
+    "unsignedSafeIntent": "5b1bfca46aa0587459ad8ba32bca6c579eae86e87f1006f02716ba6c7069d216"
+  },
+  "timelock": {
+    "address": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "data": "0x8456cb59",
+    "eta": 1792029034,
+    "etaMarginBeyondMinDelayAtReceiptSeconds": 149946,
+    "executed": false,
+    "executedOrCancelledEventInReceipt": false,
+    "minDelaySeconds": 86400,
+    "operationId": "0xce251e4c40b88520a90eab4f2e955ff6bd810f25f6e28c3e3d253dcafc93db02",
+    "queueEventLogIndex": 161,
+    "queuedAtLatestReviewBlock": true,
+    "queuedAtReceiptBlock": true,
+    "queuedBefore": false,
+    "readyAtLatestReviewBlock": false,
+    "target": "0xeeA4e5d891B90D3d99E9C4e2c61069911477110E",
+    "valueWei": 0
+  },
+  "verdict": {
+    "M1_EXECUTION_AUTHORIZED": "NO",
+    "M2_AUTHORIZED": "NO",
+    "PUBLIC_TRADING_AUTHORIZED": "NO",
+    "S1_POSTFLIGHT": "PASS",
+    "S1_SCHEDULING": "VERIFIED_SCHEDULED"
+  }
+}
