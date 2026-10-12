@@ -1,0 +1,151 @@
+{
+  "c12Authorized": false,
+  "c20Authorized": false,
+  "chain": {
+    "id": 84532,
+    "pinMode": "EIP1898_BLOCK_HASH_REQUIRE_CANONICAL",
+    "reviewBlockHash": "0x79ddad7bf3c46f73335eaf77c177ed7bfbb9fb19ebd43a266d28b4af1abdda25",
+    "reviewBlockNumber": 48009885,
+    "reviewBlockTimestamp": 1791788058
+  },
+  "currentProtocolState": {
+    "d1MarketsEmpty": true,
+    "d4InsuranceAuthorized": false,
+    "d4MigrationOpen": true,
+    "d4PmePointerZero": true,
+    "d4RiskPointerZero": true,
+    "d4VaultAuthorized": false,
+    "d5MaxOracleDelay": 0,
+    "d6Engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+    "d6Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "d6Paused": false
+  },
+  "d6PausedAfterS1": false,
+  "etaGate": {
+    "doNotChangeEtaOrOperationIdWithoutNewReview": true,
+    "marginAfterOneHourSecondsAtPinnedBlock": 150976,
+    "marginSecondsAtPinnedBlock": 154576,
+    "mustRecheckAtActualSchedulingBlock": true,
+    "oneHourMarginLatestPreExecutionTimestamp": 1791939034,
+    "theoreticalLatestScheduleTimestamp": 1791942634
+  },
+  "exactTransactionReview": "PASS_FOR_OFFLINE_FIELDS_ONLY",
+  "futureS1Gates": [
+    "Use normal OPS Safe 2-of-3 workflow only",
+    "Compare all exact Safe transaction fields and SafeTx hash to this reviewed intent",
+    "Refresh Safe nonce, owners, threshold, modules and guard before signing and execution",
+    "Verify at least two valid Safe owner confirmations",
+    "Refresh D6 paused=false, D4 OPEN/unwired/unprivileged, Timelock role/delay/queue state",
+    "At final pre-execution require ETA >= actual block timestamp + live minDelay + 3600 seconds",
+    "Review full Safe-mediated gas strategy; direct Timelock estimate alone is insufficient",
+    "No automatic retry after ambiguous submission",
+    "Canonical receipt and Safe ExecutionSuccess plus Timelock TransactionQueued required before any success claim",
+    "D6 must remain unpaused after S1; S2 requires separate review and authorization"
+  ],
+  "gasPlanning": {
+    "baseFeeWei": 5000000,
+    "directSafeAddressToTimelockEstimateGas": 56489,
+    "fullSafeExecTransactionEstimateGas": "NOT_RELIABLY_AVAILABLE_WITHOUT_SAFE_WORKFLOW_AND_SIGNATURES",
+    "gasPriceWei": 6000000,
+    "noGasEnvelopeApproved": true,
+    "outerExecutionGasLimit": "UNREVIEWED",
+    "priorityFeeWei": 1000000
+  },
+  "m1": {
+    "currentStatus": "NOT_QUEUED_NOT_READY",
+    "d6Paused": false,
+    "data": "0x8456cb59",
+    "eta": 1792029034,
+    "etaUtc": "2026-10-15T01:50:34Z",
+    "executed": false,
+    "operationId": "0xce251e4c40b88520a90eab4f2e955ff6bd810f25f6e28c3e3d253dcafc93db02",
+    "predecessor": "NOT_APPLICABLE",
+    "queued": false,
+    "salt": "NOT_APPLICABLE",
+    "target": "0xeeA4e5d891B90D3d99E9C4e2c61069911477110E",
+    "valueWei": 0
+  },
+  "m1Executed": false,
+  "m1ExecutionAuthorized": false,
+  "m1Queued": false,
+  "m2Authorized": false,
+  "migrationReplayAuthorized": false,
+  "milestone": "PERPS_V2_BASE_SEPOLIA_D6_INITIAL_PAUSE_S1_SCHEDULING_AUTHORIZATION_V1",
+  "nextMilestone": "REMAIN_AT_EXACT_SAFE_OR_TIMELOCK_GATE",
+  "operatorCheckpoint": {
+    "executionAttempted": false,
+    "publicSchedulingBroadcast": false,
+    "safeConfirmationsVerified": false,
+    "safeProposalSubmitted": false,
+    "safeSignaturesCollectedByThisMilestone": false,
+    "status": "REQUIRES_EXPLICIT_OPERATOR_APPROVAL_IN_NORMAL_SAFE_WORKFLOW"
+  },
+  "phaseAReadOnlyPreflight": "PASS",
+  "priorEvidence": {
+    "finalReview": {
+      "path": "artifacts/perps_v2_replacement_deployment/m1_d6_pause_scheduling_final_review_v1.json",
+      "sha256": "24991a9478a1de05a9bdc70f5bd455c157bb77bffd4651fb13e4629287012848"
+    },
+    "preparation": {
+      "path": "artifacts/perps_v2_replacement_deployment/m1_d6_initial_pause_preparation_v1.json",
+      "sha256": "9c49a9d24441d835a6317692e8655903e3305daad0891271d7835027d586b84e"
+    },
+    "unsignedIntent": {
+      "path": "artifacts/perps_v2_replacement_deployment/m1_d6_pause_unsigned_safe_schedule_v1.json",
+      "sha256": "5b1bfca46aa0587459ad8ba32bca6c579eae86e87f1006f02716ba6c7069d216"
+    }
+  },
+  "publicReceipt": null,
+  "publicTradingAuthorized": false,
+  "readyForM1ExecutionReview": false,
+  "reason": "No connected Safe UI, Safe Transaction Service workflow, or Safe owner signing capability is available in this workspace. Operator checkpoint and real 2-of-3 Safe confirmation remain outstanding. No proposal or signature was attempted.",
+  "repositoryHeadAtStart": "bb10c9b011863a66f348066347020792074cfccc",
+  "s1Postflight": "NOT_RUN",
+  "safe": {
+    "address": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "confirmations": "NOT_VERIFIED_NO_SAFE_PROPOSAL",
+    "guard": "0000000000000000000000000000000000000000",
+    "modules": [],
+    "nonceAfterObserved": 19,
+    "nonceBeforeObserved": 19,
+    "owners": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "publicTransactionHash": null,
+    "safeTxHashConditional": "0x3fb35cf8215315d5da8d157c5f2631a251f59a525a4a55eb9a6df9eed951320b",
+    "threshold": 2,
+    "version": "1.4.1"
+  },
+  "safeTransaction": {
+    "baseGas": 0,
+    "gasPrice": 0,
+    "gasToken": "0x0000000000000000000000000000000000000000",
+    "nonceObserved": 19,
+    "operation": "CALL",
+    "operationCode": 0,
+    "outerCalldata": "0x8e361cdf000000000000000000000000eea4e5d891b90d3d99e9c4e2c61069911477110e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ad0316a00000000000000000000000000000000000000000000000000000000000000048456cb5900000000000000000000000000000000000000000000000000000000",
+    "outerCalldataKeccak256": "0xf6b1c5b1a0b6df93df2c8b863e850ed06fc8499a6ae069c56136f09e4e319b05",
+    "outerFunction": "queueTransaction(address,uint256,bytes,uint256)",
+    "refundReceiver": "0x0000000000000000000000000000000000000000",
+    "safeTxGas": 0,
+    "safeTxHashConditional": "0x3fb35cf8215315d5da8d157c5f2631a251f59a525a4a55eb9a6df9eed951320b",
+    "safeTxHashIsNotPublicTransactionHash": true,
+    "safeTxHashIsNotTimelockOperationId": true,
+    "target": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "valueWei": 0
+  },
+  "schema": "deopt.perps_v2_replacement_deployment.m1_d6_pause_s1_scheduling_authorization_v1",
+  "sharedEconomicNonDrift": "NO_PUBLIC_ACTION; bounded preflight D4 ACL/wiring checks only",
+  "sourceCommit": "25c36670883604c1ef5229642ee6548aea6796c3",
+  "terminalStatus": "AWAITING_OPERATOR_SAFE_ACTION",
+  "timelock": {
+    "address": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "minDelaySeconds": 86400,
+    "queuePaused": false,
+    "runtimeHash": "0xb20f9fa764b46a832c7665f07c1b9c3cd6506a58f6885c0e12e88e9bbc55233c",
+    "safeExecutor": true,
+    "safeProposer": true
+  }
+}
