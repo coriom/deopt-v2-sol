@@ -1,0 +1,269 @@
+{
+  "backendStoppedLocalObservation": true,
+  "chainId": 84532,
+  "currentPublicEconomicPathExists": false,
+  "d1Markets": [],
+  "d2": {
+    "D4feeConsumer": false,
+    "feeRecipient": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "merkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "protocolFeeVault": "0x0000000000000000000000000000000000000000"
+  },
+  "d2RebateBudgetsSampled": {
+    "D2.rebateBudget.D4": 0,
+    "D2.rebateBudget.TIMELOCK": 0,
+    "D2.rebateBudget.TOKEN": 0
+  },
+  "d3MUsdcConfig": [
+    0,
+    false,
+    false
+  ],
+  "d4": {
+    "clearingAccount": "0x0000000000000000000000000000000000000000",
+    "collateralOpsPaused": false,
+    "collateralSeizer": "0x0000000000000000000000000000000000000000",
+    "collateralVault": "0x00340c360353a5ab784c5bc5c44322a6af0625d3",
+    "feesManagerV2": "0x0000000000000000000000000000000000000000",
+    "fundingPaused": false,
+    "guardian": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "insuranceFund": "0x0000000000000000000000000000000000000000",
+    "liquidationPaused": false,
+    "marketRegistry": "0x6b3d846536116082dc4e7227861c341bb85ee963",
+    "matchingEngine": "0x0000000000000000000000000000000000000000",
+    "migrationSnapshotHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "migrationState": 0,
+    "oracle": "0xb416406f200b2ef3d7a86a5d5877ed41d9b1a581",
+    "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "riskModule": "0x0000000000000000000000000000000000000000",
+    "totalResidualBadDebtBase": 0,
+    "tradingPaused": false
+  },
+  "d4CanonicalTraderPositions": {
+    "0x290bd12c93e467bf51c51f5273d35bddb19e9274": {
+      "lastCumulativeFundingRate1e18": 0,
+      "openNotional1e8": 0,
+      "size1e8": 0
+    },
+    "0x475fe397fa56884952d350aa9ee1c3946964bc0c": {
+      "lastCumulativeFundingRate1e18": 0,
+      "openNotional1e8": 0,
+      "size1e8": 0
+    },
+    "0x66858286feea78a05ea093673ea1535e0a52002d": {
+      "lastCumulativeFundingRate1e18": 0,
+      "openNotional1e8": 0,
+      "size1e8": 0
+    },
+    "0x77ca9dd6ccce2d692fb23877a2db7178807b0020": {
+      "lastCumulativeFundingRate1e18": 0,
+      "openNotional1e8": 0,
+      "size1e8": 0
+    },
+    "0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34": {
+      "lastCumulativeFundingRate1e18": 0,
+      "openNotional1e8": 0,
+      "size1e8": 0
+    },
+    "0xff287410852b9328437eac353720e5476bc5f837": {
+      "lastCumulativeFundingRate1e18": 0,
+      "openNotional1e8": 0,
+      "size1e8": 0
+    }
+  },
+  "d4MarketStateView": "REVERTS_WHILE_PMR_MARKETS_UNCONFIGURED; source PerpEngineViews.marketState requires market existence, so OI is not directly readable by this getter at the review block",
+  "d5MaxOracleDelay": 0,
+  "d6": {
+    "domainSeparatorV4": "0x1ff87de391024af5fcccddf4e4a83e9fb5acc5ddf28cf85f76eefc96d5d4d0f5",
+    "executor.runtime": false,
+    "executor.timelock": true,
+    "guardian": "0x0000000000000000000000000000000000000000",
+    "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "paused": false,
+    "pendingOwner": "0x0000000000000000000000000000000000000000",
+    "perpEngine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb"
+  },
+  "d6CanonicalReceipt": {
+    "blockHash": "0x9f840a7d0de285b764c93cd2b9e6d70461739610164f3b81512ad54a64e2183b",
+    "blockNumber": "0x2dc1f75",
+    "contractAddress": "0xeea4e5d891b90d3d99e9c4e2c61069911477110e",
+    "status": "0x1",
+    "transactionHash": "0x99b5f01a24ec1038e6d75177b006de25fe157419412cf461c21ba1efdd4d91ac"
+  },
+  "d6ExecutionEvidence": {
+    "path": "artifacts/perps_v2_replacement_deployment/d6_pme_execution_v2_journal.json",
+    "sha256": "392bd5bdb89277ed58b02e71f96973cd7d6be97120a1d5d2f15e150c309fc580"
+  },
+  "deployments": [
+    {
+      "address": "0x6B3D846536116082dC4E7227861C341Bb85Ee963",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "runtimeHash": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5",
+      "stage": "D1",
+      "transactionHash": "0x8d361c5bc913deb9aa10c2638b8fc2a687c54998b3bf8c695a34c0548d921cba"
+    },
+    {
+      "address": "0x9947F42cC29A32992bbf2030ee49E35C839EDEd5",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "runtimeHash": "0x732101d67fb112f6d3159f32852071bbf995f8bd1995335cf9a2b0f167d08726",
+      "stage": "D2",
+      "transactionHash": "0x5bfcaf662296abae3c2b95bbe144fdf73015dd666c7502cce5a717c00e299b85"
+    },
+    {
+      "address": "0x43Ac3782e75018981a8F8d210049f2A185b07331",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "runtimeHash": "0x6d199e027af598ee903513a1ab41e27e2937115c79b8ec85e386d739615befcb",
+      "stage": "D3",
+      "transactionHash": "0x6708dea09dd9620fca4323feb94394c7d1e40e9fd1ffae7d9883f93742a5eed7"
+    },
+    {
+      "address": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "runtimeHash": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785",
+      "stage": "D4",
+      "transactionHash": "0xd77b5b6c74a6709fc8a5040318ced23f7033c69f7720b4fb4c74e200e306fae0"
+    },
+    {
+      "address": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "runtimeHash": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c",
+      "stage": "D5",
+      "transactionHash": "0x243f693e7c7aedcf972a62eee9a84660916194736379020501e25e7303dd06b3"
+    },
+    {
+      "address": "0xeeA4e5d891B90D3d99E9C4e2c61069911477110E",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "runtimeHash": "0x3bad813e8654fddf86fb459a738d912b0c6c4dd4ad20119c52a4cc0dc1db834f",
+      "stage": "D6",
+      "transactionHash": "0x99b5f01a24ec1038e6d75177b006de25fe157419412cf461c21ba1efdd4d91ac"
+    }
+  ],
+  "focusedTests": {
+    "forkFoundry": {
+      "failed": 0,
+      "passed": 6,
+      "skipped": 0
+    },
+    "governancePython": {
+      "failed": 0,
+      "passed": 31,
+      "skipped": 0
+    }
+  },
+  "frozenSoliditySourceCommit": "25c36670883604c1ef5229642ee6548aea6796c3",
+  "governanceIntegrity": {
+    "C12Authorized": false,
+    "C12ExecutionAdapterEnabled": false,
+    "C20Executed": false,
+    "correctedManifestSha256": "745e7a2fad6a77fef6e35f10a1a431b75615524f51fe13c881c191351ad591fe",
+    "validator": "tools/perps_v2_cutover/c12_c20_preflight.py",
+    "validatorSha256": "371ac6a893078571f0702f324fbb245f7ab03f3a372b017b6e386f4d6b42b1a5",
+    "workflow": "tools/perps_v2_cutover/c12_governance_workflow.py",
+    "workflowSha256": "8f69c2e6c3c66cb337a58478b45c4923078b1ef3fc028de5f2a29174fbbe66c8"
+  },
+  "historicalMaintenance": {
+    "INS.backstop.NEW": true,
+    "INS.backstop.OLD": false,
+    "INS.backstop.V1": true,
+    "NEW.collateralOpsPaused": true,
+    "NEW.fundingPaused": true,
+    "NEW.liquidationPaused": true,
+    "NEW.migrationSnapshotHash": "0x039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d",
+    "NEW.migrationState": 1,
+    "NEW.tradingPaused": true,
+    "OLD.collateralOpsPaused": true,
+    "OLD.fundingPaused": true,
+    "OLD.liquidationPaused": true,
+    "OLD.migrationSnapshotHash": "0x039d9172729b0c9621956878a453409796308a37dc8e9f8f2d3f0d7e5b8b3d7d",
+    "OLD.migrationState": 1,
+    "OLD.tradingPaused": true,
+    "PME_V1.engine": "0xc6c592100723fe0c66343a16e95ec34cc0c2141c",
+    "PME_V1.paused": true,
+    "PME_V2.engine": "0x44702b0a3c329f2cc5b5c02c2123dc9386a46db9",
+    "PME_V2.paused": true,
+    "V1.collateralOpsPaused": true,
+    "V1.fundingPaused": true,
+    "V1.liquidationPaused": true,
+    "V1.tradingPaused": true,
+    "VAULT.auth.NEW": true,
+    "VAULT.auth.OLD": true,
+    "VAULT.auth.V1": true
+  },
+  "limits": [
+    "No public Safe or Timelock transaction, proposal, or signed operation constructed",
+    "Fork Safe impersonation tests Timelock roles/delay and target effects, not real 2-of-3 signature collection",
+    "D4 marketState getter cannot expose unconfigured market OI; bounded canonical positions and migration/debt state checked",
+    "Read-only snapshot is at a pinned block and must be refreshed before any future authorization",
+    "Existing generic Safe/Timelock authority can bypass repository off-chain workflow; public operations require independent review"
+  ],
+  "localRehearsal": {
+    "M1": "PASS",
+    "M2": "PASS",
+    "SafeRole": "impersonated on isolated fork only; actual Timelock proposer/executor modifiers and 86400-second delay exercised",
+    "SafeSignatureThresholdSimulation": "NOT_RUN; no real owner keys or public Safe proposal; 2-of-3 threshold verified by live getter",
+    "forkBlockNumber": 48000221,
+    "sequence": "PASS"
+  },
+  "maintenanceSemantics": {
+    "D4close": "setEmergencyModes(bool,bool,bool,bool) all true; onlyGuardianOrOwner; guardian cannot relax a true flag; four flag events plus EmergencyModeUpdated",
+    "D4globalPause": "V2 exposes no global pause getter or setter; inherited _paused is initialized false and not changed by M2; use four granular flags only",
+    "D6pause": "pause() 0x8456cb59, onlyGuardianOrOwner; paused bool true and Paused event; unpause() onlyOwner; no nonce, fill, executor, Engine or shared contract write"
+  },
+  "milestone": "PERPS_V2_BASE_SEPOLIA_POST_DEPLOYMENT_MAINTENANCE_AND_GOVERNANCE_PREFLIGHT_V1",
+  "nextMilestone": "PERPS_V2_BASE_SEPOLIA_D6_INITIAL_PAUSE_PREPARATION_V1",
+  "operationPlan": "artifacts/perps_v2_replacement_deployment/maintenance_operation_plan_v1.json",
+  "operationPlanSha256": "30ba4cabbdea0343f93be86e846c487bed20c9d389743acaa4d764b2a2082910",
+  "pinMode": "EIP1898_BLOCK_HASH_REQUIRE_CANONICAL",
+  "postSimulatedMaintenanceEconomicPathExists": false,
+  "publicActionsExecuted": false,
+  "reviewBlockHash": "0x63a2011c4682e9786f3e49ca06b37b67bc9934d3e48fe126039793fdbb8249d5",
+  "reviewBlockNumber": 48000221,
+  "safe": {
+    "modules": [
+      [],
+      "0x0000000000000000000000000000000000000001"
+    ],
+    "nonce": 19,
+    "owners": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "threshold": 2,
+    "version": "1.4.1"
+  },
+  "schema": "deopt.perps_v2_replacement.post_deployment_maintenance_preflight.v1",
+  "sharedCustody": {
+    "clearing": "0x00340c360353a5ab784c5bc5c44322a6af0625d3",
+    "clearingLedgerRawMUSDC": 1000000000,
+    "insurance": {
+      "backstopD4": false,
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588"
+    },
+    "vault": {
+      "clearingLedger": 1000000000,
+      "guardian": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+      "insuranceLedger": 2100010,
+      "isAuthorizedEngine.D4": false,
+      "isEngineAuthorized.D4": false,
+      "marginEngine": "0x506cd65a63c53c66ab572b9f9dd819b7bfe00d30",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "riskModule": "0xc0f019005a25524a34f2ee8839dcdcc50715dd7b"
+    },
+    "vaultMUSDCBalanceRaw": 224066000000
+  },
+  "startingHead": "74db4a97efdc63d66809eb31dfba30d80b77b4bb",
+  "timelock": {
+    "executors.safe": true,
+    "executors.self": false,
+    "guardian": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+    "minDelay": 86400,
+    "owner": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+    "pendingOwner": "0x0000000000000000000000000000000000000000",
+    "proposers.safe": true,
+    "proposers.self": false,
+    "queuePaused": false
+  },
+  "verdict": "PASS"
+}

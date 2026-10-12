@@ -1,0 +1,199 @@
+{
+  "chainId": 84532,
+  "firstOperation": "M1_D6_PAUSE",
+  "firstOperationReviewTemplate": {
+    "id": "M1_D6_PAUSE",
+    "prohibited": [
+      "batch with M2",
+      "C12/C20",
+      "executor changes",
+      "live submit from this artifact"
+    ],
+    "requiredFreshInputs": [
+      "chain 84532",
+      "D6 runtime/owner/paused state",
+      "D4 OPEN/unwired/no ACL",
+      "Safe version/owners/threshold/nonce/modules",
+      "Timelock owner/guardian/proposer/executor/minDelay/queuePaused",
+      "exact target/calldata",
+      "reviewed ETA and operation hash",
+      "independent Safe proposal and public schedule/execute authorizations"
+    ]
+  },
+  "futureC12Gate": {
+    "manifest": "artifacts/perps_v2_replacement_deployment/timelock_configuration_manifest_c12_c20_v2.json",
+    "required": "C20 publicly executed with canonical receipt and Timelock completion; D5 fresh maxOracleDelay=600 before C12 scheduling/authorization/execution",
+    "sha256": "745e7a2fad6a77fef6e35f10a1a431b75615524f51fe13c881c191351ad591fe"
+  },
+  "futureExecutorPolicy": "Keep D6 paused; review runtime executor identity and bounded event inventory, then separately authorize runtime grant and Timelock bootstrap revocation before activation; no grant/revoke here",
+  "governanceDependencyDag": {
+    "C12_D4_RISK_WIRING": [
+      "CANONICAL_MIGRATION_REPLAY"
+    ],
+    "C20_CANONICAL_RECEIPT_AND_LIVE_600_READBACK": [
+      "C12_D4_RISK_WIRING"
+    ],
+    "C20_D5_DELAY_600": [
+      "C20_CANONICAL_RECEIPT_AND_LIVE_600_READBACK"
+    ],
+    "CANONICAL_MIGRATION_REPLAY": [
+      "ECONOMIC_EQUALITY_PROOF"
+    ],
+    "D2_FEE_CONSUMER_GRANT": [
+      "CANONICAL_MIGRATION_REPLAY"
+    ],
+    "D3_TOKEN_CONFIG": [
+      "LIQUIDATION_ENABLED_USE"
+    ],
+    "D4_FEE_SEIZER_INSURANCE_CLEARING_WIRING": [
+      "CANONICAL_MIGRATION_REPLAY"
+    ],
+    "D4_PME_WIRING": [
+      "CANONICAL_MIGRATION_REPLAY"
+    ],
+    "D6_EXECUTOR_POLICY": [
+      "D4_PME_WIRING"
+    ],
+    "ECONOMIC_EQUALITY_PROOF": [
+      "SEPARATE_MIGRATION_SEAL"
+    ],
+    "FIRST_TRADE_GUARD_D4_D6_REBIND": [
+      "RESTRICTED_FIRST_TRADE_REVIEW"
+    ],
+    "M1_D6_PAUSE": [
+      "M2_D4_FOUR_FLAG_CLOSE"
+    ],
+    "M2_D4_FOUR_FLAG_CLOSE": [
+      "GUARDIAN_POLICY_REVIEW",
+      "C20_D5_DELAY_600",
+      "PMR_MARKETS_1_2",
+      "D3_TOKEN_CONFIG",
+      "D6_EXECUTOR_POLICY",
+      "D4_FEE_SEIZER_INSURANCE_CLEARING_WIRING",
+      "D2_FEE_CONSUMER_GRANT",
+      "SHARED_ACL_REVIEW"
+    ],
+    "PMR_MARKETS_1_2": [
+      "CANONICAL_MIGRATION_REPLAY"
+    ],
+    "RESTRICTED_FIRST_TRADE_REVIEW": [
+      "SELECTIVE_ACTIVATION_REVIEW"
+    ],
+    "SEPARATE_MIGRATION_SEAL": [
+      "RESTRICTED_FIRST_TRADE_REVIEW"
+    ],
+    "SHARED_ACL_GRANTS": [
+      "CANONICAL_MIGRATION_REPLAY"
+    ],
+    "SHARED_ACL_REVIEW": [
+      "SHARED_ACL_GRANTS"
+    ]
+  },
+  "operations": [
+    {
+      "calldata": "0x8456cb59",
+      "calldataKeccak256": "0x7c85f13cbc00e94f65b56843fd4599d9ebf4603adcd733a14a54c28d66dd332e",
+      "chainId": 84532,
+      "eta": null,
+      "expectedPostState": {
+        "D4.fourFlags": "unchanged false",
+        "D4.migration": "OPEN",
+        "D6.paused": true
+      },
+      "expectedTargetEvent": "Paused(address)",
+      "failurePolicy": "Stop; no automatic retry or next operation. Ambiguous submission requires read-only transaction/operation reconciliation.",
+      "functionSignature": "pause()",
+      "gasEstimate": null,
+      "gasEstimateReason": "No execution envelope or fixed Safe transaction/ETA; direct target estimate would omit Safe and Timelock overhead",
+      "governanceSender": "OPS Safe, with live 2-of-3 signatures; Safe is Timelock proposer and executor",
+      "id": "M1_D6_PAUSE",
+      "minDelaySecondsObserved": 86400,
+      "operationHash": null,
+      "operationIdentityRule": "keccak256(abi.encode(target, valueWei, calldata, eta)); conditional until a separately reviewed ETA is fixed",
+      "prerequisites": [
+        "Canonical D1-D6 live state",
+        "D6.paused false",
+        "D4 OPEN with zero Risk/PME pointers and no shared ACL",
+        "Safe 2-of-3 and Timelock Safe proposer/executor roles fresh",
+        "Separate M1 Safe proposal and scheduling/execution authorizations"
+      ],
+      "receiptAndPostflight": [
+        "Canonical successful Safe schedule receipt and TransactionQueued exact operation hash",
+        "Observe queued operation, independently confirm ETA >= schedule timestamp + live minDelay",
+        "After delay, separate canonical successful Safe execute receipt and TransactionExecuted exact operation hash",
+        "Confirm queuedTransactions(operationHash) false and target event/contract state readback at canonical block",
+        "Recheck D4 OPEN, zero Risk/PME pointers, Vault/Insurance ACL absent, custody ledger unchanged"
+      ],
+      "safeNonce": null,
+      "safeProposal": null,
+      "safeStoppingPoint": "D6 paused true; D4 still OPEN and unwired; M2 may remain unscheduled indefinitely",
+      "signedPayload": null,
+      "status": "OFFLINE_REVIEW_ONLY_NOT_SCHEDULED",
+      "target": "0xeeA4e5d891B90D3d99E9C4e2c61069911477110E",
+      "targetCallAuthority": "ProtocolTimelock as owner/guardian",
+      "timelockExecuteFunction": "executeTransaction(address,uint256,bytes,uint256)",
+      "timelockQueueFunction": "queueTransaction(address,uint256,bytes,uint256)",
+      "valueWei": 0
+    },
+    {
+      "calldata": "0xf64e345d0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001",
+      "calldataKeccak256": "0xede11d55a86c671f6ff569f50d69a0dcac0a9584879fcad82e931aed5cbd7830",
+      "chainId": 84532,
+      "eta": null,
+      "expectedPostState": {
+        "D4.collateralOpsPaused": true,
+        "D4.fundingPaused": true,
+        "D4.liquidationPaused": true,
+        "D4.migration": "OPEN",
+        "D4.tradingPaused": true,
+        "D6.paused": true
+      },
+      "expectedTargetEvent": "TradingPauseSet(bool), LiquidationPauseSet(bool), FundingPauseSet(bool), CollateralOpsPauseSet(bool), EmergencyModeUpdated(bool,bool,bool,bool)",
+      "failurePolicy": "Stop; no automatic retry or next operation. Ambiguous submission requires read-only transaction/operation reconciliation.",
+      "functionSignature": "setEmergencyModes(bool,bool,bool,bool)",
+      "gasEstimate": null,
+      "gasEstimateReason": "No execution envelope or fixed Safe transaction/ETA; direct target estimate would omit Safe and Timelock overhead",
+      "governanceSender": "OPS Safe, with live 2-of-3 signatures; Safe is Timelock proposer and executor",
+      "id": "M2_D4_FOUR_FLAG_CLOSE",
+      "minDelaySecondsObserved": 86400,
+      "operationHash": null,
+      "operationIdentityRule": "keccak256(abi.encode(target, valueWei, calldata, eta)); conditional until a separately reviewed ETA is fixed",
+      "prerequisites": [
+        "M1 canonical execution and fresh D6 paused=true readback",
+        "D4 still OPEN, zero Risk/PME pointers, no shared ACL",
+        "Safe and Timelock roles/minDelay refreshed",
+        "Separate M2 Safe proposal and scheduling/execution authorizations"
+      ],
+      "receiptAndPostflight": [
+        "Canonical successful Safe schedule receipt and TransactionQueued exact operation hash",
+        "Observe queued operation, independently confirm ETA >= schedule timestamp + live minDelay",
+        "After delay, separate canonical successful Safe execute receipt and TransactionExecuted exact operation hash",
+        "Confirm queuedTransactions(operationHash) false and target event/contract state readback at canonical block",
+        "Recheck D4 OPEN, zero Risk/PME pointers, Vault/Insurance ACL absent, custody ledger unchanged"
+      ],
+      "safeNonce": null,
+      "safeProposal": null,
+      "safeStoppingPoint": "D6 paused and D4 four emergency flags true; no wiring, ACL, migration, or activation",
+      "signedPayload": null,
+      "status": "OFFLINE_REVIEW_ONLY_NOT_SCHEDULED",
+      "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+      "targetCallAuthority": "ProtocolTimelock as owner/guardian",
+      "timelockExecuteFunction": "executeTransaction(address,uint256,bytes,uint256)",
+      "timelockQueueFunction": "queueTransaction(address,uint256,bytes,uint256)",
+      "valueWei": 0
+    }
+  ],
+  "orderingPolicy": "M1 canonical execution and target readback precede M2 separate execution review; no batch or automatic continuation",
+  "publicActionAuthorized": false,
+  "reviewBlockHash": "0x63a2011c4682e9786f3e49ca06b37b67bc9934d3e48fe126039793fdbb8249d5",
+  "reviewBlockNumber": 48000221,
+  "safetyBoundaries": [
+    "Each Safe schedule and execute action requires separate explicit authorization",
+    "No automatic retry; ambiguous submission is read-only reconciliation",
+    "No generic unpause-all",
+    "No Safe proposal or signed transaction constructed here"
+  ],
+  "schema": "deopt.perps_v2_replacement.maintenance_operation_plan.v1",
+  "secondOperation": "M2_D4_FOUR_FLAG_CLOSE",
+  "verdict": "PASS_OFFLINE_PLAN_ONLY"
+}
