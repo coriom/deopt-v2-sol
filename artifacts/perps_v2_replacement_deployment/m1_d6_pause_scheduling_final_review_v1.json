@@ -1,0 +1,209 @@
+{
+  "canonicalDeployments": [
+    {
+      "address": "0x6B3D846536116082dC4E7227861C341Bb85Ee963",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "runtimeHash": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5",
+      "stage": "D1"
+    },
+    {
+      "address": "0x9947F42cC29A32992bbf2030ee49E35C839EDEd5",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "runtimeHash": "0x732101d67fb112f6d3159f32852071bbf995f8bd1995335cf9a2b0f167d08726",
+      "stage": "D2"
+    },
+    {
+      "address": "0x43Ac3782e75018981a8F8d210049f2A185b07331",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "runtimeHash": "0x6d199e027af598ee903513a1ab41e27e2937115c79b8ec85e386d739615befcb",
+      "stage": "D3"
+    },
+    {
+      "address": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "runtimeHash": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785",
+      "stage": "D4"
+    },
+    {
+      "address": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "runtimeHash": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c",
+      "stage": "D5"
+    },
+    {
+      "address": "0xeeA4e5d891B90D3d99E9C4e2c61069911477110E",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "runtimeHash": "0x3bad813e8654fddf86fb459a738d912b0c6c4dd4ad20119c52a4cc0dc1db834f",
+      "stage": "D6"
+    }
+  ],
+  "chain": {
+    "blockHash": "0xe767dbd954f802dcadd4e445bdc7f21797de1ccb3d9b20d10c4eaddf667fe1be",
+    "blockNumber": 48001769,
+    "blockTimestamp": 1791771826,
+    "id": 84532,
+    "pinMode": "EIP1898_BLOCK_HASH_REQUIRE_CANONICAL"
+  },
+  "d4State": {
+    "D4.collateralOpsPaused": false,
+    "D4.fundingPaused": false,
+    "D4.insuranceAuthorized": false,
+    "D4.liquidationPaused": false,
+    "D4.matchingEngine": "0x0000000000000000000000000000000000000000",
+    "D4.migrationSnapshotHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "D4.migrationState": 0,
+    "D4.owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "D4.riskModule": "0x0000000000000000000000000000000000000000",
+    "D4.runtimeHash": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785",
+    "D4.totalResidualBadDebtBase": 0,
+    "D4.tradingPaused": false,
+    "D4.vaultAuthorized": false
+  },
+  "d5MaxOracleDelay": 0,
+  "d6State": {
+    "D6.executor.runtime": false,
+    "D6.executor.timelock": true,
+    "D6.guardian": "0x0000000000000000000000000000000000000000",
+    "D6.owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "D6.paused": false,
+    "D6.pendingOwner": "0x0000000000000000000000000000000000000000",
+    "D6.perpEngine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+    "D6.runtimeHash": "0x3bad813e8654fddf86fb459a738d912b0c6c4dd4ad20119c52a4cc0dc1db834f"
+  },
+  "frozenSourceCommit": "25c36670883604c1ef5229642ee6548aea6796c3",
+  "futureSequence": [
+    "S1 separate scheduling authorization",
+    "Safe proposal and 2-of-3 confirmations",
+    "Canonical Safe execution and Timelock queued readback",
+    "Delay elapsed",
+    "S2 separate final review and authorization",
+    "Canonical S2 execution receipt and D6 paused=true readback",
+    "Only then may M2 proceed under separate review"
+  ],
+  "gasPlanning": {
+    "baseFeeWei": 5000000,
+    "directTimelockQueueEthEstimateGas": 56489,
+    "executionEnvelopeAuthorized": false,
+    "gasPriceWei": 6000000,
+    "priorityFeeWei": 1000000,
+    "safeMediatedEstimate": "NOT_RELIABLY_AVAILABLE_WITHOUT_EXACT_SIGNED_SAFE_TRANSACTION"
+  },
+  "m1Executed": false,
+  "m1Inner": {
+    "currentGuardian": "0x0000000000000000000000000000000000000000",
+    "data": "0x8456cb59",
+    "effect": "D6 paused false to true on later S2 execution only",
+    "externalCalls": false,
+    "function": "pause()",
+    "nonPauseWrites": false,
+    "onlyGuardianOrOwner": true,
+    "target": "0xeeA4e5d891B90D3d99E9C4e2c61069911477110E",
+    "valueWei": 0
+  },
+  "m1Scheduled": false,
+  "m1Scheduling": {
+    "conflict": false,
+    "currentState": "NOT_QUEUED_NOT_READY_NO_SCOPED_LOGS",
+    "eta": 1792029034,
+    "etaApprovalStatus": "READY_FOR_SEPARATE_APPROVAL",
+    "operationId": "0xce251e4c40b88520a90eab4f2e955ff6bd810f25f6e28c3e3d253dcafc93db02",
+    "operationIdFromOnchainHashFunction": "0xce251e4c40b88520a90eab4f2e955ff6bd810f25f6e28c3e3d253dcafc93db02",
+    "operationalMarginAssessment": "47h26m48s beyond current review block, before any Safe proposal/signing; adequate for prompt separately authorized 2-of-3 review but not guaranteed. Recheck deadline immediately before scheduling.",
+    "outerCalldata": "0x8e361cdf000000000000000000000000eea4e5d891b90d3d99e9c4e2c61069911477110e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ad0316a00000000000000000000000000000000000000000000000000000000000000048456cb5900000000000000000000000000000000000000000000000000000000",
+    "outerCalldataKeccak256": "0xf6b1c5b1a0b6df93df2c8b863e850ed06fc8499a6ae069c56136f09e4e319b05",
+    "predecessor": "NOT_APPLICABLE",
+    "queueDeadline": 1791942634,
+    "queueDeadlineMarginSecondsAtReview": 170808,
+    "queued": false,
+    "ready": false,
+    "salt": "NOT_APPLICABLE",
+    "scopedTimelockLogsSinceD6Deployment": 0
+  },
+  "m2Prepared": false,
+  "milestone": "PERPS_V2_BASE_SEPOLIA_D6_INITIAL_PAUSE_SCHEDULING_FINAL_REVIEW_V1",
+  "nextMilestone": "PERPS_V2_BASE_SEPOLIA_D6_INITIAL_PAUSE_SCHEDULING_AUTHORIZATION_V1",
+  "postflightChecklist": [
+    "Canonical Base Sepolia receipt status success for Safe execTransaction",
+    "Exact Safe transaction identity/outer calldata and consistent nonce increment",
+    "Timelock TransactionQueued event exact operation ID, target D6, value 0, data 0x8456cb59, ETA",
+    "queuedTransactions(operationId)=true and operation not yet completed",
+    "D6.paused remains false; D4 and shared balances/ACLs unchanged",
+    "No M2 operation queued or executed"
+  ],
+  "preparation": {
+    "path": "artifacts/perps_v2_replacement_deployment/m1_d6_initial_pause_preparation_v1.json",
+    "reportSha256": "099493d9014ff7f4cb2f3dec3cf7ae3ac10a143a6ffb54f797151f4a76b00de7",
+    "sha256": "9c49a9d24441d835a6317692e8655903e3305daad0891271d7835027d586b84e"
+  },
+  "publicStateChanged": false,
+  "repoHeadAtReview": "26f4da9b2fe08e2b560de292fec13d780aefffa9",
+  "safeProposalCreated": false,
+  "safeSignaturesCollected": false,
+  "safeState": {
+    "Safe.fallback_manager.handler.address": "fd0732dc9e303f09fcef3a7388ad10a83459ec99",
+    "Safe.guard_manager.guard.address": "0000000000000000000000000000000000000000",
+    "Safe.modules": [],
+    "Safe.nonce": 19,
+    "Safe.owners": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "Safe.threshold": 2,
+    "Safe.version": "1.4.1"
+  },
+  "schema": "deopt.perps_v2_replacement_deployment.m1_d6_pause_scheduling_final_review.v1",
+  "scope": "S1_SCHEDULING_FINAL_REVIEW_ONLY",
+  "simulations": {
+    "localForkScheduleOnly": "PASS",
+    "localForkTestsFailed": 0,
+    "localForkTestsPassed": 4,
+    "localForkTestsSkipped": 0,
+    "noM2Scheduling": true,
+    "postScheduleD6Paused": false,
+    "prematureExecutionBlocked": true,
+    "safeAddressToTimelockEthCall": "PASS",
+    "safeImpersonationCaveat": "Fork impersonated OPS Safe address to test Timelock role and state; did not verify 2-of-3 Safe signature collection or public Safe execTransaction.",
+    "safeSignaturesVerified": false,
+    "sharedEconomicSideEffects": "NONE_BOUNDED_LOCAL_FORK"
+  },
+  "stoppingRules": [
+    "A stale Safe nonce or changed Safe fields invalidates the conditional SafeTx hash and requires new review",
+    "ETA after queueDeadline invalidates prepared operation; no silent ETA change",
+    "Ambiguous Safe submission requires read-only reconciliation; no automatic retry",
+    "Queued or ready Timelock state is not execution",
+    "S2 and M2 remain unauthorized"
+  ],
+  "timelockRuntimeHash": "0xb20f9fa764b46a832c7665f07c1b9c3cd6506a58f6885c0e12e88e9bbc55233c",
+  "timelockSemantics": {
+    "cancelAuthority": "Timelock owner or guardian; both currently OPS Safe",
+    "executeSignature": "executeTransaction(address,uint256,bytes,uint256)",
+    "gracePeriodSeconds": 1209600,
+    "hashSignature": "hashOperation(address,uint256,bytes,uint256)",
+    "implementation": "CUSTOM_PROTOCOL_TIMELOCK_NOT_OZ",
+    "minDelayRule": "eta >= queueBlock.timestamp + minDelay",
+    "operationIdentity": "keccak256(abi.encode(target,value,data,eta))",
+    "operationStateCaveat": "queuedTransactions false cannot by itself distinguish never queued, cancelled, or completed; scanned scoped events since D6 deployment; ETA future prevents completed execution at review",
+    "queueSignature": "queueTransaction(address,uint256,bytes,uint256)",
+    "safeExecutorRole": true,
+    "safeProposerRole": true
+  },
+  "timelockState": {
+    "TL.executors.safe": true,
+    "TL.executors.zero": false,
+    "TL.guardian": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+    "TL.minDelay": 86400,
+    "TL.owner": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+    "TL.pendingOwner": "0x0000000000000000000000000000000000000000",
+    "TL.proposers.safe": true,
+    "TL.proposers.zero": false,
+    "TL.queuePaused": false
+  },
+  "unsignedIntent": {
+    "noProposalOrSignature": true,
+    "path": "artifacts/perps_v2_replacement_deployment/m1_d6_pause_unsigned_safe_schedule_v1.json",
+    "safeTxHashConditional": "0x3fb35cf8215315d5da8d157c5f2631a251f59a525a4a55eb9a6df9eed951320b",
+    "sha256": "5b1bfca46aa0587459ad8ba32bca6c579eae86e87f1006f02716ba6c7069d216"
+  },
+  "verdict": "PASS"
+}
