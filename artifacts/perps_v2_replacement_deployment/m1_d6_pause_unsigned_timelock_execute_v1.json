@@ -1,0 +1,59 @@
+{
+  "authorization": {
+    "c12Authorized": false,
+    "c20Authorized": false,
+    "m2Authorized": false,
+    "migrationAuthorized": false,
+    "publicExecutionAuthorized": false,
+    "tradingAuthorized": false
+  },
+  "chainId": 84532,
+  "executionWindow": {
+    "earliestUTC": "2026-10-15T01:50:34Z",
+    "earliestUnix": 1792029034,
+    "graceSeconds": 1209600,
+    "latestUnixInclusive": 1793238634,
+    "readyAtReview": false
+  },
+  "intendedRoute": {
+    "batch": false,
+    "delegatecall": false,
+    "gasFields": "NOT_YET_FINALIZED_REQUIRES_SEPARATE_REVIEW",
+    "liveSafeProposalCreated": false,
+    "safe": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "safeData": "0x06a41d09000000000000000000000000eea4e5d891b90d3d99e9c4e2c61069911477110e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ad0316a00000000000000000000000000000000000000000000000000000000000000048456cb5900000000000000000000000000000000000000000000000000000000",
+    "safeNonceIsFutureCommitment": false,
+    "safeNonceObservedAtReview": 20,
+    "safeOperation": "CALL",
+    "safeOperationValue": 0,
+    "safeTo": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "safeTxHash": "NOT_YET_FINALIZED",
+    "safeValueWei": "0",
+    "signatureThreshold": 2,
+    "signaturesCollected": false
+  },
+  "operation": {
+    "alreadyQueued": true,
+    "eta": 1792029034,
+    "innerCalldata": "0x8456cb59",
+    "innerFunction": "pause()",
+    "name": "M1_D6_PAUSE_S2_EXECUTE_EXISTING_QUEUE",
+    "scheduleAgain": false,
+    "target": "0xeeA4e5d891B90D3d99E9C4e2c61069911477110E",
+    "timelockOperationId": "0xce251e4c40b88520a90eab4f2e955ff6bd810f25f6e28c3e3d253dcafc93db02",
+    "valueWei": "0"
+  },
+  "schema": "deopt.perps_v2_replacement_deployment.m1_d6_pause_unsigned_timelock_execute.v1",
+  "sourceS1PostflightSha256": "7d02ac31236098f344b7d2b1d4674b8bb3f1629312fed342ec0598e238546d88",
+  "status": "OFFLINE_UNSIGNED_NOT_SUBMITTED_NOT_AUTHORIZED",
+  "timelockCall": {
+    "data": "0x06a41d09000000000000000000000000eea4e5d891b90d3d99e9c4e2c61069911477110e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ad0316a00000000000000000000000000000000000000000000000000000000000000048456cb5900000000000000000000000000000000000000000000000000000000",
+    "dataKeccak256": "0x4db645de4fe8fef89a1996121cc9ebc26dd955b590d3e62a3520d797c959c1cc",
+    "dataLengthBytes": 196,
+    "dataSha256": "59c16b4d974e91f2085155fa4191c0d4eea1adb7c3c86cdc3e5ee7ac87659da7",
+    "function": "executeTransaction(address,uint256,bytes,uint256)",
+    "selector": "0x06a41d09",
+    "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "valueWei": "0"
+  }
+}

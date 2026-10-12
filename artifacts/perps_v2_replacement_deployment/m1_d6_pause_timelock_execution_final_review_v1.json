@@ -1,0 +1,166 @@
+{
+  "ambiguousSubmission": "READ_ONLY_RECONCILIATION_ONLY_NO_AUTOMATIC_RETRY",
+  "authorization": {
+    "c12": "NO",
+    "c20": "NO",
+    "m1PublicExecution": "NO",
+    "m2": "NO",
+    "migrationReplay": "NO",
+    "publicTrading": "NO"
+  },
+  "chainId": 84532,
+  "d4Isolation": {
+    "address": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+    "emergencyFlags": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "insuranceAuthorization": false,
+    "migration": "OPEN",
+    "pmePointer": "0x0000000000000000000000000000000000000000",
+    "pmrMarketIds": [],
+    "residualBadDebtBase": 0,
+    "riskPointer": "0x0000000000000000000000000000000000000000",
+    "runtimeHash": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785",
+    "samplePositionZero": true,
+    "snapshotHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "vaultAuthorization": false
+  },
+  "d6Prestate": {
+    "address": "0xeeA4e5d891B90D3d99E9C4e2c61069911477110E",
+    "domainSeparator": "0x1ff87de391024af5fcccddf4e4a83e9fb5acc5ddf28cf85f76eefc96d5d4d0f5",
+    "engine": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+    "guardian": "0x0000000000000000000000000000000000000000",
+    "owner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "paused": false,
+    "pendingOwner": "0x0000000000000000000000000000000000000000",
+    "runtimeExecutor": false,
+    "runtimeHash": "0x3bad813e8654fddf86fb459a738d912b0c6c4dd4ad20119c52a4cc0dc1db834f",
+    "sampleIntentFilled": 0,
+    "sampleIntentNonceUsed": false,
+    "sampleTraderNonce": 0,
+    "timelockExecutor": true
+  },
+  "execute": {
+    "calldataKeccak256": "0x4db645de4fe8fef89a1996121cc9ebc26dd955b590d3e62a3520d797c959c1cc",
+    "function": "executeTransaction(address,uint256,bytes,uint256)",
+    "liveSafeGasEstimate": "NOT_RELIABLY_AVAILABLE_BEFORE_ETA",
+    "liveTimelockGasEstimate": "NOT_RELIABLY_AVAILABLE_BEFORE_ETA",
+    "localD6PausedAfter": true,
+    "localDirectTimelockGasObserved": 41003,
+    "localExecution": "PASS",
+    "localPreEtaRevert": "PASS",
+    "localReplayProtection": "PASS",
+    "localSafeExecGasObserved": 72339,
+    "localTimelockQueuedAfter": false,
+    "operationIdMatch": true,
+    "publicExecutionReadyNow": "NO_WAITING_FOR_ETA",
+    "publicGasEnvelope": "NOT_AUTHORIZED",
+    "route": "ONE_SAFE_CALL_TO_CUSTOM_TIMELOCK",
+    "selector": "0x06a41d09",
+    "unsignedIntentSha256": "6413aa82282e3d6e83d3d2b443da93ab3b1818b2f72349fe3c6b37f21f0d4436"
+  },
+  "frozenSourceCommit": "25c36670883604c1ef5229642ee6548aea6796c3",
+  "frozenSourceDiffEmpty": true,
+  "futurePublicPostflight": [
+    "Verify Base Sepolia chain, canonical successful receipt and exact one-call Safe transaction, including 2 valid confirmations and Safe ExecutionSuccess.",
+    "Verify exact Timelock TransactionExecuted event for operation ID, target, zero value, pause data and ETA; queued flag false and execution no longer possible.",
+    "Verify D6 Paused(Timelock) event and paused=true; owner, guardian, Engine, EIP-712 domain, executors, sample nonces/fills unchanged.",
+    "Verify D4 OPEN, Risk/PME pointers zero, emergency flags unchanged, positions/debt unaffected, Vault/Insurance ACL and custody/Clearing ledgers unchanged.",
+    "Do not treat an outer receipt or Safe transaction success alone as M1 postflight; no automatic retry after ambiguity."
+  ],
+  "m2HardDependency": "Public M1 execution receipt and D6 paused=true readback plus D4 non-drift before any M2 preparation.",
+  "milestone": "PERPS_V2_BASE_SEPOLIA_D6_INITIAL_PAUSE_TIMELOCK_EXECUTION_FINAL_REVIEW_V1",
+  "nextMilestone": "PERPS_V2_BASE_SEPOLIA_D6_INITIAL_PAUSE_TIMELOCK_EXECUTION_AUTHORIZATION_V1",
+  "repositoryHeadAtReview": "19d67a93896fbe415171209f46a9844ce3a15d66",
+  "reviewBlock": {
+    "hash": "0x5f3e812de638bd72d0032985ee3d16bf43498854401e14cbf725c692ff2c996d",
+    "number": 48013602,
+    "timestamp": 1791795492
+  },
+  "s1": {
+    "blockHash": "0xe3f626a3b0a827c3dd5e41373c06ebdf44994ca92a27d3068a46fd0467f87c14",
+    "blockNumber": 48012200,
+    "canonicalReceipt": "PASS",
+    "publicTxHash": "0x96c83640fadbe7ad0e339c6f590fb97e9837bc4d629706be61e56c6bb469eda8",
+    "s1PostflightSha256": "7d02ac31236098f344b7d2b1d4674b8bb3f1629312fed342ec0598e238546d88",
+    "safeExecution": "PASS",
+    "safeTxHash": "0x3fb35cf8215315d5da8d157c5f2631a251f59a525a4a55eb9a6df9eed951320b",
+    "timelockScheduleEvent": "PASS"
+  },
+  "safe": {
+    "address": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "enabledModules": 0,
+    "fallbackHandler": "0xfd0732dc9e303f09fcef3a7388ad10a83459ec99",
+    "futureSafeTxHash": "NOT_YET_FINALIZED",
+    "guard": "0x0000000000000000000000000000000000000000",
+    "localApprovedHashOwnerImpersonation": true,
+    "nonceAtReview": 20,
+    "owners": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "realOwnerSignaturesSimulated": false,
+    "roleModel": "Safe is Timelock owner, proposer and executor. Executor mapping is not exhaustively enumerable.",
+    "threshold": 2,
+    "version": "1.4.1"
+  },
+  "safeStoppingStates": [
+    "QUEUED_WAITING_FOR_ETA",
+    "QUEUED_READY",
+    "SAFE_PROPOSAL_PREPARED",
+    "SAFE_CONFIRMATIONS_INCOMPLETE",
+    "SAFE_CONFIRMATIONS_COMPLETE",
+    "SUBMISSION_UNKNOWN",
+    "CANONICAL_RECEIPT_VERIFIED",
+    "M1_POSTFLIGHT_VERIFIED",
+    "EXECUTION_REVERTED",
+    "CANCELLED_OR_ALREADY_EXECUTED"
+  ],
+  "schema": "deopt.perps_v2_replacement_deployment.m1_d6_pause_timelock_execution_final_review.v1",
+  "sharedState": {
+    "economicPath": "INERT",
+    "insuranceVaultBalanceRaw": 2100010,
+    "localExecutionNonDrift": "PASS",
+    "vaultClearingLedgerRaw": 1000000000,
+    "vaultTokenBalanceRaw": 224066000000
+  },
+  "tests": {
+    "actualSafeOwnerSignaturesCollected": false,
+    "focusedFork": {
+      "failed": 0,
+      "passed": 6,
+      "skipped": 0,
+      "source": "test/perp/PerpsV2M1D6PauseTimelockExecutionFinalReview.t.sol"
+    },
+    "localForkMutationsOnly": true
+  },
+  "timelock": {
+    "address": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "cancelled": false,
+    "compiledRuntimeHash": "0xb20f9fa764b46a832c7665f07c1b9c3cd6506a58f6885c0e12e88e9bbc55233c",
+    "earliestExecutionUTC": "2026-10-15T01:50:34Z",
+    "eta": 1792029034,
+    "executed": false,
+    "executorOuterEoa": false,
+    "executorSafe": true,
+    "expiryPolicy": "EXECUTE_AT_ETA_THROUGH_ETA_PLUS_14_DAYS_INCLUSIVE",
+    "expiryUnixInclusive": 1793238634,
+    "graceSeconds": 1209600,
+    "minDelaySeconds": 86400,
+    "noSubsequentGovernanceLogs": true,
+    "operationHashRecomputed": true,
+    "operationId": "0xce251e4c40b88520a90eab4f2e955ff6bd810f25f6e28c3e3d253dcafc93db02",
+    "owner": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "queueConsumedBeforeTargetCallAnd_REVERT_RESTORES_ON_FAILURE": true,
+    "queued": true,
+    "readyNow": false,
+    "replayRejected": true,
+    "runtimeHash": "0xb20f9fa764b46a832c7665f07c1b9c3cd6506a58f6885c0e12e88e9bbc55233c",
+    "scopedRelevantLogsSinceS1": 3
+  },
+  "verdict": "PASS"
+}
