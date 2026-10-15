@@ -1,0 +1,239 @@
+{
+  "authorization": {
+    "C12": false,
+    "C20": false,
+    "M2Execution": false,
+    "M2Scheduling": false,
+    "MigrationReplay": false,
+    "PublicTrading": false,
+    "SafeTransaction": false,
+    "TimelockOperation": false
+  },
+  "boundedSharedState": {
+    "D4InsuranceAuthorized": false,
+    "D4VaultAuthorized": false,
+    "getterLimit": "PMR markets unconfigured; D4 full market-state views may revert. Sampled position, nonce, fill and custody reads are bounded checks, not complete enumeration.",
+    "insuranceVaultLedgerRaw": 2100010,
+    "vaultClearingLedgerRawMUSDC": 1000000000,
+    "vaultMUSDCRawBalance": 224066000000
+  },
+  "canonicalDeployments": {
+    "D1": {
+      "address": "0x6B3D846536116082dC4E7227861C341Bb85Ee963",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "runtimeHash": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5"
+    },
+    "D2": {
+      "address": "0x9947F42cC29A32992bbf2030ee49E35C839EDEd5",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "runtimeHash": "0x732101d67fb112f6d3159f32852071bbf995f8bd1995335cf9a2b0f167d08726"
+    },
+    "D3": {
+      "address": "0x43Ac3782e75018981a8F8d210049f2A185b07331",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "runtimeHash": "0x6d199e027af598ee903513a1ab41e27e2937115c79b8ec85e386d739615befcb"
+    },
+    "D4": {
+      "address": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "runtimeHash": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785"
+    },
+    "D5": {
+      "address": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "runtimeHash": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c"
+    },
+    "D6": {
+      "address": "0xeeA4e5d891B90D3d99E9C4e2c61069911477110E",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "runtimeHash": "0x3bad813e8654fddf86fb459a738d912b0c6c4dd4ad20119c52a4cc0dc1db834f"
+    }
+  },
+  "chainId": 84532,
+  "d4Prestate": {
+    "PMRMarkets": 0,
+    "badDebtRaw": 0,
+    "collateralOpsPaused": false,
+    "fundingPaused": false,
+    "guardian": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "insuranceAuthorized": false,
+    "liquidationPaused": false,
+    "migrationState": "OPEN",
+    "owner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "pmePointer": "0x0000000000000000000000000000000000000000",
+    "riskPointer": "0x0000000000000000000000000000000000000000",
+    "samplePositionRaw": "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "snapshotHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "tradingPaused": false,
+    "vaultAuthorized": false
+  },
+  "d6Prestate": {
+    "domainSeparator": "0x1ff87de391024af5fcccddf4e4a83e9fb5acc5ddf28cf85f76eefc96d5d4d0f5",
+    "engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+    "guardian": "0x0000000000000000000000000000000000000000",
+    "owner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "paused": true,
+    "pendingOwner": "0x0000000000000000000000000000000000000000",
+    "runtimeExecutor": false,
+    "sampleTraderNonce": 0,
+    "timelockExecutor": true
+  },
+  "frozenSourceCommit": "25c36670883604c1ef5229642ee6548aea6796c3",
+  "futureS1Postflight": [
+    "Canonical Base Sepolia successful receipt and correct SafeTx/public transaction identities",
+    "Real 2-of-3 confirmations, Safe ExecutionSuccess and no failed inner call",
+    "Exact single CALL to ProtocolTimelock.queueTransaction with reviewed target/value/data/ETA",
+    "TransactionQueued exact operation ID and ETA; queue getter true, operation not executed",
+    "Safe nonce advances consistently; D4 four flags remain false; D6 remains paused",
+    "D4 OPEN/zero Risk and PME pointers; bounded Vault, Insurance, Clearing, PMR and FeesManager non-drift",
+    "No S2 execution without independent final review, ETA readiness and separate authorization"
+  ],
+  "gasPlanning": {
+    "baseL1FeePlanning": "NOT_RELIABLY_AVAILABLE_WITHOUT_FINAL_PUBLIC_SAFE_EXECUTION_TRANSACTION",
+    "currentBaseFeeWei": 5000000,
+    "currentGasPriceWei": 6000000,
+    "currentPriorityFeeWei": 1000000,
+    "directTimelockQueueEthEstimateGas": 58177,
+    "feeEnvelopeAuthorized": false,
+    "fullSafeSchedulingEstimate": "NOT_RELIABLY_AVAILABLE"
+  },
+  "m1Completion": {
+    "d6PausedNow": true,
+    "laterTimelockD4D6Events": "NONE_FROM_M1_RECEIPT_PLUS_ONE_THROUGH_REVIEW_BLOCK",
+    "operationId": "0xce251e4c40b88520a90eab4f2e955ff6bd810f25f6e28c3e3d253dcafc93db02",
+    "postflightArtifactSha256": "46a59c6e2de1bffc955923a5e4fe5fdb5bf0a36567b3493e68a23ccfe3e138a0",
+    "publicTxHash": "0x792adfb0498c9b8142d849d9a64e0e0e14751d9b6db4c6a669f4fb5dae82bb7f",
+    "queuedNow": false,
+    "receiptBlock": 48130929,
+    "receiptBlockHash": "0x4e6f4cee04abc35049f8039cadeb52a11f357edf258381b474c0169f9b3ad054",
+    "receiptStatus": 1,
+    "safeExecutionSuccessInReceipt": true
+  },
+  "m2": {
+    "arguments": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "conflict": false,
+    "effectScope": "FOUR_D4_EMERGENCY_FLAGS_ONLY_AT_EXECUTION; SCHEDULING_CHANGES_ONLY_TIMELOCK_QUEUE",
+    "eta": 1792465200,
+    "etaApprovalStatus": "READY_FOR_SEPARATE_APPROVAL",
+    "etaUtc": "2026-10-20T03:00:00+00:00",
+    "finalGateCutoffWithOneHourBuffer": 1792375200,
+    "function": "setEmergencyModes(bool,bool,bool,bool)",
+    "innerCalldata": "0xf64e345d0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001",
+    "innerCalldataBytes": 132,
+    "innerCalldataKeccak256": "0xede11d55a86c671f6ff569f50d69a0dcac0a9584879fcad82e931aed5cbd7830",
+    "innerCalldataSha256": "b4ce7d83b488720d94c952590c6fd8b2da9e133f5d365b1a3a83486555077776",
+    "latestTheoreticalScheduleTimestamp": 1792378800,
+    "matchingD4TimelockEventCountGenesisToReview": 0,
+    "matchingM2CalldataEventsGenesisToReview": [],
+    "onchainHashOperationResult": "0xe67e4f92022dd5cdbabc05c6ce0ee63f2cb186ef0aaccbe5eec002d6f3718063",
+    "operationId": "0xe67e4f92022dd5cdbabc05c6ce0ee63f2cb186ef0aaccbe5eec002d6f3718063",
+    "operationStateAtReview": "ABSENT",
+    "outerCalldata": "0x8e361cdf000000000000000000000000d0901de8f6de72aecc716ca1465c4cf58a0b99fb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ad6d9300000000000000000000000000000000000000000000000000000000000000084f64e345d000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000",
+    "outerCalldataBytes": 324,
+    "outerCalldataKeccak256": "0xb379a7191b4e098982e2bed3e1667471afd031d53afcf9fed0d76cbdd4ee845e",
+    "queuedTransactions": false,
+    "remainingBufferAtReviewSeconds": 341694,
+    "reviewTimestamp": 1792033506,
+    "selector": "0xf64e345d",
+    "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+    "valueWei": 0
+  },
+  "m2Executed": false,
+  "m2Scheduled": false,
+  "milestone": "PERPS_V2_BASE_SEPOLIA_D4_INITIAL_EMERGENCY_CLOSE_SCHEDULING_FINAL_REVIEW_V1",
+  "nextMilestone": "PERPS_V2_BASE_SEPOLIA_D4_INITIAL_EMERGENCY_CLOSE_SCHEDULING_AUTHORIZATION_V1",
+  "preparationArtifacts": {
+    "operationPlanSha256": "4173fd37231b1b4e38f9ac592eb7769c8013158f8affce750dcb7b65ca9434f4",
+    "preparationReportSha256": "48e145d736e253f4a7a472cbceb169fcf1194ff421e4f85f6e0dcaca18c22092",
+    "preparationSha256": "8cf400b816feee222b83abe2ca8fe91656836ea1dc36bf4f27e29eaa8ccdfcb0"
+  },
+  "publicStateChanged": false,
+  "readOnlySimulation": {
+    "collisionRejected": true,
+    "d4FlagsAfterScheduling": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "d6PausedAfterScheduling": true,
+    "directSafeAddressToTimelockEthEstimateGas": 58177,
+    "forkBlock": 48132609,
+    "forkTestsFailed": 0,
+    "forkTestsPassed": 4,
+    "forkTestsSkipped": 0,
+    "offlineArtifactTestsFailed": 0,
+    "offlineArtifactTestsPassed": 5,
+    "offlineArtifactTestsSkipped": 0,
+    "prematureExecutionRejected": true,
+    "queueEventExact": "PASS",
+    "realSafeSignaturesVerified": false,
+    "safeAddressImpersonatedOnFork": true,
+    "safeToTimelockEthCallResult": "0xe67e4f92022dd5cdbabc05c6ce0ee63f2cb186ef0aaccbe5eec002d6f3718063",
+    "schedule": "PASS",
+    "sharedEconomicNonDrift": "PASS_BOUNDED",
+    "unauthorizedCallReverted": true
+  },
+  "reviewBlock": {
+    "hash": "0xd3b4a06a8aec904647b75697c40a6a6fb16c30dd575643c99f40b938b2bd6a88",
+    "number": 48132609,
+    "timestamp": 1792033506
+  },
+  "rpcEndpointIdentity": {
+    "clientVersion": "reth/v2.5.2-5877708/x86_64-unknown-linux-gnu/base/v1.4.2",
+    "urlSha256": "90b3dcfbb7685940a049c9ab7e1cf2d2d2eb03957572b7cb98c688db23208c95"
+  },
+  "rpcPinnedConsistency": "BLOCK_HASH_RE_READ_MATCHED_AT_PINNED_BLOCK",
+  "safeBuilderFile": "m2_d4_emergency_close_s1_safe_builder_review_v1.json",
+  "safeBuilderSha256": "5569b2656bd5b219a63806301b831bb9cb64563bf2e1ac504eccd78e7ad0a6e4",
+  "safeGovernance": {
+    "address": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "canScheduleM2": true,
+    "fallbackHandler": "0xfd0732dc9e303f09fcef3a7388ad10a83459ec99",
+    "guard": "0x0000000000000000000000000000000000000000",
+    "modules": [],
+    "nonceObservedOnly": 21,
+    "owners": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "realSignaturesVerified": false,
+    "safeTxHashConditional": "0x2c6991829458812f37aabd2a6fbe54a16faf26af45bf75f6e5138dc65043c18d",
+    "safeTxHashOnchainGetterMatch": true,
+    "threshold": 2,
+    "version": "1.4.1"
+  },
+  "safeProposalCreated": false,
+  "safeSignaturesCollected": false,
+  "sourceDiff": "NONE_IN_SRC",
+  "startingHead": "9c1c1895212bffb90ade19f75b9ad46b5726c96b",
+  "timelock": {
+    "address": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "cancelCaller": "OWNER_OR_GUARDIAN_SAFE",
+    "executeCaller": "ONLY_EXECUTOR_SAFE",
+    "gracePeriodSeconds": 1209600,
+    "guardian": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+    "minDelaySeconds": 86400,
+    "operationHashSemantics": "keccak256(abi.encode(target,value,data,eta))",
+    "owner": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+    "predecessor": "NOT_APPLICABLE",
+    "queueCaller": "ONLY_PROPOSER_SAFE",
+    "queueEvent": "TransactionQueued(bytes32 indexed txHash,address indexed target,uint256 value,bytes data,uint256 eta)",
+    "queuePaused": false,
+    "replay": "queuedTransactions mapping, duplicate queue while queued rejected; completion clears mapping",
+    "safeExecutor": true,
+    "safeProposer": true,
+    "salt": "NOT_APPLICABLE",
+    "scheduleSelector": "0x8e361cdf",
+    "scheduleSignature": "queueTransaction(address,uint256,bytes,uint256)"
+  },
+  "unsignedIntentFile": "m2_d4_emergency_close_unsigned_safe_schedule_v1.json",
+  "unsignedIntentSha256": "67fa149651b1206dfff8eaacdf8616558f4d262d80b32fae0b8574ad90a8fd1f",
+  "verdict": "PASS"
+}

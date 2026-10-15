@@ -1,0 +1,61 @@
+{
+  "chainId": 84532,
+  "eta": 1792465200,
+  "etaStatus": "PROPOSED_FOR_SEPARATE_APPROVAL_RECHECK_AT_PUBLIC_SCHEDULING",
+  "futureGate": "Refresh chain, Safe nonce/owners/threshold/modules/guard, Timelock roles/minDelay/queue, M1/D6/D4 state, and ETA >= scheduling block timestamp + minDelay + 3600; any changed Safe envelope or ETA requires review.",
+  "milestone": "PERPS_V2_BASE_SEPOLIA_D4_INITIAL_EMERGENCY_CLOSE_SCHEDULING_FINAL_REVIEW_V1",
+  "noPublicScheduling": true,
+  "noSafeProposal": true,
+  "noSignatures": true,
+  "reviewBlock": {
+    "hash": "0xd3b4a06a8aec904647b75697c40a6a6fb16c30dd575643c99f40b938b2bd6a88",
+    "number": 48132609,
+    "timestamp": 1792033506
+  },
+  "safe": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+  "safeBuilderFile": "m2_d4_emergency_close_s1_safe_builder_review_v1.json",
+  "safeBuilderSha256": "5569b2656bd5b219a63806301b831bb9cb64563bf2e1ac504eccd78e7ad0a6e4",
+  "safeEnvelopePolicy": "Zero Safe internal gas/refund fields mirror the previously executed M1 Safe transaction and are conditional review inputs, not an approved public gas limit or refund strategy. Safe UI values and outer Ethereum gas envelope require fresh separate review.",
+  "safeNonceObservedOnly": 21,
+  "safeNonceReserved": false,
+  "safeOwnersObserved": [
+    "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+    "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+    "0xa774c46c41064524df895bd7be9f294409798dfc"
+  ],
+  "safeThresholdObserved": 2,
+  "safeTransaction": {
+    "baseGas": 0,
+    "data": "0x8e361cdf000000000000000000000000d0901de8f6de72aecc716ca1465c4cf58a0b99fb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ad6d9300000000000000000000000000000000000000000000000000000000000000084f64e345d000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000",
+    "dataKeccak256": "0xb379a7191b4e098982e2bed3e1667471afd031d53afcf9fed0d76cbdd4ee845e",
+    "dataLengthBytes": 324,
+    "function": "queueTransaction(address,uint256,bytes,uint256)",
+    "gasPrice": 0,
+    "gasToken": "0x0000000000000000000000000000000000000000",
+    "nonceObservedOnly": 21,
+    "operation": 0,
+    "operationName": "CALL",
+    "refundReceiver": "0x0000000000000000000000000000000000000000",
+    "safeTxGas": 0,
+    "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "valueWei": 0
+  },
+  "safeTxHashConditional": "0x2c6991829458812f37aabd2a6fbe54a16faf26af45bf75f6e5138dc65043c18d",
+  "safeTxHashIsPublicTxHash": false,
+  "safeTxHashOnchainGetterMatch": true,
+  "status": "OFFLINE_UNSIGNED_NOT_PROPOSED_NOT_AUTHORIZED",
+  "timelockInner": {
+    "argumentsInSourceOrder": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "data": "0xf64e345d0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001",
+    "dataKeccak256": "0xede11d55a86c671f6ff569f50d69a0dcac0a9584879fcad82e931aed5cbd7830",
+    "function": "setEmergencyModes(bool,bool,bool,bool)",
+    "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+    "valueWei": 0
+  },
+  "timelockOperationId": "0xe67e4f92022dd5cdbabc05c6ce0ee63f2cb186ef0aaccbe5eec002d6f3718063"
+}
