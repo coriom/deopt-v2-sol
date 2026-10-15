@@ -1,0 +1,127 @@
+{
+  "authorization": {
+    "C12": false,
+    "C20": false,
+    "M2Execution": false,
+    "MigrationReplay": false,
+    "PublicTrading": false
+  },
+  "chainId": 84532,
+  "exactTransactionReview": "PASS_READ_ONLY_CONDITIONAL_ON_UNCHANGED_SAFE_ENVELOPE",
+  "feesObservedWei": {
+    "baseFeeWei": 5000000,
+    "gasPriceWei": 6000000,
+    "priorityFeeWei": 1000000
+  },
+  "m2": {
+    "eta": 1792465200,
+    "finalGateCutoffWithOneHourMargin": 1792375200,
+    "innerData": "0xf64e345d0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001",
+    "innerDataKeccak256": "0xede11d55a86c671f6ff569f50d69a0dcac0a9584879fcad82e931aed5cbd7830",
+    "latestTheoreticalSchedulingTimestamp": 1792378800,
+    "outerData": "0x8e361cdf000000000000000000000000d0901de8f6de72aecc716ca1465c4cf58a0b99fb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ad6d9300000000000000000000000000000000000000000000000000000000000000084f64e345d000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000",
+    "outerDataBytes": 324,
+    "outerDataKeccak256": "0xb379a7191b4e098982e2bed3e1667471afd031d53afcf9fed0d76cbdd4ee845e",
+    "remainingSecondsAtReviewToBufferedCutoff": 339456,
+    "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+    "valueWei": 0
+  },
+  "milestone": "PERPS_V2_BASE_SEPOLIA_D4_INITIAL_EMERGENCY_CLOSE_SCHEDULING_AUTHORIZATION_V1",
+  "operatorCheckpoint": {
+    "builderJsonPath": "artifacts/perps_v2_replacement_deployment/m2_d4_emergency_close_s1_safe_builder_review_v1.json",
+    "futurePublicSchedulingCondition": "ETA >= actual scheduling block timestamp + live minDelay + 3600",
+    "noAutonomousSafeSubmission": true,
+    "requiredAction": "Import and inspect exact single CALL in Safe Transaction Builder; explicitly approve exact Safe envelope and hash before owner confirmations; check Safe UI simulation and full public gas; execute only if fresh ETA and state gates pass.",
+    "stopIfChanged": [
+      "chainId",
+      "Safe nonce/owners/threshold/guard/modules",
+      "to/value/data/CALL",
+      "safeTxGas/baseGas/gasPrice/gasToken/refundReceiver",
+      "SafeTx hash",
+      "ETA/minDelay/margin",
+      "M2 queue state",
+      "D4/D6 prestate"
+    ]
+  },
+  "prestate": {
+    "d4FourEmergencyFlags": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "d4InsuranceAuthorized": false,
+    "d4MigrationState": "OPEN",
+    "d4PmePointer": "0x0000000000000000000000000000000000000000",
+    "d4RiskPointer": "0x0000000000000000000000000000000000000000",
+    "d4VaultAuthorized": false,
+    "d5MaxOracleDelay": 0,
+    "d6Paused": true,
+    "m1Consumed": true,
+    "pmrMarkets": 0,
+    "postM1ScopedEventsThroughReview": 0
+  },
+  "publicStateChanged": false,
+  "publicSubmissionByThisRun": false,
+  "reviewBlock": {
+    "hash": "0xb5d5dd50f853e38c5e63f813eca4ba15c55ea404546cf4c38fb62afa5517a6c5",
+    "number": 48133728,
+    "timestamp": 1792035744
+  },
+  "reviewedArtifactSha256": {
+    "finalReview": "c4fc75c971219a8afde53fc5e7480a420c79f80efc1fce8b8584604383e190d1",
+    "safeBuilder": "5569b2656bd5b219a63806301b831bb9cb64563bf2e1ac504eccd78e7ad0a6e4",
+    "unsignedIntent": "67fa149651b1206dfff8eaacdf8616558f4d262d80b32fae0b8574ad90a8fd1f"
+  },
+  "safe": {
+    "address": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "confirmations": "NOT_OBSERVED_NO_CONNECTED_SAFE_INTERFACE",
+    "fallbackHandler": "0xfd0732dc9e303f09fcef3a7388ad10a83459ec99",
+    "guard": "0x0000000000000000000000000000000000000000",
+    "modules": [],
+    "nonceBefore": 21,
+    "owners": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "threshold": 2,
+    "version": "1.4.1"
+  },
+  "safeProposalCreatedByThisRun": false,
+  "safeSignaturesCollectedByThisRun": false,
+  "safeTransactionEnvelope": {
+    "baseGas": 0,
+    "conditionalSafeTxHash": "0x2c6991829458812f37aabd2a6fbe54a16faf26af45bf75f6e5138dc65043c18d",
+    "gasPrice": 0,
+    "gasToken": "0x0000000000000000000000000000000000000000",
+    "matchesDeployedSafeHashGetter": true,
+    "nonceObservedOnly": 21,
+    "notAReservedNonceOrPublicTxHash": true,
+    "operation": 0,
+    "refundReceiver": "0x0000000000000000000000000000000000000000",
+    "safeTxGas": 0,
+    "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "valueWei": 0
+  },
+  "simulation": {
+    "directTimelockScheduleGasEstimate": 58177,
+    "forkSchedulingRehearsalFromFinalReview": "PASS_SAFE_ADDRESS_IMPERSONATED_NO_REAL_SIGNATURES",
+    "fullSafePublicGasEstimate": "NOT_RELIABLY_AVAILABLE_WITHOUT_REAL_SAFE_ENVELOPE_AND_UI_SIMULATION",
+    "safeToTimelockEthCallReturn": "0xe67e4f92022dd5cdbabc05c6ce0ee63f2cb186ef0aaccbe5eec002d6f3718063",
+    "unauthorizedCallerReverted": true
+  },
+  "startingHead": "88affc6d159fdc9e92419a62c8c9d53a2c1cfc04",
+  "status": "AWAITING_OPERATOR_SAFE_ACTION",
+  "timelock": {
+    "address": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "executed": false,
+    "matchingD4EventCountGenesisToReview": 0,
+    "minDelaySeconds": 86400,
+    "operationId": "0xe67e4f92022dd5cdbabc05c6ce0ee63f2cb186ef0aaccbe5eec002d6f3718063",
+    "operationState": "ABSENT",
+    "queuePaused": false,
+    "queued": false,
+    "safeIsProposer": true
+  }
+}
