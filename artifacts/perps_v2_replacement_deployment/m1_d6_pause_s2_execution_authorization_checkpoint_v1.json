@@ -1,0 +1,74 @@
+{
+  "authorizationScope": "One Safe-mediated execution of the already-queued M1 only; separate operator review and 2-of-3 confirmations required",
+  "builderFile": "m1_d6_pause_s2_safe_builder_authorization_v1.json",
+  "builderSha256": "7fb999432d1b8634e9bee9b71e85a6a4b1ee218721c3db0f9b42c5b12c1a0ff3",
+  "chainId": 84532,
+  "executionWindow": {
+    "eta": 1792029034,
+    "expiryInclusive": 1793238634,
+    "readyAtReviewBlock": true
+  },
+  "gasReview": {
+    "baseFeeWei": 5000000,
+    "directTimelockEthEstimateGas": 65997,
+    "fullSafeOuterGasEstimate": "PENDING_OPERATOR_SAFE_UI_SIMULATION",
+    "gasPriceObservationWei": 6000000,
+    "localForkSafeGasObservedInPriorReview": 72339,
+    "priorityFeeObservationWei": 1000000,
+    "safeBaseGas": 0,
+    "safeGasPrice": 0,
+    "safeTxGas": 0,
+    "warning": "The direct Timelock estimate and prior fork observation are not a full public Safe or wallet gas estimate. Verify the actual Safe UI gas and payer funding before owner signing or execution. Any different Safe envelope changes the SafeTx hash and requires renewed review."
+  },
+  "m1": {
+    "calldata": "0x8456cb59",
+    "eventHistorySinceS1": "ONE_QUEUED_EVENT_NO_CANCELLATION_OR_EXECUTION",
+    "operationId": "0xce251e4c40b88520a90eab4f2e955ff6bd810f25f6e28c3e3d253dcafc93db02",
+    "queued": true,
+    "ready": true,
+    "target": "0xeeA4e5d891B90D3d99E9C4e2c61069911477110E",
+    "valueWei": 0
+  },
+  "publicActions": {
+    "agentBroadcasts": 0,
+    "agentSafeConfirmationsCollected": 0,
+    "agentSafeProposalsCreated": 0,
+    "timelockExecutionAtReviewBlock": false
+  },
+  "reviewBlock": {
+    "hash": "0x8922902cc3d2a84a1b07a299ac0bf88bec0c68ffed0e1602bafe9e3510150094",
+    "number": 48130544,
+    "timestamp": 1792029376
+  },
+  "safe": {
+    "address": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "baseGas": 0,
+    "callDataKeccak256": "0x4db645de4fe8fef89a1996121cc9ebc26dd955b590d3e62a3520d797c959c1cc",
+    "dataLengthBytes": 196,
+    "destination": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "gasPrice": 0,
+    "gasToken": "0x0000000000000000000000000000000000000000",
+    "modules": [],
+    "nonce": 20,
+    "operation": "CALL",
+    "owners": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "refundReceiver": "0x0000000000000000000000000000000000000000",
+    "safeTxGas": 0,
+    "safeTxHash": "0x406249172e8b25f700ea35f2aedaa437ec0592c501c53301344da0e62ee48d57",
+    "safeTxHashMatchesOnchainGetter": true,
+    "threshold": 2,
+    "valueWei": 0
+  },
+  "schema": "deopt.perps_v2_replacement_deployment.m1_d6_pause_s2_execution_authorization_checkpoint.v1",
+  "status": "AWAITING_OPERATOR_SAFE_ACTION",
+  "stopConditions": [
+    "Do not sign until the operator explicitly approves the exact Builder import, Safe envelope, SafeTx hash and actual Safe UI gas estimate.",
+    "Recheck Safe nonce 20, owners, threshold, signatures, M1 queued/readiness, D6 paused=false, D4 isolation and gas immediately before execution.",
+    "Do not send without two real Safe owner confirmations; no automatic retry after ambiguity.",
+    "Do not schedule M1 again or perform M2, C12, C20, migration or trading."
+  ]
+}

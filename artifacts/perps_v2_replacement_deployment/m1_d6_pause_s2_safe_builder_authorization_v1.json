@@ -1,0 +1,51 @@
+{
+  "chainId": "84532",
+  "createdAt": 1792029376000,
+  "meta": {
+    "createdFromOwnerAddress": "",
+    "createdFromSafeAddress": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "description": "Offline review only: one Safe CALL to execute the already queued M1 operation. No scheduling or M2.",
+    "name": "M1_D6_PAUSE_S2_EXECUTE_EXISTING_QUEUE",
+    "txBuilderVersion": "1.18.0"
+  },
+  "transactions": [
+    {
+      "contractInputsValues": {
+        "data": "0x8456cb59",
+        "eta": "1792029034",
+        "target": "0xeeA4e5d891B90D3d99E9C4e2c61069911477110E",
+        "value": "0"
+      },
+      "contractMethod": {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "target",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "value",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "data",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint256",
+            "name": "eta",
+            "type": "uint256"
+          }
+        ],
+        "name": "executeTransaction",
+        "payable": true
+      },
+      "data": "0x06a41d09000000000000000000000000eea4e5d891b90d3d99e9c4e2c61069911477110e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ad0316a00000000000000000000000000000000000000000000000000000000000000048456cb5900000000000000000000000000000000000000000000000000000000",
+      "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "value": "0"
+    }
+  ],
+  "version": "1.0"
+}
