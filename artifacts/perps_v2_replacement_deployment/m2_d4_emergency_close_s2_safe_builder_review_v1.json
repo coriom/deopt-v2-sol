@@ -1,0 +1,51 @@
+{
+  "chainId": "84532",
+  "createdAt": 1792039182000,
+  "meta": {
+    "createdFromOwnerAddress": "",
+    "createdFromSafeAddress": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "description": "One Safe CALL to execute already queued M2 through the custom Timelock after ETA. No proposal, signature or public execution is authorized. Recheck Safe nonce and all gas/refund fields at execution authorization.",
+    "name": "OFFLINE_REVIEW_ONLY_NOT_AUTHORIZED_M2_S2_EXECUTE",
+    "txBuilderVersion": "1.18.0"
+  },
+  "transactions": [
+    {
+      "contractInputsValues": {
+        "data": "0xf64e345d0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001",
+        "eta": "1792465200",
+        "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+        "value": "0"
+      },
+      "contractMethod": {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "target",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "value",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "data",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint256",
+            "name": "eta",
+            "type": "uint256"
+          }
+        ],
+        "name": "executeTransaction",
+        "payable": true
+      },
+      "data": "0x06a41d09000000000000000000000000d0901de8f6de72aecc716ca1465c4cf58a0b99fb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ad6d9300000000000000000000000000000000000000000000000000000000000000084f64e345d000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000",
+      "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "value": "0"
+    }
+  ],
+  "version": "1.0"
+}
