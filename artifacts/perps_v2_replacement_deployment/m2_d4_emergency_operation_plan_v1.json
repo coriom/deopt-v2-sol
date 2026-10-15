@@ -1,0 +1,117 @@
+{
+  "authorization": {
+    "S1_M2": false,
+    "S2_M2": false,
+    "SafeTransaction": false,
+    "TimelockOperation": false
+  },
+  "customTimelock": {
+    "executeCaller": "OPS_SAFE_WITH_REAL_2_OF_3_CONFIRMATIONS",
+    "executeFunction": "executeTransaction(address,uint256,bytes,uint256)",
+    "fullHistoryCheck": "NO_MATCHING_OPERATION_ID_EVENT_FROM_GENESIS_TO_REVIEW_BLOCK",
+    "gracePeriodSecondsAtReview": 1209600,
+    "minDelaySecondsAtReview": 86400,
+    "operationIdentity": "keccak256(abi.encode(target,value,data,eta))",
+    "queueCaller": "OPS_SAFE_WITH_REAL_2_OF_3_CONFIRMATIONS",
+    "queueStateAtReview": false,
+    "replay": "queuedTransactions cleared before target call; failed target call reverts the whole execution",
+    "scheduleFunction": "queueTransaction(address,uint256,bytes,uint256)"
+  },
+  "failurePolicy": {
+    "cancelledOrExpired": "stop; separate governance review needed",
+    "executionOutcomeUnknown": "read-only reconcile receipt, Safe success, Timelock event/queue and D4 flags; no automatic retry",
+    "failedExecution": "stop and inspect exact failure; no batch continuation",
+    "notScheduled": "stop before S1; refresh review if ETA or Safe nonce drift",
+    "queued": "do not treat as executed; await ETA and separate S2 approval",
+    "schedulingOutcomeUnknown": "read-only reconcile SafeTx/public hash, Safe nonce, Timelock queue and events; no automatic retry"
+  },
+  "milestone": "PERPS_V2_BASE_SEPOLIA_D4_INITIAL_EMERGENCY_CLOSE_PREPARATION_V1",
+  "offlineTemplates": {
+    "S1_M2_schedule": {
+      "calldata": "0x8e361cdf000000000000000000000000d0901de8f6de72aecc716ca1465c4cf58a0b99fb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ad6d9300000000000000000000000000000000000000000000000000000000000000084f64e345d000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000",
+      "calldataKeccak256": "0xb379a7191b4e098982e2bed3e1667471afd031d53afcf9fed0d76cbdd4ee845e",
+      "caller": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+      "function": "queueTransaction(address,uint256,bytes,uint256)",
+      "mode": "SAFE_CALL_ONLY_NO_MULTISEND_NO_DELEGATECALL",
+      "receiptPostflight": [
+        "canonical successful public receipt",
+        "Safe ExecutionSuccess for exact reviewed SafeTx hash",
+        "Timelock TransactionQueued for exact proposed operation ID and ETA",
+        "queuedTransactions=true",
+        "D4 flags still false",
+        "D6 paused=true",
+        "bounded shared economic non-drift"
+      ],
+      "requiredPrestate": [
+        "D6.paused=true",
+        "D4 four emergency flags=false",
+        "M2 operation absent",
+        "ETA >= actual scheduling block timestamp + live minDelay",
+        "fresh Safe owner/threshold/nonce review"
+      ],
+      "safe": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+      "safeStop": "QUEUED_ONLY_D4_FLAGS_FALSE; S2 requires independent review and authorization",
+      "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "valueWei": 0
+    },
+    "S2_M2_execute": {
+      "calldata": "0x06a41d09000000000000000000000000d0901de8f6de72aecc716ca1465c4cf58a0b99fb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ad6d9300000000000000000000000000000000000000000000000000000000000000084f64e345d000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000",
+      "calldataKeccak256": "0x6f1765e2316c522261202f40b476a51bcc98a0b550c5a50faf8e6da8d0562dfd",
+      "caller": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+      "function": "executeTransaction(address,uint256,bytes,uint256)",
+      "mode": "SAFE_CALL_ONLY_NO_MULTISEND_NO_DELEGATECALL",
+      "receiptPostflight": [
+        "canonical successful public receipt",
+        "Safe ExecutionSuccess and no inner failure",
+        "Timelock TransactionExecuted for exact operation ID",
+        "queuedTransactions=false",
+        "D4 four flags=true",
+        "D6 paused=true",
+        "D4 OPEN with zero Risk/PME pointers",
+        "bounded shared economic non-drift"
+      ],
+      "requiredPrestate": [
+        "exact M2 operation queued",
+        "block.timestamp >= ETA and <= ETA + live grace period",
+        "D6.paused=true",
+        "D4 flags still false",
+        "fresh Safe owner/threshold/nonce review"
+      ],
+      "safe": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+      "safeStop": "MAINTENANCE_CLOSED_ONLY; no wiring, ACL, migration or trading authorized",
+      "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "valueWei": 0
+    }
+  },
+  "operation": {
+    "argumentsInSourceOrder": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "chainId": 84532,
+    "etaProposed": 1792465200,
+    "etaProposedUtc": "2026-10-20T03:00:00Z",
+    "etaStatus": "PROPOSED_ONLY_REVALIDATE_IN_SEPARATE_SCHEDULING_FINAL_REVIEW",
+    "function": "setEmergencyModes(bool,bool,bool,bool)",
+    "innerCalldata": "0xf64e345d0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001",
+    "innerCalldataBytes": 132,
+    "innerCalldataKeccak256": "0xede11d55a86c671f6ff569f50d69a0dcac0a9584879fcad82e931aed5cbd7830",
+    "innerCalldataSha256": "b4ce7d83b488720d94c952590c6fd8b2da9e133f5d365b1a3a83486555077776",
+    "operationHashSourceAndGetterMatch": true,
+    "operationIdProposed": "0xe67e4f92022dd5cdbabc05c6ce0ee63f2cb186ef0aaccbe5eec002d6f3718063",
+    "predecessor": "NOT_APPLICABLE",
+    "publicSubmission": "NOT_AUTHORIZED",
+    "safe": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "safeNonceObservationOnly": 21,
+    "safeTransactionHash": "NOT_FINALIZED",
+    "salt": "NOT_APPLICABLE",
+    "signatureCollection": "NOT_AUTHORIZED",
+    "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+    "timelock": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "valueWei": 0
+  },
+  "schema": 1,
+  "status": "OFFLINE_PROPOSED_ONLY"
+}

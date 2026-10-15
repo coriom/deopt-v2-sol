@@ -1,0 +1,228 @@
+{
+  "authorization": {
+    "C12": false,
+    "C20": false,
+    "M2Execution": false,
+    "M2Scheduling": false,
+    "MigrationReplay": false,
+    "PublicTrading": false,
+    "SafeTransaction": false,
+    "TimelockOperation": false
+  },
+  "boundedEconomicState": {
+    "D4SamplePositionGetterRaw": "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "D4VaultAndInsuranceAuthorization": false,
+    "D5MaxOracleDelay": 0,
+    "InsuranceVaultLedgerRaw": 2100010,
+    "PMRMarkets": 0,
+    "VaultClearingLedgerRawMUSDC": 1000000000,
+    "VaultMUSDCRawBalance": 224066000000,
+    "economicExecutionPathAfterLocalClose": false,
+    "limits": [
+      "Full D4 market OI getters can revert while PMR markets are unconfigured",
+      "Sampled trader nonce/fill/position and custody getters do not enumerate all historical economic state",
+      "Local Safe-address prank does not validate real 2-of-3 signatures"
+    ],
+    "localM2SharedSideEffects": "NONE_IN_BOUNDED_FORK_CHECKS"
+  },
+  "canonicalDeployments": {
+    "D1": {
+      "address": "0x6B3D846536116082dC4E7227861C341Bb85Ee963",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "runtimeHash": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5"
+    },
+    "D2": {
+      "address": "0x9947F42cC29A32992bbf2030ee49E35C839EDEd5",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "runtimeHash": "0x732101d67fb112f6d3159f32852071bbf995f8bd1995335cf9a2b0f167d08726"
+    },
+    "D3": {
+      "address": "0x43Ac3782e75018981a8F8d210049f2A185b07331",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "runtimeHash": "0x6d199e027af598ee903513a1ab41e27e2937115c79b8ec85e386d739615befcb"
+    },
+    "D4": {
+      "address": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "runtimeHash": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785"
+    },
+    "D5": {
+      "address": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "runtimeHash": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c"
+    },
+    "D6": {
+      "address": "0xeeA4e5d891B90D3d99E9C4e2c61069911477110E",
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "runtimeHash": "0x3bad813e8654fddf86fb459a738d912b0c6c4dd4ad20119c52a4cc0dc1db834f"
+    }
+  },
+  "chainId": 84532,
+  "d4Prestate": {
+    "collateralOpsPaused": false,
+    "fundingPaused": false,
+    "guardian": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "insuranceAuthorized": false,
+    "liquidationPaused": false,
+    "marketStateGetterLimit": "PMR markets unconfigured; full market getters may revert",
+    "matchingEngine": "0x0000000000000000000000000000000000000000",
+    "migrationSnapshotHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "migrationState": "OPEN",
+    "owner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "riskModule": "0x0000000000000000000000000000000000000000",
+    "sampleTraderMarket1PositionRaw": "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "totalResidualBadDebtBase": 0,
+    "tradingPaused": false,
+    "vaultAuthorized": false
+  },
+  "d6Prestate": {
+    "domainSeparator": "0x1ff87de391024af5fcccddf4e4a83e9fb5acc5ddf28cf85f76eefc96d5d4d0f5",
+    "engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+    "guardian": "0x0000000000000000000000000000000000000000",
+    "owner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "paused": true,
+    "pendingOwner": "0x0000000000000000000000000000000000000000",
+    "runtimeExecutor": false,
+    "sampleTraderNonce": 0,
+    "timelockExecutor": true
+  },
+  "frozenSourceCommit": "25c36670883604c1ef5229642ee6548aea6796c3",
+  "frozenSourceDiff": "NONE_IN_SRC",
+  "gasPlanning": {
+    "directD4SetterEthEstimateGasAtPinnedBlock": 56156,
+    "directSafeAddressToTimelockQueueEthEstimateGasAtPinnedBlock": 58177,
+    "directTimelockExecuteEthEstimateGasBeforeEta": "REVERT_NOT_QUEUED",
+    "feeEnvelopeAuthorized": false,
+    "feeObservationWei": {
+      "baseFeeWei": 5000000,
+      "gasPriceWei": 6000000,
+      "priorityFeeWei": 1000000
+    },
+    "fullSafeExecuteGasEstimate": "NOT_RELIABLY_AVAILABLE_WITHOUT_FINAL_SAFE_ENVELOPE_AND_SIGNATURES",
+    "fullSafeScheduleGasEstimate": "NOT_RELIABLY_AVAILABLE_WITHOUT_FINAL_SAFE_ENVELOPE_AND_SIGNATURES",
+    "localTimelockExecutionGasleftDelta": 46934
+  },
+  "laterDevelopmentMilestoneAfterVerifiedM2": "DEOPT_PRIVATE_MCP_V1_LOCAL_STDIO_READ_ONLY",
+  "localRehearsal": {
+    "D4FourFlagsAfter": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "D6PausedAfter": true,
+    "execution": "PASS",
+    "forkBlock": 48131424,
+    "forkBlockHash": "0x56b4f17066ee97a51500ea54f99a0ec12ac75bca347c992d2093cc748ddcd8fd",
+    "prematureExecutionRejected": true,
+    "realSafeSignaturesSimulated": false,
+    "replayRejected": true,
+    "safeAddressImpersonated": true,
+    "schedule": "PASS",
+    "sharedNonDrift": "PASS_BOUNDED",
+    "testPath": "test/perp/PerpsV2M2EmergencyClosePreparation.t.sol",
+    "testsFailed": 0,
+    "testsPassed": 7,
+    "testsSkipped": 0
+  },
+  "m1": {
+    "d6PausedAtReview": true,
+    "executionEventAndSafeSuccess": "VERIFIED_IN_CANONICAL_M1_POSTFLIGHT_ARTIFACT",
+    "laterD6TimelockEvents": "NONE_FROM_M1_RECEIPT_PLUS_ONE_TO_REVIEW_BLOCK",
+    "operationId": "0xce251e4c40b88520a90eab4f2e955ff6bd810f25f6e28c3e3d253dcafc93db02",
+    "postflightArtifactSha256": "46a59c6e2de1bffc955923a5e4fe5fdb5bf0a36567b3493e68a23ccfe3e138a0",
+    "publicTxHash": "0x792adfb0498c9b8142d849d9a64e0e0e14751d9b6db4c6a669f4fb5dae82bb7f",
+    "queuedAtReview": false,
+    "receiptBlock": 48130929,
+    "receiptBlockHash": "0x4e6f4cee04abc35049f8039cadeb52a11f357edf258381b474c0169f9b3ad054",
+    "receiptStatus": 1,
+    "replay": "READ_ONLY_ETH_CALL_REVERT_VERIFIED_IN_CANONICAL_M1_POSTFLIGHT_ARTIFACT"
+  },
+  "m2": {
+    "accessControl": "onlyGuardianOrOwner; current owner and guardian are ProtocolTimelock; guardian cannot relax active flags",
+    "argumentsInSourceOrder": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "atomicity": "ONE_EXTERNAL_CALL_WITH_FOUR_STORAGE_UPDATES; ANY_REVERT_ROLLS_BACK_ALL",
+    "chainId": 84532,
+    "effectScope": "D4_FOUR_EMERGENCY_FLAGS_ONLY_PLUS_FIVE_D4_EVENTS; TIMELOCK_QUEUE_BOOKKEEPING",
+    "etaProposed": 1792465200,
+    "etaProposedUtc": "2026-10-20T03:00:00Z",
+    "etaStatus": "PROPOSED_ONLY_REVALIDATE_IN_SEPARATE_SCHEDULING_FINAL_REVIEW",
+    "events": [
+      "TradingPauseSet(true)",
+      "LiquidationPauseSet(true)",
+      "FundingPauseSet(true)",
+      "CollateralOpsPauseSet(true)",
+      "EmergencyModeUpdated(true,true,true,true)"
+    ],
+    "externalCalls": false,
+    "function": "setEmergencyModes(bool,bool,bool,bool)",
+    "idempotence": "repeating identical call makes no flag change but emits EmergencyModeUpdated",
+    "innerCalldata": "0xf64e345d0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001",
+    "innerCalldataBytes": 132,
+    "innerCalldataKeccak256": "0xede11d55a86c671f6ff569f50d69a0dcac0a9584879fcad82e931aed5cbd7830",
+    "innerCalldataSha256": "b4ce7d83b488720d94c952590c6fd8b2da9e133f5d365b1a3a83486555077776",
+    "matchingOperationIdLogsGenesisToReview": 0,
+    "migrationCompatibility": "OWNER_ONLY_SEED_AND_SEAL_REMAIN_CALLABLE_WHILE_EMERGENCY_FLAGS_TRUE; SEPARATE_AUTHORIZATION_REQUIRED",
+    "operationHashSourceAndGetterMatch": true,
+    "operationIdProposed": "0xe67e4f92022dd5cdbabc05c6ce0ee63f2cb186ef0aaccbe5eec002d6f3718063",
+    "operationQueuedAtReview": false,
+    "predecessor": "NOT_APPLICABLE",
+    "prematureUnpauseRequired": false,
+    "publicSubmission": "NOT_AUTHORIZED",
+    "safe": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "safeNonceObservationOnly": 21,
+    "safeTransactionHash": "NOT_FINALIZED",
+    "salt": "NOT_APPLICABLE",
+    "selector": "0xf64e345d",
+    "signatureCollection": "NOT_AUTHORIZED",
+    "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+    "timelock": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "valueWei": 0
+  },
+  "milestone": "PERPS_V2_BASE_SEPOLIA_D4_INITIAL_EMERGENCY_CLOSE_PREPARATION_V1",
+  "nextMilestone": "PERPS_V2_BASE_SEPOLIA_D4_INITIAL_EMERGENCY_CLOSE_SCHEDULING_FINAL_REVIEW_V1",
+  "operationPlanFile": "m2_d4_emergency_operation_plan_v1.json",
+  "operationPlanSha256": "4173fd37231b1b4e38f9ac592eb7769c8013158f8affce750dcb7b65ca9434f4",
+  "reviewBlock": {
+    "hash": "0x56b4f17066ee97a51500ea54f99a0ec12ac75bca347c992d2093cc748ddcd8fd",
+    "number": 48131424,
+    "timestamp": 1792031136
+  },
+  "rpcEndpointIdentity": {
+    "clientVersion": "reth/v2.5.2-5877708/x86_64-unknown-linux-gnu/base/v1.4.2",
+    "urlSha256": "90b3dcfbb7685940a049c9ab7e1cf2d2d2eb03957572b7cb98c688db23208c95"
+  },
+  "safe": {
+    "address": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "fallbackHandler": "0xfd0732dc9e303f09fcef3a7388ad10a83459ec99",
+    "guard": "0x0000000000000000000000000000000000000000",
+    "modules": [],
+    "nonceObservationOnly": 21,
+    "owners": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "realSignaturesCollected": false,
+    "threshold": 2,
+    "version": "1.4.1"
+  },
+  "schema": 1,
+  "startingHead": "09915d83913db819aeff2e6dd24e7e7de343e5c3",
+  "timelock": {
+    "address": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "gracePeriodSeconds": 1209600,
+    "guardian": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+    "minDelaySeconds": 86400,
+    "owner": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+    "queuePaused": false,
+    "safeExecutor": true,
+    "safeProposer": true
+  },
+  "verdict": "PASS"
+}
