@@ -1,0 +1,270 @@
+{
+  "artifacts": {
+    "safeBuilder": {
+      "path": "/home/corio/DEOPT/deopt-v2-sol/artifacts/perps_v2_replacement_deployment/c20_oracle_delay_fast_s2_safe_builder_v1.json",
+      "sha256": "c17bb2c96e8550ed8ab27e9682b5bd49dde7856175713db087096ae4504ad73a"
+    },
+    "unsignedIntent": {
+      "path": "/home/corio/DEOPT/deopt-v2-sol/artifacts/perps_v2_replacement_deployment/c20_oracle_delay_fast_s2_unsigned_intent_v1.json",
+      "sha256": "739458898da51a865369983d0200fe195c4cc69d9f137d21c0ef84756d931d57"
+    }
+  },
+  "boundaries": {
+    "C12Authorized": false,
+    "migrationAuthorized": false,
+    "publicBroadcast": false,
+    "publicSigning": false,
+    "publicTimelockExecution": false,
+    "publicTradingAuthorized": false
+  },
+  "c12Gate": {
+    "manifestSha256": "745e7a2fad6a77fef6e35f10a1a431b75615524f51fe13c881c191351ad591fe",
+    "queuedC20Insufficient": true,
+    "repositoryWorkflowOnly": true,
+    "required": "Public C20 execution receipt + Timelock TransactionExecuted + operation consumed + fresh D5=600 + D4/D6 maintenance + separate C12 review/authorization",
+    "status": "BLOCKED_WAITING_FOR_C20"
+  },
+  "calldata": {
+    "execute": "0x06a41d0900000000000000000000000090caa6d5bc628577bc76d6cc8b775f983c75e11000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ad8a9400000000000000000000000000000000000000000000000000000000000000024cd3b691c000000000000000000000000000000000000000000000000000000000000025800000000000000000000000000000000000000000000000000000000",
+    "executeBytes": 228,
+    "executeKeccak": "0x442affee20ddf4bd8dadfd054ff300d095e7b85ff3f7aa197a3a75ccbadac757",
+    "executeSha256": "84f01c8c8331e6c73e739cfa03f9c92c42b890f2faea169d806d2c7c0dc53783",
+    "inner": "0xcd3b691c0000000000000000000000000000000000000000000000000000000000000258",
+    "innerKeccak": "0x9f727fc7e4f11d3a330bc6d92d1516a318b953d98400130612b6e27686b8d9d9"
+  },
+  "chain": {
+    "blockHashRechecked": true,
+    "chainId": 84532,
+    "reviewBlock": {
+      "hash": "0xfa03f41fe7e9e764c62e7d80b4af999efd1c859c00f7f615ca1dde2a457e1383",
+      "number": 48356476,
+      "timestamp": 1792481240
+    },
+    "rpcProvenance": "configured Base Sepolia RPC_URL; credential withheld; single provider, pinned reads"
+  },
+  "forkRehearsal": {
+    "D4D6MaintenancePreserved": true,
+    "D5MaxOracleDelayAfter": 600,
+    "D5MaxOracleDelaySetEvent": "MaxOracleDelaySet(0,600)",
+    "block": {
+      "hash": "0xfa03f41fe7e9e764c62e7d80b4af999efd1c859c00f7f615ca1dde2a457e1383",
+      "number": 48356476,
+      "timestamp": 1792481240
+    },
+    "cancelledAndExpiredRejected": true,
+    "forgeTests": {
+      "failed": 0,
+      "passed": 7,
+      "skipped": 0
+    },
+    "gasObservationLimit": "Local gasleft deltas are not complete public network transaction gas estimates.",
+    "localDirectTimelockGasObserved": 38911,
+    "localSafeProxyGasObserved": 71131,
+    "operationConsumed": true,
+    "prematureExecutionReverted": true,
+    "realSafeSignaturesVerified": false,
+    "replayRejected": true,
+    "safeAddressImpersonationUsed": true,
+    "sharedEconomicNonDrift": "PASS_BOUNDED",
+    "syntheticForkOnlySafeApproveHashUsed": true,
+    "targetedBuild": "PASS_ONE_FILE_SOLC_0.8.30",
+    "timelockEvent": "TransactionExecuted exact ID/target/value/data/ETA",
+    "wrongAuthorityTargetDataEtaRejected": true
+  },
+  "futureOperatorChecklist": [
+    "After ETA, refresh chainId/block timestamp and Timelock queued+ready state within expiry.",
+    "Refresh Safe nonce, owner set, threshold, modules/guard, Timelock executor role, and D4/D5/D6 prestate.",
+    "Import exactly the unsigned one-action Safe Builder JSON manually; confirm CALL(0), TL destination, zero value, exact data, nonce, five gas/refund fields and recomputed SafeTx hash.",
+    "Require Safe UI simulation PASS, full wallet gas review/balance, explicit operator approval, and two genuine Safe owner confirmations.",
+    "Execute once manually only after separate authorization; no automatic retry. Reconcile ambiguous submission read-only."
+  ],
+  "futurePublicPostflight": [
+    "Canonical Base Sepolia receipt and exact Safe ExecutionSuccess hash; no failed inner call; nonce progression.",
+    "Exact Safe CALL to custom Timelock, TransactionExecuted event for reviewed C20 ID/ETA, queue consumed and replay rejected.",
+    "D5 MaxOracleDelaySet(0,600) and fresh D5.maxOracleDelay=600; D5 owner/Engine unchanged.",
+    "D4 four restrictions true, D6 paused, D4 Risk pointer zero/migration OPEN, bounded shared economic non-drift."
+  ],
+  "gasPlanning": {
+    "baseFeeWeiAtReview": 5000000,
+    "directPublicEstimateBeforeEta": "NOT_AVAILABLE_PRE_ETA_TIMELOCK_REVERT",
+    "gasLimitApproved": false,
+    "priorityFeeWeiAtReview": 1000000,
+    "safeFullGasReview": "PENDING_SAFE_UI_AFTER_ETA"
+  },
+  "milestone": "PERPS_V2_BASE_SEPOLIA_C20_FAST_S2_EXECUTION_FINAL_REVIEW_V1",
+  "prestate": {
+    "D4FourFlags": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "D4Migration": "OPEN",
+    "D4RiskAndPMEPointers": "ZERO",
+    "D5MaxOracleDelay": 0,
+    "D6Paused": true,
+    "boundedCoverage": "Named getters, one sampled position/nonce/fill in fork, known executor keys; PMR market getters unavailable while no markets exist. Not exhaustive storage.",
+    "economicPathOpen": false,
+    "readbacks": {
+      "clearingLedger": 1000000000,
+      "d1Markets": 0,
+      "d2Budget": 0,
+      "d2Root": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "d3Config": [
+        0,
+        false,
+        false
+      ],
+      "d4BadDebt": 0,
+      "d4CollateralOps": true,
+      "d4Funding": true,
+      "d4Guardian": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "d4InsuranceAuthorized": false,
+      "d4Liquidation": true,
+      "d4Migration": 0,
+      "d4Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "d4Pme": "0x0000000000000000000000000000000000000000",
+      "d4Risk": "0x0000000000000000000000000000000000000000",
+      "d4Snapshot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "d4Trading": true,
+      "d4VaultAuthorized": false,
+      "d5BaseToken": "0x6eae407f5640b006fac9965182e238582a3b412e",
+      "d5Delay": 0,
+      "d5Engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+      "d5Guardian": "0x0000000000000000000000000000000000000000",
+      "d5Oracle": "0xb416406f200b2ef3d7a86a5d5877ed41d9b1a581",
+      "d5Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "d5Paused": false,
+      "d5Pending": "0x0000000000000000000000000000000000000000",
+      "d5RiskPaused": false,
+      "d5Vault": "0x00340c360353a5ab784c5bc5c44322a6af0625d3",
+      "d5WithdrawPaused": false,
+      "d6Domain": "0x1ff87de391024af5fcccddf4e4a83e9fb5acc5ddf28cf85f76eefc96d5d4d0f5",
+      "d6Engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+      "d6Guardian": "0x0000000000000000000000000000000000000000",
+      "d6Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "d6Paused": true,
+      "d6RuntimeExecutor": false,
+      "d6TLExecutor": true,
+      "insuranceLedger": 2100010,
+      "queued": true,
+      "ready": false,
+      "safeNonce": 24,
+      "safeOwners": [
+        "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+        "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+        "0xa774c46c41064524df895bd7be9f294409798dfc"
+      ],
+      "safeThreshold": 2,
+      "safeVersion": "1.4.1",
+      "tlGrace": 1209600,
+      "tlGuardian": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+      "tlMinDelay": 86400,
+      "tlOwner": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+      "tlSafeExecutor": true,
+      "tlSafeProposer": true,
+      "vaultTokenBalance": 224066000000
+    },
+    "runtimeHashes": {
+      "D4": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785",
+      "D5": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c",
+      "D6": "0x3bad813e8654fddf86fb459a738d912b0c6c4dd4ad20119c52a4cc0dc1db834f",
+      "Timelock": "0xb20f9fa764b46a832c7665f07c1b9c3cd6506a58f6885c0e12e88e9bbc55233c"
+    }
+  },
+  "publicExecutionAuthorized": false,
+  "publicExecutionReadyNow": "NO_WAITING_FOR_ETA",
+  "repository": {
+    "C12C20ManifestSha256": "745e7a2fad6a77fef6e35f10a1a431b75615524f51fe13c881c191351ad591fe",
+    "S1PostflightSha256": "87802a598ea61860c79fae4b88b0ce4fa1339dc0fd9e0265b5bb1f6c1f577f31",
+    "branch": "main",
+    "frozenSourceRevision": "25c36670883604c1ef5229642ee6548aea6796c3",
+    "headBefore": "baaee7ceeb7e4e10186e0b6a45947d858464d0f1",
+    "remote": "git@github.com:coriom/deopt-v2-sol.git",
+    "sourceDiffFromFrozen": "NONE"
+  },
+  "s1CanonicalReceipt": {
+    "blockHash": "0x14997e801ec09f469c64f372b835843825a502c00c53e1ceb975457c5fced5bf",
+    "blockNumber": 48355814,
+    "queueEvent": true,
+    "queueEventData": "0xcd3b691c0000000000000000000000000000000000000000000000000000000000000258",
+    "queueEventEta": 1792584000,
+    "queueEventOperationId": "0xad2000557d6dfd7a9adec3d2ba7e66c27386191195c78bd1090f40f8bd7ebc0a",
+    "queueEventTarget": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110",
+    "queueEventValue": 0,
+    "receiptBlockTimestamp": 1792479916,
+    "safeFailure": false,
+    "safeSuccess": true,
+    "safeTxHash": "0xd0a5e1f4a449b839760d786ec8de26995f6f3efa9067a67aa49c3f4940e8b13f",
+    "status": 1,
+    "txHash": "0x22915a6b6671a46f806a3b08571b5d735e493d2eb10e62816d4ddfe0482f2cfe"
+  },
+  "safe": {
+    "address": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "envelope": {
+      "baseGas": 0,
+      "data": "0x06a41d0900000000000000000000000090caa6d5bc628577bc76d6cc8b775f983c75e11000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ad8a9400000000000000000000000000000000000000000000000000000000000000024cd3b691c000000000000000000000000000000000000000000000000000000000000025800000000000000000000000000000000000000000000000000000000",
+      "gasPrice": 0,
+      "gasToken": "0x0000000000000000000000000000000000000000",
+      "nonce": 24,
+      "operation": 0,
+      "refundReceiver": "0x0000000000000000000000000000000000000000",
+      "safeTxGas": 0,
+      "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "value": 0
+    },
+    "fallback": "0xfd0732dc9e303f09fcef3a7388ad10a83459ec99",
+    "guard": "0x0000000000000000000000000000000000000000",
+    "modules": [],
+    "nonceObserved": 24,
+    "owners": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "realOwnerSignaturesCollected": false,
+    "safeTxHashConditional": "0x911ceff10ce4de39bf3e17b9779a533c28baf8efae8d25a455d59dd4f63bc909",
+    "safeTxHashMatchesDeployedGetter": true,
+    "safeUIProposalCreated": false,
+    "threshold": 2,
+    "version": "1.4.1"
+  },
+  "schema": "deopt.c20.fast_s2_final_review.v1",
+  "tests": {
+    "C12Gate": 19,
+    "failed": 0,
+    "fork": 7,
+    "fullHistoricalSuite": "NOT_RUN",
+    "offlinePackage": 8,
+    "passed": 34,
+    "skipped": 0
+  },
+  "timelock": {
+    "address": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "earliestUTC": "2026-10-21T12:00:00Z",
+    "executorSafe": true,
+    "expiryUTC": "2026-11-04T12:00:00Z",
+    "graceSeconds": 1209600,
+    "minDelay": 86400,
+    "noExecuteOrCancelEventsSinceS1": true,
+    "operation": {
+      "data": "0xcd3b691c0000000000000000000000000000000000000000000000000000000000000258",
+      "eta": 1792584000,
+      "executionOrCancelEventsSinceS1": 0,
+      "expiryInclusive": 1793793600,
+      "id": "0xad2000557d6dfd7a9adec3d2ba7e66c27386191195c78bd1090f40f8bd7ebc0a",
+      "onChainHashMatch": true,
+      "queued": true,
+      "readyNow": false,
+      "scopedD5EventCount": 1,
+      "scopedOperationEventCount": 1,
+      "target": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110",
+      "value": 0
+    },
+    "operationHashRule": "keccak256(abi.encode(target,value,data,eta)); no salt/predecessor",
+    "prematureEthCall": "EXPECTED_REVERT_BEFORE_ETA",
+    "readinessRule": "queued && ETA <= block.timestamp <= ETA + 14 days inclusive",
+    "runtimeHash": "0xb20f9fa764b46a832c7665f07c1b9c3cd6506a58f6885c0e12e88e9bbc55233c"
+  },
+  "verdict": "PASS"
+}

@@ -1,0 +1,69 @@
+{
+  "authorityAndLimits": {
+    "c12Authorized": false,
+    "expiryInclusive": 1793793600,
+    "fiveZeroGasRefundFieldsAreConditional": true,
+    "fullSafeWalletGas": "PENDING_SAFE_UI_AFTER_ETA",
+    "noBatchOrDelegatecall": true,
+    "notBeforeEta": 1792584000,
+    "publicExecutionAuthorized": false,
+    "safeOwnerSignaturesPresent": false,
+    "safeThreshold": 2,
+    "timelockExecutor": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46"
+  },
+  "chainId": 84532,
+  "milestone": "PERPS_V2_BASE_SEPOLIA_C20_FAST_S2_EXECUTION_FINAL_REVIEW_V1",
+  "operation": {
+    "cancelledAtReview": false,
+    "eta": 1792584000,
+    "executedAtReview": false,
+    "id": "0xad2000557d6dfd7a9adec3d2ba7e66c27386191195c78bd1090f40f8bd7ebc0a",
+    "innerArgumentSeconds": 600,
+    "innerCalldata": "0xcd3b691c0000000000000000000000000000000000000000000000000000000000000258",
+    "innerCalldataKeccak256": "0x9f727fc7e4f11d3a330bc6d92d1516a318b953d98400130612b6e27686b8d9d9",
+    "innerFunction": "setMaxOracleDelay(uint256)",
+    "queuedAtReview": true,
+    "target": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110",
+    "valueWei": 0
+  },
+  "safeAddress": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+  "safeEnvelope": {
+    "baseGas": 0,
+    "data": "0x06a41d0900000000000000000000000090caa6d5bc628577bc76d6cc8b775f983c75e11000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ad8a9400000000000000000000000000000000000000000000000000000000000000024cd3b691c000000000000000000000000000000000000000000000000000000000000025800000000000000000000000000000000000000000000000000000000",
+    "gasPrice": 0,
+    "gasToken": "0x0000000000000000000000000000000000000000",
+    "nonce": 24,
+    "operation": 0,
+    "refundReceiver": "0x0000000000000000000000000000000000000000",
+    "safeTxGas": 0,
+    "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "value": 0
+  },
+  "safeNonceObservationBlock": {
+    "hash": "0xfa03f41fe7e9e764c62e7d80b4af999efd1c859c00f7f615ca1dde2a457e1383",
+    "number": 48356476,
+    "timestamp": 1792481240
+  },
+  "safeTransactionBuilder": {
+    "builderDoesNotBindNonceGasOrRefund": true,
+    "operationTypeMustBeConfirmedInSafeUI": "CALL (0)",
+    "path": "/home/corio/DEOPT/deopt-v2-sol/artifacts/perps_v2_replacement_deployment/c20_oracle_delay_fast_s2_safe_builder_v1.json",
+    "sha256": "c17bb2c96e8550ed8ab27e9682b5bd49dde7856175713db087096ae4504ad73a",
+    "transactionCount": 1
+  },
+  "safeTxHashConditional": "0x911ceff10ce4de39bf3e17b9779a533c28baf8efae8d25a455d59dd4f63bc909",
+  "safeTxHashLocalEqualsDeployedGetter": true,
+  "schema": "deopt.c20.fast_s2_unsigned_intent.v1",
+  "status": "OFFLINE_UNSIGNED_UNSUBMITTED_NOT_AUTHORIZED",
+  "timelockAddress": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+  "timelockCall": {
+    "data": "0x06a41d0900000000000000000000000090caa6d5bc628577bc76d6cc8b775f983c75e11000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ad8a9400000000000000000000000000000000000000000000000000000000000000024cd3b691c000000000000000000000000000000000000000000000000000000000000025800000000000000000000000000000000000000000000000000000000",
+    "dataBytes": 228,
+    "dataKeccak256": "0x442affee20ddf4bd8dadfd054ff300d095e7b85ff3f7aa197a3a75ccbadac757",
+    "dataSha256": "84f01c8c8331e6c73e739cfa03f9c92c42b890f2faea169d806d2c7c0dc53783",
+    "function": "executeTransaction(address,uint256,bytes,uint256)",
+    "selector": "0x06a41d09",
+    "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "valueWei": 0
+  }
+}
