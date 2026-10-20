@@ -1,0 +1,262 @@
+{
+  "C12Authorized": false,
+  "C20": {
+    "argumentSeconds": 600,
+    "bufferedSchedulingCutoff": 1792494000,
+    "eta": 1792584000,
+    "etaStatus": "PROPOSED_FOR_SEPARATE_OPERATOR_APPROVAL",
+    "etaUTC": "2026-10-21T12:00:00+00:00",
+    "expectedPostS1D5Delay": 0,
+    "expectedQueueEvent": "TransactionQueued(bytes32,address,uint256,bytes,uint256)",
+    "function": "setMaxOracleDelay(uint256)",
+    "innerCalldata": "0xcd3b691c0000000000000000000000000000000000000000000000000000000000000258",
+    "innerCalldataBytes": 36,
+    "innerCalldataKeccak256": "0x9f727fc7e4f11d3a330bc6d92d1516a318b953d98400130612b6e27686b8d9d9",
+    "innerCalldataSha256": "c2afc251e175aad4d0144ce5080398e77ad873315c2e51df5ac3feef1d71cc7d",
+    "operationId": "0xad2000557d6dfd7a9adec3d2ba7e66c27386191195c78bd1090f40f8bd7ebc0a",
+    "queueCalldata": "0x8e361cdf00000000000000000000000090caa6d5bc628577bc76d6cc8b775f983c75e11000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ad8a9400000000000000000000000000000000000000000000000000000000000000024cd3b691c000000000000000000000000000000000000000000000000000000000000025800000000000000000000000000000000000000000000000000000000",
+    "queueCalldataBytes": 228,
+    "queueCalldataKeccak256": "0xd5129ee83ea986b7d017017bceebc45deddf105eaf89fcb4621f3d826e1520fd",
+    "secondsToBufferedCutoffAtOperationSnapshot": 15470,
+    "target": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110",
+    "theoreticalSchedulingCutoff": 1792497600,
+    "valueWei": 0
+  },
+  "C20Executed": false,
+  "C20SchedulingPubliclyCompleted": false,
+  "C20_FAST_REVIEW": "PASS",
+  "C20_S1_STATUS": "AWAITING_OPERATOR_SAFE_ACTION",
+  "agentPublicBroadcast": false,
+  "agentPublicSigning": false,
+  "agentSafeProposal": false,
+  "builder": {
+    "containsSafeNonceOrGasRefundFields": false,
+    "notImportedOrSubmittedByAgent": true,
+    "operationTypeMustBeConfirmedInSafeUI": "CALL (0)",
+    "path": "/home/corio/DEOPT/deopt-v2-sol/artifacts/perps_v2_replacement_deployment/c20_oracle_delay_s1_fast_safe_builder_v2.json",
+    "schema": "Safe Transaction Builder 1.0 / txBuilderVersion 1.18.0",
+    "sha256": "15409ec012fbcc534851e925e63ded418558deed97713f8c7768a3a3e254d4dc",
+    "transactionCount": 1
+  },
+  "c12Gate": {
+    "ambiguousExecutionInsufficient": true,
+    "gateScope": "supported repository workflow, not universal on-chain enforcement",
+    "localSimulationInsufficient": true,
+    "manifestSha256": "745e7a2fad6a77fef6e35f10a1a431b75615524f51fe13c881c191351ad591fe",
+    "queueOnlyInsufficient": true,
+    "status": "BLOCKED_UNTIL_CANONICAL_C20_S2_AND_FRESH_D5_600_READBACK",
+    "workflow": "tools/perps_v2_cutover/c12_governance_workflow.py"
+  },
+  "chain": {
+    "bothBlockHashesRechecked": true,
+    "chainId": 84532,
+    "operationHashPinnedSnapshot": {
+      "hash": "0xdabe4301bb999531cc547a27b1726b49532180f3557bae6cf55c4d1c6b9615a8",
+      "number": 48355121,
+      "timestamp": 1792478530
+    },
+    "primaryPinnedSnapshot": {
+      "hash": "0xcc197fc6b17ba612a0d123bac7a1f469b50c6cfa3855c1d04efd270716577cb3",
+      "number": 48355068,
+      "timestamp": 1792478424
+    },
+    "provenance": "same configured Base Sepolia RPC; endpoint and credentials withheld; snapshots are separate, not atomic"
+  },
+  "deployment": {
+    "D5Guardian": "0x0000000000000000000000000000000000000000",
+    "D5PendingOwner": "0x0000000000000000000000000000000000000000",
+    "allSixOwners": {
+      "D1": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "D2": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "D3": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "D4": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "D5": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "D6": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588"
+    },
+    "runtimeHashes": {
+      "D1": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5",
+      "D2": "0x732101d67fb112f6d3159f32852071bbf995f8bd1995335cf9a2b0f167d08726",
+      "D3": "0x6d199e027af598ee903513a1ab41e27e2937115c79b8ec85e386d739615befcb",
+      "D4": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785",
+      "D5": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c",
+      "D6": "0x3bad813e8654fddf86fb459a738d912b0c6c4dd4ad20119c52a4cc0dc1db834f"
+    }
+  },
+  "futurePostflight": {
+    "afterS1": "canonical successful receipt plus Safe ExecutionSuccess for exact SafeTx hash, nonce advancement, Timelock TransactionQueued exact ID/ETA, operation queued but not executed, D5 still zero, D4/D6 maintenance and bounded economy unchanged",
+    "afterS2": "separate final review/authorization after ETA; canonical Safe and Timelock execution receipt, operation consumed, D5 exactly 600, D4/D6 closure preserved; only then separate C12 review"
+  },
+  "futureReadOnlyParallelWork": [
+    "inspect C12 source/payload without scheduling",
+    "audit D5 risk completeness",
+    "review D1 market activation policy",
+    "plan D3 token configuration",
+    "verify D4 wiring dependencies"
+  ],
+  "gasPlanning": {
+    "baseFeeWeiAtOperationSnapshot": 5000000,
+    "directD5SetterEstimateNotSafeScheduleGas": 47957,
+    "directTimelockSchedulingEstimateFromSafeAddress": 56923,
+    "fullSafeWalletGasEstimate": "PENDING_SAFE_UI_SIMULATION",
+    "outerGasEnvelopeAuthorized": false,
+    "priorityFeeWeiAtOperationSnapshot": 1000000
+  },
+  "limits": [
+    "Builder JSON does not bind Safe nonce, CALL type or five gas/refund fields; operator must check them in Safe UI",
+    "Safe-address eth_call/fork prank does not prove real Safe 2/3 signatures",
+    "direct Timelock gas estimate is not full Safe/wallet gas",
+    "bounded getter comparisons do not prove exhaustive storage non-drift",
+    "no public state change in this milestone"
+  ],
+  "maintenanceAndBoundedEconomy": {
+    "ClearingLedgerRawMUSDC": 1000000000,
+    "D4Flags": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "D4InsuranceAuthorized": false,
+    "D4Migration": "OPEN",
+    "D4PMEPointer": "0x0000000000000000000000000000000000000000",
+    "D4ResidualBadDebt": 0,
+    "D4RiskPointer": "0x0000000000000000000000000000000000000000",
+    "D4Snapshot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "D4VaultAuthorized": false,
+    "D5Delay": 0,
+    "D5Engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+    "D6Domain": "0x1ff87de391024af5fcccddf4e4a83e9fb5acc5ddf28cf85f76eefc96d5d4d0f5",
+    "D6Engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+    "D6Paused": true,
+    "D6RuntimeExecutor": false,
+    "D6TimelockExecutor": true,
+    "FeesMerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "InsuranceVaultLedgerRawMUSDC": 2100010,
+    "PMRMarkets": 0,
+    "SeizerMUSDCConfig": [
+      0,
+      false,
+      false
+    ],
+    "VaultMUSDCTokenBalance": 224066000000
+  },
+  "migrationReplayAuthorized": false,
+  "milestone": "PERPS_V2_BASE_SEPOLIA_C20_ACCELERATED_SCHEDULING_V2",
+  "operatorCheckpoint": {
+    "beforeAnySigning": [
+      "Base Sepolia chain 84532; OPS Safe exact address and nonce 23",
+      "one CALL to ProtocolTimelock, zero value, exact 228-byte calldata and Keccak",
+      "D5 target, setMaxOracleDelay(600), ETA 1792584000, operation ID exact",
+      "safeTxGas/baseGas/gasPrice zero and gasToken/refundReceiver zero; SafeTx hash exact",
+      "Safe UI simulation succeeds and full wallet gas/fee/balance reviewed",
+      "Safe proposal inventory checked; no competing transaction"
+    ],
+    "beforeManualExecution": [
+      "refresh chain timestamp; require ETA >= actual scheduling block timestamp + live minDelay + 3600",
+      "refresh Safe nonce/owners/threshold/modules/guard and SafeTx hash",
+      "refresh D5 delay=0, D4 four flags true, D6 paused, queue absent",
+      "two genuine Safe-owner confirmations; exact single CALL",
+      "stop if any hash-relevant field or authority changes"
+    ],
+    "ifSubmissionAmbiguous": "Do not retry; reconcile SafeTx hash, public tx, Safe nonce, Timelock queue event/operation ID and D5 readback read-only",
+    "requiredAction": "Manual Safe Transaction Builder import and independent review only; operator controls proposal, real 2/3 confirmations and execution"
+  },
+  "publicTradingAuthorized": false,
+  "repository": {
+    "correctedC12C20ManifestSha256": "745e7a2fad6a77fef6e35f10a1a431b75615524f51fe13c881c191351ad591fe",
+    "forkTestSha256": "76e05fb9bcd6dc168f0ad91b7df8d31e45529d10ed08bd34b790a71cb195025e",
+    "frozenSourceRevision": "25c36670883604c1ef5229642ee6548aea6796c3",
+    "previousOperationPlanSha256": "d504869af35ad7b90b413dad5dbb76eb95b11467926352a7ecf4dc6f2e4dacf7",
+    "previousPreparationSha256": "8ed6296e1ce06375ade94244eb6a07893ee5dff5d3fa55569bf6ca1cceb688e9",
+    "previousProposalStatus": "OBSOLETE_FOR_FAST_REVIEW_NOT_PUBLICLY_QUEUED",
+    "previousProposedEta": 1792810800,
+    "previousProposedOperationId": "0x9f2f5b40839a71031bf95e2ea3eda634360351e851fa83fa2f6045ba00084317",
+    "startingHead": "67670ba0a8e4dde717efdfbf6ef6958c36bd418c"
+  },
+  "safe": {
+    "address": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "envelope": {
+      "baseGas": 0,
+      "data": "0x8e361cdf00000000000000000000000090caa6d5bc628577bc76d6cc8b775f983c75e11000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ad8a9400000000000000000000000000000000000000000000000000000000000000024cd3b691c000000000000000000000000000000000000000000000000000000000000025800000000000000000000000000000000000000000000000000000000",
+      "gasPrice": 0,
+      "gasToken": "0x0000000000000000000000000000000000000000",
+      "nonce": 23,
+      "operation": 0,
+      "refundReceiver": "0x0000000000000000000000000000000000000000",
+      "safeTxGas": 0,
+      "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "value": 0
+    },
+    "fallback": "0xfd0732dc9e303f09fcef3a7388ad10a83459ec99",
+    "guard": "0x0000000000000000000000000000000000000000",
+    "modules": [],
+    "noRealSignatures": true,
+    "noSafeProposal": true,
+    "nonceObserved": 23,
+    "owners": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "safeDomainSeparator": "0x2c0d582d9c9e132109be0c6b670d4740fd7774bb12703c7888886a9b7748656a",
+    "safeTxHashConditional": "0xd0a5e1f4a449b839760d786ec8de26995f6f3efa9067a67aa49c3f4940e8b13f",
+    "safeTxHashLocalEqualsOnChainGetter": true,
+    "threshold": 2,
+    "version": "1.4.1",
+    "zeroFieldRationale": "These fields matched earlier successful Safe transactions and deployed Safe hash semantics; gasPrice=0 avoids Safe refund, but outer wallet still pays network gas. UI must preserve all fields or obtain renewed review."
+  },
+  "schema": "deopt.c20.fast_scheduling_review.v2",
+  "simulation": {
+    "D4MaintenanceAndD6PausePreserved": true,
+    "D5StillZeroAfterScheduling": true,
+    "boundedSharedEconomyPreserved": true,
+    "exactQueueEventAndOperationId": "PASS",
+    "forkBlock": 48355121,
+    "fullSafeWalletGas": "PENDING_SAFE_UI_SIMULATION",
+    "prematureExecutionRejected": true,
+    "realSafeSignaturesVerified": false,
+    "safeAddressImpersonated": true,
+    "safeAddressReadOnlyEthCall": "PASS",
+    "wrongActorPayloadEtaAndDuplicateRejected": true
+  },
+  "tests": {
+    "breakdown": {
+      "C12C20WorkflowPython": 31,
+      "existingGovernanceOrderSolidity": 1,
+      "fastFork": 2,
+      "fastPackageOfflinePython": 8
+    },
+    "failed": 0,
+    "governanceCorrectionValidator": "PASS",
+    "passed": 42,
+    "skipped": 0
+  },
+  "timelock": {
+    "D5TargetedEventsNewScan": {
+      "events": [],
+      "fromBlock": 48354133,
+      "toBlock": 48355121
+    },
+    "D5TargetedEventsPriorFullScan": {
+      "eventCount": 0,
+      "fromBlock": 47924646,
+      "toBlock": 48354132
+    },
+    "address": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "guardian": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+    "hashRule": "keccak256(abi.encode(target,value,data,eta)); no salt or predecessor",
+    "minDelaySeconds": 86400,
+    "oldProposalOperationId": "0x9f2f5b40839a71031bf95e2ea3eda634360351e851fa83fa2f6045ba00084317",
+    "operationId": "0xad2000557d6dfd7a9adec3d2ba7e66c27386191195c78bd1090f40f8bd7ebc0a",
+    "operationIdLocalEqualsOnChain": true,
+    "operationState": "ABSENT",
+    "owner": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+    "queueEthCallReturnsOperationId": true,
+    "queueFunction": "queueTransaction(address,uint256,bytes,uint256)",
+    "queuePaused": false,
+    "queueSelector": "0x8e361cdf",
+    "safeExecutor": true,
+    "safeProposer": true,
+    "unauthorizedEthCallRejected": true
+  }
+}

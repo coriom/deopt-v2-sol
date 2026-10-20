@@ -1,0 +1,51 @@
+{
+  "chainId": "84532",
+  "createdAt": 1792478530000,
+  "meta": {
+    "createdFromOwnerAddress": "",
+    "createdFromSafeAddress": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "description": "Exactly one unsigned OPS Safe CALL to custom ProtocolTimelock.queueTransaction for D5 setMaxOracleDelay(600), ETA 1792584000. No proposal/signature/submission. Confirm CALL, nonce, gas/refund fields, hash and deadline in Safe UI.",
+    "name": "OFFLINE_REVIEW_ONLY_NOT_AUTHORIZED_C20_S1_FAST",
+    "txBuilderVersion": "1.18.0"
+  },
+  "transactions": [
+    {
+      "contractInputsValues": {
+        "data": "0xcd3b691c0000000000000000000000000000000000000000000000000000000000000258",
+        "eta": "1792584000",
+        "target": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110",
+        "value": "0"
+      },
+      "contractMethod": {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "target",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "value",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "data",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint256",
+            "name": "eta",
+            "type": "uint256"
+          }
+        ],
+        "name": "queueTransaction",
+        "payable": false
+      },
+      "data": "0x8e361cdf00000000000000000000000090caa6d5bc628577bc76d6cc8b775f983c75e11000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ad8a9400000000000000000000000000000000000000000000000000000000000000024cd3b691c000000000000000000000000000000000000000000000000000000000000025800000000000000000000000000000000000000000000000000000000",
+      "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "value": "0"
+    }
+  ],
+  "version": "1.0"
+}
