@@ -1,0 +1,295 @@
+{
+  "C12Authorized": false,
+  "C20ExecutionAuthorized": false,
+  "C20SchedulingAuthorized": false,
+  "D5": {
+    "address": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110",
+    "baseCollateralToken": "0x6eae407f5640b006fac9965182e238582a3b412e",
+    "engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+    "guardian": "0x0000000000000000000000000000000000000000",
+    "maxOracleDelayBefore": 0,
+    "oracle": "0xb416406f200b2ef3d7a86a5d5877ed41d9b1a581",
+    "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "paused": false,
+    "pendingOwner": "0x0000000000000000000000000000000000000000",
+    "riskComputationPaused": false,
+    "runtimeHash": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c",
+    "vault": "0x00340c360353a5ab784c5bc5c44322a6af0625d3",
+    "withdrawPreviewPaused": false
+  },
+  "SafeProposalCreated": false,
+  "chainEvidence": {
+    "chainId": 84532,
+    "operationHashRechecked": true,
+    "operationHashSnapshot": {
+      "hash": "0xefa5448f7c6a714325fda2fd30e527a5549b58b6a02975c2f35126e739c2c5af",
+      "number": 48354132,
+      "timestamp": 1792476552
+    },
+    "primaryHashRechecked": true,
+    "primarySnapshot": {
+      "hash": "0x48aaec9bafb40a121a84d7290e5b0934ae75a2c4ac1201d456e5e052280e486e",
+      "number": 48354014,
+      "timestamp": 1792476316
+    },
+    "provenance": "existing configured Base Sepolia RPC, credentials withheld; separate pinned reads on same RPC, not independent consensus providers"
+  },
+  "economicCoverage": {
+    "clearingLedgerRawMUSDC": 1000000000,
+    "feesMerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "feesRebateBudget": 0,
+    "insuranceLedgerRawMUSDC": 2100010,
+    "limits": [
+      "Named getters and one sampled trader/order key only; no exhaustive storage proof",
+      "PMR market-state getters unavailable while no markets are configured",
+      "Local fork changes do not prove public execution"
+    ],
+    "pmrMarketCount": 0,
+    "seizerConfigForMUSDC": [
+      0,
+      false,
+      false
+    ],
+    "vaultTokenBalanceRawMUSDC": 224066000000
+  },
+  "gasPlanning": {
+    "baseFeeWeiAtOperationSnapshot": 5000000,
+    "directD5SetterFromTimelockEstimate": 47957,
+    "directTimelockExecuteBeforeEta": "NOT_RELIABLY_AVAILABLE: {'code': 3, 'message': 'execution reverted', 'data': '0x0280b15e'}",
+    "directTimelockScheduleFromSafeAddressEstimate": 56923,
+    "feeEnvelopeAuthorized": false,
+    "fullSafeExecuteEstimate": "NOT_RELIABLY_AVAILABLE",
+    "fullSafeScheduleEstimate": "NOT_RELIABLY_AVAILABLE",
+    "priorityFeeWeiAtOperationSnapshot": 1000000
+  },
+  "governance": {
+    "cancellationAuthority": "Timelock owner or guardian; both are OPS Safe at review block",
+    "gracePeriodSeconds": 1209600,
+    "minDelaySeconds": 86400,
+    "operationIdentity": "keccak256(abi.encode(target,value,data,eta)); no salt or predecessor",
+    "queuePaused": false,
+    "safe": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "safeConfirmationsRequired": "2 of 3 for each separate scheduling and execution Safe transaction",
+    "safeExecutor": true,
+    "safeFallback": "0xfd0732dc9e303f09fcef3a7388ad10a83459ec99",
+    "safeGuard": "0x0000000000000000000000000000000000000000",
+    "safeModules": [],
+    "safeNonceObserved": 23,
+    "safeOwners": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "safeProposer": true,
+    "safeThreshold": 2,
+    "safeVersion": "1.4.1",
+    "timelock": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "timelockGuardian": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+    "timelockOwner": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46"
+  },
+  "maintenance": {
+    "D4Flags": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "D4InsuranceAuthorized": false,
+    "D4MigrationState": "OPEN",
+    "D4PMEPointer": "0x0000000000000000000000000000000000000000",
+    "D4ResidualBadDebt": 0,
+    "D4RiskPointer": "0x0000000000000000000000000000000000000000",
+    "D4SampleTraderMarkets": 0,
+    "D4Snapshot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "D4VaultAuthorized": false,
+    "D6Domain": "0x1ff87de391024af5fcccddf4e4a83e9fb5acc5ddf28cf85f76eefc96d5d4d0f5",
+    "D6Engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+    "D6Paused": true,
+    "D6RuntimeExecutor": false,
+    "D6TimelockExecutor": true,
+    "M1M2CanonicalReceipts": {
+      "M1": {
+        "blockHash": "0x4e6f4cee04abc35049f8039cadeb52a11f357edf258381b474c0169f9b3ad054",
+        "blockNumber": "0x2de6b71",
+        "status": "0x1",
+        "transactionHash": "0x792adfb0498c9b8142d849d9a64e0e0e14751d9b6db4c6a669f4fb5dae82bb7f"
+      },
+      "M2": {
+        "blockHash": "0x897901a5ba4a7e28d2c70497ed605c8a169a569402c041d8b56e48a6de2208bc",
+        "blockNumber": "0x2e1c020",
+        "status": "0x1",
+        "transactionHash": "0xc4403aab142d4b89e9851793490e1238d761fd0e99d5beeb4fb88c63e2a3c70c"
+      }
+    },
+    "M1M2ScopedEvents": {
+      "M1": [
+        {
+          "block": 48130929,
+          "topic0": "0xbf5aad41947264cee85c734f09dc40e62b870b104a3110ba64673196b43c4096",
+          "txHash": "0x792adfb0498c9b8142d849d9a64e0e0e14751d9b6db4c6a669f4fb5dae82bb7f"
+        }
+      ],
+      "M2": [
+        {
+          "block": 48134264,
+          "topic0": "0x4efebf40a8244d219085e74f928a18e8c9d17adc6b39270b8706cca0a92b648d",
+          "txHash": "0x0562d8df4da6b41d89fa9a1278b85af085f5520cd8e3797514bbfc857f73cc4b"
+        },
+        {
+          "block": 48349216,
+          "topic0": "0xbf5aad41947264cee85c734f09dc40e62b870b104a3110ba64673196b43c4096",
+          "txHash": "0xc4403aab142d4b89e9851793490e1238d761fd0e99d5beeb4fb88c63e2a3c70c"
+        }
+      ]
+    },
+    "M1Queued": false,
+    "M2Queued": false
+  },
+  "manifestGate": {
+    "C12CurrentlyAuthorized": false,
+    "correctedManifestSha256": "745e7a2fad6a77fef6e35f10a1a431b75615524f51fe13c881c191351ad591fe",
+    "gate": "canonical C20 queue and execution receipts plus fresh 600 readback before C12 authorization/scheduling; off-chain workflow gate",
+    "historicalUnsafeManifestRejected": true,
+    "validator": "tools/perps_v2_cutover/c12_c20_preflight.py",
+    "workflow": "tools/perps_v2_cutover/c12_governance_workflow.py"
+  },
+  "migrationReplayAuthorized": false,
+  "milestone": "PERPS_V2_BASE_SEPOLIA_C20_ORACLE_DELAY_PREPARATION_V1",
+  "operation": {
+    "argument": 600,
+    "argumentUnit": "seconds",
+    "collisionHistory": {
+      "D5TargetedTimelockQueueCancelExecuteEvents": [],
+      "fromD5DeploymentBlock": 47924646,
+      "rangeCount": 43,
+      "throughBlock": 48354132
+    },
+    "data": "0xcd3b691c0000000000000000000000000000000000000000000000000000000000000258",
+    "dataKeccak256": "0x9f727fc7e4f11d3a330bc6d92d1516a318b953d98400130612b6e27686b8d9d9",
+    "dataLengthBytes": 36,
+    "dataSha256": "c2afc251e175aad4d0144ce5080398e77ad873315c2e51df5ac3feef1d71cc7d",
+    "effectScope": "only maxOracleDelay storage and event; oracle freshness check becomes active, but feed health and other oracle policy remain separate",
+    "eta": 1792810800,
+    "etaStatus": "PROPOSED_NOT_APPROVED_NOT_QUEUED",
+    "etaUTC": "2026-10-24T03:00:00+00:00",
+    "event": "MaxOracleDelaySet(uint256 oldDelay,uint256 newDelay)",
+    "functionSignature": "setMaxOracleDelay(uint256)",
+    "graceExpiryInclusive": 1794020400,
+    "minimumDelaySeconds": 86400,
+    "onChainHashOperationReadback": "0x9f2f5b40839a71031bf95e2ea3eda634360351e851fa83fa2f6045ba00084317",
+    "operationId": "0x9f2f5b40839a71031bf95e2ea3eda634360351e851fa83fa2f6045ba00084317",
+    "ownerOnly": true,
+    "postState": {
+      "maxOracleDelaySeconds": 600
+    },
+    "preState": {
+      "maxOracleDelaySeconds": 0
+    },
+    "predecessor": "NOT_APPLICABLE",
+    "queuedAtReview": false,
+    "repeatedCall": "accepted and emits event with oldDelay == newDelay; do not submit redundantly",
+    "salt": "NOT_APPLICABLE",
+    "schedulingCutoffUTC": "2026-10-23T02:00:00+00:00",
+    "schedulingCutoffWithOneHourBuffer": 1792720800,
+    "selector": "0xcd3b691c",
+    "stageId": "C20",
+    "status": "PROPOSED_OFFLINE_ONLY",
+    "target": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110",
+    "validation": "newDelay <= 3600; 600 accepted; no minimum",
+    "valueWei": 0
+  },
+  "operationPlanPath": "artifacts/perps_v2_replacement_deployment/c20_oracle_delay_operation_plan_v1.json",
+  "publicStateChangesByThisMilestone": 0,
+  "publicTradingAuthorized": false,
+  "rehearsal": {
+    "D4MaintenanceLocalAfter": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "D5MaxOracleDelayLocalAfter": 600,
+    "D6PausedLocalAfter": true,
+    "boundedNonDrift": [
+      "D5 owner/guardian/engine/oracle/vault/base token/pause flags",
+      "D4 four flags/OPEN migration/zero pointers/snapshot/debt",
+      "D6 pause/owner/engine/domain/runtime executor/sample nonce and fill",
+      "Vault Clearing and Insurance ledgers",
+      "Vault mUSDC balance",
+      "D1 market count",
+      "D2 Merkle root",
+      "D3 mUSDC seize config",
+      "D4 Vault and Insurance authorization"
+    ],
+    "eventChecks": [
+      "MaxOracleDelaySet(0,600)",
+      "TransactionExecuted(exact operationId)"
+    ],
+    "executionAfterLocalWarp": "PASS",
+    "mode": "isolated Foundry Base Sepolia fork at block 48354014; Safe-address impersonation, no real Safe signatures",
+    "negativeCases": [
+      "unauthorized direct D5 setter",
+      "runtime executor direct setter",
+      "unauthorized Timelock proposer",
+      "unqueued operation",
+      "ETA too soon",
+      "duplicate queue",
+      "wrong target",
+      "wrong calldata",
+      "wrong ETA",
+      "wrong executor",
+      "cancelled operation",
+      "pre-ETA execution"
+    ],
+    "operationConsumed": true,
+    "prematureExecutionBlocked": true,
+    "proposedEtaAndOperationIdExact": true,
+    "replayRejected": true,
+    "schedule": "PASS",
+    "testPath": "test/perp/PerpsV2C20OracleDelayPreparationFork.t.sol"
+  },
+  "runtimeHashes": {
+    "D1": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5",
+    "D2": "0x732101d67fb112f6d3159f32852071bbf995f8bd1995335cf9a2b0f167d08726",
+    "D3": "0x6d199e027af598ee903513a1ab41e27e2937115c79b8ec85e386d739615befcb",
+    "D4": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785",
+    "D5": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c",
+    "D6": "0x3bad813e8654fddf86fb459a738d912b0c6c4dd4ad20119c52a4cc0dc1db834f"
+  },
+  "schema": "deopt.c20.oracle_delay_preparation.v1",
+  "signedTransactionCreated": false,
+  "sixOwners": {
+    "D1": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "D2": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "D3": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "D4": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "D5": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "D6": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588"
+  },
+  "sourceReferences": {
+    "correctedC12C20ManifestSha256": "745e7a2fad6a77fef6e35f10a1a431b75615524f51fe13c881c191351ad591fe",
+    "dependencyDagSha256": "f3907236b928a50151f21ea748e3572ce8fde8fe5a090c0de8d3ca4d647e5b5d",
+    "focusedForkTestSha256": "b0843fa1ec9252a7d7241a3860b85d534c6cb894ea3de36a74b0dcdb7f098051",
+    "frozenSolidityRevision": "25c36670883604c1ef5229642ee6548aea6796c3",
+    "m2PostflightSha256": "5e9dd84a7c8b9084ab6da1e7b5f14e1f4b83c1b3a9075bece8e689835e347927",
+    "repositoryHeadBefore": "4f6f9da55ca3f73ed6e873f06f3fe596427642e9",
+    "roadmapSha256": "ba8efeb738a86d60c232bf9551f75e30cc2481b51b0e8b4842675ca9f461acd0"
+  },
+  "validation": {
+    "focusedTests": {
+      "details": {
+        "fork": 2,
+        "governanceOrderSolidity": 1,
+        "pythonC12C20Workflow": 31
+      },
+      "failed": 0,
+      "passed": 34,
+      "skipped": 0
+    },
+    "forkFocusedBuild": "PASS_COMPILED_ONE_FILE",
+    "fullFoundryBuild": "INCOMPLETE_FROM_PREVIOUS_ROADMAP_NOT_RERUN",
+    "governanceCorrectionValidator": "PASS",
+    "previousBuildEvidence": "Handoff reports prolonged compilation interrupted; no terminal build report found in the reviewed roadmap artifact or report, so the exact compiler failure mode is unavailable. Focused C20 file compiled successfully."
+  },
+  "verdict": "PASS"
+}
