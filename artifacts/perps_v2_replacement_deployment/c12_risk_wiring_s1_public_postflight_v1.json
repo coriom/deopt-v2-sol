@@ -1,0 +1,584 @@
+{
+  "derived": {
+    "boundedEconomicNonDrift": "PASS",
+    "boundedOnlyChanges": {
+      "safeNonce": [
+        25,
+        26,
+        26
+      ],
+      "tlQueued": [
+        false,
+        true,
+        true
+      ]
+    },
+    "canonicalReceipt": true,
+    "duplicateC12QueueEvents": false,
+    "excessDelaySeconds": 28825,
+    "minimumDelaySeconds": 86400,
+    "operationCancelled": false,
+    "operationExecuted": false,
+    "operationQueuedAtReceiptAndLatest": true,
+    "operationalBufferSeconds": 3600,
+    "queueEventExact": true,
+    "receiptTimestampUtc": "2026-10-22T03:59:35Z",
+    "safeFailure": false,
+    "safeNonceTransition": "25_TO_26",
+    "safeSuccessExactHash": true,
+    "safeThresholdEvidence": "Deployed Safe 2-of-3 threshold accepted 130-byte signature payload and emitted exact ExecutionSuccess; raw signatures redacted; individual signer recovery not separately reproduced.",
+    "singleReviewedSafeCall": true,
+    "tracePath": "Delegation Manager -> owner-delegated call -> OPS Safe execTransaction -> one ProtocolTimelock.queueTransaction. Safe proxy internal DELEGATECALL is implementation dispatch, not transaction operation DELEGATECALL."
+  },
+  "evidence": {
+    "blocks": {
+      "before": {
+        "hash": "0x8066ac742eb4223dfab8c3c4d2a7b5f6d31dd2049e2ae74b169aadbc9a2fd1da",
+        "number": 48598530,
+        "timestamp": 1792641574
+      },
+      "hashesRechecked": true,
+      "latest": {
+        "hash": "0x4d7f86b68897cf4844482ae4facb37ebf1f19893b081bbbcf30a61d62bcb1d26",
+        "number": 48602829,
+        "timestamp": 1792642434
+      },
+      "receipt": {
+        "hash": "0xe97b4b37edbe80f55ce172d3d2d8533f88121bff900ae2ddac9c384d9995d507",
+        "number": 48598531,
+        "timestamp": 1792641575
+      }
+    },
+    "chainId": 84532,
+    "dataSource": "configured Base Sepolia RPC; URL withheld; pinned block reads and transaction trace from one provider; signature bytes omitted",
+    "publicTxHash": "0x27e61939bf39f0db3671ea610d8783ce229bd93a9f154bb04255650c833b3535",
+    "receipt": {
+      "blockHash": "0xe97b4b37edbe80f55ce172d3d2d8533f88121bff900ae2ddac9c384d9995d507",
+      "blockNumber": 48598531,
+      "effectiveGasPriceWei": 6000001,
+      "gasUsed": 240612,
+      "logCount": 5,
+      "logs": [
+        {
+          "address": "0x04658b29f6b82ed55274221a06fc97d318e25416",
+          "dataBytes": 64,
+          "dataKeccak256": "0xcc69885fda6bcc1a4ace058b4a62bf5e179ea78fd58a1ccd71c22cc9b688792f",
+          "decoded": null,
+          "index": 0,
+          "kind": "OTHER",
+          "topic0": "0x449da07f2c06c9d1a6b19d2454ffe749e8cf991d22f686e076a1a4844c5ff370"
+        },
+        {
+          "address": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+          "dataBytes": 960,
+          "dataKeccak256": "0xe8d272502821d746c496b8513f303f8fcf25e26467754a11129057423701a1f2",
+          "decoded": null,
+          "index": 1,
+          "kind": "SAFE_TRANSACTION_METADATA_REDACTED",
+          "topic0": "0x66753cd2356569ee081232e3be8909b950e0a76c1f8460c3a5e3c2be32b11bed"
+        },
+        {
+          "address": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+          "dataBytes": 192,
+          "dataKeccak256": "0x88996112259d756f997faf3d2f6ebf220793601ae9d194f82ce898af569baac9",
+          "decoded": {
+            "data": "0x04f6f5b200000000000000000000000090caa6d5bc628577bc76d6cc8b775f983c75e110",
+            "eta": 1792756800,
+            "operationId": "0xd15ec63a22daebd4eb015de23561089547af9b02945fb8ae6dd7028ae7581229",
+            "target": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+            "valueWei": 0
+          },
+          "index": 2,
+          "kind": "TIMELOCK_TRANSACTION_QUEUED",
+          "topic0": "0x4efebf40a8244d219085e74f928a18e8c9d17adc6b39270b8706cca0a92b648d"
+        },
+        {
+          "address": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+          "dataBytes": 32,
+          "dataKeccak256": "0x290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563",
+          "decoded": {
+            "paymentWei": 0,
+            "safeTxHash": "0x6cce2c2dcde9635050713acf875793ae2d6767d35f0f755318c9eec72260b9bf"
+          },
+          "index": 3,
+          "kind": "SAFE_EXECUTION_SUCCESS",
+          "topic0": "0x442e715f626346e8c54381002da614f62bee8d27386535b2521ec8540898556e"
+        },
+        {
+          "address": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+          "dataBytes": 1664,
+          "dataKeccak256": "0xa0872d5f0032af482b210691846100cc9aac2e1e8738e2ea964da53671d69b7f",
+          "decoded": null,
+          "index": 4,
+          "kind": "OTHER",
+          "topic0": "0x40dadaa36c6c2e3d7317e24757451ffb2d603d875f0ad5e92c5dd156573b1873"
+        }
+      ],
+      "status": 1,
+      "transactionIndex": 2
+    },
+    "runtimeHashesLatest": {
+      "D4": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785",
+      "D5": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c",
+      "D6": "0x3bad813e8654fddf86fb459a738d912b0c6c4dd4ad20119c52a4cc0dc1db834f"
+    },
+    "safe": {
+      "currentGovernance": {
+        "fallback": "0xfd0732dc9e303f09fcef3a7388ad10a83459ec99",
+        "guard": "0x0000000000000000000000000000000000000000",
+        "modules": [],
+        "owners": [
+          "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+          "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+          "0xa774c46c41064524df895bd7be9f294409798dfc"
+        ],
+        "threshold": 2,
+        "version": "1.4.1"
+      },
+      "decodedExecTransaction": {
+        "baseGas": 0,
+        "data": "0x8e361cdf000000000000000000000000d0901de8f6de72aecc716ca1465c4cf58a0b99fb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006adb4c40000000000000000000000000000000000000000000000000000000000000002404f6f5b200000000000000000000000090caa6d5bc628577bc76d6cc8b775f983c75e11000000000000000000000000000000000000000000000000000000000",
+        "gasPrice": 0,
+        "gasToken": "0x0000000000000000000000000000000000000000",
+        "operation": 0,
+        "refundReceiver": "0x0000000000000000000000000000000000000000",
+        "safeTxGas": 0,
+        "signatureBytesLength": 130,
+        "signatureBytesRedacted": true,
+        "signatureSlots65": 2,
+        "to": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "valueWei": 0
+      },
+      "executionFailure": [],
+      "executionSuccess": [
+        {
+          "paymentWei": 0,
+          "safeTxHash": "0x6cce2c2dcde9635050713acf875793ae2d6767d35f0f755318c9eec72260b9bf"
+        }
+      ],
+      "expectedSafeTxHash": "0x6cce2c2dcde9635050713acf875793ae2d6767d35f0f755318c9eec72260b9bf",
+      "getTransactionHashAtPreReceiptBlock": "0x6cce2c2dcde9635050713acf875793ae2d6767d35f0f755318c9eec72260b9bf"
+    },
+    "state": {
+      "before": {
+        "clearingTokenBalance": 0,
+        "d3SeizeConfig": [
+          0,
+          false,
+          false
+        ],
+        "d4BadDebt": 0,
+        "d4Flags": [
+          true,
+          true,
+          true,
+          true
+        ],
+        "d4Guardian": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "d4InsuranceAuthorized": false,
+        "d4Migration": 0,
+        "d4Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "d4Pme": "0x0000000000000000000000000000000000000000",
+        "d4Risk": "0x0000000000000000000000000000000000000000",
+        "d4SamplePositionRaw": "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "d4Snapshot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "d4TraderMarkets": 0,
+        "d4VaultAuthorized": false,
+        "d5Delay": 600,
+        "d5Engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+        "d5Guardian": "0x0000000000000000000000000000000000000000",
+        "d5Oracle": "0xb416406f200b2ef3d7a86a5d5877ed41d9b1a581",
+        "d5Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "d5Pending": "0x0000000000000000000000000000000000000000",
+        "d5RiskPaused": false,
+        "d5WithdrawPaused": false,
+        "d6Domain": "0x1ff87de391024af5fcccddf4e4a83e9fb5acc5ddf28cf85f76eefc96d5d4d0f5",
+        "d6Engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+        "d6Guardian": "0x0000000000000000000000000000000000000000",
+        "d6IntentNonceUsed": false,
+        "d6Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "d6Paused": true,
+        "d6RuntimeExecutor": false,
+        "d6TimelockExecutor": true,
+        "d6TraderNonce": 0,
+        "d6ZeroFill": 0,
+        "fmFeeRecipient": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "fmMerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "fmRebateBudget": 0,
+        "insuranceTokenBalance": 0,
+        "pmrMarketCount": 0,
+        "safeNonce": 25,
+        "tlQueued": false,
+        "vaultClearingLedger": 1000000000,
+        "vaultInsuranceLedger": 2100010,
+        "vaultTokenBalance": 224066000000
+      },
+      "latest": {
+        "clearingTokenBalance": 0,
+        "d3SeizeConfig": [
+          0,
+          false,
+          false
+        ],
+        "d4BadDebt": 0,
+        "d4Flags": [
+          true,
+          true,
+          true,
+          true
+        ],
+        "d4Guardian": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "d4InsuranceAuthorized": false,
+        "d4Migration": 0,
+        "d4Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "d4Pme": "0x0000000000000000000000000000000000000000",
+        "d4Risk": "0x0000000000000000000000000000000000000000",
+        "d4SamplePositionRaw": "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "d4Snapshot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "d4TraderMarkets": 0,
+        "d4VaultAuthorized": false,
+        "d5Delay": 600,
+        "d5Engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+        "d5Guardian": "0x0000000000000000000000000000000000000000",
+        "d5Oracle": "0xb416406f200b2ef3d7a86a5d5877ed41d9b1a581",
+        "d5Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "d5Pending": "0x0000000000000000000000000000000000000000",
+        "d5RiskPaused": false,
+        "d5WithdrawPaused": false,
+        "d6Domain": "0x1ff87de391024af5fcccddf4e4a83e9fb5acc5ddf28cf85f76eefc96d5d4d0f5",
+        "d6Engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+        "d6Guardian": "0x0000000000000000000000000000000000000000",
+        "d6IntentNonceUsed": false,
+        "d6Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "d6Paused": true,
+        "d6RuntimeExecutor": false,
+        "d6TimelockExecutor": true,
+        "d6TraderNonce": 0,
+        "d6ZeroFill": 0,
+        "fmFeeRecipient": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "fmMerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "fmRebateBudget": 0,
+        "insuranceTokenBalance": 0,
+        "pmrMarketCount": 0,
+        "safeNonce": 26,
+        "tlQueued": true,
+        "vaultClearingLedger": 1000000000,
+        "vaultInsuranceLedger": 2100010,
+        "vaultTokenBalance": 224066000000
+      },
+      "receipt": {
+        "clearingTokenBalance": 0,
+        "d3SeizeConfig": [
+          0,
+          false,
+          false
+        ],
+        "d4BadDebt": 0,
+        "d4Flags": [
+          true,
+          true,
+          true,
+          true
+        ],
+        "d4Guardian": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "d4InsuranceAuthorized": false,
+        "d4Migration": 0,
+        "d4Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "d4Pme": "0x0000000000000000000000000000000000000000",
+        "d4Risk": "0x0000000000000000000000000000000000000000",
+        "d4SamplePositionRaw": "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "d4Snapshot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "d4TraderMarkets": 0,
+        "d4VaultAuthorized": false,
+        "d5Delay": 600,
+        "d5Engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+        "d5Guardian": "0x0000000000000000000000000000000000000000",
+        "d5Oracle": "0xb416406f200b2ef3d7a86a5d5877ed41d9b1a581",
+        "d5Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "d5Pending": "0x0000000000000000000000000000000000000000",
+        "d5RiskPaused": false,
+        "d5WithdrawPaused": false,
+        "d6Domain": "0x1ff87de391024af5fcccddf4e4a83e9fb5acc5ddf28cf85f76eefc96d5d4d0f5",
+        "d6Engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+        "d6Guardian": "0x0000000000000000000000000000000000000000",
+        "d6IntentNonceUsed": false,
+        "d6Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "d6Paused": true,
+        "d6RuntimeExecutor": false,
+        "d6TimelockExecutor": true,
+        "d6TraderNonce": 0,
+        "d6ZeroFill": 0,
+        "fmFeeRecipient": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "fmMerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "fmRebateBudget": 0,
+        "insuranceTokenBalance": 0,
+        "pmrMarketCount": 0,
+        "safeNonce": 26,
+        "tlQueued": true,
+        "vaultClearingLedger": 1000000000,
+        "vaultInsuranceLedger": 2100010,
+        "vaultTokenBalance": 224066000000
+      }
+    },
+    "timelock": {
+      "eta": 1792756800,
+      "hashOperationOnchain": "0xd15ec63a22daebd4eb015de23561089547af9b02945fb8ae6dd7028ae7581229",
+      "minDelayAtReceipt": 86400,
+      "operationId": "0xd15ec63a22daebd4eb015de23561089547af9b02945fb8ae6dd7028ae7581229",
+      "postReceiptOperationEvents": [],
+      "queueEvents": [
+        {
+          "data": "0x04f6f5b200000000000000000000000090caa6d5bc628577bc76d6cc8b775f983c75e110",
+          "eta": 1792756800,
+          "operationId": "0xd15ec63a22daebd4eb015de23561089547af9b02945fb8ae6dd7028ae7581229",
+          "target": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+          "valueWei": 0
+        }
+      ],
+      "recentD4QueueEvents": 1,
+      "recentExactC12QueueEvents": [
+        {
+          "blockNumber": 48598531,
+          "eta": 1792756800,
+          "operationId": "0xd15ec63a22daebd4eb015de23561089547af9b02945fb8ae6dd7028ae7581229",
+          "publicTxHash": "0x27e61939bf39f0db3671ea610d8783ce229bd93a9f154bb04255650c833b3535"
+        }
+      ]
+    },
+    "trace": {
+      "allCallsSucceeded": true,
+      "available": true,
+      "nodes": [
+        {
+          "depth": 0,
+          "error": null,
+          "from": "0xc066ac5d385419b1a8c43a0e146fa439837a8b8c",
+          "inputBytes": 2948,
+          "inputKeccak256": "0x2d77c9013edabb94cdc0595ff19b7785b5ea3ac3991451b98226896de49fd92f",
+          "selector": "0xcef6d209",
+          "to": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+          "type": "CALL",
+          "value": "0x0"
+        },
+        {
+          "depth": 1,
+          "error": null,
+          "from": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+          "inputBytes": 196,
+          "inputKeccak256": "0x835317bd47d369323881d6e9a0ef009007a12fdd9557b40c1861c4219121beac",
+          "selector": "0x1626ba7e",
+          "to": "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+          "type": "STATICCALL",
+          "value": null
+        },
+        {
+          "depth": 2,
+          "error": null,
+          "from": "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+          "inputBytes": 128,
+          "inputKeccak256": "0xfbb7d900fc3d2beea96bc49ee4ac17c00f6bfd215f932365628aa3bdb43aea91",
+          "selector": "0x5ae0e4e7",
+          "to": "0x0000000000000000000000000000000000000001",
+          "type": "STATICCALL",
+          "value": null
+        },
+        {
+          "depth": 1,
+          "error": null,
+          "from": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+          "inputBytes": 1220,
+          "inputKeccak256": "0xe71e59b106eb61bcac439e025e1dd11393d5bb1d57e36e5f0963ff9dd5d32608",
+          "selector": "0x414c3e33",
+          "to": "0x04658b29f6b82ed55274221a06fc97d318e25416",
+          "type": "CALL",
+          "value": "0x0"
+        },
+        {
+          "depth": 1,
+          "error": null,
+          "from": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+          "inputBytes": 2052,
+          "inputKeccak256": "0x3ab3c4954a79dc0719b6c8a5da067315b4ed154ac7ea6b7c395723c115c6e3aa",
+          "selector": "0x414c3e33",
+          "to": "0x146713078d39ecc1f5338309c28405ccf85abfbb",
+          "type": "CALL",
+          "value": "0x0"
+        },
+        {
+          "depth": 1,
+          "error": null,
+          "from": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+          "inputBytes": 1220,
+          "inputKeccak256": "0xe8b3ac643ec68ad54a0ebbe89ae626daad1df7927cea5c221601665cb43fd168",
+          "selector": "0xa145832a",
+          "to": "0x04658b29f6b82ed55274221a06fc97d318e25416",
+          "type": "CALL",
+          "value": "0x0"
+        },
+        {
+          "depth": 1,
+          "error": null,
+          "from": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+          "inputBytes": 2052,
+          "inputKeccak256": "0x05f2582085a2081d2f99d292863badfe384394229fe0597c4edb1f1f4f30241b",
+          "selector": "0xa145832a",
+          "to": "0x146713078d39ecc1f5338309c28405ccf85abfbb",
+          "type": "CALL",
+          "value": "0x0"
+        },
+        {
+          "depth": 1,
+          "error": null,
+          "from": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+          "inputBytes": 964,
+          "inputKeccak256": "0xa8fc54983ac4ce97da08c9ae1a563b29870fa0a3a6e444faffe2b2e554c46b62",
+          "selector": "0xd691c964",
+          "to": "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+          "type": "CALL",
+          "value": "0x0"
+        },
+        {
+          "depth": 2,
+          "error": null,
+          "from": "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+          "inputBytes": 804,
+          "inputKeccak256": "0xeb4ef03e2b4cf30af1b76b59b8504912c8b20077745c432e8f4b79e8bcf4e1ca",
+          "selector": "0x6a761202",
+          "to": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+          "type": "CALL",
+          "value": "0x0"
+        },
+        {
+          "depth": 3,
+          "error": null,
+          "from": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+          "inputBytes": 804,
+          "inputKeccak256": "0xeb4ef03e2b4cf30af1b76b59b8504912c8b20077745c432e8f4b79e8bcf4e1ca",
+          "selector": "0x6a761202",
+          "to": "0x29fcb43b46531bca003ddc8fcb67ffe91900c762",
+          "type": "DELEGATECALL",
+          "value": "0x0"
+        },
+        {
+          "depth": 4,
+          "error": null,
+          "from": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+          "inputBytes": 128,
+          "inputKeccak256": "0x6c570bf6b10f37f7c8ec882c3c2e77925fd7228d2757dac7011c2b6deef187e6",
+          "selector": "0x6cce2c2d",
+          "to": "0x0000000000000000000000000000000000000001",
+          "type": "STATICCALL",
+          "value": null
+        },
+        {
+          "depth": 4,
+          "error": null,
+          "from": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+          "inputBytes": 128,
+          "inputKeccak256": "0xfa6a8d5c2b901858da5fdbd870f373b41548dcf9d9411eba04eb731b6bc9e24f",
+          "selector": "0x6cce2c2d",
+          "to": "0x0000000000000000000000000000000000000001",
+          "type": "STATICCALL",
+          "value": null
+        },
+        {
+          "depth": 4,
+          "error": null,
+          "from": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+          "inputBytes": 228,
+          "inputKeccak256": "0xa2c1e022d78cd6f666743082e69a91d68a7f60a41fc9627842d8c636db388e29",
+          "selector": "0x8e361cdf",
+          "to": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+          "type": "CALL",
+          "value": "0x0"
+        },
+        {
+          "depth": 1,
+          "error": null,
+          "from": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+          "inputBytes": 2052,
+          "inputKeccak256": "0xd681c48913d65883d9635f61d44fe028a4b037d0fdc1ce432ca343d5d6c62542",
+          "selector": "0xd3eddcc5",
+          "to": "0x146713078d39ecc1f5338309c28405ccf85abfbb",
+          "type": "CALL",
+          "value": "0x0"
+        },
+        {
+          "depth": 1,
+          "error": null,
+          "from": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+          "inputBytes": 1220,
+          "inputKeccak256": "0xeb16a1b0fa18ec56f7f49e84c3b7181e573c34d8d4f41b8a4efba380c59dea22",
+          "selector": "0xd3eddcc5",
+          "to": "0x04658b29f6b82ed55274221a06fc97d318e25416",
+          "type": "CALL",
+          "value": "0x0"
+        },
+        {
+          "depth": 1,
+          "error": null,
+          "from": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+          "inputBytes": 2052,
+          "inputKeccak256": "0x9182851ed640eccaa18569e376a86db98ecf2c79b23a95a692295adf135509f4",
+          "selector": "0xed463367",
+          "to": "0x146713078d39ecc1f5338309c28405ccf85abfbb",
+          "type": "CALL",
+          "value": "0x0"
+        },
+        {
+          "depth": 1,
+          "error": null,
+          "from": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+          "inputBytes": 1220,
+          "inputKeccak256": "0x4327883a7acac704746595a207ec59729c985a30fd7eb25dc5d80ac38b8674be",
+          "selector": "0xed463367",
+          "to": "0x04658b29f6b82ed55274221a06fc97d318e25416",
+          "type": "CALL",
+          "value": "0x0"
+        }
+      ]
+    },
+    "transaction": {
+      "from": "0xc066ac5d385419b1a8c43a0e146fa439837a8b8c",
+      "inputBytes": 2948,
+      "inputKeccak256": "0x2d77c9013edabb94cdc0595ff19b7785b5ea3ac3991451b98226896de49fd92f",
+      "inputRedacted": true,
+      "inputSelector": "0xcef6d209",
+      "to": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+      "valueWei": 0
+    }
+  },
+  "limitations": [
+    "RPC receipt, trace, events and pinned reads share one configured provider; not independent RPC consensus.",
+    "Position, fill, funding, custody and fee checks are bounded getters and receipt logs, not exhaustive storage verification.",
+    "Prior supported C12/C20 gate scanned D4 queue history through block 48595906; this postflight scanned subsequent D4-target queue events and found one exact C12 event.",
+    "Safe contract threshold enforcement observed; raw public signature bytes not stored or independently recovered."
+  ],
+  "milestone": "PERPS_V2_BASE_SEPOLIA_C12_S1_PUBLIC_POSTFLIGHT_RECONCILIATION_V1",
+  "publicTransactionsSentByAgent": 0,
+  "repository": {
+    "branch": "main",
+    "frozenSourceIntegrity": "PASS",
+    "headBefore": "62b6e6e2c1d3c3158827fe7b4534d49b40858b55",
+    "reviewedArtifactSha256": {
+      "c12_risk_wiring_fast_preparation_v1.json": "ea0beadb8adb89efdd1a280d3331c4baf6e6465993752185bb5c0041d165efe3",
+      "c12_risk_wiring_fast_s1_safe_builder_v1.json": "6f66db71d432e071ce0a7d23ed0db8f31e29998cfd941da7a818be1859bf5177",
+      "c12_risk_wiring_fast_scheduling_final_review_v1.json": "8e1b35bd0fd1e37a9cc0f6da17baf3c64ad1dc5be7045b1a861e3c2f89f1718d",
+      "c12_risk_wiring_fast_unsigned_safe_schedule_v1.json": "d32b30f709d5b7efc573bb981df6ce1e764b8e895e17a7240993e3c8296ba749",
+      "c12_risk_wiring_s1_operator_checkpoint_v1.json": "388ae92120dabac40df4da4f30b7f9e2c4e6ca7f53e0ccb533c7f3f5712ccbd8",
+      "c20_oracle_delay_fast_s2_public_postflight_v1.json": "5428c079f9ec016881bc2436fe1a2402c1b83ba25c502525463e15d42529e0a4",
+      "timelock_configuration_manifest_c12_c20_v2.json": "745e7a2fad6a77fef6e35f10a1a431b75615524f51fe13c881c191351ad591fe"
+    }
+  },
+  "schema": "deopt.c12_risk_wiring.s1_public_postflight.v1",
+  "verdict": {
+    "C12_EXECUTED": "NO",
+    "C12_EXECUTION_AUTHORIZED": "NO",
+    "C12_QUEUED": "YES",
+    "C12_S1_POSTFLIGHT": "PASS",
+    "C12_S1_SCHEDULING": "VERIFIED_SCHEDULED",
+    "MIGRATION_REPLAY_AUTHORIZED": "NO",
+    "NEXT_MILESTONE": "PERPS_V2_BASE_SEPOLIA_C12_S2_ACCELERATED_EXECUTION_FINAL_REVIEW_V1",
+    "PUBLIC_TRADING_AUTHORIZED": "NO"
+  }
+}
