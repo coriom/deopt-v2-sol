@@ -1,0 +1,121 @@
+{
+  "C12ExecutionAuthorized": false,
+  "C12SchedulingAuthorized": false,
+  "bufferRule": "actual scheduling block timestamp <= ETA - live minDelay - 3600; cutoff is operational, not contract minimum",
+  "bufferedSchedulingCutoff": 1792666800,
+  "futureS1Postflight": [
+    "canonical successful receipt",
+    "real Safe 2/3 confirmations and exact SafeTx hash",
+    "Safe ExecutionSuccess without inner failure",
+    "one exact queueTransaction event and operation ID/ETA",
+    "queued not executed; D4 Risk still zero",
+    "D5=600 and D4/D6 maintenance preserved",
+    "bounded shared economic non-drift"
+  ],
+  "futureS2Postflight": [
+    "separate execution review and explicit authorization after ETA",
+    "canonical Safe and Timelock TransactionExecuted proof",
+    "operation consumed and replay rejected",
+    "D4 Risk equals canonical D5; D5 Engine D4 and delay600",
+    "D4 flags true, D6 paused, migration OPEN, PME zero",
+    "shared custody and economics non-drift"
+  ],
+  "gasReview": "FULL_SAFE_UI_SIMULATION_AND_WALLET_GAS_PENDING_OPERATOR; no public gas envelope approved",
+  "independentChecks": {
+    "C20CanonicalAndFreshD5Readback": true,
+    "D4D6Maintenance": true,
+    "builderSingleAction": true,
+    "ethCallQueueReturnsOperationId": true,
+    "forkEconomicIsolation": true,
+    "frozenD4SourceEqualsRevision": true,
+    "manifestExactCalldata": true,
+    "operationHashLocalEqualsOnchain": true,
+    "queuedC12Conflicts": false,
+    "safeAndTimelockAuthority": true,
+    "safeHashLocalEqualsOnchain": true,
+    "supportedC12Gate": true
+  },
+  "phaseAPreparationSha256": "ea0beadb8adb89efdd1a280d3331c4baf6e6465993752185bb5c0041d165efe3",
+  "phaseBIndependentSourceReconstruction": {
+    "block": {
+      "hash": "0x2982f84fe5490f754df3233b615baa2def0a167b68680be15a7f3bb6af7e8328",
+      "number": 48584951,
+      "timestamp": 1792638859
+    },
+    "c12": {
+      "bufferedCutoff": 1792666800,
+      "eta": 1792756800,
+      "functionSignature": "setRiskModule(address)",
+      "innerBytes": 36,
+      "innerCalldata": "0x04f6f5b200000000000000000000000090caa6d5bc628577bc76d6cc8b775f983c75e110",
+      "innerKeccak256": "0x793e647f899a70e7ad9bb5b3fd503eec492225662b0e64a76e46b16f8947fcd5",
+      "innerSha256": "913f1076364e9bea91b1c54ac6ad8f95aef4aae54ee65f4e9c4f1cbe2808ffae",
+      "newQueueEventsSinceGate": [],
+      "onchainOperationId": "0xd15ec63a22daebd4eb015de23561089547af9b02945fb8ae6dd7028ae7581229",
+      "operationId": "0xd15ec63a22daebd4eb015de23561089547af9b02945fb8ae6dd7028ae7581229",
+      "queued": false,
+      "riskModuleArg": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110",
+      "selector": "0x04f6f5b2",
+      "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+      "valueWei": 0
+    },
+    "chainId": 84532,
+    "freshPredicates": {
+      "D4Flags": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "D4Migration": "OPEN",
+      "D4Pme": "0x0000000000000000000000000000000000000000",
+      "D4Risk": "0x0000000000000000000000000000000000000000",
+      "D5MaxOracleDelay": 600,
+      "D6Paused": true
+    },
+    "phase": "B_INDEPENDENT_READ_ONLY_REVIEW",
+    "publicWriteCount": 0,
+    "safeEnvelope": {
+      "baseGas": 0,
+      "chainId": 84532,
+      "data": "0x8e361cdf000000000000000000000000d0901de8f6de72aecc716ca1465c4cf58a0b99fb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006adb4c40000000000000000000000000000000000000000000000000000000000000002404f6f5b200000000000000000000000090caa6d5bc628577bc76d6cc8b775f983c75e11000000000000000000000000000000000000000000000000000000000",
+      "gasPrice": 0,
+      "gasToken": "0x0000000000000000000000000000000000000000",
+      "nonce": 25,
+      "operation": 0,
+      "refundReceiver": "0x0000000000000000000000000000000000000000",
+      "safe": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+      "safeTxGas": 0,
+      "safeTxHashLocal": "0x6cce2c2dcde9635050713acf875793ae2d6767d35f0f755318c9eec72260b9bf",
+      "safeTxHashOnchain": "0x6cce2c2dcde9635050713acf875793ae2d6767d35f0f755318c9eec72260b9bf",
+      "threshold": 2,
+      "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "valueWei": 0
+    },
+    "sourceIntegrity": "FROZEN_D4_SOURCE_EXACT",
+    "timelock": {
+      "address": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "ethCallReturnedOperationId": "0xd15ec63a22daebd4eb015de23561089547af9b02945fb8ae6dd7028ae7581229",
+      "minDelay": 86400,
+      "queueBytes": 228,
+      "queueCalldata": "0x8e361cdf000000000000000000000000d0901de8f6de72aecc716ca1465c4cf58a0b99fb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006adb4c40000000000000000000000000000000000000000000000000000000000000002404f6f5b200000000000000000000000090caa6d5bc628577bc76d6cc8b775f983c75e11000000000000000000000000000000000000000000000000000000000",
+      "queueKeccak256": "0xa2c1e022d78cd6f666743082e69a91d68a7f60a41fc9627842d8c636db388e29",
+      "queueSelector": "0x8e361cdf",
+      "queueSha256": "0a7eeaa02da9c86d3d8b67ae166362488dba66944445423b275c1378f9186d00",
+      "queueSignature": "queueTransaction(address,uint256,bytes,uint256)"
+    }
+  },
+  "proposedEta": 1792756800,
+  "publicActionsByAgent": 0,
+  "safeBuilderSha256": "6f66db71d432e071ce0a7d23ed0db8f31e29998cfd941da7a818be1859bf5177",
+  "safeTxHashConditional": "0x6cce2c2dcde9635050713acf875793ae2d6767d35f0f755318c9eec72260b9bf",
+  "schema": "deopt.c12_risk_wiring.fast_scheduling_final_review.v1",
+  "status": "PASS",
+  "stoppingStates": [
+    "nonce, gas/refund or UI data drift -> renewed review",
+    "ETA buffer missed -> new independent ETA review",
+    "queue conflict or drift -> block and read-only reconcile",
+    "ambiguous submission -> no automatic retry"
+  ],
+  "unsignedIntentSha256": "d32b30f709d5b7efc573bb981df6ce1e764b8e895e17a7240993e3c8296ba749"
+}
