@@ -1,0 +1,34 @@
+{
+  "schema": "deopt.c01_market_protection.fork_validation.v1",
+  "forkChainId": 84532,
+  "forkBlockNumber": 48642380,
+  "testPath": "test/perp/PerpsV2C01MarketProtectionFastFork.t.sol",
+  "command": "forge test -j 1 --match-path test/perp/PerpsV2C01MarketProtectionFastFork.t.sol",
+  "initialRun": {
+    "passed": 2,
+    "failed": 1,
+    "failure": "A test cheatcode expected the next call to revert, but a minDelay() getter in the call arguments consumed the expectation before queueTransaction ran.",
+    "resolution": "Precomputed tooSoon before setting expectRevert; no protocol or assertion was weakened."
+  },
+  "correctedRun": {
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "exitCode": 0,
+    "checks": [
+      "exact queue ID, one Timelock queue event, pre-ETA rejection and post-ETA C01 effect",
+      "unauthorized setter/proposer/executor rejection, duplicate queue, wrong payload/ETA and replay rejection",
+      "C12 queue independence; D4/D6 maintenance, OPEN migration and zero wiring preserved",
+      "zero created markets and no newly accessible economic route",
+      "Vault, Insurance and Clearing ledger/balance non-drift"
+    ]
+  },
+  "additionalLocalGovernanceOrderTest": {
+    "path": "test/perp/PerpsV2ReplacementGovernanceC12C20Order.t.sol",
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "exitCode": 0
+  },
+  "scope": "Isolated fork rehearsal only; vm.prank approvals are synthetic and do not constitute public Safe signatures or transactions."
+}

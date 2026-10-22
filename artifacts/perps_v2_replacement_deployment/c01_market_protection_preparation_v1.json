@@ -1,0 +1,80 @@
+{
+  "chainId": 84532,
+  "dependency": {
+    "c02Separate": true,
+    "c12CompletionRequired": false,
+    "c12Queued": true,
+    "dependsOn": [
+      "MAINTENANCE_VERIFIED"
+    ]
+  },
+  "effect": "D1 settlement allowlist mUSDC false to true; no market creation",
+  "liveState": {
+    "D1": {
+      "configPaused": false,
+      "creationPaused": false,
+      "nextMarketId": 1,
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "paused": false,
+      "settlementAllowed": false,
+      "timelockMarketCreator": true,
+      "totalMarkets": 0
+    },
+    "D4": {
+      "collateralOpsPaused": true,
+      "fundingPaused": true,
+      "liquidationPaused": true,
+      "matchingEngine": "0x0000000000000000000000000000000000000000",
+      "migrationState": 0,
+      "owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "riskModule": "0x0000000000000000000000000000000000000000",
+      "tradingPaused": true
+    },
+    "D5": {
+      "delay": 600
+    },
+    "D6": {
+      "paused": true
+    },
+    "custody": {
+      "clearingVaultLedger": 1000000000,
+      "insuranceD4Backstop": false,
+      "insuranceVaultLedger": 2100010,
+      "vaultD4Authorized": false,
+      "vaultTokenBalance": 224066000000
+    }
+  },
+  "publicTransactionSent": false,
+  "reviewBlock": {
+    "hash": "0x2d55e8bf2be36939f143ed421d22afe6bffdea45ce8f59d97edb16e1a9d33366",
+    "number": 48646982,
+    "timestamp": 1792651265
+  },
+  "runtimeHashes": {
+    "D1": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5",
+    "D4": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785",
+    "D5": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c",
+    "D6": "0x3bad813e8654fddf86fb459a738d912b0c6c4dd4ad20119c52a4cc0dc1db834f",
+    "Timelock": "0xb20f9fa764b46a832c7665f07c1b9c3cd6506a58f6885c0e12e88e9bbc55233c"
+  },
+  "safeAuthority": {
+    "guard": "0x0000000000000000000000000000000000000000",
+    "modules": [],
+    "nonce": 26,
+    "owners": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "threshold": 2
+  },
+  "safeStop": "D4 four flags true, D6 paused, D4 migration OPEN, no market created",
+  "schema": "deopt.c01_market_protection.preparation.v1",
+  "source": {
+    "d1DeploymentTx": "0x8d361c5bc913deb9aa10c2638b8fc2a687c54998b3bf8c695a34c0548d921cba",
+    "dagSha256": "f3907236b928a50151f21ea748e3572ce8fde8fe5a090c0de8d3ca4d647e5b5d",
+    "manifestSha256": "745e7a2fad6a77fef6e35f10a1a431b75615524f51fe13c881c191351ad591fe",
+    "roadmapSha256": "ba8efeb738a86d60c232bf9551f75e30cc2481b51b0e8b4842675ca9f461acd0"
+  },
+  "status": "PASS"
+}

@@ -1,0 +1,57 @@
+{
+  "bufferedSchedulingCutoff": 1792666800,
+  "builder": {
+    "path": "artifacts/perps_v2_replacement_deployment/c01_market_protection_s1_safe_builder_v1.json",
+    "sha256": "a757dfca687b4010bad6c909ef5f96167b711e3ed8fc2abcbe26a02219555ec2"
+  },
+  "c12Independence": true,
+  "crossChecks": {
+    "D1CanonicalReceipt": true,
+    "manifestInnerCalldata": true,
+    "onchainOperationId": true,
+    "pinnedBlockHashRechecked": true,
+    "queueEthCall": true,
+    "safeHashGetter": true
+  },
+  "economicIsolation": "PASS_BOUNDED_FORK_AND_PINNED_STATE",
+  "eta": 1792756800,
+  "forkValidation": {
+    "path": "artifacts/perps_v2_replacement_deployment/c01_market_protection_fork_validation_v1.json",
+    "sha256": "f3dacb5a1611bbcb5fee892316b046bc6ad67da1d63d890c9653d1329e133339"
+  },
+  "limitations": [
+    "Safe hash is conditional on nonce and every envelope field",
+    "Full Safe UI gas simulation and wallet review remain operator gates",
+    "One RPC provider; named getter and receipt scope is bounded",
+    "Future C02 creates an active market and requires separate authorization"
+  ],
+  "marketProtection": true,
+  "minDelaySeconds": 86400,
+  "operationId": "0x589fb819f60769c77ad9090750f2173377eb45dcbb5367fbc0fb978e4e15d396",
+  "preparation": {
+    "path": "artifacts/perps_v2_replacement_deployment/c01_market_protection_preparation_v1.json",
+    "sha256": "2e802cadb8fb87de27e58aba65c1c996104bd8b38534ecd88907cdba06190d4f"
+  },
+  "publicExecution": false,
+  "publicScheduling": false,
+  "publicSigning": false,
+  "reviewBlock": {
+    "hash": "0x2d55e8bf2be36939f143ed421d22afe6bffdea45ce8f59d97edb16e1a9d33366",
+    "number": 48646982,
+    "timestamp": 1792651265
+  },
+  "safeProposal": false,
+  "safeTxHashConditional": "0x6f4f68cf38bd215e2ec4cb05c021aeee2286822d9ff1c8b8cd4f286657eabaef",
+  "schema": "deopt.c01_market_protection.scheduling_final_review.v1",
+  "secondsToCutoffAtReview": 15535,
+  "sourceReview": {
+    "C01": "setSettlementAssetAllowed(mUSDC,true) is onlyOwner and whenConfigNotPaused; it updates one allowlist mapping and emits SettlementAssetConfigured",
+    "C02": "createMarket checks the allowlist and creates a market active immediately; C02 and MKT1_INACTIVE remain separately governed",
+    "economicRoute": "C01 creates no market; D4 migration OPEN, four pauses true, Risk/PME pointers zero, D6 paused and shared ACLs absent"
+  },
+  "status": "PASS_FOR_SEPARATE_OPERATOR_REVIEW_ONLY",
+  "unsignedIntent": {
+    "path": "artifacts/perps_v2_replacement_deployment/c01_market_protection_s1_unsigned_intent_v1.json",
+    "sha256": "9a3b28279348be5fb4d3c1ea3813107c78704625f89c3057ae75ae19c1a22408"
+  }
+}
