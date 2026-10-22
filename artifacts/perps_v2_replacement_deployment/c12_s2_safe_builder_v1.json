@@ -1,0 +1,51 @@
+{
+  "chainId": "84532",
+  "createdAt": 1792657257000,
+  "meta": {
+    "createdFromOwnerAddress": "",
+    "createdFromSafeAddress": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "description": "One unsigned Safe CALL to execute the existing C12 Timelock operation. Independent 2/3 authorization and postflight required; Builder omits nonce and gas/refund envelope.",
+    "name": "OFFLINE_REVIEW_ONLY_NOT_AUTHORIZED_C12_S2",
+    "txBuilderVersion": "1.18.0"
+  },
+  "transactions": [
+    {
+      "contractInputsValues": {
+        "data": "0x04f6f5b200000000000000000000000090caa6d5bc628577bc76d6cc8b775f983c75e110",
+        "eta": "1792756800",
+        "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+        "value": "0"
+      },
+      "contractMethod": {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "target",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "value",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "data",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint256",
+            "name": "eta",
+            "type": "uint256"
+          }
+        ],
+        "name": "executeTransaction",
+        "payable": true
+      },
+      "data": "0x06a41d09000000000000000000000000d0901de8f6de72aecc716ca1465c4cf58a0b99fb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006adb4c40000000000000000000000000000000000000000000000000000000000000002404f6f5b200000000000000000000000090caa6d5bc628577bc76d6cc8b775f983c75e11000000000000000000000000000000000000000000000000000000000",
+      "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "value": "0"
+    }
+  ],
+  "version": "1.0"
+}

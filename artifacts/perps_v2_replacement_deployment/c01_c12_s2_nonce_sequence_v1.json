@@ -1,0 +1,94 @@
+{
+  "alternateOrderForkOnly": {
+    "C01": {
+      "local": "0xbfc8e4d8e2cad49a31020ec8df5953419fe0b79595f12c4352717a9372548c19",
+      "nonce": 28,
+      "onchain": "0xbfc8e4d8e2cad49a31020ec8df5953419fe0b79595f12c4352717a9372548c19"
+    },
+    "C12": {
+      "local": "0x2aca973090455776ab5f9767069c4d186d0daa21b19be58bcc145c7366d741fd",
+      "nonce": 27,
+      "onchain": "0x2aca973090455776ab5f9767069c4d186d0daa21b19be58bcc145c7366d741fd"
+    }
+  },
+  "builderSchemaLimitation": "Safe Transaction Builder stores the action but does not bind Safe nonce, gas/refund fields, SafeTx hash, owner confirmations, wallet gas, or UI simulation. Verify them separately for each public transaction.",
+  "chainId": 84532,
+  "commonEta": 1792756800,
+  "first": {
+    "builderJsonPath": "/home/corio/DEOPT/deopt-v2-sol/artifacts/perps_v2_replacement_deployment/c01_s2_safe_builder_v1.json",
+    "builderJsonSha256": "9242454117fe0e2188fb627d94cf6c775902469e5938aa1e80f68b3371a4be6e",
+    "calldataKeccak256": "0x3734e380d87e14827ace06325fa6bc352d1756e71212acb89133b6c33a03c4a6",
+    "condition": "Fresh live nonce 27, exact fields, ready queued operation, actual Safe UI simulation and human approval",
+    "nonce": 27,
+    "operation": "C01",
+    "safeTransaction": {
+      "baseGas": 0,
+      "chainId": 84532,
+      "data": "0x06a41d090000000000000000000000006b3d846536116082dc4e7227861c341bb85ee96300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006adb4c400000000000000000000000000000000000000000000000000000000000000044dd4d8a460000000000000000000000006eae407f5640b006fac9965182e238582a3b412e000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000",
+      "gasPrice": 0,
+      "gasToken": "0x0000000000000000000000000000000000000000",
+      "nonce": 27,
+      "operationCode": 0,
+      "operationType": "CALL",
+      "refundReceiver": "0x0000000000000000000000000000000000000000",
+      "safe": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+      "safeTxGas": 0,
+      "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "valueWei": 0
+    },
+    "safeTxHash": "0xa4b8f2a256b90c8fdf4ad685aaeb472642dfd76ae9d974d2457a3b69f235b96c"
+  },
+  "milestone": "PERPS_V2_BASE_SEPOLIA_C01_C12_PARALLEL_S2_EXECUTION_PREPARATION_V1",
+  "operatorRules": [
+    "No proposal, signing, or public execution in this milestone.",
+    "Separate genuine 2-of-3 confirmations for each execution.",
+    "Stop after first execution until its receipt, Safe event, Timelock event, target readback and bounded non-drift pass.",
+    "Recheck second Safe nonce, hash, queue, ETA, maintenance, UI simulation and gas; if anything differs, stop for renewed review.",
+    "No MultiSend, delegatecall, batch, retry or automatic continuation."
+  ],
+  "recommendedOrder": [
+    "C01",
+    "C12"
+  ],
+  "reviewBlock": {
+    "hash": "0x34ba04a424b5e3caa47fff7b150141c55b1e448c2217ecbb02b0748ba4146a73",
+    "number": 48676945,
+    "timestamp": 1792657257,
+    "timestampUtc": "2026-10-22T08:20:57Z"
+  },
+  "reviewedZeroGasRefundConvention": {
+    "baseGas": 0,
+    "gasPrice": 0,
+    "gasToken": "0x0000000000000000000000000000000000000000",
+    "refundReceiver": "0x0000000000000000000000000000000000000000",
+    "safeTxGas": 0,
+    "scope": "Safe internal envelope only; not an outer wallet gas estimate or standing approval"
+  },
+  "safe": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+  "second": {
+    "builderJsonPath": "/home/corio/DEOPT/deopt-v2-sol/artifacts/perps_v2_replacement_deployment/c12_s2_safe_builder_v1.json",
+    "builderJsonSha256": "e8d11801a404e944cffb0eefd8c5975bc6b224261c4ec0260bc6dff9b3c5e61e",
+    "calldataKeccak256": "0x963584c123980e342dc6ee8eb9855243b6c75e05240235f579c64470f2224619",
+    "condition": "ONLY after C01 canonical public postflight PASS, observed Safe nonce 28 and fresh complete SafeTx hash review; not currently executable",
+    "nonce": 28,
+    "operation": "C12",
+    "safeTransactionConditional": {
+      "baseGas": 0,
+      "chainId": 84532,
+      "data": "0x06a41d09000000000000000000000000d0901de8f6de72aecc716ca1465c4cf58a0b99fb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006adb4c40000000000000000000000000000000000000000000000000000000000000002404f6f5b200000000000000000000000090caa6d5bc628577bc76d6cc8b775f983c75e11000000000000000000000000000000000000000000000000000000000",
+      "gasPrice": 0,
+      "gasToken": "0x0000000000000000000000000000000000000000",
+      "nonce": 28,
+      "operationCode": 0,
+      "operationType": "CALL",
+      "refundReceiver": "0x0000000000000000000000000000000000000000",
+      "safe": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+      "safeTxGas": 0,
+      "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "valueWei": 0
+    },
+    "safeTxHashConditional": "0xb41d702689c8be0df90db46c02cd6896c60dd45ac9065575bbfa462d16781eed"
+  },
+  "status": "OFFLINE_CONDITIONAL_NOT_AUTHORIZED",
+  "timelock": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588"
+}
