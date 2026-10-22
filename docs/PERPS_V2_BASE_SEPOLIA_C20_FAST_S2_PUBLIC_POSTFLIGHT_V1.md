@@ -1,0 +1,15 @@
+# C20 S2 public postflight
+
+**C20_S2_EXECUTION = VERIFIED_SUCCESS** and **C20_POSTFLIGHT = PASS**. This report is strictly read-only; no transaction was sent by the agent.
+
+Base Sepolia transaction `0xfff78cbdec4680a3a8ceba03e06eccf08c445ebc50117be0668e25350de0b25c` has canonical successful receipt at block `48563745`, hash `0xd7a03078ac457fda9a4e5cb43d6fba1c0b10a994e0dd25b2aeb3873b1988682f`, timestamp `1792634617`. The transaction directly targeted OPS Safe. Its decoded `execTransaction` contains exactly one CALL(0) to ProtocolTimelock, zero value, and the reviewed C20 execution calldata. The raw public signature bytes were verified for two 65-byte slots and omitted from evidence.
+
+Safe emitted `ExecutionSuccess` for `0x911ceff10ce4de39bf3e17b9779a533c28baf8efae8d25a455d59dd4f63bc909` and no `ExecutionFailure`; its nonce advanced **24 → 25**. A call trace shows Safe proxy → Safe singleton → ProtocolTimelock `executeTransaction` → D5 `setMaxOracleDelay`, with no call errors or second governance call. The singleton DELEGATECALL is the Safe's implementation path; the reviewed governance operation was CALL(0).
+
+Timelock emitted `TransactionExecuted` for operation `0xad2000557d6dfd7a9adec3d2ba7e66c27386191195c78bd1090f40f8bd7ebc0a`, target D5, zero value, exact `setMaxOracleDelay(600)` calldata and ETA `1792584000`. The operation was queued before the receipt and unqueued at receipt and latest blocks. A read-only replay call reverted. D5 emitted `MaxOracleDelaySet(0,600)` and read **600** at both receipt and fresh blocks; owner and Engine pointer remained unchanged.
+
+D4's four emergency flags remain **true,true,true,true**, migration remains OPEN, Risk/PME pointers zero, and shared Vault/Insurance authorizations false. D6 remains paused with unchanged owner, guardian, Engine pointer, domain and sampled executor/order state. Before/receipt/latest reads of Vault, Insurance, Clearing, Registry, FeesManager, Seizer, one position sample, and debt show only the intended Safe nonce, queue and D5-delay transitions. This is bounded getter/event evidence, not exhaustive storage verification.
+
+The corrected C12/C20 manifest SHA-256 is `745e7a2fad6a77fef6e35f10a1a431b75615524f51fe13c881c191351ad591fe`. The supported read-only C12 authorization preflight passed at block `48570977` with canonical C20 receipts, operation consumption, D5=600 and maintenance preserved. The D4-target queue log scan was fully covered and the workflow found no C12 queue. **C12 preparation is eligible; C12 scheduling or execution is not authorized.**
+
+Sanitized evidence: `/home/corio/DEOPT/deopt-v2-sol/artifacts/perps_v2_replacement_deployment/c20_oracle_delay_fast_s2_public_postflight_v1.json` (SHA-256 `5428c079f9ec016881bc2436fe1a2402c1b83ba25c502525463e15d42529e0a4`). Validation: **18 postflight predicates passed, 0 failed; 33 focused tests passed, 0 failed, 0 skipped**. No private RPC endpoint, secret, or raw signing bytes are stored. The private MCP was not needed; direct pinned RPC, logs and trace supplied the evidence.

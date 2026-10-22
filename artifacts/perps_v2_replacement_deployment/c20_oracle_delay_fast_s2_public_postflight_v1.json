@@ -1,0 +1,472 @@
+{
+  "agentPublicTransactionsSent": false,
+  "c12Authorized": false,
+  "c12Gate": {
+    "backendStoppedLocally": true,
+    "d4TargetQueueEventScan": {
+      "eventCount": 1,
+      "fromBlock": 47878321,
+      "note": "One D4-target event is the separately reviewed M2 queue, not C12; workflow found no C12 queue.",
+      "toBlock": 48570954
+    },
+    "futureC12GovernanceReviewRequired": true,
+    "status": "PASS_FOR_SEPARATE_PREPARATION_ONLY",
+    "supportedWorkflowResult": {
+      "C12_AUTHORIZATION_READY": "YES",
+      "c20ExecutionTxHash": "0xfff78cbdec4680a3a8ceba03e06eccf08c445ebc50117be0668e25350de0b25c",
+      "c20OperationId": "0xad2000557d6dfd7a9adec3d2ba7e66c27386191195c78bd1090f40f8bd7ebc0a",
+      "chainId": 84532,
+      "d5MaxOracleDelay": 600,
+      "manifestSha256": "745e7a2fad6a77fef6e35f10a1a431b75615524f51fe13c881c191351ad591fe",
+      "phase": "authorization",
+      "publicWriteCount": 0,
+      "reviewBlock": 48570977,
+      "reviewBlockHash": "0x603a138634e52a15836b8a9f06948d8433763a3fad6b9af9427445b3b7d6b81d"
+    }
+  },
+  "limits": [
+    "All live reads use one configured Base Sepolia RPC provider; block hashes were rechecked. This is not independent consensus-source corroboration.",
+    "Receipt-block state includes all transactions in that block; exact receipt logs and trace attribute this transaction to C20.",
+    "Named getters, one trader/market position and order-state sample, known executor keys, and receipt logs are bounded evidence, not exhaustive storage or all-account verification.",
+    "Raw public signature bytes and SafeMultiSigTransaction event data are omitted; the Safe contract emitted ExecutionSuccess under its live 2-of-3 threshold and trace showed two precompile checks.",
+    "This postflight establishes oracle-delay configuration only; remaining feed health, market/risk configuration, C12 wiring and economic migration require separate reviews."
+  ],
+  "migrationReplayAuthorized": false,
+  "milestone": "PERPS_V2_BASE_SEPOLIA_C20_FAST_S2_PUBLIC_POSTFLIGHT_V1",
+  "nextMilestone": "PERPS_V2_BASE_SEPOLIA_C12_RISK_WIRING_PREPARATION_V1",
+  "public": {
+    "blocks": {
+      "before": {
+        "hash": "0x0ffea9898d9271bb55f0012c28e85d1f0750df0471351ef44af91691dc498c21",
+        "number": 48563744,
+        "timestamp": 1792634617
+      },
+      "hashesRechecked": true,
+      "latest": {
+        "hash": "0x64c3be00c19e0d809ed5832cb0a905cd6cfbcab9b18e3d909d3230f9e2aeb0c5",
+        "number": 48568627,
+        "timestamp": 1792635594
+      },
+      "receipt": {
+        "hash": "0xd7a03078ac457fda9a4e5cb43d6fba1c0b10a994e0dd25b2aeb3873b1988682f",
+        "number": 48563745,
+        "timestamp": 1792634617
+      }
+    },
+    "chainId": 84532,
+    "d5": {
+      "delaySetEventsInReceipt": [
+        {
+          "new": 600,
+          "old": 0
+        }
+      ]
+    },
+    "dataSource": "configured Base Sepolia RPC; endpoint withheld; pinned block-number reads, receipt and callTracer from one provider",
+    "publicTxHash": "0xfff78cbdec4680a3a8ceba03e06eccf08c445ebc50117be0668e25350de0b25c",
+    "receipt": {
+      "blockHash": "0xd7a03078ac457fda9a4e5cb43d6fba1c0b10a994e0dd25b2aeb3873b1988682f",
+      "blockNumber": 48563745,
+      "effectiveGasPriceWei": 6000000,
+      "gasUsed": 108144,
+      "logCount": 4,
+      "sanitizedLogs": [
+        {
+          "address": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+          "dataKeccak256": "0x4b4230ca4ce111edd7dd0084ff3714d7b1ea1a6a8199fff3554c25753fdae709",
+          "dataLength": 960,
+          "decoded": null,
+          "index": 1,
+          "kind": "SAFE_MULTISIG_TRANSACTION_REDACTED",
+          "topic0": "0x66753cd2356569ee081232e3be8909b950e0a76c1f8460c3a5e3c2be32b11bed"
+        },
+        {
+          "address": "0x90caa6d5bc628577bc76d6cc8b775f983c75e110",
+          "dataKeccak256": "0x593ff24f0745436477b888a1c665319a4b4916b449181dc86b0f3d334af9be07",
+          "dataLength": 64,
+          "decoded": {
+            "new": 600,
+            "old": 0
+          },
+          "index": 2,
+          "kind": "D5_MAX_ORACLE_DELAY_SET",
+          "topic0": "0x8fbd4755f1f0ae3273128d1efbe7fa6f78dcdaacb9b7e704345adf5d9f64c61b"
+        },
+        {
+          "address": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+          "dataKeccak256": "0x30a8e4870b02b4d75a208da83738adc9725b15826fe6c85b18c39a91b7b2eaf3",
+          "dataLength": 256,
+          "decoded": {
+            "eta": 1792584000,
+            "innerCalldata": "0xcd3b691c0000000000000000000000000000000000000000000000000000000000000258",
+            "operationId": "0xad2000557d6dfd7a9adec3d2ba7e66c27386191195c78bd1090f40f8bd7ebc0a",
+            "returnDataKeccak256": "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
+            "target": "0x90caa6d5bc628577bc76d6cc8b775f983c75e110",
+            "valueWei": 0
+          },
+          "index": 3,
+          "kind": "TIMELOCK_EXECUTED",
+          "topic0": "0xbf5aad41947264cee85c734f09dc40e62b870b104a3110ba64673196b43c4096"
+        },
+        {
+          "address": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+          "dataKeccak256": "0x290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563",
+          "dataLength": 32,
+          "decoded": {
+            "paymentWei": 0,
+            "safeTxHash": "0x911ceff10ce4de39bf3e17b9779a533c28baf8efae8d25a455d59dd4f63bc909"
+          },
+          "index": 4,
+          "kind": "SAFE_EXECUTION_SUCCESS",
+          "topic0": "0x442e715f626346e8c54381002da614f62bee8d27386535b2521ec8540898556e"
+        }
+      ],
+      "status": 1,
+      "transactionIndex": 3
+    },
+    "runtimeHashesLatest": {
+      "D4": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785",
+      "D5": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c",
+      "D6": "0x3bad813e8654fddf86fb459a738d912b0c6c4dd4ad20119c52a4cc0dc1db834f",
+      "Timelock": "0xb20f9fa764b46a832c7665f07c1b9c3cd6506a58f6885c0e12e88e9bbc55233c"
+    },
+    "safe": {
+      "currentGovernance": {
+        "fallback": "0xfd0732dc9e303f09fcef3a7388ad10a83459ec99",
+        "guard": "0x0000000000000000000000000000000000000000",
+        "modules": [],
+        "owners": [
+          "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+          "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+          "0xa774c46c41064524df895bd7be9f294409798dfc"
+        ],
+        "threshold": 2,
+        "version": "1.4.1"
+      },
+      "expectedSafeTxHash": "0x911ceff10ce4de39bf3e17b9779a533c28baf8efae8d25a455d59dd4f63bc909",
+      "failureEvents": [],
+      "getTransactionHashAtPreReceiptBlock": "0x911ceff10ce4de39bf3e17b9779a533c28baf8efae8d25a455d59dd4f63bc909",
+      "successEvents": [
+        {
+          "paymentWei": 0,
+          "safeTxHash": "0x911ceff10ce4de39bf3e17b9779a533c28baf8efae8d25a455d59dd4f63bc909"
+        }
+      ]
+    },
+    "state": {
+      "before": {
+        "clearingTokenBalance": 0,
+        "d3SeizeConfig": [
+          0,
+          false,
+          false
+        ],
+        "d4BadDebt": 0,
+        "d4Collateral": true,
+        "d4Funding": true,
+        "d4Guardian": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "d4InsuranceAuthorized": false,
+        "d4Liquidation": true,
+        "d4Migration": 0,
+        "d4Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "d4Pme": "0x0000000000000000000000000000000000000000",
+        "d4Risk": "0x0000000000000000000000000000000000000000",
+        "d4SamplePositionRaw": "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "d4Snapshot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "d4TraderMarkets": 0,
+        "d4Trading": true,
+        "d4VaultAuthorized": false,
+        "d5Delay": 0,
+        "d5Engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+        "d5Guardian": "0x0000000000000000000000000000000000000000",
+        "d5Oracle": "0xb416406f200b2ef3d7a86a5d5877ed41d9b1a581",
+        "d5Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "d5Pending": "0x0000000000000000000000000000000000000000",
+        "d5RiskPaused": false,
+        "d5WithdrawPaused": false,
+        "d6Domain": "0x1ff87de391024af5fcccddf4e4a83e9fb5acc5ddf28cf85f76eefc96d5d4d0f5",
+        "d6Engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+        "d6Guardian": "0x0000000000000000000000000000000000000000",
+        "d6IntentFilled": 0,
+        "d6IntentNonceUsed": false,
+        "d6Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "d6Paused": true,
+        "d6RuntimeExecutor": false,
+        "d6TimelockExecutor": true,
+        "d6TraderNonce": 0,
+        "fmFeeRecipient": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "fmMerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "fmRebateBudget": 0,
+        "insuranceTokenBalance": 0,
+        "pmrMarketCount": 0,
+        "queued": true,
+        "safeNonce": 24,
+        "vaultClearingLedger": 1000000000,
+        "vaultInsuranceLedger": 2100010,
+        "vaultTokenBalance": 224066000000
+      },
+      "latest": {
+        "clearingTokenBalance": 0,
+        "d3SeizeConfig": [
+          0,
+          false,
+          false
+        ],
+        "d4BadDebt": 0,
+        "d4Collateral": true,
+        "d4Funding": true,
+        "d4Guardian": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "d4InsuranceAuthorized": false,
+        "d4Liquidation": true,
+        "d4Migration": 0,
+        "d4Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "d4Pme": "0x0000000000000000000000000000000000000000",
+        "d4Risk": "0x0000000000000000000000000000000000000000",
+        "d4SamplePositionRaw": "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "d4Snapshot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "d4TraderMarkets": 0,
+        "d4Trading": true,
+        "d4VaultAuthorized": false,
+        "d5Delay": 600,
+        "d5Engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+        "d5Guardian": "0x0000000000000000000000000000000000000000",
+        "d5Oracle": "0xb416406f200b2ef3d7a86a5d5877ed41d9b1a581",
+        "d5Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "d5Pending": "0x0000000000000000000000000000000000000000",
+        "d5RiskPaused": false,
+        "d5WithdrawPaused": false,
+        "d6Domain": "0x1ff87de391024af5fcccddf4e4a83e9fb5acc5ddf28cf85f76eefc96d5d4d0f5",
+        "d6Engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+        "d6Guardian": "0x0000000000000000000000000000000000000000",
+        "d6IntentFilled": 0,
+        "d6IntentNonceUsed": false,
+        "d6Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "d6Paused": true,
+        "d6RuntimeExecutor": false,
+        "d6TimelockExecutor": true,
+        "d6TraderNonce": 0,
+        "fmFeeRecipient": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "fmMerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "fmRebateBudget": 0,
+        "insuranceTokenBalance": 0,
+        "pmrMarketCount": 0,
+        "queued": false,
+        "safeNonce": 25,
+        "vaultClearingLedger": 1000000000,
+        "vaultInsuranceLedger": 2100010,
+        "vaultTokenBalance": 224066000000
+      },
+      "receipt": {
+        "clearingTokenBalance": 0,
+        "d3SeizeConfig": [
+          0,
+          false,
+          false
+        ],
+        "d4BadDebt": 0,
+        "d4Collateral": true,
+        "d4Funding": true,
+        "d4Guardian": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "d4InsuranceAuthorized": false,
+        "d4Liquidation": true,
+        "d4Migration": 0,
+        "d4Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "d4Pme": "0x0000000000000000000000000000000000000000",
+        "d4Risk": "0x0000000000000000000000000000000000000000",
+        "d4SamplePositionRaw": "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "d4Snapshot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "d4TraderMarkets": 0,
+        "d4Trading": true,
+        "d4VaultAuthorized": false,
+        "d5Delay": 600,
+        "d5Engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+        "d5Guardian": "0x0000000000000000000000000000000000000000",
+        "d5Oracle": "0xb416406f200b2ef3d7a86a5d5877ed41d9b1a581",
+        "d5Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "d5Pending": "0x0000000000000000000000000000000000000000",
+        "d5RiskPaused": false,
+        "d5WithdrawPaused": false,
+        "d6Domain": "0x1ff87de391024af5fcccddf4e4a83e9fb5acc5ddf28cf85f76eefc96d5d4d0f5",
+        "d6Engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+        "d6Guardian": "0x0000000000000000000000000000000000000000",
+        "d6IntentFilled": 0,
+        "d6IntentNonceUsed": false,
+        "d6Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "d6Paused": true,
+        "d6RuntimeExecutor": false,
+        "d6TimelockExecutor": true,
+        "d6TraderNonce": 0,
+        "fmFeeRecipient": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "fmMerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "fmRebateBudget": 0,
+        "insuranceTokenBalance": 0,
+        "pmrMarketCount": 0,
+        "queued": false,
+        "safeNonce": 25,
+        "vaultClearingLedger": 1000000000,
+        "vaultInsuranceLedger": 2100010,
+        "vaultTokenBalance": 224066000000
+      }
+    },
+    "timelock": {
+      "d5DelaySetEventsAfterReceipt": 0,
+      "eta": 1792584000,
+      "executionEvents": [
+        {
+          "eta": 1792584000,
+          "innerCalldata": "0xcd3b691c0000000000000000000000000000000000000000000000000000000000000258",
+          "operationId": "0xad2000557d6dfd7a9adec3d2ba7e66c27386191195c78bd1090f40f8bd7ebc0a",
+          "returnDataKeccak256": "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
+          "target": "0x90caa6d5bc628577bc76d6cc8b775f983c75e110",
+          "valueWei": 0
+        }
+      ],
+      "operationId": "0xad2000557d6dfd7a9adec3d2ba7e66c27386191195c78bd1090f40f8bd7ebc0a",
+      "replay": {
+        "reason": "READ_ONLY_CALL_REVERTED_AFTER_CONSUMPTION",
+        "rejected": true
+      }
+    },
+    "trace": {
+      "allCallsSucceeded": true,
+      "available": true,
+      "nodes": [
+        {
+          "depth": 0,
+          "error": null,
+          "from": "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+          "inputKeccak256": "0x36d0570b0d9aada137c77d8d234f5bc0d22f028156d990e6110b236f88e3bcd5",
+          "inputLength": 804,
+          "selector": "0x6a761202",
+          "to": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+          "type": "CALL",
+          "value": "0x0"
+        },
+        {
+          "depth": 1,
+          "error": null,
+          "from": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+          "inputKeccak256": "0x36d0570b0d9aada137c77d8d234f5bc0d22f028156d990e6110b236f88e3bcd5",
+          "inputLength": 804,
+          "selector": "0x6a761202",
+          "to": "0x29fcb43b46531bca003ddc8fcb67ffe91900c762",
+          "type": "DELEGATECALL",
+          "value": "0x0"
+        },
+        {
+          "depth": 2,
+          "error": null,
+          "from": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+          "inputKeccak256": "0xeab959c7588dc1e9c618d08082bf79a5d27145f10eab968444c1e765bd513796",
+          "inputLength": 128,
+          "selector": "0x911ceff1",
+          "to": "0x0000000000000000000000000000000000000001",
+          "type": "STATICCALL",
+          "value": null
+        },
+        {
+          "depth": 2,
+          "error": null,
+          "from": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+          "inputKeccak256": "0x0c26dc866f0a6a7ff4c70652f6ea0352b9a3f110ef283acd9e40b57d0dadaea0",
+          "inputLength": 128,
+          "selector": "0x911ceff1",
+          "to": "0x0000000000000000000000000000000000000001",
+          "type": "STATICCALL",
+          "value": null
+        },
+        {
+          "depth": 2,
+          "error": null,
+          "from": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+          "inputKeccak256": "0x442affee20ddf4bd8dadfd054ff300d095e7b85ff3f7aa197a3a75ccbadac757",
+          "inputLength": 228,
+          "selector": "0x06a41d09",
+          "to": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+          "type": "CALL",
+          "value": "0x0"
+        },
+        {
+          "depth": 3,
+          "error": null,
+          "from": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+          "inputKeccak256": "0x9f727fc7e4f11d3a330bc6d92d1516a318b953d98400130612b6e27686b8d9d9",
+          "inputLength": 36,
+          "selector": "0xcd3b691c",
+          "to": "0x90caa6d5bc628577bc76d6cc8b775f983c75e110",
+          "type": "CALL",
+          "value": "0x0"
+        }
+      ]
+    },
+    "transaction": {
+      "decodedSafeFields": {
+        "baseGas": 0,
+        "data": "0x06a41d0900000000000000000000000090caa6d5bc628577bc76d6cc8b775f983c75e11000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ad8a9400000000000000000000000000000000000000000000000000000000000000024cd3b691c000000000000000000000000000000000000000000000000000000000000025800000000000000000000000000000000000000000000000000000000",
+        "gasPrice": 0,
+        "gasToken": "0x0000000000000000000000000000000000000000",
+        "operation": 0,
+        "refundReceiver": "0x0000000000000000000000000000000000000000",
+        "safeTxGas": 0,
+        "signatureBytes": 130,
+        "signatureSlots65": 2,
+        "to": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "value": 0
+      },
+      "from": "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "inputKeccak256": "0x36d0570b0d9aada137c77d8d234f5bc0d22f028156d990e6110b236f88e3bcd5",
+      "inputLength": 804,
+      "inputSelector": "0x6a761202",
+      "signaturesRedacted": true,
+      "to": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+      "valueWei": 0
+    }
+  },
+  "publicTradingAuthorized": false,
+  "repository": {
+    "branch": "main",
+    "frozenSourceDiff": "NONE",
+    "frozenSourceRevision": "25c36670883604c1ef5229642ee6548aea6796c3",
+    "headBefore": "202d8c663a244cec7914e0a82d1901eecd7f0cdd",
+    "historicalSha256": {
+      "correctedManifest": "745e7a2fad6a77fef6e35f10a1a431b75615524f51fe13c881c191351ad591fe",
+      "operatorCheckpoint": "3d8db2b25820a59d0c3471df8ad6ad5e727f76a058f10c6bb9cef284937b20cd",
+      "unsignedIntent": "739458898da51a865369983d0200fe195c4cc69d9f137d21c0ef84756d931d57"
+    }
+  },
+  "validation": {
+    "failed": 0,
+    "passed": 18,
+    "predicates": {
+      "boundedEconomic": true,
+      "c12Gate": true,
+      "canonicalReceipt": true,
+      "d4Maintenance": true,
+      "d5EventAndReadback": true,
+      "d5Identity": true,
+      "d6Maintenance": true,
+      "exactSafeInput": true,
+      "executionTime": true,
+      "noOtherReceiptOperation": true,
+      "oneNestedCall": true,
+      "onlyIntendedStateDifferences": true,
+      "operationConsumed": true,
+      "safeGasRefund": true,
+      "safeGovernance": true,
+      "safeNonce": true,
+      "safeSuccessHash": true,
+      "timelockEvent": true
+    },
+    "testCounts": {
+      "failed": 0,
+      "passed": 33,
+      "skipped": 0
+    }
+  },
+  "verdict": {
+    "C12_AUTHORIZED": "NO",
+    "C12_PREPARATION_ELIGIBLE": "YES",
+    "C20_POSTFLIGHT": "PASS",
+    "C20_S2_EXECUTION": "VERIFIED_SUCCESS"
+  }
+}
