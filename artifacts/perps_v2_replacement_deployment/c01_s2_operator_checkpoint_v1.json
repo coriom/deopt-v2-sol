@@ -1,0 +1,150 @@
+{
+  "authorization": {
+    "agentBroadcast": "NO",
+    "agentSigning": "NO",
+    "c01PublicExecutionAuthorizedByAgent": "NO",
+    "c12PublicExecutionAuthorized": "NO",
+    "marketCreation": "NO",
+    "migrationReplay": "NO",
+    "publicTrading": "NO",
+    "sharedAclChanges": "NO"
+  },
+  "blockHashRechecked": true,
+  "c01Postflight": "NOT_RUN",
+  "c01Transaction": {
+    "builderJsonPath": "/home/corio/DEOPT/deopt-v2-sol/artifacts/perps_v2_replacement_deployment/c01_s2_safe_builder_v1.json",
+    "builderJsonSha256": "9242454117fe0e2188fb627d94cf6c775902469e5938aa1e80f68b3371a4be6e",
+    "ethValueWei": 0,
+    "executionCalldataBytes": 260,
+    "executionCalldataKeccak256": "0x3734e380d87e14827ace06325fa6bc352d1756e71212acb89133b6c33a03c4a6",
+    "innerAllowed": true,
+    "innerAsset": "0x6eAe407f5640B006faC9965182e238582A3B412E",
+    "innerCalldata": "0xdd4d8a460000000000000000000000006eae407f5640b006fac9965182e238582a3b412e0000000000000000000000000000000000000000000000000000000000000001",
+    "innerCalldataKeccak256": "0xbbb41c51e15f36f840d0c6fee7568ee4abd3acd10017c93c7cd46fe2fd6c452d",
+    "innerFunction": "setSettlementAssetAllowed(address,bool)",
+    "innerTarget": "0x6B3D846536116082dC4E7227861C341Bb85Ee963",
+    "oneActionOnly": true,
+    "operation": "CALL_0",
+    "safeEnvelope": {
+      "baseGas": 0,
+      "chainId": 84532,
+      "data": "0x06a41d090000000000000000000000006b3d846536116082dc4e7227861c341bb85ee96300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006adb4c400000000000000000000000000000000000000000000000000000000000000044dd4d8a460000000000000000000000006eae407f5640b006fac9965182e238582a3b412e000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000",
+      "gasPrice": 0,
+      "gasToken": "0x0000000000000000000000000000000000000000",
+      "nonce": 27,
+      "operationCode": 0,
+      "operationType": "CALL",
+      "refundReceiver": "0x0000000000000000000000000000000000000000",
+      "safe": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+      "safeTxGas": 0,
+      "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "valueWei": 0
+    }
+  },
+  "c12Postflight": "NOT_RUN",
+  "c12Status": "NOT_STARTED_WAITING_FOR_C01_CANONICAL_POSTFLIGHT_PASS",
+  "chainId": 84532,
+  "economicEvidenceScope": "PRE_EXECUTION_BOUNDED_ONLY: D1 zero markets, D4 maintenance and zero wiring, D4 shared ACL false, Vault Clearing/Insurance ledgers match reviewed values. No public C01 execution occurred in this milestone; no post-execution non-drift claim.",
+  "livePrestate": {
+    "clearingLedgerRawMusdc": 1000000000,
+    "d1MarketCount": 0,
+    "d1MusdcSettlementAllowed": false,
+    "d1Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "d4FourEmergencyFlags": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "d4Guardian": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "d4MigrationState": "OPEN",
+    "d4Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "d4PmePointer": "0x0000000000000000000000000000000000000000",
+    "d4RiskPointer": "0x0000000000000000000000000000000000000000",
+    "d5EnginePointer": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+    "d5MaxOracleDelay": 600,
+    "d6Paused": true,
+    "insuranceD4Authorized": false,
+    "insuranceLedgerRawMusdc": 2100010,
+    "runtimeHashes": {
+      "D1": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5",
+      "D4": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785",
+      "D5": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c",
+      "D6": "0x3bad813e8654fddf86fb459a738d912b0c6c4dd4ad20119c52a4cc0dc1db834f",
+      "Timelock": "0xb20f9fa764b46a832c7665f07c1b9c3cd6506a58f6885c0e12e88e9bbc55233c"
+    },
+    "vaultD4Authorized": false
+  },
+  "milestone": "PERPS_V2_BASE_SEPOLIA_C01_C12_S2_OPERATOR_CHECKPOINT_V1",
+  "operatorChecks": [
+    "Import only the existing C01 S2 Builder JSON into Base Sepolia OPS Safe; verify file SHA-256.",
+    "Verify one CALL to ProtocolTimelock.executeTransaction targeting D1, value zero, mUSDC allowed true, ETA unchanged, operation ID exact.",
+    "Verify Safe nonce 27 and all five zero internal gas/refund fields; SafeTx hash must equal local/on-chain cross-check.",
+    "Require Safe UI simulation PASS, full wallet gas estimate and sufficient executing wallet ETH. Check no duplicate pending Safe proposal.",
+    "Obtain two genuine owner confirmations and explicit approval; refresh chain ID, Safe nonce, queue/readiness/expiry, D1/D4/D5/D6 prestate and hash immediately before execution.",
+    "Operator manually executes exactly once. On ambiguous submission, stop and reconcile read-only; never automatically retry.",
+    "Supply public transaction hash for separate canonical postflight; do not progress to C12 until C01 postflight PASS."
+  ],
+  "phase": "A_C01_ONLY",
+  "repository": {
+    "branch": "main",
+    "frozenSourceRevision": "25c36670883604c1ef5229642ee6548aea6796c3",
+    "frozenSrcDiff": "EMPTY",
+    "reviewedArtifactHashes": {
+      "c01_c12_parallel_s2_execution_review_v1.json": "46cda98027085dc3ef42e8b0db8c8a3ddea30e938926048a1b26af5c5e0fadc4",
+      "c01_c12_s2_nonce_sequence_v1.json": "251d7e0f49bde71826b87d3a892ec7fd923c33f2d34c0b7b79b6913586c7ac04",
+      "c01_s2_safe_builder_v1.json": "9242454117fe0e2188fb627d94cf6c775902469e5938aa1e80f68b3371a4be6e",
+      "c12_s2_safe_builder_v1.json": "e8d11801a404e944cffb0eefd8c5975bc6b224261c4ec0260bc6dff9b3c5e61e"
+    },
+    "startingHead": "e18f0e624d0a67a4e99f3e3ca98970786b347aba"
+  },
+  "reviewBlock": {
+    "hash": "0xd66dc954c53ade84f3c24221fd1037ac57537e799f42d10c6e38429a86095c04",
+    "number": 49176962,
+    "timestamp": 1792757261,
+    "timestampUtc": "2026-10-23T12:07:41Z"
+  },
+  "rpcProvenance": "Configured Base Sepolia RPC; URL withheld; pinned read-only calls, one provider",
+  "safe": {
+    "address": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "fallbackHandler": "0xfd0732dc9e303f09fcef3a7388ad10a83459ec99",
+    "guard": "0x0000000000000000000000000000000000000000",
+    "modules": [],
+    "nonce": 27,
+    "ownerCount": 3,
+    "owners": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "safeTxHashDeployedGetter": "0xa4b8f2a256b90c8fdf4ad685aaeb472642dfd76ae9d974d2457a3b69f235b96c",
+    "safeTxHashLocalEip712": "0xa4b8f2a256b90c8fdf4ad685aaeb472642dfd76ae9d974d2457a3b69f235b96c",
+    "safeTxHashStatus": "CONDITIONAL_UNTIL_OPERATOR_UI_AND_FRESH_PRE_EXECUTION_CHECK",
+    "threshold": 2,
+    "version": "1.4.1"
+  },
+  "simulationAndGas": {
+    "baseSepoliaGasPriceWei": 6000000,
+    "directTimelockEthCallFromSafe": "PASS_DIRECT_TIMELOCK_ETH_CALL_FROM_SAFE",
+    "directTimelockGasEstimate": 68425,
+    "executingWalletEthBalance": "UNKNOWN_OPERATOR_WALLET_NOT_IDENTIFIED",
+    "fullSafeWalletGasEstimate": "PENDING_OPERATOR_SAFE_UI",
+    "limitation": "eth_call from Safe simulates Timelock authority only; it is not a Safe 2/3 signature or full wallet/delegation execution simulation.",
+    "safeUiSimulation": "PENDING_OPERATOR_SAFE_UI"
+  },
+  "status": "AWAITING_OPERATOR_SAFE_ACTION",
+  "timelock": {
+    "address": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "c01ExecutedOrCancelledEventsSinceS1": [],
+    "c01OperationId": "0x589fb819f60769c77ad9090750f2173377eb45dcbb5367fbc0fb978e4e15d396",
+    "c01Queued": true,
+    "c01Ready": true,
+    "c12Queued": true,
+    "c12Ready": true,
+    "etaUnix": 1792756800,
+    "expiryInclusiveUnix": 1793966400,
+    "gracePeriodSeconds": 1209600,
+    "minDelaySeconds": 86400,
+    "safeExecutorAuthorized": true
+  }
+}
