@@ -1,0 +1,510 @@
+{
+  "c12Readiness": {
+    "builderJsonPath": "/home/corio/DEOPT/deopt-v2-sol/artifacts/perps_v2_replacement_deployment/c12_s2_safe_builder_v1.json",
+    "builderJsonSha256": "e8d11801a404e944cffb0eefd8c5975bc6b224261c4ec0260bc6dff9b3c5e61e",
+    "eta": 1792756800,
+    "expiryInclusiveUnix": 1793966400,
+    "operationId": "0xd15ec63a22daebd4eb015de23561089547af9b02945fb8ae6dd7028ae7581229",
+    "queuedLatest": true,
+    "readyLatest": true,
+    "requiredNextStep": "Separate C12-S2 operator authorization, fresh live preflight, Safe UI simulation, full wallet gas review, two genuine owner confirmations; no execution in this milestone.",
+    "safeNonceLatest": 28,
+    "safeThresholdLatest": 2,
+    "safeTxHashDeployedGetter": "0xb41d702689c8be0df90db46c02cd6896c60dd45ac9065575bbfa462d16781eed",
+    "safeTxHashLocal": "0xb41d702689c8be0df90db46c02cd6896c60dd45ac9065575bbfa462d16781eed",
+    "safeTxHashReviewedConditional": "0xb41d702689c8be0df90db46c02cd6896c60dd45ac9065575bbfa462d16781eed",
+    "status": "READY_FOR_SEPARATE_OPERATOR_AUTHORIZATION_REVIEW_NOT_AUTHORIZED"
+  },
+  "canonicalPublicTransaction": {
+    "from": "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+    "inputBytes": 836,
+    "inputKeccak256": "0x5376e6e26c1c97c305ed0b3f64181dc0781a2b73a201df1ba615ebc917e27fbb",
+    "inputSelector": "0x6a761202",
+    "nonce": 6,
+    "safeExecTransaction": {
+      "baseGas": 0,
+      "data": "0x06a41d090000000000000000000000006b3d846536116082dc4e7227861c341bb85ee96300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006adb4c400000000000000000000000000000000000000000000000000000000000000044dd4d8a460000000000000000000000006eae407f5640b006fac9965182e238582a3b412e000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000",
+      "gasPrice": 0,
+      "gasToken": "0x0000000000000000000000000000000000000000",
+      "operation": 0,
+      "refundReceiver": "0x0000000000000000000000000000000000000000",
+      "safeTxGas": 0,
+      "signatureBytes": 130,
+      "to": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "valueWei": 0
+    },
+    "to": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+    "valueWei": 0
+  },
+  "canonicalReceipt": {
+    "blockHash": "0x287b683d61545454642a446a6529c06b5f259eae221d24eeb42e0584dd2560cf",
+    "blockNumber": 49433335,
+    "gasUsed": 112235,
+    "logs": [
+      {
+        "address": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+        "dataBytes": 992,
+        "dataKeccak256": "0x53227a7037f41936346198cc668cdcb2162ae3308f82a5c4a0d0ab377ac30988",
+        "kind": "OTHER",
+        "logIndex": 0,
+        "topic0": "0x66753cd2356569ee081232e3be8909b950e0a76c1f8460c3a5e3c2be32b11bed"
+      },
+      {
+        "address": "0x6b3d846536116082dc4e7227861c341bb85ee963",
+        "allowed": true,
+        "asset": "0x6eae407f5640b006fac9965182e238582a3b412e",
+        "kind": "D1_SETTLEMENT_CONFIGURED",
+        "logIndex": 1
+      },
+      {
+        "address": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "data": "0xdd4d8a460000000000000000000000006eae407f5640b006fac9965182e238582a3b412e0000000000000000000000000000000000000000000000000000000000000001",
+        "dataKeccak256": "0xbbb41c51e15f36f840d0c6fee7568ee4abd3acd10017c93c7cd46fe2fd6c452d",
+        "eta": 1792756800,
+        "kind": "TIMELOCK_EXECUTED",
+        "logIndex": 2,
+        "operationId": "0x589fb819f60769c77ad9090750f2173377eb45dcbb5367fbc0fb978e4e15d396",
+        "returnData": "0x",
+        "target": "0x6b3d846536116082dc4e7227861c341bb85ee963",
+        "valueWei": 0
+      },
+      {
+        "address": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+        "kind": "SAFE_EXECUTION_SUCCESS",
+        "logIndex": 3,
+        "paymentWei": 0,
+        "safeTxHash": "0xa4b8f2a256b90c8fdf4ad685aaeb472642dfd76ae9d974d2457a3b69f235b96c"
+      }
+    ],
+    "logsCount": 4,
+    "status": 1,
+    "transactionIndex": 2
+  },
+  "chain": {
+    "blockHashesRechecked": true,
+    "blocks": {
+      "before": {
+        "hash": "0x0471ae534cff709493727e66e4e5547477d33f967cb181c19a45ba73ab82faed",
+        "number": 49433334,
+        "timestamp": 1792808535,
+        "timestampUtc": "2026-10-24T02:22:15Z"
+      },
+      "latest": {
+        "hash": "0x50d362d1f77f00dcf85930d635555ae12ee7b294956c660f98547a2272c876b2",
+        "number": 49437363,
+        "timestamp": 1792809341,
+        "timestampUtc": "2026-10-24T02:35:41Z"
+      },
+      "receipt": {
+        "hash": "0x287b683d61545454642a446a6529c06b5f259eae221d24eeb42e0584dd2560cf",
+        "number": 49433335,
+        "timestamp": 1792808535,
+        "timestampUtc": "2026-10-24T02:22:15Z"
+      }
+    },
+    "chainId": 84532,
+    "independentConsensusSources": false,
+    "rpcProvenance": "Configured Base Sepolia RPC; URL withheld; one provider, pinned read-only calls"
+  },
+  "d1": {
+    "address": "0x6B3D846536116082dC4E7227861C341Bb85Ee963",
+    "allowanceBeforeReceiptLatest": [
+      false,
+      true,
+      true
+    ],
+    "event": {
+      "address": "0x6b3d846536116082dc4e7227861c341bb85ee963",
+      "allowed": true,
+      "asset": "0x6eae407f5640b006fac9965182e238582a3b412e",
+      "kind": "D1_SETTLEMENT_CONFIGURED",
+      "logIndex": 1
+    },
+    "mUSDC": "0x6eAe407f5640B006faC9965182e238582A3B412E",
+    "marketCountBeforeReceiptLatest": [
+      0,
+      0,
+      0
+    ],
+    "marketIdsBeforeReceiptLatest": [
+      [],
+      [],
+      []
+    ],
+    "ownerBeforeReceiptLatest": [
+      "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588"
+    ],
+    "runtimeHashAtReceipt": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5",
+    "runtimeHashLatest": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5",
+    "settlementEventsReceiptToLatest": [
+      {
+        "allowed": true,
+        "asset": "0x6eae407f5640b006fac9965182e238582a3b412e",
+        "block": 49433335,
+        "transactionHash": "0x40ac2a8c9fc331247b2777761353ac9caf400dcf263615d1ef86cc4194cafe47"
+      }
+    ]
+  },
+  "evidenceLimits": [
+    "Operator-supplied hash was malformed and had to be uniquely recovered from the claimed block.",
+    "One configured RPC provider supplied receipt, trace, logs and pinned state; block hashes were rechecked but sources are not independent consensus.",
+    "Safe signatures were not retained or independently decoded; Safe success and two ECRECOVER calls demonstrate deployed threshold enforcement.",
+    "Replay eth_call reverted generically without decoded custom error.",
+    "Economic non-drift is bounded to listed getters and sampled account, not exhaustive storage."
+  ],
+  "executionTrace": {
+    "status": "AVAILABLE",
+    "tree": {
+      "calls": [
+        {
+          "calls": [
+            {
+              "calls": [],
+              "error": null,
+              "from": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+              "inputKeccak256": "0xeb1f91d64e9f92cf10209c22bf0caf7eeb2aff3250aa1709ce6482a141391254",
+              "inputSelector": "0xa4b8f2a2",
+              "to": "0x0000000000000000000000000000000000000001",
+              "type": "STATICCALL",
+              "value": null
+            },
+            {
+              "calls": [],
+              "error": null,
+              "from": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+              "inputKeccak256": "0xe664a1673055551c2edfe8f918d657c444c7d52e34a493b872269e3871e74221",
+              "inputSelector": "0xa4b8f2a2",
+              "to": "0x0000000000000000000000000000000000000001",
+              "type": "STATICCALL",
+              "value": null
+            },
+            {
+              "calls": [
+                {
+                  "calls": [],
+                  "error": null,
+                  "from": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+                  "inputKeccak256": "0xbbb41c51e15f36f840d0c6fee7568ee4abd3acd10017c93c7cd46fe2fd6c452d",
+                  "inputSelector": "0xdd4d8a46",
+                  "to": "0x6b3d846536116082dc4e7227861c341bb85ee963",
+                  "type": "CALL",
+                  "value": "0x0"
+                }
+              ],
+              "error": null,
+              "from": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+              "inputKeccak256": "0x3734e380d87e14827ace06325fa6bc352d1756e71212acb89133b6c33a03c4a6",
+              "inputSelector": "0x06a41d09",
+              "to": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+              "type": "CALL",
+              "value": "0x0"
+            }
+          ],
+          "error": null,
+          "from": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+          "inputKeccak256": "0x5376e6e26c1c97c305ed0b3f64181dc0781a2b73a201df1ba615ebc917e27fbb",
+          "inputSelector": "0x6a761202",
+          "to": "0x29fcb43b46531bca003ddc8fcb67ffe91900c762",
+          "type": "DELEGATECALL",
+          "value": "0x0"
+        }
+      ],
+      "error": null,
+      "from": "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "inputKeccak256": "0x5376e6e26c1c97c305ed0b3f64181dc0781a2b73a201df1ba615ebc917e27fbb",
+      "inputSelector": "0x6a761202",
+      "to": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+      "type": "CALL",
+      "value": "0x0"
+    }
+  },
+  "hashReconciliation": {
+    "canonicalHexDigits": 64,
+    "canonicalPublicTxHash": "0x40ac2a8c9fc331247b2777761353ac9caf400dcf263615d1ef86cc4194cafe47",
+    "operatorSuppliedHash": "0x40ac2a8c9fc331247b277761353ac9caf400dcf263615d1ef86cc4194cafe47",
+    "operatorSuppliedHashValid": false,
+    "operatorSuppliedHexDigits": 63,
+    "resolution": "Exact C01 Timelock operation event, Safe ExecutionSuccess and D1 settlement event at the claimed block uniquely share this canonical transaction hash. The supplied hash omitted one hexadecimal digit."
+  },
+  "maintenanceAndEconomicState": {
+    "before": {
+      "c01Queued": true,
+      "c12Queued": true,
+      "clearingLedger": 1000000000,
+      "d1Allowed": false,
+      "d1MarketIds": [],
+      "d1Markets": 0,
+      "d1Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "d2MerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "d2RebateBudget": 0,
+      "d3SeizeConfig": [
+        0,
+        false,
+        false
+      ],
+      "d4BadDebt": 0,
+      "d4Collateral": true,
+      "d4Funding": true,
+      "d4Liquidation": true,
+      "d4Migration": 0,
+      "d4Pme": "0x0000000000000000000000000000000000000000",
+      "d4Risk": "0x0000000000000000000000000000000000000000",
+      "d4Snapshot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "d4Trading": true,
+      "d5Delay": 600,
+      "d6Domain": "0x1ff87de391024af5fcccddf4e4a83e9fb5acc5ddf28cf85f76eefc96d5d4d0f5",
+      "d6IntentFilledZero": 0,
+      "d6Paused": true,
+      "d6RuntimeExecutor": false,
+      "d6TimelockExecutor": true,
+      "d6TraderNonce": 0,
+      "insuranceD4Authorized": false,
+      "insuranceLedger": 2100010,
+      "insuranceTokenBalance": 0,
+      "safeNonce": 27,
+      "vaultD4Authorized": false,
+      "vaultTokenBalance": 224066000000
+    },
+    "coverageLimit": "Source-supported getter samples and scoped events; no exhaustive storage proof. No configured D1 markets, so market-specific funding getters unavailable or inapplicable.",
+    "latest": {
+      "D1RuntimeHash": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5",
+      "D4RuntimeHash": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785",
+      "D5RuntimeHash": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c",
+      "D6RuntimeHash": "0x3bad813e8654fddf86fb459a738d912b0c6c4dd4ad20119c52a4cc0dc1db834f",
+      "c01Queued": false,
+      "c12Hash": "0xd15ec63a22daebd4eb015de23561089547af9b02945fb8ae6dd7028ae7581229",
+      "c12Queued": true,
+      "c12Ready": true,
+      "clearingLedger": 1000000000,
+      "d1Allowed": true,
+      "d1MarketIds": [],
+      "d1Markets": 0,
+      "d1Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "d2MerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "d2RebateBudget": 0,
+      "d3SeizeConfig": [
+        0,
+        false,
+        false
+      ],
+      "d4BadDebt": 0,
+      "d4Collateral": true,
+      "d4Funding": true,
+      "d4Guardian": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "d4Liquidation": true,
+      "d4Migration": 0,
+      "d4Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "d4Pme": "0x0000000000000000000000000000000000000000",
+      "d4Risk": "0x0000000000000000000000000000000000000000",
+      "d4Snapshot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "d4Trading": true,
+      "d5Delay": 600,
+      "d5Engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+      "d5Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "d6Domain": "0x1ff87de391024af5fcccddf4e4a83e9fb5acc5ddf28cf85f76eefc96d5d4d0f5",
+      "d6Engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+      "d6IntentFilledZero": 0,
+      "d6Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "d6Paused": true,
+      "d6RuntimeExecutor": false,
+      "d6TimelockExecutor": true,
+      "d6TraderNonce": 0,
+      "insuranceD4Authorized": false,
+      "insuranceLedger": 2100010,
+      "insuranceTokenBalance": 0,
+      "safeFallback": "0xfd0732dc9e303f09fcef3a7388ad10a83459ec99",
+      "safeGuard": "0x0000000000000000000000000000000000000000",
+      "safeModules": [
+        [],
+        "0x0000000000000000000000000000000000000001"
+      ],
+      "safeNonce": 28,
+      "safeOwners": [
+        "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+        "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+        "0xa774c46c41064524df895bd7be9f294409798dfc"
+      ],
+      "safeThreshold": 2,
+      "safeVersion": "1.4.1",
+      "tlGrace": 1209600,
+      "tlMinDelay": 86400,
+      "tlSafeExecutor": true,
+      "vaultD4Authorized": false,
+      "vaultTokenBalance": 224066000000
+    },
+    "receipt": {
+      "D1RuntimeHash": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5",
+      "D4RuntimeHash": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785",
+      "D5RuntimeHash": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c",
+      "D6RuntimeHash": "0x3bad813e8654fddf86fb459a738d912b0c6c4dd4ad20119c52a4cc0dc1db834f",
+      "c01Queued": false,
+      "c12Queued": true,
+      "clearingLedger": 1000000000,
+      "d1Allowed": true,
+      "d1MarketIds": [],
+      "d1Markets": 0,
+      "d1Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "d2MerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "d2RebateBudget": 0,
+      "d3SeizeConfig": [
+        0,
+        false,
+        false
+      ],
+      "d4BadDebt": 0,
+      "d4Collateral": true,
+      "d4Funding": true,
+      "d4Liquidation": true,
+      "d4Migration": 0,
+      "d4Pme": "0x0000000000000000000000000000000000000000",
+      "d4Risk": "0x0000000000000000000000000000000000000000",
+      "d4Snapshot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "d4Trading": true,
+      "d5Delay": 600,
+      "d6Domain": "0x1ff87de391024af5fcccddf4e4a83e9fb5acc5ddf28cf85f76eefc96d5d4d0f5",
+      "d6IntentFilledZero": 0,
+      "d6Paused": true,
+      "d6RuntimeExecutor": false,
+      "d6TimelockExecutor": true,
+      "d6TraderNonce": 0,
+      "insuranceD4Authorized": false,
+      "insuranceLedger": 2100010,
+      "insuranceTokenBalance": 0,
+      "safeNonce": 28,
+      "vaultD4Authorized": false,
+      "vaultTokenBalance": 224066000000
+    },
+    "sampledPosition": {
+      "before": {
+        "safeThreshold": 2,
+        "sampledD4PositionReturnBytes": 96,
+        "sampledD4PositionReturnKeccak256": "0x46700b4d40ac5c35af2c22dda2787a91eb567b06c924a8fb8ae9a05b20c08c21"
+      },
+      "d1SettlementEventsReceiptToLatest": [
+        {
+          "allowed": true,
+          "asset": "0x6eae407f5640b006fac9965182e238582a3b412e",
+          "block": 49433335,
+          "transactionHash": "0x40ac2a8c9fc331247b2777761353ac9caf400dcf263615d1ef86cc4194cafe47"
+        }
+      ],
+      "latest": {
+        "safeThreshold": 2,
+        "sampledD4PositionReturnBytes": 96,
+        "sampledD4PositionReturnKeccak256": "0x46700b4d40ac5c35af2c22dda2787a91eb567b06c924a8fb8ae9a05b20c08c21"
+      },
+      "receipt": {
+        "safeThreshold": 2,
+        "sampledD4PositionReturnBytes": 96,
+        "sampledD4PositionReturnKeccak256": "0x46700b4d40ac5c35af2c22dda2787a91eb567b06c924a8fb8ae9a05b20c08c21"
+      }
+    },
+    "sharedComparedKeys": [
+      "clearingLedger",
+      "insuranceLedger",
+      "vaultTokenBalance",
+      "insuranceTokenBalance",
+      "d2RebateBudget",
+      "d2MerkleRoot",
+      "d3SeizeConfig",
+      "d4BadDebt",
+      "d6TraderNonce",
+      "d6IntentFilledZero",
+      "d6Domain",
+      "d6TimelockExecutor",
+      "d6RuntimeExecutor",
+      "vaultD4Authorized",
+      "insuranceD4Authorized"
+    ],
+    "sharedEconomicNonDrift": "PASS_BOUNDED"
+  },
+  "milestone": "PERPS_V2_BASE_SEPOLIA_C01_S2_PUBLIC_POSTFLIGHT_V1",
+  "publicTransactionsSentByAgent": false,
+  "repository": {
+    "branch": "main",
+    "frozenSourceRevision": "25c36670883604c1ef5229642ee6548aea6796c3",
+    "frozenSrcDiff": "EMPTY",
+    "reviewedArtifactSha256": {
+      "c01_c12_parallel_s2_execution_review_v1.json": "46cda98027085dc3ef42e8b0db8c8a3ddea30e938926048a1b26af5c5e0fadc4",
+      "c01_c12_s2_nonce_sequence_v1.json": "251d7e0f49bde71826b87d3a892ec7fd923c33f2d34c0b7b79b6913586c7ac04",
+      "c01_s2_operator_checkpoint_v1.json": "140cecf0f6d336b158700d90ee1222b1af8bfaaf2b1bd0089d797a2f3111c316",
+      "c01_s2_safe_builder_v1.json": "9242454117fe0e2188fb627d94cf6c775902469e5938aa1e80f68b3371a4be6e",
+      "c12_s2_safe_builder_v1.json": "e8d11801a404e944cffb0eefd8c5975bc6b224261c4ec0260bc6dff9b3c5e61e"
+    },
+    "startingHead": "6c309ff4dd2bbf468cf2a471aa8b97884cce3d41"
+  },
+  "safe": {
+    "actualFieldsEip712Hash": "0xa4b8f2a256b90c8fdf4ad685aaeb472642dfd76ae9d974d2457a3b69f235b96c",
+    "address": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "executionFailureEvents": [],
+    "executionSuccessEvent": {
+      "address": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+      "kind": "SAFE_EXECUTION_SUCCESS",
+      "logIndex": 3,
+      "paymentWei": 0,
+      "safeTxHash": "0xa4b8f2a256b90c8fdf4ad685aaeb472642dfd76ae9d974d2457a3b69f235b96c"
+    },
+    "expectedSafeTxHash": "0xa4b8f2a256b90c8fdf4ad685aaeb472642dfd76ae9d974d2457a3b69f235b96c",
+    "fallbackLatest": "0xfd0732dc9e303f09fcef3a7388ad10a83459ec99",
+    "guardLatest": "0x0000000000000000000000000000000000000000",
+    "modulesLatest": [],
+    "nonceAtReceipt": 28,
+    "nonceBefore": 27,
+    "nonceLatest": 28,
+    "ownersLatest": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "signatureEvidence": "Safe transaction contained 130 signature bytes; trace shows two ECRECOVER precompile calls; deployed Safe emitted ExecutionSuccess at threshold 2. Signature bytes excluded from evidence.",
+    "thresholdBeforeReceiptLatest": [
+      2,
+      2,
+      2
+    ]
+  },
+  "testCounts": {
+    "focusedEvidenceChecks": {
+      "failed": 0,
+      "passed": 10,
+      "skipped": 0
+    }
+  },
+  "timelock": {
+    "address": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "consumed": true,
+    "eta": 1792756800,
+    "executionEvent": {
+      "address": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "data": "0xdd4d8a460000000000000000000000006eae407f5640b006fac9965182e238582a3b412e0000000000000000000000000000000000000000000000000000000000000001",
+      "dataKeccak256": "0xbbb41c51e15f36f840d0c6fee7568ee4abd3acd10017c93c7cd46fe2fd6c452d",
+      "eta": 1792756800,
+      "kind": "TIMELOCK_EXECUTED",
+      "logIndex": 2,
+      "operationId": "0x589fb819f60769c77ad9090750f2173377eb45dcbb5367fbc0fb978e4e15d396",
+      "returnData": "0x",
+      "target": "0x6b3d846536116082dc4e7227861c341bb85ee963",
+      "valueWei": 0
+    },
+    "noOtherGovernanceActionInReceipt": true,
+    "operationId": "0x589fb819f60769c77ad9090750f2173377eb45dcbb5367fbc0fb978e4e15d396",
+    "queuedAtReceipt": false,
+    "queuedBefore": true,
+    "queuedLatest": false,
+    "replayEthCall": {
+      "rejected": true,
+      "rpcRevertSummary": "eth_call: execution reverted"
+    },
+    "replayLimitation": "RPC provided generic execution-reverted message, without decoded custom-error data; source and consumed queue state support TransactionNotQueued."
+  },
+  "verdict": {
+    "C01_S2_EXECUTION": "VERIFIED_SUCCESS",
+    "C01_S2_POSTFLIGHT": "PASS",
+    "C12_PUBLIC_EXECUTION_AUTHORIZED": "NO",
+    "MARKET_CREATION_AUTHORIZED": "NO",
+    "MIGRATION_REPLAY_AUTHORIZED": "NO",
+    "PUBLIC_TRADING_AUTHORIZED": "NO"
+  }
+}
