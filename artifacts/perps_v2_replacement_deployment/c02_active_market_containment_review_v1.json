@@ -1,0 +1,232 @@
+{
+  "authorizations": {
+    "C02_PUBLIC_EXECUTION_AUTHORIZED": "NO",
+    "MIGRATION_REPLAY_AUTHORIZED": "NO",
+    "MKT1_INACTIVE_AUTHORIZED": "NO",
+    "PUBLIC_TRADING_AUTHORIZED": "NO"
+  },
+  "criticalFinding": "Remote backend/relayer/keeper isolation and actual deployed execution configuration are not independently verified. The approved DAG yields at least a 24-hour ACTIVE interval. On-chain guards are strong but do not establish off-chain containment or remove the need for a separate active-interval approval.",
+  "externalOperationalEvidence": {
+    "backendRepositoryDefaults": "EXECUTION_ENABLED=false, EXECUTOR_DRY_RUN=true, EXECUTOR_REAL_BROADCAST_ENABLED=false; defaults are not deployed-state proof",
+    "localProcessNameScan": "No process with reviewed backend/relayer/keeper names observed; only local host and exact-name coverage",
+    "missing": [
+      "Inventory all Base Sepolia backend/relayer/keeper deployments and actual running instances",
+      "Attest effective runtime flags and active engine/PME addresses without exposing secrets",
+      "Verify RPC-facing jobs, order intake and transaction broadcaster are disabled for replacement stack",
+      "Confirm all external executor identities and routing cannot bypass maintained D4/D6 controls",
+      "Reconfirm these controls immediately before separately authorized C02-S2 execution"
+    ],
+    "relayerKeeperIsolation": "NOT_VERIFIED",
+    "remoteBackendIsolation": "NOT_VERIFIED"
+  },
+  "milestone": "DEOPT_V2_C02_S1_POSTFLIGHT_AND_ACTIVE_MARKET_SAFETY_REVIEW_V1",
+  "mkt1Inactive": {
+    "actualInterval": "At least 86400 seconds plus Safe confirmations, inclusion, postflight and operator delays; unbounded above",
+    "approvedDAGDependency": "C02 canonical execution before MKT1_INACTIVE preparation/scheduling",
+    "diagnosticCalldataKeccak256": "0xd2c425cabaea425fd78ddf833de798c6548718078ade79a8c28f0c220ccb017e",
+    "diagnosticCalldataNotAuthorized": "0x85477fb3000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "marketExistenceCheckedAtExecution": true,
+    "minimumActiveIntervalUnderCurrentDAGSeconds": 86400,
+    "owner": "ProtocolTimelock",
+    "saferSourceSupportedButNotApproved": "The custom Timelock could technically queue the deactivation before market creation because it does not call D1 until execution; D1 setter would then require market 1 to exist. The approved DAG currently requires C02 execution first. Any prequeue needs a separate DAG/policy change, full review and separate Safe authorizations; none is proposed or authorized here.",
+    "selector": "0x85477fb3",
+    "sourceFunction": "setMarketStatus(uint256,bool,bool)",
+    "stoppingProcedure": "Keep D4 four flags true, D6 paused, D4 PME/clearing/insurance zero and shared ACLs absent. If MKT1_INACTIVE scheduling/execution fails, stop downstream market/configuration/migration/trading, reconcile receipts and queue state read-only, and require a new independent governance review. D1 configPaused would block setMarketStatus and must be addressed separately.",
+    "timelockQueueDoesNotInspectTargetDataOrMarketExistence": true
+  },
+  "onchainGuards": {
+    "D4Clearing": "0x0000000000000000000000000000000000000000",
+    "D4FourEmergencyFlags": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "D4ImpactMidSource": "0x0000000000000000000000000000000000000000",
+    "D4Insurance": "0x0000000000000000000000000000000000000000",
+    "D4InsuranceAuthorized": false,
+    "D4MatchingEngine": "0x0000000000000000000000000000000000000000",
+    "D4Migration": "OPEN",
+    "D4VaultAuthorized": false,
+    "D6Paused": true,
+    "D6RuntimeExecutorAuthorized": false
+  },
+  "phase": "B_ACTIVE_MARKET_CONTAINMENT",
+  "phaseAPostflightArtifact": "/home/corio/DEOPT/deopt-v2-sol/artifacts/perps_v2_replacement_deployment/c02_s1_public_postflight_v1.json",
+  "phaseAPostflightSha256": "74f63322969b84d970a0d354fbca713822f779073b19f5cf52815662914af769",
+  "publicActionByAgent": false,
+  "reachabilityMatrix": [
+    {
+      "action": "D1 market creation",
+      "activeMarketEffect": "Creates market 1 ACTIVE at execution; scheduling has no market effect",
+      "entryPoint": "D1.createMarket",
+      "evidence": [
+        "src/perp/PerpMarketRegistry.sol:539-608",
+        "pinned D1 creator/market count and C02 queue event"
+      ],
+      "guards": "whenCreationNotPaused; settlement allowlist; validated configs",
+      "requiredPermissions": "onlyMarketCreator; Timelock is approved creator",
+      "verdict": "PASS_FOR_S1_ONLY"
+    },
+    {
+      "action": "D6 signed matching and intent execution",
+      "activeMarketEffect": "Does not remove D6 pause; D4 applyTrade remains blocked",
+      "entryPoint": "D6.executeTrade / executeBatch / executeTradeFromIntents",
+      "evidence": [
+        "src/matching/PerpMatchingEngineV2.sol:616-746",
+        "pinned D6 paused/executor readbacks"
+      ],
+      "guards": "whenNotPaused; D6 paused=true; runtime executor unauthorized",
+      "requiredPermissions": "onlyExecutor and valid signatures",
+      "verdict": "PASS_ONCHAIN_GUARD"
+    },
+    {
+      "action": "D4 direct trade/accounting",
+      "activeMarketEffect": "Would satisfy later market.isActive check, but earlier independent modifiers still reject",
+      "entryPoint": "D4.applyTrade",
+      "evidence": [
+        "src/perp/PerpEngineTradingV2.sol:769-790",
+        "src/perp/PerpEngineStorage.sol:207-233",
+        "pinned D4 readbacks"
+      ],
+      "guards": "migration SEALED; whenTradingNotPaused; matchingEngine pointer=ZERO; tradingPaused=true",
+      "requiredPermissions": "configured matchingEngine caller",
+      "verdict": "PASS_ONCHAIN_GUARD"
+    },
+    {
+      "action": "D4 liquidation",
+      "activeMarketEffect": "Would satisfy later active-market check, but earlier modifiers reject",
+      "entryPoint": "D4.liquidate",
+      "evidence": [
+        "src/perp/PerpEngineTradingV2.sol:879-905",
+        "pinned D4/Insurance readbacks"
+      ],
+      "guards": "migration SEALED; whenLiquidationNotPaused; liquidationPaused=true; Insurance pointer=ZERO; D4 shared ACL=false",
+      "requiredPermissions": "permissionless when enabled",
+      "verdict": "PASS_ONCHAIN_GUARD"
+    },
+    {
+      "action": "D4 funding accrual",
+      "activeMarketEffect": "Market existence no longer reverts after C02, but earlier guards reject",
+      "entryPoint": "D4.updateFunding",
+      "evidence": [
+        "src/perp/PerpEngineTradingV2.sol:543-565",
+        "C02 frozen manifest funding args",
+        "pinned D4 readbacks"
+      ],
+      "guards": "migration SEALED; whenFundingNotPaused; fundingPaused=true; C02 funding is disabled",
+      "requiredPermissions": "public when enabled",
+      "verdict": "PASS_ONCHAIN_GUARD"
+    },
+    {
+      "action": "D4 impact-mid keeper write",
+      "activeMarketEffect": "Market existence becomes true, but caller and pause gates reject",
+      "entryPoint": "D4.updateImpactMid",
+      "evidence": [
+        "src/perp/PerpEngineTradingV2.sol:449-459",
+        "pinned impactMidSource/readbacks"
+      ],
+      "guards": "whenFundingNotPaused; fundingPaused=true",
+      "requiredPermissions": "onlyImpactMidSource; source=ZERO",
+      "verdict": "PASS_ONCHAIN_GUARD"
+    },
+    {
+      "action": "D4 migration seeding",
+      "activeMarketEffect": "C02 enables market-exists precondition for owner-only seed; emergency flags do not block owner migration writes",
+      "entryPoint": "D4.adminSeedPosition / adminSeedMarketFunding / adminSeedResidualBadDebt",
+      "evidence": [
+        "src/perp/PerpEngineTradingV2.sol:226-305",
+        "pinned owner/migration state",
+        "scoped Timelock queue inventory"
+      ],
+      "guards": "onlyMigrationOpen; migration OPEN; market existence required for position/funding seed",
+      "requiredPermissions": "onlyOwner=ProtocolTimelock; independent queued governance operation needed",
+      "verdict": "PASS_GOVERNANCE_GATED_WITH_EXPLICIT_STOP"
+    },
+    {
+      "action": "D5 risk calculations",
+      "activeMarketEffect": "May change available read results, not economic storage",
+      "entryPoint": "D5.computeAccountRisk and related views",
+      "evidence": [
+        "src/perp/PerpRiskModule.sol:728-820",
+        "pinned D5 Engine/delay"
+      ],
+      "guards": "RiskModule computes/returns values; no state-changing trade route",
+      "requiredPermissions": "public read-only",
+      "verdict": "PASS_READ_ONLY"
+    },
+    {
+      "action": "D4 custody and Insurance calls",
+      "activeMarketEffect": "No new shared authority granted by D1 market creation",
+      "entryPoint": "Vault engine transfers / Insurance backstop payout",
+      "evidence": [
+        "src/collateral/CollateralVaultStorage.sol:195-240",
+        "src/core/InsuranceFund.sol:130-154",
+        "pinned ACL/pointer readbacks"
+      ],
+      "guards": "both D4 ACLs=false; D4 Insurance/Clearing pointers=ZERO",
+      "requiredPermissions": "D4 Vault ACL and Insurance backstop ACL",
+      "verdict": "PASS_BOUNDED_ONCHAIN_ACL"
+    },
+    {
+      "action": "Generic custody and Clearing funding",
+      "activeMarketEffect": "ACTIVE market does not create these entry points; unrelated user funding can still occur",
+      "entryPoint": "Vault user deposit/withdraw; Clearing.fundClearing",
+      "evidence": [
+        "src/collateral/CollateralVaultActions.sol:41-180",
+        "src/perp/PerpClearingAccountV2.sol:94-111",
+        "bounded balance/ledger comparisons"
+      ],
+      "guards": "Independent from D1 market status; not a D4 economic permission",
+      "requiredPermissions": "user token ownership/allowance and Vault per-function controls; Clearing funding is public",
+      "verdict": "PASS_ACTIVE_MARKET_INDEPENDENT_BOUNDED"
+    },
+    {
+      "action": "Remote backend, relayer and keeper execution",
+      "activeMarketEffect": "ACTIVE registry state may be consumed by external systems even while on-chain D4/D6 settlement is blocked",
+      "entryPoint": "off-chain order intake, executor jobs, RPC submission, relayer/keeper jobs",
+      "evidence": [
+        "../deopt-v2-backend/src/config/env.rs:149-195",
+        "../deopt-v2-backend/README.md:44-55",
+        "local process-name scan only"
+      ],
+      "guards": "repository defaults disabled; local process-name scan found no named DeOpt backend, but remote deployments and effective config not attested",
+      "requiredPermissions": "deployed feature flags, credentials, permitted sender and live job state",
+      "verdict": "UNKNOWN_REMOTE_NOT_VERIFIED"
+    },
+    {
+      "action": "D1 market deactivation",
+      "activeMarketEffect": "Only separately governed execution makes market inactive; delay under current DAG is at least 86400 seconds",
+      "entryPoint": "D1.setMarketStatus(1,false,false)",
+      "evidence": [
+        "src/perp/PerpMarketRegistry.sol:442-449",
+        "src/gouvernance/ProtocolTimelock.sol:290-306",
+        "post_maintenance_dependency_dag_v1.json C02->MKT1_INACTIVE"
+      ],
+      "guards": "whenConfigNotPaused; market must exist at execution; current configPaused=false",
+      "requiredPermissions": "onlyOwner=ProtocolTimelock",
+      "verdict": "BLOCKED_PENDING_SEPARATE_GOVERNANCE"
+    }
+  ],
+  "reviewBlock": {
+    "hash": "0x2afb5ec673e33f0906b7f45fad0c52a53a528608b278eac90acf2565b4ea22cc",
+    "number": 49522016,
+    "timestamp": 1792826272,
+    "timestampUtc": "2026-10-24T07:17:52Z"
+  },
+  "s2PackageFilesCreated": [],
+  "testCounts": {
+    "focusedFinalFailed": 0,
+    "focusedFinalPassed": 10,
+    "focusedFinalSkipped": 0,
+    "historicalForkRehearsalReusedNotRerun": 33,
+    "initialTestExpectationFailurePreserved": 1
+  },
+  "verdict": {
+    "C02_ACTIVE_MARKET_SAFETY": "INCONCLUSIVE",
+    "C02_S2_EXECUTION_ELIGIBLE": "NO",
+    "C02_S2_OFFLINE_PACKAGE": "BLOCKED",
+    "RELAYER_KEEPER_ISOLATION": "NOT_VERIFIED",
+    "REMOTE_BACKEND_ISOLATION": "NOT_VERIFIED"
+  }
+}
