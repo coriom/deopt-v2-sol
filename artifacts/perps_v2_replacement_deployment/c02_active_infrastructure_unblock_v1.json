@@ -1,0 +1,128 @@
+{
+  "milestone": "DEOPT_ACTIVE_INFRASTRUCTURE_C02_UNBLOCK_V1",
+  "reviewStatus": "PARTIAL",
+  "c02S2ExecutionEligible": false,
+  "publicTransactionsSent": false,
+  "cloudChangesMade": false,
+  "repository": {
+    "startingHead": "0678a3685001ebe92c23a1be31eea03435b2e82a",
+    "frozenSolidityRevision": "25c36670883604c1ef5229642ee6548aea6796c3",
+    "frozenSrcDiff": "EMPTY",
+    "baselineWorktree": "CLEAN"
+  },
+  "trustedPriorEvidence": {
+    "operationalReviewV2": "artifacts/perps_v2_replacement_deployment/c02_operational_evidence_mkt1_policy_decision_v2.json",
+    "operationalReviewV2Sha256": "5a0accff0c9b9357757d6cddc369711ca77120415a5739bcf111e6ff201bf263",
+    "earlyQueueProposal": "artifacts/perps_v2_replacement_deployment/mkt1_early_queue_policy_amendment_proposal_v1.json",
+    "earlyQueueProposalSha256": "88672bcf7469371913b689b61a4e362324b69939c0aefab87a7fd0dfca534ae2",
+    "priorOnchainContainment": "PASS_BOUNDED",
+    "priorEarlyQueueForkReview": "PASS; fork-only Safe impersonation, not real signatures"
+  },
+  "freshPinnedChain": {
+    "chainId": 84532,
+    "blockNumber": 49595281,
+    "blockHash": "0x4cd11b161d4c151dc74c2a2dd2a4a24ee872d2b141a3df656abfbe5473da2f4c",
+    "blockTimestamp": 1792840925,
+    "source": "configured direct Base Sepolia RPC; URL redacted; block hash rechecked",
+    "c02OperationId": "0x9e10ee1c04280e36ba1d7144b5abd2d1a48b08fac54087bd5e7090d91030913e",
+    "c02Queued": true,
+    "marketCount": 0,
+    "d4EmergencyFlags": [true, true, true, true],
+    "d4MigrationState": "OPEN",
+    "d4RiskPointer": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110",
+    "d4PmePointer": "ZERO",
+    "d5MaxOracleDelaySeconds": 600,
+    "d6Paused": true,
+    "d4VaultAcl": false,
+    "d4InsuranceAcl": false,
+    "safeNonce": 30,
+    "safeThreshold": 2,
+    "timelockMinDelaySeconds": 86400,
+    "scope": "Narrow current-state getters; no exhaustive storage or remote-process proof"
+  },
+  "canonicalVercel": {
+    "product": "DeOpt",
+    "project": "deoptv2-frontend",
+    "projectId": "prj_YADz33AWNuLnbnXYvQZOINFIhTTG",
+    "teamId": "team_jh3uGhEAzuuNEO6gehL1vHE4",
+    "productionDeploymentId": "dpl_FoAjCa4Z4D49pos1KuQ2z8Zntq3U",
+    "state": "READY",
+    "target": "production",
+    "deploymentType": "LAMBDAS",
+    "gitCommit": "938ab3d779c0109ab24a98068799174bcd06a0b2",
+    "productionAlias": "deoptv2-frontend.vercel.app",
+    "projectLatestDeploymentMatches": true,
+    "deploymentAliasMatches": true,
+    "projectLiveFlag": false,
+    "projectLiveFlagInterpretation": "Ambiguous; not evidence that runtime functions are disabled",
+    "projectCustomRoutes": 0,
+    "projectConnectorConnections": 0,
+    "environmentVariableNamesReturnedWithDecryptFalse": [],
+    "hiddenProductionEnvCountReturned": 0,
+    "deployedFileTree": "UNAVAILABLE_404",
+    "exactGitHubCommit": "UNAVAILABLE_404",
+    "deployedFunctions": "UNKNOWN",
+    "deployedApiRoutes": "UNKNOWN",
+    "vercelCrons": "UNKNOWN",
+    "transactionSubmissionCapability": "UNKNOWN",
+    "externalBackendOrQueueIntegrations": "UNKNOWN",
+    "evidenceLimit": "Project-level custom routes and connector records do not enumerate bundled Next.js functions; READY establishes deployment availability only"
+  },
+  "otherInfrastructure": {
+    "rustBackendCurrentHost": "UNKNOWN",
+    "backendSourceCommit": "ad8dd7466aeba6963d28687e825fe4df58ef32ee",
+    "backendCapability": "Source has gated real broadcast and execution paths; deployed effective flags, identities, network and targets unverified",
+    "githubActions": "Reviewed backend workflow definitions trigger on push/pull_request; no schedule/cron trigger found; CI source sets real broadcast false",
+    "railway": "GitHub deployment 5416476893 for project 5d110969-6d5a-4f78-ab01-60dc3efd55e3/environment 9fa9cad6-cb27-43ad-b4ed-c8af4e416365 failed on 2026-07-12; historical record, current service state unknown",
+    "localDocker": "No DeOpt backend/relayer/keeper container running; DeOpt monitoring and webhook-sink containers present",
+    "localSystemd": "No running DeOpt backend/relayer/keeper unit matched",
+    "localScopeLimit": "Local WSL checks do not prove remote isolation",
+    "remoteBackendIsolation": "NOT_VERIFIED",
+    "relayerKeeperIsolation": "NOT_VERIFIED",
+    "executionCapableRemoteServices": "UNKNOWN",
+    "retiredFrontendScope": "deopt-frontend excluded per operator naming correction; no current evidence linking it to governed replacement addresses"
+  },
+  "incrementalC02Risk": {
+    "newlyReachable": [
+      "D4 owner-only adminSeedPosition and adminSeedMarketFunding become market-eligible when market 1 exists; separate Timelock/Safe governance is required and D4 migration OPEN does not itself prevent these setters",
+      "ACTIVE market status would satisfy later market-status checks, but currently maintained D4/D6 and shared ACL guards still contain the reviewed replacement trading/funding/liquidation routes"
+    ],
+    "notNewlyIntroducedByC02": "Generic Vault/Clearing calls and legacy-authorized actors existed before market 1 and require their own policy review",
+    "unresolvedMaterialRisks": [
+      "Actual canonical Vercel deployed functions, cron jobs, API write paths and upstream backend/queue connections are not inventoried",
+      "Rust backend, relayer and keeper current deployment/running state and effective non-secret execution flags/chain/contract targets are not attested",
+      "If MKT1_INACTIVE is delayed or fails, ACTIVE interval has no guaranteed maximum; refresh on-chain guards and remote inventory before C02-S2"
+    ]
+  },
+  "mkt1Policy": {
+    "technicalReview": "PASS_FROM_HASH_VERIFIED_PROPOSAL",
+    "decisionReadiness": "READY_FOR_OPERATOR_DECISION",
+    "operatorApproval": "NOT_GRANTED",
+    "approvedDag": "UNCHANGED",
+    "oldSchedulingEdge": "C02-S2 canonical postflight PASS -> MKT1_INACTIVE scheduling eligible",
+    "proposedSchedulingEdge": "C02-S1 canonical queue postflight PASS -> MKT1_INACTIVE scheduling eligible",
+    "preservedExecutionEdge": "C02-S2 canonical postflight PASS -> MKT1_INACTIVE execution eligible",
+    "proposedEtaAndOperationId": "UNAPPROVED_DIAGNOSTIC_ONLY; refresh before any separate scheduling review",
+    "activeInterval": "Potentially shortened when both queues are ready, never guaranteed; no automatic continuation",
+    "separateGovernance": "Policy approval, MKT1 scheduling review/approval/postflight, C02 execution review/approval/postflight, MKT1 execution review/approval/postflight all remain distinct"
+  },
+  "exactOperatorEvidenceRequired": [
+    "Vercel: open project deoptv2-frontend > Deployments > production deployment dpl_FoAjCa4Z4D49pos1KuQ2z8Zntq3U > Functions (and deployment output if shown). Provide one redacted screenshot/export listing every deployed Function/Edge route, runtime and path; show deployment ID. If empty, show the empty-state screen.",
+    "Vercel: open project deoptv2-frontend > Cron Jobs. Provide one redacted screenshot/export of path, schedule and enabled status, or the empty-state screen. Show project ID/name.",
+    "For any Vercel API/function/cron found: provide deployed revision-matched route source or build manifest and only non-secret chain ID, D1-D6 addresses, outbound signing/broadcast booleans and upstream backend/queue endpoint hostnames; redact values of credentials, RPC URLs, keys, tokens and signatures.",
+    "Backend host: identify actual provider/project/service for Rust backend and each relayer/keeper/queue consumer. Provide provider dashboard service/deployment status and revision, worker/cron/restart settings, non-secret effective chain ID, contract targets and execution/broadcast/order-intake flags; or evidence that no such service exists.",
+    "Railway only if still relevant: for project 5d110969-6d5a-4f78-ab01-60dc3efd55e3 and environment 9fa9cad6-cb27-43ad-b4ed-c8af4e416365, provide current service list/status or deletion/inactive proof, redacted. The July failure is insufficient."
+  ],
+  "decision": {
+    "c02OperationalEvidence": "PARTIAL",
+    "c02S2ExecutionEligibility": "NO",
+    "mkt1EarlyQueuePolicy": "READY_FOR_OPERATOR_DECISION",
+    "smallestNextAction": "Canonical Vercel deployment Functions and Cron Jobs screenshots/export, then provider identity/status for any referenced backend or worker",
+    "nextMilestone": "C02_OPERATOR_VERCEL_EVIDENCE_COLLECTION",
+    "c02ExecutionAuthorized": false,
+    "mkt1SchedulingAuthorized": false,
+    "mkt1ExecutionAuthorized": false,
+    "migrationReplayAuthorized": false,
+    "publicTradingAuthorized": false
+  }
+}
