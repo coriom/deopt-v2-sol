@@ -1,0 +1,162 @@
+{
+  "c12CanonicalPostflightPath": "/home/corio/DEOPT/deopt-v2-sol/artifacts/perps_v2_replacement_deployment/c12_risk_wiring_s2_public_postflight_v1.json",
+  "c12CanonicalPostflightSha256": "dc38ec07b98bfe44744a1f93540823b180ef73fcea7e9328be3a0d1bec0afb05",
+  "dagPath": "/home/corio/DEOPT/deopt-v2-sol/artifacts/perps_v2_replacement_deployment/post_maintenance_dependency_dag_v1.json",
+  "dagSha256": "f3907236b928a50151f21ea748e3572ce8fde8fe5a090c0de8d3ca4d647e5b5d",
+  "forkRehearsal": {
+    "after": {
+      "clearingLedger": 1000000000,
+      "d4Flags": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "d4Migration": 0,
+      "d4Pme": "0x0000000000000000000000000000000000000000",
+      "d4Risk": "0x90caa6d5bc628577bc76d6cc8b775f983c75e110",
+      "d5Delay": 600,
+      "d6Paused": true,
+      "insuranceAcl": false,
+      "insuranceLedger": 2100010,
+      "insuranceTokenBalance": 0,
+      "markets": 1,
+      "nextMarketId": 2,
+      "vaultAcl": false,
+      "vaultTokenBalance": 224066000000
+    },
+    "before": {
+      "clearingLedger": 1000000000,
+      "d4Flags": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "d4Migration": 0,
+      "d4Pme": "0x0000000000000000000000000000000000000000",
+      "d4Risk": "0x90caa6d5bc628577bc76d6cc8b775f983c75e110",
+      "d5Delay": 600,
+      "d6Paused": true,
+      "insuranceAcl": false,
+      "insuranceLedger": 2100010,
+      "insuranceTokenBalance": 0,
+      "markets": 0,
+      "nextMarketId": 1,
+      "vaultAcl": false,
+      "vaultTokenBalance": 224066000000
+    },
+    "c02": {
+      "args": [
+        "0x4deebc5f537f3b8ba0e3393807b4d699d72bdd02",
+        "0x6eae407f5640b006fac9965182e238582a3b412e",
+        "0xb416406f200b2ef3d7a86a5d5877ed41d9b1a581",
+        "0x4554482d50455250000000000000000000000000000000000000000000000000",
+        [
+          1000,
+          750,
+          500,
+          10000000000,
+          50000000000,
+          true
+        ],
+        [
+          5000,
+          100,
+          50,
+          60
+        ],
+        [
+          false,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "bufferedCutoff": 1792839600,
+      "etaProposed": 1792929600,
+      "innerCalldata": "0xbdb9df9a0000000000000000000000004deebc5f537f3b8ba0e3393807b4d699d72bdd020000000000000000000000006eae407f5640b006fac9965182e238582a3b412e000000000000000000000000b416406f200b2ef3d7a86a5d5877ed41d9b1a5814554482d5045525000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003e800000000000000000000000000000000000000000000000000000000000002ee00000000000000000000000000000000000000000000000000000000000001f400000000000000000000000000000000000000000000000000000002540be4000000000000000000000000000000000000000000000000000000000ba43b74000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000138800000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000032000000000000000000000000000000000000000000000000000000000000003c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "innerCalldataKeccak256": "0x976f360139a3069605b3baa59c1d4bb8c2dc0591c676e6deaf3a5d142089067f",
+      "innerCalldataSha256": "eaa4a1e9408bb11efc267fbe824c365cbae5e16c76b841ebb6c85326808a31c2",
+      "operationId": "0x9e10ee1c04280e36ba1d7144b5abd2d1a48b08fac54087bd5e7090d91030913e",
+      "queueCalldata": "0x8e361cdf0000000000000000000000006b3d846536116082dc4e7227861c341bb85ee96300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006addef400000000000000000000000000000000000000000000000000000000000000284bdb9df9a0000000000000000000000004deebc5f537f3b8ba0e3393807b4d699d72bdd020000000000000000000000006eae407f5640b006fac9965182e238582a3b412e000000000000000000000000b416406f200b2ef3d7a86a5d5877ed41d9b1a5814554482d5045525000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003e800000000000000000000000000000000000000000000000000000000000002ee00000000000000000000000000000000000000000000000000000000000001f400000000000000000000000000000000000000000000000000000002540be4000000000000000000000000000000000000000000000000000000000ba43b74000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000138800000000000000000000000000000000000000000000000000000000000000640000000000000000000000000000000000000000000000000000000000000032000000000000000000000000000000000000000000000000000000000000003c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "queueCalldataKeccak256": "0x22c021db87f3dc1a148f0ceb49131260b771cf330551740075a71b233780f315",
+      "signature": "createMarket(address,address,address,bytes32,(uint32,uint32,uint32,uint128,uint128,bool),(uint32,uint32,uint32,uint32),(bool,uint32,uint32,uint32,uint32,uint32))",
+      "target": "0x6B3D846536116082dC4E7227861C341Bb85Ee963"
+    },
+    "checksFailed": [],
+    "checksPassed": [
+      "fork_chain",
+      "base_c12",
+      "market_absent",
+      "d1_creator",
+      "safe_proposer",
+      "safe_executor",
+      "min_delay",
+      "eta_margin",
+      "operation_absent",
+      "calldata_manifest",
+      "local_hash",
+      "maintenance_pre",
+      "pre_market_id",
+      "wrong_caller_queue",
+      "unauthorized_direct_market",
+      "queued",
+      "market_unchanged_after_queue",
+      "premature",
+      "still_queued",
+      "wrong_target",
+      "wrong_eta",
+      "wrong_data",
+      "created_market",
+      "market_active",
+      "market_exists",
+      "settlement_allowed",
+      "operation_consumed",
+      "replay",
+      "non_drift",
+      "funding_blocked",
+      "liquidation_blocked",
+      "market_event",
+      "timelock_event"
+    ],
+    "executeLocal": {
+      "eventTopics": [
+        "0xc72a9f333ec8cf54cc06b0cc5177b44cfe5edb9e803e3e2eea93c7de9a37811c",
+        "0xd1aac655644e3451b3dc5649a46b1603fc6cd0f61457470ef145892ee3bd80ed",
+        "0x2f4c8be50701fb93dc3b75b896b8a723822b28b157e301675d38d4082f5dbaed",
+        "0xc04aed44206e9ddeb7ddc7c179def3ac1a380a1a82fbd2d42174eb0b5c170f28",
+        "0xbf5aad41947264cee85c734f09dc40e62b870b104a3110ba64673196b43c4096"
+      ],
+      "gasUsed": 363619
+    },
+    "label": "ISOLATED_ANVIL_FORK_ONLY_SAFE_ADDRESS_IMPERSONATED_NO_REAL_SIGNATURES",
+    "limits": "Fork-only Safe-address impersonation; no real Safe 2/3 authorization or public transaction. Bounded getters and selected blocked economic entry points.",
+    "market1ActiveAfter": true,
+    "milestone": "DEOPT_V2_C12_POSTFLIGHT_AND_C02_FAST_TRACK_V1",
+    "scheduleLocal": {
+      "eventTopics": [
+        "0x4efebf40a8244d219085e74f928a18e8c9d17adc6b39270b8706cca0a92b648d"
+      ],
+      "gasUsed": 64925
+    },
+    "sourceBlock": {
+      "hash": "0x2287f6a1912db07b6ff972a13f65a16cb24748b0dada2828c91c67f9ad0cbd76",
+      "number": 49445633,
+      "timestamp": 1792810995,
+      "timestampUtc": "2026-10-24T03:03:15Z"
+    }
+  },
+  "limits": [
+    "Safe address impersonated on isolated Anvil fork; genuine 2/3 signatures not tested.",
+    "Direct market creation activates the registry entry immediately. Market oracle/feed quality and trading readiness are outside C02 acceptance.",
+    "No public market creation or Timelock scheduling happened."
+  ],
+  "milestone": "DEOPT_V2_C12_POSTFLIGHT_AND_C02_FAST_TRACK_V1",
+  "phase": "C02_TECHNICAL_PREPARATION",
+  "publicActionAuthorization": false,
+  "sourcePolicy": "D1 createMarket sets isActive=true immediately; D4 all emergency flags true, D6 paused true, D4 PME zero and shared ACLs absent isolate economic execution. MKT1_INACTIVE must be separately executed and verified before later cutover.",
+  "status": "PASS_OFFLINE_ONLY"
+}

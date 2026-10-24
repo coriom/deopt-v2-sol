@@ -1,0 +1,80 @@
+{
+  "milestone": "DEOPT_V2_C12_POSTFLIGHT_AND_C02_FAST_TRACK_V1",
+  "noAutomaticBatching": true,
+  "noPublicAuthorization": true,
+  "operations": [
+    {
+      "etaProposed": 1792929600,
+      "id": "C02",
+      "nextGate": "Separate Safe S1 authorization, UI simulation, 2/3 signatures, canonical queue postflight",
+      "prerequisites": "C01 executed; C12 verified; maintenance and D1 empty; exact market params",
+      "separateSafeApproval": true,
+      "status": "OFFLINE_REVIEW_PASS_NOT_AUTHORIZED"
+    },
+    {
+      "etaProposed": null,
+      "id": "MKT1_INACTIVE",
+      "nextGate": "Prepare separate status-change operation; execute only after C02 canonical postflight",
+      "prerequisites": "C02 executed and market 1 active with exact config",
+      "separateSafeApproval": true,
+      "status": "DEPENDENT_PREPARATION_ONLY"
+    },
+    {
+      "etaProposed": null,
+      "id": "D3_TOKEN",
+      "nextGate": "Technical policy review and separate governance package",
+      "prerequisites": "Maintenance verified; exact mUSDC seizer policy/legacy RiskModule distinction reviewed",
+      "separateSafeApproval": true,
+      "status": "INDEPENDENT_PREPARATION_ELIGIBLE"
+    },
+    {
+      "etaProposed": null,
+      "id": "D2_FEE_POLICY",
+      "nextGate": "Policy review; later fee writes each separately approved",
+      "prerequisites": "Maintenance verified; historical rebate isolation reviewed",
+      "separateSafeApproval": "For future writes",
+      "status": "INDEPENDENT_REVIEW_ELIGIBLE"
+    },
+    {
+      "etaProposed": null,
+      "id": "GUARDIAN_POLICY",
+      "nextGate": "Authority review; no owner/guardian change yet",
+      "prerequisites": "Maintenance verified; pause-only powers and Safe guardian identity reviewed",
+      "separateSafeApproval": "For future writes",
+      "status": "INDEPENDENT_REVIEW_ELIGIBLE"
+    },
+    {
+      "etaProposed": null,
+      "id": "EXECUTOR_IDENTITY_REVIEW",
+      "nextGate": "Identity and permissions review; D6 remains paused",
+      "prerequisites": "Maintenance verified; runtime executor and first-trade guard identity checked",
+      "separateSafeApproval": "For future writes",
+      "status": "INDEPENDENT_REVIEW_ELIGIBLE"
+    },
+    {
+      "etaProposed": null,
+      "id": "ACL_POLICY_REVIEW",
+      "nextGate": "Shared custody policy review; grants remain absent",
+      "prerequisites": "Maintenance verified; dual-engine access and no-double-funding plan",
+      "separateSafeApproval": "For future writes",
+      "status": "INDEPENDENT_REVIEW_ELIGIBLE"
+    },
+    {
+      "etaProposed": null,
+      "id": "C03",
+      "nextGate": "Wait for verified inactive market 1",
+      "prerequisites": "MKT1_INACTIVE canonically executed",
+      "separateSafeApproval": true,
+      "status": "BLOCKED_DEPENDENCY"
+    },
+    {
+      "etaProposed": null,
+      "id": "C04",
+      "nextGate": "Wait for verified inactive market 1",
+      "prerequisites": "MKT1_INACTIVE canonically executed",
+      "separateSafeApproval": true,
+      "status": "BLOCKED_DEPENDENCY"
+    }
+  ],
+  "sourceDagSha256": "f3907236b928a50151f21ea748e3572ce8fde8fe5a090c0de8d3ca4d647e5b5d"
+}

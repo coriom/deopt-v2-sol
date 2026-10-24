@@ -1,0 +1,536 @@
+{
+  "c02PromotionDependency": "PASS",
+  "chainId": 84532,
+  "decodedEvents": {
+    "all": [
+      {
+        "address": "0x04658b29f6b82ed55274221a06fc97d318e25416",
+        "dataBytes": 64,
+        "dataKeccak256": "0xcc69885fda6bcc1a4ace058b4a62bf5e179ea78fd58a1ccd71c22cc9b688792f",
+        "logIndex": 1,
+        "topics": [
+          "0x449da07f2c06c9d1a6b19d2454ffe749e8cf991d22f686e076a1a4844c5ff370",
+          "0x000000000000000000000000db9b1e94b5b69df7e401ddbede43491141047db3",
+          "0x000000000000000000000000b01caea8c6c47bbf4f4b4c5080ca642043359c2e",
+          "0xb22464b91de50a7cdd6776244764058feaa979770a3ff2bf3d872f457655461e"
+        ]
+      },
+      {
+        "address": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+        "dataBytes": 960,
+        "dataKeccak256": "0x9322d49f53a6848fa748e07b0f43075985e149a4ffb00a364db22b3acad7a912",
+        "logIndex": 2,
+        "topics": [
+          "0x66753cd2356569ee081232e3be8909b950e0a76c1f8460c3a5e3c2be32b11bed"
+        ]
+      },
+      {
+        "address": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+        "dataBytes": 0,
+        "dataKeccak256": "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
+        "logIndex": 3,
+        "topics": [
+          "0x808fc0874768c225409d9bf87fc94b6cdc40cb955dd7960727704b534b352b9b",
+          "0x00000000000000000000000090caa6d5bc628577bc76d6cc8b775f983c75e110"
+        ]
+      },
+      {
+        "address": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+        "dataBytes": 256,
+        "dataKeccak256": "0x071e7c2cd0ae7cd675e2513dea814055163dfedfd7cd7a59fbe9ccfb02b17489",
+        "logIndex": 4,
+        "topics": [
+          "0xbf5aad41947264cee85c734f09dc40e62b870b104a3110ba64673196b43c4096",
+          "0xd15ec63a22daebd4eb015de23561089547af9b02945fb8ae6dd7028ae7581229",
+          "0x000000000000000000000000d0901de8f6de72aecc716ca1465c4cf58a0b99fb"
+        ]
+      },
+      {
+        "address": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+        "dataBytes": 32,
+        "dataKeccak256": "0x290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563",
+        "logIndex": 5,
+        "topics": [
+          "0x442e715f626346e8c54381002da614f62bee8d27386535b2521ec8540898556e",
+          "0xb41d702689c8be0df90db46c02cd6896c60dd45ac9065575bbfa462d16781eed"
+        ]
+      },
+      {
+        "address": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+        "dataBytes": 1920,
+        "dataKeccak256": "0xec687316c6e138682a13b0129d13656b1ac3941b653603d612f9300a23293134",
+        "logIndex": 6,
+        "topics": [
+          "0x40dadaa36c6c2e3d7317e24757451ffb2d603d875f0ad5e92c5dd156573b1873",
+          "0x000000000000000000000000b9f8de807ff98d5730035a8bfed4bda33e886d06",
+          "0x000000000000000000000000b01caea8c6c47bbf4f4b4c5080ca642043359c2e"
+        ]
+      }
+    ],
+    "d4RiskSet": [
+      "0x90caa6d5bc628577bc76d6cc8b775f983c75e110"
+    ],
+    "safeFailure": [],
+    "safeSuccess": [
+      {
+        "payment": 0,
+        "safeTxHash": "0xb41d702689c8be0df90db46c02cd6896c60dd45ac9065575bbfa462d16781eed"
+      }
+    ],
+    "timelockExecuted": [
+      {
+        "eta": 1792756800,
+        "innerCalldata": "0x04f6f5b200000000000000000000000090caa6d5bc628577bc76d6cc8b775f983c75e110",
+        "operationId": "0xd15ec63a22daebd4eb015de23561089547af9b02945fb8ae6dd7028ae7581229",
+        "returnData": "0x",
+        "target": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+        "valueWei": 0
+      }
+    ],
+    "timelockQueued": []
+  },
+  "economicNonDrift": {
+    "boundedPass": true,
+    "comparedKeys": [
+      "clearingLedger",
+      "insuranceLedger",
+      "vaultTokenBalance",
+      "insuranceTokenBalance",
+      "d2MerkleRoot",
+      "d2RebateBudget",
+      "d3SeizeConfig",
+      "d6Domain"
+    ],
+    "limits": "Source-supported getters and this transaction trace/logs; not exhaustive storage proof. No configured D1 markets, so market-specific state getters not applicable."
+  },
+  "milestone": "DEOPT_V2_C12_POSTFLIGHT_AND_C02_FAST_TRACK_V1",
+  "publicTransactionHash": "0x06c600301456252af2ea158ed25062235db0d2b141c15dfa727af3a30e77846b",
+  "publicTransactionsSentByAgent": false,
+  "readbacks": {
+    "before": {
+      "c12Queued": true,
+      "clearingLedger": 1000000000,
+      "d1Allowed": true,
+      "d1Ids": [],
+      "d1Markets": 0,
+      "d2MerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "d2RebateBudget": 0,
+      "d3SeizeConfig": [
+        0,
+        false,
+        false
+      ],
+      "d4BadDebt": 0,
+      "d4Collateral": true,
+      "d4Funding": true,
+      "d4Guardian": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "d4Liquidation": true,
+      "d4Migration": 0,
+      "d4Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "d4Pme": "0x0000000000000000000000000000000000000000",
+      "d4Risk": "0x0000000000000000000000000000000000000000",
+      "d4Snapshot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "d4Trading": true,
+      "d5Delay": 600,
+      "d5Engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+      "d5Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "d6Domain": "0x1ff87de391024af5fcccddf4e4a83e9fb5acc5ddf28cf85f76eefc96d5d4d0f5",
+      "d6Paused": true,
+      "d6RuntimeExecutor": false,
+      "d6TimelockExecutor": true,
+      "insuranceD4Acl": false,
+      "insuranceLedger": 2100010,
+      "insuranceTokenBalance": 0,
+      "safeNonce": 28,
+      "safeOwners": [
+        "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+        "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+        "0xa774c46c41064524df895bd7be9f294409798dfc"
+      ],
+      "safeThreshold": 2,
+      "vaultD4Acl": false,
+      "vaultTokenBalance": 224066000000
+    },
+    "latest": {
+      "D1RuntimeHash": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5",
+      "D4RuntimeHash": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785",
+      "D5RuntimeHash": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c",
+      "D6RuntimeHash": "0x3bad813e8654fddf86fb459a738d912b0c6c4dd4ad20119c52a4cc0dc1db834f",
+      "c12Queued": false,
+      "clearingLedger": 1000000000,
+      "d1Allowed": true,
+      "d1Ids": [],
+      "d1Markets": 0,
+      "d2MerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "d2RebateBudget": 0,
+      "d3SeizeConfig": [
+        0,
+        false,
+        false
+      ],
+      "d4BadDebt": 0,
+      "d4Collateral": true,
+      "d4Funding": true,
+      "d4Guardian": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "d4Liquidation": true,
+      "d4Migration": 0,
+      "d4Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "d4Pme": "0x0000000000000000000000000000000000000000",
+      "d4Risk": "0x90caa6d5bc628577bc76d6cc8b775f983c75e110",
+      "d4Snapshot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "d4Trading": true,
+      "d5Delay": 600,
+      "d5Engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+      "d5Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "d6Domain": "0x1ff87de391024af5fcccddf4e4a83e9fb5acc5ddf28cf85f76eefc96d5d4d0f5",
+      "d6Paused": true,
+      "d6RuntimeExecutor": false,
+      "d6TimelockExecutor": true,
+      "insuranceD4Acl": false,
+      "insuranceLedger": 2100010,
+      "insuranceTokenBalance": 0,
+      "safeFallback": "0xfd0732dc9e303f09fcef3a7388ad10a83459ec99",
+      "safeGuard": "0x0000000000000000000000000000000000000000",
+      "safeModules": [],
+      "safeNonce": 29,
+      "safeOwners": [
+        "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+        "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+        "0xa774c46c41064524df895bd7be9f294409798dfc"
+      ],
+      "safeThreshold": 2,
+      "vaultD4Acl": false,
+      "vaultTokenBalance": 224066000000
+    },
+    "receipt": {
+      "c12Queued": false,
+      "clearingLedger": 1000000000,
+      "d1Allowed": true,
+      "d1Ids": [],
+      "d1Markets": 0,
+      "d2MerkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "d2RebateBudget": 0,
+      "d3SeizeConfig": [
+        0,
+        false,
+        false
+      ],
+      "d4BadDebt": 0,
+      "d4Collateral": true,
+      "d4Funding": true,
+      "d4Guardian": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "d4Liquidation": true,
+      "d4Migration": 0,
+      "d4Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "d4Pme": "0x0000000000000000000000000000000000000000",
+      "d4Risk": "0x90caa6d5bc628577bc76d6cc8b775f983c75e110",
+      "d4Snapshot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "d4Trading": true,
+      "d5Delay": 600,
+      "d5Engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+      "d5Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "d6Domain": "0x1ff87de391024af5fcccddf4e4a83e9fb5acc5ddf28cf85f76eefc96d5d4d0f5",
+      "d6Paused": true,
+      "d6RuntimeExecutor": false,
+      "d6TimelockExecutor": true,
+      "insuranceD4Acl": false,
+      "insuranceLedger": 2100010,
+      "insuranceTokenBalance": 0,
+      "safeNonce": 29,
+      "safeOwners": [
+        "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+        "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+        "0xa774c46c41064524df895bd7be9f294409798dfc"
+      ],
+      "safeThreshold": 2,
+      "vaultD4Acl": false,
+      "vaultTokenBalance": 224066000000
+    }
+  },
+  "receipt": {
+    "blockHash": "0xbddcc7a216b27af8a0c45c16ffb9787b1d90b4c7e076cf6b93516c60b5a72cce",
+    "blockNumber": 49443665,
+    "blockTimestamp": 1792810601,
+    "canonicalBlockHashMatch": true,
+    "gasUsed": 268863,
+    "status": 1,
+    "transactionInputSelector": "0xcef6d209",
+    "transactionTo": "0xdb9b1e94b5b69df7e401ddbede43491141047db3"
+  },
+  "reviewBlock": {
+    "hash": "0x2287f6a1912db07b6ff972a13f65a16cb24748b0dada2828c91c67f9ad0cbd76",
+    "number": 49445633,
+    "timestamp": 1792810995,
+    "timestampUtc": "2026-10-24T03:03:15Z"
+  },
+  "rpcProvenance": "Configured Base Sepolia RPC; URL withheld; pinned reads from one provider; trace available",
+  "safe": {
+    "actualExecutedFields": {
+      "baseGas": 0,
+      "dataKeccak256": "0x963584c123980e342dc6ee8eb9855243b6c75e05240235f579c64470f2224619",
+      "gasPrice": 0,
+      "gasToken": "0x0000000000000000000000000000000000000000",
+      "operation": 0,
+      "refundReceiver": "0x0000000000000000000000000000000000000000",
+      "safeTxGas": 0,
+      "signatureBytesExcluded": 130,
+      "to": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "valueWei": 0
+    },
+    "fallbackLatest": "0xfd0732dc9e303f09fcef3a7388ad10a83459ec99",
+    "guardLatest": "0x0000000000000000000000000000000000000000",
+    "modulesLatest": [],
+    "nonceAtReceipt": 29,
+    "nonceBefore": 28,
+    "nonceLatest": 29,
+    "ownersLatest": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "safeTxHashOnchain": "0xb41d702689c8be0df90db46c02cd6896c60dd45ac9065575bbfa462d16781eed",
+    "thresholdLatest": 2
+  },
+  "signatureMaterialExcluded": true,
+  "timelock": {
+    "eta": 1792756800,
+    "exactInnerCalldataKeccak256": "0x793e647f899a70e7ad9bb5b3fd503eec492225662b0e64a76e46b16f8947fcd5",
+    "exactOuterCalldataKeccak256": "0x963584c123980e342dc6ee8eb9855243b6c75e05240235f579c64470f2224619",
+    "operationId": "0xd15ec63a22daebd4eb015de23561089547af9b02945fb8ae6dd7028ae7581229",
+    "queuedAtReceipt": false,
+    "queuedBefore": true,
+    "queuedLatest": false,
+    "replay": {
+      "reason": "eth_call:execution reverted",
+      "rejected": true
+    }
+  },
+  "tracePath": [
+    {
+      "depth": 0,
+      "error": null,
+      "from": "0xb01caea8c6c47bbf4f4b4c5080ca642043359c2e",
+      "inputKeccak256": "0x723839ce7d75832190ba2e3dad07b822a28dfc2f9ecae1781d74964abeb9d54e",
+      "inputSelector": "0xcef6d209",
+      "to": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+      "type": "CALL",
+      "valueWei": 0
+    },
+    {
+      "depth": 1,
+      "error": null,
+      "from": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+      "inputKeccak256": "0xd439f7fe0f8cb641cdf3a005b021f99cc49d9b7371ea84c9e74bd0b91f337149",
+      "inputSelector": "0x1626ba7e",
+      "to": "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "type": "STATICCALL",
+      "valueWei": 0
+    },
+    {
+      "depth": 2,
+      "error": null,
+      "from": "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "inputKeccak256": "0x8d4775ffe0027a973222b21a93560faed6fdfa45bcb9445bb02a7c2f1826dbe7",
+      "inputSelector": "0x6b9db203",
+      "to": "0x0000000000000000000000000000000000000001",
+      "type": "STATICCALL",
+      "valueWei": 0
+    },
+    {
+      "depth": 1,
+      "error": null,
+      "from": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+      "inputKeccak256": "0xa5c7d09c7248b7faee6b6c903e3391e691e28b4c8ca019e5d04fbb95411e59a3",
+      "inputSelector": "0x414c3e33",
+      "to": "0x04658b29f6b82ed55274221a06fc97d318e25416",
+      "type": "CALL",
+      "valueWei": 0
+    },
+    {
+      "depth": 1,
+      "error": null,
+      "from": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+      "inputKeccak256": "0xe9674552473dc6e9f0229d807d3952f6968e596eac30912eb033e19b31902b05",
+      "inputSelector": "0x414c3e33",
+      "to": "0x146713078d39ecc1f5338309c28405ccf85abfbb",
+      "type": "CALL",
+      "valueWei": 0
+    },
+    {
+      "depth": 1,
+      "error": null,
+      "from": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+      "inputKeccak256": "0x15b683d4f337cb3f743c69f7e4c0050d56214606b9281334b6d9ae0dc3384f66",
+      "inputSelector": "0x414c3e33",
+      "to": "0xe144b0b2618071b4e56f746313528a669c7e65c5",
+      "type": "CALL",
+      "valueWei": 0
+    },
+    {
+      "depth": 1,
+      "error": null,
+      "from": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+      "inputKeccak256": "0x3138e4857541d9257bffbd2cc67e35df3c4bbe3f26ba306d057ee92b2b878d39",
+      "inputSelector": "0xa145832a",
+      "to": "0x04658b29f6b82ed55274221a06fc97d318e25416",
+      "type": "CALL",
+      "valueWei": 0
+    },
+    {
+      "depth": 1,
+      "error": null,
+      "from": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+      "inputKeccak256": "0x87a18aac35a9d25939d9c4ef366a61e2b9ae6b678b1d0b05346fe07cda688d87",
+      "inputSelector": "0xa145832a",
+      "to": "0x146713078d39ecc1f5338309c28405ccf85abfbb",
+      "type": "CALL",
+      "valueWei": 0
+    },
+    {
+      "depth": 1,
+      "error": null,
+      "from": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+      "inputKeccak256": "0xe37198cf6d3a10283959e2a66e892ec62ef539c3430dc84d2326195d9ee19839",
+      "inputSelector": "0xa145832a",
+      "to": "0xe144b0b2618071b4e56f746313528a669c7e65c5",
+      "type": "CALL",
+      "valueWei": 0
+    },
+    {
+      "depth": 1,
+      "error": null,
+      "from": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+      "inputKeccak256": "0x6247cf4d8a34227040671b0b11b937a29e2b15b73160690577f190dcb5319d24",
+      "inputSelector": "0xd691c964",
+      "to": "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "type": "CALL",
+      "valueWei": 0
+    },
+    {
+      "depth": 2,
+      "error": null,
+      "from": "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "inputKeccak256": "0x9c19db4e1fa303ddb6dda405c6a4b28a6f83e0cb8a1680ce33b27764077db332",
+      "inputSelector": "0x6a761202",
+      "to": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+      "type": "CALL",
+      "valueWei": 0
+    },
+    {
+      "depth": 3,
+      "error": null,
+      "from": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+      "inputKeccak256": "0x9c19db4e1fa303ddb6dda405c6a4b28a6f83e0cb8a1680ce33b27764077db332",
+      "inputSelector": "0x6a761202",
+      "to": "0x29fcb43b46531bca003ddc8fcb67ffe91900c762",
+      "type": "DELEGATECALL",
+      "valueWei": 0
+    },
+    {
+      "depth": 4,
+      "error": null,
+      "from": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+      "inputKeccak256": "0x45eca085fa939abb0b7f740676e7427892974c967b03bb0afcd20705c162f475",
+      "inputSelector": "0xb41d7026",
+      "to": "0x0000000000000000000000000000000000000001",
+      "type": "STATICCALL",
+      "valueWei": 0
+    },
+    {
+      "depth": 4,
+      "error": null,
+      "from": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+      "inputKeccak256": "0xec0ed60cbc51d2240842b548ebd71eddeaaebda03112be1aa54698cf42c9f390",
+      "inputSelector": "0xb41d7026",
+      "to": "0x0000000000000000000000000000000000000001",
+      "type": "STATICCALL",
+      "valueWei": 0
+    },
+    {
+      "depth": 4,
+      "error": null,
+      "from": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+      "inputKeccak256": "0x963584c123980e342dc6ee8eb9855243b6c75e05240235f579c64470f2224619",
+      "inputSelector": "0x06a41d09",
+      "to": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "type": "CALL",
+      "valueWei": 0
+    },
+    {
+      "depth": 5,
+      "error": null,
+      "from": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "inputKeccak256": "0x793e647f899a70e7ad9bb5b3fd503eec492225662b0e64a76e46b16f8947fcd5",
+      "inputSelector": "0x04f6f5b2",
+      "to": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+      "type": "CALL",
+      "valueWei": 0
+    },
+    {
+      "depth": 1,
+      "error": null,
+      "from": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+      "inputKeccak256": "0xfd0c8dfc0bb9b65137262f34357dbb976e6f4a762a68143f279ad52d8c5d4ccd",
+      "inputSelector": "0xd3eddcc5",
+      "to": "0xe144b0b2618071b4e56f746313528a669c7e65c5",
+      "type": "CALL",
+      "valueWei": 0
+    },
+    {
+      "depth": 1,
+      "error": null,
+      "from": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+      "inputKeccak256": "0x7e13d2925901211d98b5b0256d9df31c9d754af4e8e3ee4a5145624b3312de62",
+      "inputSelector": "0xd3eddcc5",
+      "to": "0x146713078d39ecc1f5338309c28405ccf85abfbb",
+      "type": "CALL",
+      "valueWei": 0
+    },
+    {
+      "depth": 1,
+      "error": null,
+      "from": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+      "inputKeccak256": "0xa0813a46f72f870bfa0c2fdb6e1fe21c254e972caf0935533e92991a59b397cb",
+      "inputSelector": "0xd3eddcc5",
+      "to": "0x04658b29f6b82ed55274221a06fc97d318e25416",
+      "type": "CALL",
+      "valueWei": 0
+    },
+    {
+      "depth": 1,
+      "error": null,
+      "from": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+      "inputKeccak256": "0x89531988ac03c8f2524fa69297e990f2d47dab2515a001bdfff01b328bf32aac",
+      "inputSelector": "0xed463367",
+      "to": "0xe144b0b2618071b4e56f746313528a669c7e65c5",
+      "type": "CALL",
+      "valueWei": 0
+    },
+    {
+      "depth": 1,
+      "error": null,
+      "from": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+      "inputKeccak256": "0x1bd1e54e81f135676d67a08711aac59c9e1da955c7044d9c883b1568d490bc9b",
+      "inputSelector": "0xed463367",
+      "to": "0x146713078d39ecc1f5338309c28405ccf85abfbb",
+      "type": "CALL",
+      "valueWei": 0
+    },
+    {
+      "depth": 1,
+      "error": null,
+      "from": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+      "inputKeccak256": "0x1c112dd4168a67ec960b4db96d44204b5c6a4b3d001fb0be6cd29632a87719a8",
+      "inputSelector": "0xed463367",
+      "to": "0x04658b29f6b82ed55274221a06fc97d318e25416",
+      "type": "CALL",
+      "valueWei": 0
+    }
+  ],
+  "verdict": {
+    "c12PublicPostflight": "PASS",
+    "riskPointer": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110",
+    "sharedEconomicNonDrift": "PASS_BOUNDED",
+    "timelockConsumed": true
+  }
+}
