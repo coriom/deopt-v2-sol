@@ -1,0 +1,145 @@
+{
+  "activeMarketIsolation": {
+    "backendLimit": "No matching local backend process name; remote operational state not verified. On-chain barriers remain the controlling protection.",
+    "controls": "D4 migration OPEN and four flags true, D4 PME pointer zero, D6 paused, D4 shared ACL absent; previous isolated fork proved market active while tested funding/liquidation remain blocked. No public market was created.",
+    "futureEffect": "ACTIVE_IMMEDIATELY_ON_FUTURE_C02_EXECUTION",
+    "mkt1Inactive": "Separate governance with independent delay, Safe approval and postflight required. No automatic continuation.",
+    "status": "PASS_BOUNDED_CHAIN_GUARDS"
+  },
+  "artifactCommitment": {
+    "historicalBuilderModified": false,
+    "mismatch": true,
+    "path": "/home/corio/DEOPT/deopt-v2-sol/artifacts/perps_v2_replacement_deployment/c02_market_creation_s1_safe_builder_review_v1.json",
+    "sha256ExpectedInCurrentAuthorization": "32275799536bc5bdcbea5effe58f3a3fd6bda608af79c2dd39c0999bee7a8b9c",
+    "sha256ObservedFile": "32275799536bc5bdcbea5effe58f3a3fd6dba608af79c2dd39c0999bee7a8b9c",
+    "sha256ObservedGitBlob": "32275799536bc5bdcbea5effe58f3a3fd6dba608af79c2dd39c0999bee7a8b9c",
+    "sha256RecordedInPriorFinalReview": "32275799536bc5bdcbea5effe58f3a3fd6dba608af79c2dd39c0999bee7a8b9c",
+    "threeIndependentHashMethodsAgree": true
+  },
+  "authorization": {
+    "agentPublicTransaction": false,
+    "c02Execution": false,
+    "c02Scheduling": false,
+    "migrationReplay": false,
+    "mkt1Inactive": false,
+    "operatorApproval": "NOT_REQUESTED_BLOCKED",
+    "publicTrading": false
+  },
+  "blocker": "User-provided Builder JSON SHA-256 differs from the actual committed file and reviewed final-review artifact. Transaction package not promoted for operator import.",
+  "chain": {
+    "blockHashRechecked": true,
+    "id": 84532,
+    "reviewBlock": {
+      "hash": "0x810219eaa63f4c0922b5b6570a1cc4388e95124cc4b53fb294bd3d8cb211136b",
+      "number": 49450516,
+      "timestamp": 1792811972,
+      "timestampUtc": "2026-10-24T03:19:32Z"
+    },
+    "rpcProvenance": "Configured Base Sepolia RPC, one provider, pinned reads; no independent consensus provider"
+  },
+  "exactTransactionReview": "BLOCKED",
+  "milestone": "PERPS_V2_BASE_SEPOLIA_C02_S1_OPERATOR_SAFE_AUTHORIZATION_V1",
+  "nextGate": "Reconcile the expected Builder SHA-256 commitment in a new explicit review before manual Safe import. Do not silently edit the file, ETA, calldata, nonce or hash.",
+  "proposedOperationDiagnosticOnly": {
+    "bufferedCutoff": 1792839600,
+    "eta": 1792929600,
+    "innerCalldataKeccak256": "0x976f360139a3069605b3baa59c1d4bb8c2dc0591c676e6deaf3a5d142089067f",
+    "queueCalldataKeccak256": "0x22c021db87f3dc1a148f0ceb49131260b771cf330551740075a71b233780f315",
+    "remainingMarginSecondsAtReview": 27628,
+    "safeTxHashConditionalUnpromoted": "0x25599e842b539a2b3aeeb5f6ab7691183127dbd3e578f29e16aa2da65d51ccfe",
+    "singleCallInCommittedBuilder": true
+  },
+  "readOnlyFindings": {
+    "boundedSharedState": {
+      "clearingLedger": 1000000000,
+      "insuranceLedger": 2100010,
+      "insuranceTokenBalance": 0,
+      "vaultTokenBalance": 224066000000
+    },
+    "c01C12CanonicalReceipts": [
+      {
+        "blockHash": "0x287b683d61545454642a446a6529c06b5f259eae221d24eeb42e0584dd2560cf",
+        "blockNumber": 49433335,
+        "name": "C01",
+        "operationId": "0x589fb819f60769c77ad9090750f2173377eb45dcbb5367fbc0fb978e4e15d396",
+        "publicTxHash": "0x40ac2a8c9fc331247b2777761353ac9caf400dcf263615d1ef86cc4194cafe47",
+        "queuedNow": false,
+        "safeSuccess": true,
+        "status": 1,
+        "timelockExecuted": true
+      },
+      {
+        "blockHash": "0xbddcc7a216b27af8a0c45c16ffb9787b1d90b4c7e076cf6b93516c60b5a72cce",
+        "blockNumber": 49443665,
+        "name": "C12",
+        "operationId": "0xd15ec63a22daebd4eb015de23561089547af9b02945fb8ae6dd7028ae7581229",
+        "publicTxHash": "0x06c600301456252af2ea158ed25062235db0d2b141c15dfa727af3a30e77846b",
+        "queuedNow": false,
+        "safeSuccess": true,
+        "status": 1,
+        "timelockExecuted": true
+      }
+    ],
+    "c02OperationIdComputed": "0x9e10ee1c04280e36ba1d7144b5abd2d1a48b08fac54087bd5e7090d91030913e",
+    "c02OperationIdOnchain": "0x9e10ee1c04280e36ba1d7144b5abd2d1a48b08fac54087bd5e7090d91030913e",
+    "c02Queued": false,
+    "d1MarketCount": 0,
+    "d1NextMarketId": 1,
+    "d1SettlementAllowed": true,
+    "d4FourFlags": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "d4Migration": 0,
+    "d4PmePointer": "0x0000000000000000000000000000000000000000",
+    "d4RiskPointer": "0x90caa6d5bc628577bc76d6cc8b775f983c75e110",
+    "d5Delay": 600,
+    "d6Paused": true,
+    "directTimelockSchedulingGasEstimate": 65766,
+    "ethCallQueueReturnedOperationId": "0x9e10ee1c04280e36ba1d7144b5abd2d1a48b08fac54087bd5e7090d91030913e",
+    "fullSafeWalletGas": "PENDING_OPERATOR_SAFE_UI",
+    "insuranceD4Authorized": false,
+    "safeGuard": "0x0000000000000000000000000000000000000000",
+    "safeModules": [],
+    "safeNonce": 29,
+    "safeOwnersMatchPriorReview": true,
+    "safeServiceLimit": "Off-chain service query is separate from the pinned chain block; operator UI recheck is still required.",
+    "safeServicePendingNonce29Count": 0,
+    "safeThreshold": 2,
+    "safeTimelockProposer": true,
+    "safeUiSimulation": "PENDING_OPERATOR",
+    "targetScopedD1QueueEventsSincePriorReview": [],
+    "timelockMinDelay": 86400,
+    "vaultD4Authorized": false,
+    "walletEthBalance": "PENDING_OPERATOR"
+  },
+  "repository": {
+    "branch": "main",
+    "frozenSrcDiffEmpty": true,
+    "headBefore": "e77e8bad933bad12f0b09267328694bb8246dc30",
+    "priorFinalReviewSha256": "81ef51b32906618acf234e55a6ec7ba4f518d66d19c8037ea2b02d6e7e3dc6c5",
+    "remoteMatchedBefore": true
+  },
+  "status": "BLOCKED",
+  "testCounts": {
+    "focusedBlockedConsistencyFailed": 0,
+    "focusedBlockedConsistencyPassed": 12,
+    "focusedCheckNames": [
+      "expected_hash_mismatch",
+      "file_git_blob_hash_match",
+      "reviewed_prior_hash_match",
+      "head_clean_frozen_source",
+      "base_sepolia_block",
+      "c01_c12_receipts",
+      "safe_nonce_authority",
+      "d1_prestate",
+      "d4_d5_d6_maintenance",
+      "operation_absent_and_id",
+      "one_reviewed_builder_call",
+      "blocked_no_public_action"
+    ],
+    "forkHistoricalNotRerun": 33
+  }
+}
