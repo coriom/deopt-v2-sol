@@ -1,0 +1,569 @@
+{
+  "acceleratedDagSafety": "INCONCLUSIVE",
+  "c02": {
+    "d1MarketCount": 0,
+    "eta": 1792929600,
+    "mUsdcSettlementAllowed": true,
+    "market1Exists": false,
+    "operationId": "0x9e10ee1c04280e36ba1d7144b5abd2d1a48b08fac54087bd5e7090d91030913e",
+    "s1Scheduling": "VERIFIED_SCHEDULED_REUSED_CANONICAL_POSTFLIGHT",
+    "statusAtPrimaryBlock": "QUEUED_UNEXECUTED"
+  },
+  "c02S2Blockers": [
+    "Remote backend and relayer/keeper isolation unverified",
+    "Future ACTIVE market interval lacks operational attestation",
+    "Early MKT1 queue is outside current approved DAG and has no separate policy approval",
+    "Fresh independent C02-S2 execution review and operator Safe authorization still required"
+  ],
+  "c02S2ExecutionEligible": false,
+  "chain": {
+    "authorityPinnedBlock": {
+      "hash": "0xd1e9b982190ce685dc9852d7706a6aeb337b73e9190f32b34653dbc0195dbfdd",
+      "number": 49528148,
+      "timestamp": 1792827498,
+      "utc": "2026-10-24T07:38:18Z"
+    },
+    "chainId": 84532,
+    "eachBlockHashRechecked": true,
+    "finalPinnedBlock": {
+      "hash": "0xb2cdae5face09c028109e4a85bd673a0db7b80c937f6606852876b4929504f3a",
+      "number": 49530455,
+      "timestamp": 1792827959,
+      "timestampUtc": "2026-10-24T07:45:59Z"
+    },
+    "finalPinnedGovernance": {
+      "safeGuard": "0x0000000000000000000000000000000000000000",
+      "safeModules": [],
+      "safeOwners": [
+        "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+        "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+        "0xa774c46c41064524df895bd7be9f294409798dfc"
+      ],
+      "safeThreshold": 2,
+      "timelockOwner": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+      "timelockSafeExecutor": true,
+      "timelockSafeProposer": true
+    },
+    "finalPinnedState": {
+      "c02Queued": true,
+      "chainId": 84532,
+      "d4Flags": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "d4Migration": 0,
+      "d4Pme": "0x0000000000000000000000000000000000000000",
+      "d5Delay": 600,
+      "d6Paused": true,
+      "market1Exists": false,
+      "marketCount": 0,
+      "safeNonce": 30
+    },
+    "primaryPinnedBlock": {
+      "hash": "0xd6d39b52225b5e2d784c236747703942779e57699fb88dead86bada4dee65746",
+      "number": 49527372,
+      "timestamp": 1792827343,
+      "utc": "2026-10-24T07:35:43Z"
+    },
+    "rpcProvenance": "configured Base Sepolia RPC from existing audited helper; endpoint redacted"
+  },
+  "existingDagMinimumActiveIntervalSeconds": 86400,
+  "existingDagSafety": "INCONCLUSIVE",
+  "liveMaintenance": {
+    "d1ConfigPaused": false,
+    "d1CreationPaused": false,
+    "d1TimelockMarketCreator": true,
+    "d4Clearing": "0x0000000000000000000000000000000000000000",
+    "d4FourFlags": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "d4ImpactMidSource": "0x0000000000000000000000000000000000000000",
+    "d4Insurance": "0x0000000000000000000000000000000000000000",
+    "d4Migration": "OPEN",
+    "d4Pme": "0x0000000000000000000000000000000000000000",
+    "d4Risk": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110",
+    "d5MaxOracleDelay": 600,
+    "d6Paused": true,
+    "d6RuntimeExecutorAuthorized": false,
+    "d6TimelockBootstrapExecutorAuthorized": true,
+    "insuranceD4Acl": false,
+    "safeExecutor": true,
+    "safeNonce": 30,
+    "safeOwners": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "safeProposer": true,
+    "safeThreshold": 2,
+    "timelockMinDelay": 86400,
+    "vaultClearingLedgerRawMusdc": 1000000000,
+    "vaultD4Acl": false,
+    "vaultInsuranceLedgerRawMusdc": 2100010,
+    "vaultMusdcBalanceRaw": 224066000000
+  },
+  "milestone": "DEOPT_V2_C02_ACTIVE_MARKET_CONTAINMENT_AND_EARLY_INACTIVE_POLICY_REVIEW_V1",
+  "onchainEconomicContainment": "PASS",
+  "onchainScope": "No newly reachable non-governance D4/D6 economic mutation from D1 ACTIVE market under observed maintenance and ACL state. Generic user Vault/Clearing writes remain possible independent of C02; owner-only migration seed becomes market-eligible but remains Timelock-governed. Source review and bounded fork/readbacks are not exhaustive storage or future-state proof.",
+  "parallelPreparation": [
+    {
+      "id": "D3_TOKEN",
+      "publicSchedulingAuthorized": false,
+      "status": "PREPARATION_ELIGIBLE_ONLY"
+    },
+    {
+      "id": "D2_FEE_POLICY",
+      "publicSchedulingAuthorized": false,
+      "status": "PREPARATION_ELIGIBLE_ONLY"
+    },
+    {
+      "id": "GUARDIAN_POLICY",
+      "publicSchedulingAuthorized": false,
+      "status": "PREPARATION_ELIGIBLE_ONLY"
+    },
+    {
+      "id": "EXECUTOR_IDENTITY_REVIEW",
+      "publicSchedulingAuthorized": false,
+      "status": "PREPARATION_ELIGIBLE_ONLY"
+    },
+    {
+      "id": "ACL_POLICY_REVIEW",
+      "publicSchedulingAuthorized": false,
+      "status": "PREPARATION_ELIGIBLE_ONLY"
+    }
+  ],
+  "priorEvidence": {
+    "approvedDag": {
+      "path": "artifacts/perps_v2_replacement_deployment/post_maintenance_dependency_dag_v1.json",
+      "sha256": "f3907236b928a50151f21ea748e3572ce8fde8fe5a090c0de8d3ca4d647e5b5d"
+    },
+    "c02S1Postflight": {
+      "path": "artifacts/perps_v2_replacement_deployment/c02_s1_public_postflight_v1.json",
+      "sha256": "74f63322969b84d970a0d354fbca713822f779073b19f5cf52815662914af769"
+    },
+    "priorContainment": {
+      "path": "artifacts/perps_v2_replacement_deployment/c02_active_market_containment_review_v1.json",
+      "sha256": "63e9a9f7c700b6bacaa8ad1d350331f29b59ff6fe1c7216eea0fe9eae8ba5328"
+    }
+  },
+  "publicChainWritesByAgent": false,
+  "reachabilityMatrix": [
+    {
+      "action": "Open or close position",
+      "afterC02Reachability": "REJECTED",
+      "currentReachability": "REJECTED",
+      "emergencyMigrationGuard": "D6 paused; D4 migration OPEN and tradingPaused",
+      "entrypoint": "D6.executeTrade / executeTradeFromIntents -> D4.applyTrade",
+      "evidence": [
+        "src/matching/PerpMatchingEngineV2.sol:616-746",
+        "src/perp/PerpEngineTradingV2.sol:769-790",
+        "pinned D4/D6"
+      ],
+      "marketStatusDependency": "ACTIVE would satisfy a later market check",
+      "note": "",
+      "requiredCallerAuthority": "D6 approved executor and valid traders; D4 matchingEngine caller",
+      "requiredWiring": "D6 Engine D4; D4 matchingEngine currently ZERO",
+      "sharedAclDependency": "D4 Vault authorization absent",
+      "verdict": "PASS"
+    },
+    {
+      "action": "Direct D4 trade",
+      "afterC02Reachability": "REJECTED",
+      "currentReachability": "REJECTED",
+      "emergencyMigrationGuard": "onlyMigrationSealed; whenTradingNotPaused",
+      "entrypoint": "D4.applyTrade",
+      "evidence": [
+        "src/perp/PerpEngineTradingV2.sol:769-790",
+        "pinned D4"
+      ],
+      "marketStatusDependency": "ACTIVE satisfies later check only",
+      "note": "",
+      "requiredCallerAuthority": "configured D4 matchingEngine, presently ZERO",
+      "requiredWiring": "D4 matchingEngine ZERO",
+      "sharedAclDependency": "D4 Vault authorization absent",
+      "verdict": "PASS"
+    },
+    {
+      "action": "Liquidation",
+      "afterC02Reachability": "REJECTED; fork negative tested",
+      "currentReachability": "REJECTED",
+      "emergencyMigrationGuard": "onlyMigrationSealed; liquidationPaused true",
+      "entrypoint": "D4.liquidate",
+      "evidence": [
+        "src/perp/PerpEngineTradingV2.sol:879-905",
+        "fork liquidationRejectedAfterActiveC02"
+      ],
+      "marketStatusDependency": "ACTIVE satisfies later check only",
+      "note": "",
+      "requiredCallerAuthority": "permissionless once enabled",
+      "requiredWiring": "D4 Insurance and Clearing ZERO",
+      "sharedAclDependency": "D4 Vault/Insurance ACL absent",
+      "verdict": "PASS"
+    },
+    {
+      "action": "Funding accrual or settlement",
+      "afterC02Reachability": "REJECTED; fork negative tested",
+      "currentReachability": "REJECTED",
+      "emergencyMigrationGuard": "onlyMigrationSealed; fundingPaused true; C02 funding disabled",
+      "entrypoint": "D4.updateFunding",
+      "evidence": [
+        "src/perp/PerpEngineTradingV2.sol:543-565",
+        "fork fundingRejectedAfterActiveC02"
+      ],
+      "marketStatusDependency": "Market existence would pass",
+      "note": "",
+      "requiredCallerAuthority": "public once enabled",
+      "requiredWiring": "D4 market registry",
+      "sharedAclDependency": "No new ACL",
+      "verdict": "PASS"
+    },
+    {
+      "action": "Impact-mid keeper write",
+      "afterC02Reachability": "REJECTED; fork negative tested",
+      "currentReachability": "REJECTED",
+      "emergencyMigrationGuard": "fundingPaused true",
+      "entrypoint": "D4.updateImpactMid",
+      "evidence": [
+        "src/perp/PerpEngineTradingV2.sol:449-459",
+        "fork impactMidRejectedAfterActiveC02"
+      ],
+      "marketStatusDependency": "ACTIVE could satisfy existence",
+      "note": "",
+      "requiredCallerAuthority": "only impactMidSource, currently ZERO",
+      "requiredWiring": "impactMidSource ZERO",
+      "sharedAclDependency": "No new ACL",
+      "verdict": "PASS"
+    },
+    {
+      "action": "D5 risk computation",
+      "afterC02Reachability": "READ_ONLY",
+      "currentReachability": "READ_ONLY",
+      "emergencyMigrationGuard": "risk views may have independent pause/feed checks",
+      "entrypoint": "D5 public risk and withdrawal preview views",
+      "evidence": [
+        "src/perp/PerpRiskModule.sol:743-769"
+      ],
+      "marketStatusDependency": "ACTIVE can change view result",
+      "note": "A 600-second delay alone does not prove feed health.",
+      "requiredCallerAuthority": "public reads",
+      "requiredWiring": "D5 Engine D4, delay 600",
+      "sharedAclDependency": "No mutation",
+      "verdict": "PASS"
+    },
+    {
+      "action": "D3 seizure planning",
+      "afterC02Reachability": "READ_ONLY",
+      "currentReachability": "READ_ONLY",
+      "emergencyMigrationGuard": "D4 liquidation gate remains closed",
+      "entrypoint": "D3.computeSeizurePlan / previewEffectiveBaseValue",
+      "evidence": [
+        "src/liquidation/CollateralSeizer.sol:436-545"
+      ],
+      "marketStatusDependency": "No direct ACTIVE write",
+      "note": "",
+      "requiredCallerAuthority": "public reads",
+      "requiredWiring": "legacy collateral RiskModule, not D5",
+      "sharedAclDependency": "No mutation",
+      "verdict": "PASS"
+    },
+    {
+      "action": "Migration position/funding seed",
+      "afterC02Reachability": "GOVERNANCE_GATED_POSSIBLE",
+      "currentReachability": "MARKET_ABSENT_REVERT",
+      "emergencyMigrationGuard": "onlyMigrationOpen; emergency flags do not prevent these owner writes",
+      "entrypoint": "D4.adminSeedPosition / adminSeedMarketFunding",
+      "evidence": [
+        "src/perp/PerpEngineTradingV2.sol:226-282",
+        "pinned D4 owner/migration"
+      ],
+      "marketStatusDependency": "C02 satisfies market-exists precondition",
+      "note": "Do not treat emergency flags as protection from a separately approved migration operation.",
+      "requiredCallerAuthority": "onlyOwner ProtocolTimelock, separately governed",
+      "requiredWiring": "Market registry; market 1 must exist",
+      "sharedAclDependency": "No new Vault/Insurance ACL",
+      "verdict": "PASS"
+    },
+    {
+      "action": "Residual bad debt seed",
+      "afterC02Reachability": "GOVERNANCE_GATED_UNCHANGED",
+      "currentReachability": "GOVERNANCE_GATED",
+      "emergencyMigrationGuard": "onlyMigrationOpen",
+      "entrypoint": "D4.adminSeedResidualBadDebt",
+      "evidence": [
+        "src/perp/PerpEngineTradingV2.sol:283-305"
+      ],
+      "marketStatusDependency": "Independent of market existence",
+      "note": "",
+      "requiredCallerAuthority": "onlyOwner ProtocolTimelock",
+      "requiredWiring": "D4 owner authority",
+      "sharedAclDependency": "No new ACL",
+      "verdict": "PASS"
+    },
+    {
+      "action": "Migration seal",
+      "afterC02Reachability": "REJECTED_BY_MISSING_POINTERS",
+      "currentReachability": "REJECTED_BY_MISSING_POINTERS",
+      "emergencyMigrationGuard": "onlyMigrationOpen; nonzero snapshot",
+      "entrypoint": "D4.sealMigration",
+      "evidence": [
+        "src/perp/PerpEngineTradingV2.sol:325-339",
+        "pinned pointers"
+      ],
+      "marketStatusDependency": "Independent of ACTIVE state",
+      "note": "",
+      "requiredCallerAuthority": "onlyOwner ProtocolTimelock",
+      "requiredWiring": "Clearing and matchingEngine must be configured; both ZERO",
+      "sharedAclDependency": "Shared ACL not checked by seal",
+      "verdict": "PASS"
+    },
+    {
+      "action": "D4 driven collateral or Insurance movement",
+      "afterC02Reachability": "REJECTED",
+      "currentReachability": "REJECTED",
+      "emergencyMigrationGuard": "D4 trading/liquidation guards closed",
+      "entrypoint": "Vault transferBetweenAccounts / Insurance backstop",
+      "evidence": [
+        "src/collateral/CollateralVaultActions.sol:180-215",
+        "src/core/InsuranceFund.sol:130-154",
+        "pinned ACL readbacks"
+      ],
+      "marketStatusDependency": "ACTIVE alone grants no access",
+      "note": "",
+      "requiredCallerAuthority": "D4 must pass Vault engine / Insurance backstop ACL",
+      "requiredWiring": "D4 Clearing/Insurance pointers ZERO",
+      "sharedAclDependency": "D4 ACL false in both",
+      "verdict": "PASS"
+    },
+    {
+      "action": "User deposit or withdrawal",
+      "afterC02Reachability": "UNCHANGED_POSSIBLE",
+      "currentReachability": "POSSIBLE_IF_FUNDED",
+      "emergencyMigrationGuard": "Not controlled by D4 emergency flags",
+      "entrypoint": "Vault.deposit / withdraw / transferFromInternalAccount",
+      "evidence": [
+        "src/collateral/CollateralVaultActions.sol:41-180"
+      ],
+      "marketStatusDependency": "Independent of market 1",
+      "note": "Pre-existing custody surface; global no-collateral-movement claim would be false.",
+      "requiredCallerAuthority": "user controls own token/balance; respective Vault pause gates",
+      "requiredWiring": "Vault token support",
+      "sharedAclDependency": "Cannot spend another account absent separate ACL",
+      "verdict": "PASS"
+    },
+    {
+      "action": "Clearing funding",
+      "afterC02Reachability": "UNCHANGED_POSSIBLE",
+      "currentReachability": "POSSIBLE_IF_FUNDED",
+      "emergencyMigrationGuard": "Independent of D4 migration/pauses",
+      "entrypoint": "Clearing.fundClearing",
+      "evidence": [
+        "src/perp/PerpClearingAccountV2.sol:94-111"
+      ],
+      "marketStatusDependency": "Independent of ACTIVE status",
+      "note": "",
+      "requiredCallerAuthority": "public with token allowance/funds",
+      "requiredWiring": "Vault deposit path",
+      "sharedAclDependency": "Deposits own transferred tokens",
+      "verdict": "PASS"
+    },
+    {
+      "action": "Fee consumption or distribution",
+      "afterC02Reachability": "NO_C02_TRIGGER",
+      "currentReachability": "NO_C02_TRIGGER",
+      "emergencyMigrationGuard": "Trade blocked; D2 owner writes separately governed",
+      "entrypoint": "D2.consumeFees / owner fee routing",
+      "evidence": [
+        "src/fees/FeesManagerV2.sol:71-180",
+        "src/perp/PerpEngineTradingV2.sol:570-610"
+      ],
+      "marketStatusDependency": "ACTIVE alone does not consume fees",
+      "note": "Existing fee liabilities and account claims are independent.",
+      "requiredCallerAuthority": "fee consumer or owner, per method",
+      "requiredWiring": "D4 fee path depends on trade; D4 route closed",
+      "sharedAclDependency": "D4 fee consumer grant separately required",
+      "verdict": "PASS"
+    },
+    {
+      "action": "D2 Merkle tier claim",
+      "afterC02Reachability": "UNCHANGED",
+      "currentReachability": "INDEPENDENT_IF_CONFIGURED",
+      "emergencyMigrationGuard": "Independent of D4 maintenance",
+      "entrypoint": "D2.claimTier",
+      "evidence": [
+        "src/fees/FeesManagerV2.sol:197-225"
+      ],
+      "marketStatusDependency": "No ACTIVE dependency",
+      "note": "",
+      "requiredCallerAuthority": "account with valid Merkle proof",
+      "requiredWiring": "D2 nonzero root",
+      "sharedAclDependency": "No custody transfer",
+      "verdict": "PASS"
+    },
+    {
+      "action": "Market settlement or expiry",
+      "afterC02Reachability": "REJECTED",
+      "currentReachability": "REJECTED",
+      "emergencyMigrationGuard": "D6 paused; D4 migration OPEN/tradingPaused",
+      "entrypoint": "No separate D1 market settlement mutator found; D4 close uses applyTrade",
+      "evidence": [
+        "src/perp/PerpMarketRegistry.sol:420-608",
+        "src/perp/PerpEngineTradingV2.sol:769-879",
+        "src/matching/PerpMatchingEngineV2.sol:616-746"
+      ],
+      "marketStatusDependency": "ACTIVE alone cannot close or settle",
+      "note": "",
+      "requiredCallerAuthority": "D6 executor / D4 caller if close",
+      "requiredWiring": "D4 matchingEngine ZERO",
+      "sharedAclDependency": "D4 shared ACL absent",
+      "verdict": "PASS"
+    },
+    {
+      "action": "Market status update",
+      "afterC02Reachability": "GOVERNANCE_GATED",
+      "currentReachability": "UNKNOWN_MARKET_REVERT",
+      "emergencyMigrationGuard": "whenConfigNotPaused; live configPaused false",
+      "entrypoint": "D1.setMarketStatus(1,false,false)",
+      "evidence": [
+        "src/perp/PerpMarketRegistry.sol:442-449",
+        "fork early-queue/replay results"
+      ],
+      "marketStatusDependency": "Absent market reverts; ACTIVE market can be disabled",
+      "note": "",
+      "requiredCallerAuthority": "onlyOwner ProtocolTimelock",
+      "requiredWiring": "D1 market must exist at execution",
+      "sharedAclDependency": "No custody ACL",
+      "verdict": "PASS"
+    },
+    {
+      "action": "Remote order intake / relayers / keepers",
+      "afterC02Reachability": "UNKNOWN",
+      "currentReachability": "UNKNOWN",
+      "emergencyMigrationGuard": "On-chain guarded routes reject; off-chain intake may still run",
+      "entrypoint": "hosted APIs, workers, schedulers, broadcaster",
+      "evidence": [
+        "../deopt-v2-backend/src/config/env.rs:149-195",
+        "connected Vercel inventory",
+        "Railway/provider inventory unavailable"
+      ],
+      "marketStatusDependency": "ACTIVE may be surfaced to users or automation",
+      "note": "Off-chain trade acceptance and other contract routes require separate attestation.",
+      "requiredCallerAuthority": "effective deployment configuration and credentials unknown",
+      "requiredWiring": "may reference old or new addresses",
+      "sharedAclDependency": "Can submit transactions; cannot bypass D4/D6 guards",
+      "verdict": "UNKNOWN"
+    }
+  ],
+  "recommendedNextMilestone": "DEOPT_V2_C02_REMOTE_EXECUTION_ISOLATION_ATTESTATION_AND_MKT1_POLICY_AUTHORIZATION_REVIEW_V1",
+  "relayerKeeperIsolation": "NOT_VERIFIED",
+  "remoteBackendIsolation": "NOT_VERIFIED",
+  "remoteServiceInventory": [
+    {
+      "component": "DeOpt V2 frontend",
+      "conclusion": "DOES_NOT_VERIFY_BACKEND_ISOLATION",
+      "observed": "project deoptv2-frontend; latest production deployment dpl_FoAjCa4Z4D49pos1KuQ2z8Zntq3U READY, created February 2026; get_project live=false; Next.js LAMBDAS",
+      "provider": "Vercel connected account",
+      "replacementAddresses": "UNKNOWN",
+      "writeCapability": "UNKNOWN; deployed function inventory and effective routing not inspected"
+    },
+    {
+      "component": "Rust trading backend",
+      "conclusion": "NOT_VERIFIED",
+      "observed": "repository defaults disable execution/broadcast; no provider runtime inventory",
+      "provider": "Railway historically proposed/failed; current host UNKNOWN",
+      "replacementAddresses": "UNKNOWN",
+      "writeCapability": "UNKNOWN"
+    },
+    {
+      "component": "matching relayer / executor",
+      "conclusion": "NOT_VERIFIED",
+      "observed": "D6 runtime executor on-chain unauthorized; Timelock bootstrap executor authorized but D6 paused",
+      "provider": "UNKNOWN",
+      "replacementAddresses": "UNKNOWN",
+      "writeCapability": "UNKNOWN"
+    },
+    {
+      "component": "impact-mid, funding, liquidation keepers",
+      "conclusion": "NOT_VERIFIED",
+      "observed": "backend source has opt-in impact-mid keeper flag; D4 impactMidSource ZERO and fundingPaused true",
+      "provider": "UNKNOWN",
+      "replacementAddresses": "UNKNOWN",
+      "writeCapability": "UNKNOWN"
+    },
+    {
+      "component": "scheduled jobs / queues / Vercel functions",
+      "conclusion": "NOT_VERIFIED",
+      "observed": "queried Vercel project-list page returned six projects, no DeOpt backend-named project on that page; pagination and other providers not exhausted",
+      "provider": "UNKNOWN beyond listed Vercel project",
+      "replacementAddresses": "UNKNOWN",
+      "writeCapability": "UNKNOWN"
+    }
+  ],
+  "repository": {
+    "branch": "main",
+    "frozenSourceRevision": "25c36670883604c1ef5229642ee6548aea6796c3",
+    "frozenSrcDiffEmpty": true,
+    "headBefore": "320b436b85973e6505cb76b3ddd96d073867bf52",
+    "remoteBeforeMatches": true
+  },
+  "tests": {
+    "attemptHistory": [
+      "Initial Anvil harness stopped on an immediate null receipt; polling was added. No protocol assertion was reached in that attempt.",
+      "Corrected fork completed 18 checks.",
+      "Final expanded fork completed all recorded checks including target-reverted C02."
+    ],
+    "forkResult": {
+      "boundedEconomicStateUnchangedAfterC02AndInactive": true,
+      "c02ExecutedOnFork": true,
+      "c02ForkGasUsed": 363619,
+      "c02QueuePreservedAfterFailure": true,
+      "c02TargetFailureRejected": true,
+      "cancelledC02Rejected": true,
+      "earlyQueueAcceptedBeforeMarketExists": true,
+      "earlyQueueDidNotCreateMarket": true,
+      "forkOnly": true,
+      "forkStartBlock": 49529933,
+      "fundingRejectedAfterActiveC02": true,
+      "genuineSafeSignaturesTested": false,
+      "impactMidRejectedAfterActiveC02": true,
+      "inactiveAfterFailedC02Rejected": true,
+      "inactiveDiagnosticEta": 1792933200,
+      "inactiveDiagnosticOperationId": "0x3a773a0a80ce32a12116a31fdf2e90ecdf3804d4955aa2b169532c5c7d3fa9e9",
+      "inactiveExecutedAfterC02": true,
+      "inactiveForkGasUsed": 46518,
+      "inactiveWithoutMarketRejected": true,
+      "liquidationRejectedAfterActiveC02": true,
+      "marketActiveAfterC02": true,
+      "marketInactiveAfterSetter": true,
+      "prematureInactiveRejected": true,
+      "publicTransactionSent": false,
+      "replayC02Rejected": true,
+      "replayInactiveRejected": true,
+      "safeAddressImpersonated": true,
+      "staleSafeNonceChangesHashOnly": true,
+      "wrongCallerRejected": true,
+      "wrongMarketIdRejected": true
+    },
+    "freshForkAssertionsFailed": 0,
+    "freshForkAssertionsPassed": 21,
+    "freshForkAssertionsSkipped": 0,
+    "historicalC02S1PostflightReused": true,
+    "limitations": [
+      "Anvil fork used Safe-address impersonation; no genuine Safe 2/3 signatures",
+      "A selected set of D4 economic paths and bounded balances tested; no exhaustive storage proof",
+      "No remote runtime or effective configuration attestation"
+    ]
+  },
+  "unresolvedOperationalEvidence": [
+    "Effective current Railway/other backend service inventory and deployment status for Base Sepolia",
+    "Effective public-safe feature flags and destination addresses (without exposing secrets) for every backend and broadcaster",
+    "Relayer, keeper, cron and job inventory with running/enabled state and transaction-submission policy",
+    "Vercel deployed function and routing inventory if any function can submit protocol writes",
+    "Operator attestation that external order intake and market-1 routing are disabled during ACTIVE interval"
+  ],
+  "unsafeEconomicEntrypoints": "No unguarded market-dependent write found in reviewed frozen D1/D4/D5/D6 paths. Owner-only D4 migration seeding becomes possible when market exists; generic Vault/Clearing funding remains independently callable."
+}
