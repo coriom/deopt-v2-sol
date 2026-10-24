@@ -1,0 +1,46 @@
+# C02 operational evidence and MKT1 policy decision V2
+
+**Decision: defer C02 execution and MKT1 early scheduling.** The previous bounded on-chain containment and fork rehearsal remain valid, but deployed execution-service isolation is incomplete. This report prepares a specific operator evidence request and an exact policy choice; it grants no Safe, Timelock or cloud authorization.
+
+## Focused live check
+
+Direct pinned Base Sepolia RPC at block **49,585,887** (`2026-10-24 10:50:46 UTC`, hash `0xc54bafd64b14e04ba3e287c24c1a17ff58f8b602229ae95f6e30c8f254640cb9`) confirmed C02 still queued and unexecuted. D1 market count was zero; D4 four emergency flags were true, migration OPEN, Risk pointer D5 and PME pointer zero; D5 delay was 600; D6 paused; D4 had no Vault or Insurance grant. Safe nonce was 30, threshold 2/3, and Timelock minimum delay 86,400 seconds. The pinned block hash was rechecked. C02 ETA remains `2026-10-25 12:00 UTC`; its inclusive expiry is `2026-11-08 12:00 UTC`. ETA arrival alone is not execution approval.
+
+The frozen Solidity source, C02-S1 postflight, prior remote attestation, early-queue proposal and approved DAG matched their recorded commitments. No historical deployment audit or full Foundry suite was rerun.
+
+## Actual Vercel deployment evidence
+
+| Project and exact production deployment | Verified findings | Still unknown |
+| --- | --- | --- |
+| `deoptv2-frontend` / `dpl_FoAjCa4Z4D49pos1KuQ2z8Zntq3U` / Git `938ab3d779c0109ab24a98068799174bcd06a0b2` | Vercel reports READY and production aliases. The non-decrypting project environment listing returned zero names. | GitHub exact commit returned 404 through the connected integration. Vercel deployment file tree and direct `package.json` fetch returned 404. Built Functions, Edge routes, cron jobs, chain/contract targets, external backend and transaction capability remain **UNKNOWN**. The local frontend checkout is not this deployed revision. |
+| `deopt-frontend` / `dpl_VPtyktyXfAbaieSDxPmUUYwuF2MT` / Git `e4d8a3e9bb3608233ce698c18278d9f190323e8d` | READY with production aliases. Its exact Git commit has four `app/api/*/route.ts` paths; three are zero-byte source files. The one nonempty `POST /api/create-option` Node route uses a viem **public** client for best-effort `marginInfo/stateInfo` reads and can write option metadata to GitHub. No EVM signer, wallet client or transaction send was found in that inspected route. Wallet-provider source lists Polygon and Polygon Amoy; project environment **names** include `RPC_137` and `RPC_80002`, with no listed `RPC_84532`. No `vercel.json` appears in that commit tree. | Vercel's built function tree and direct route fetch returned 404. The exact built function and cron inventory remains **UNKNOWN**. The source finding does not prove the deployed runtime has no additional capability. |
+
+Vercel also lists an older READY `deopt-frontend` deployment with unspecified target, `dpl_7QfMNWSstJVAMHZPxAQNN1YHrJTS`; whether it remains addressable and what functions it serves need confirmation. A project-level custom-route count of zero does **not** enumerate Next.js app functions. Vercel `READY` and the project `live:false` field do not establish that write paths are disabled. No environment value, credential or wallet material was fetched.
+
+## Other execution services
+
+The current local Rust backend source supports broadcast, order intake and funding/liquidation/impact-mid workers; its disabled defaults do not prove effective hosted settings. Its actual provider, deployed revision and running state are **UNKNOWN**. Three backend GitHub Actions workflows are active definitions with push/PR triggers and no schedule trigger in the reviewed source; the reviewed CI/E2E definitions disable broadcast. Local Docker shows DeOpt monitoring and a webhook sink, with no backend container or DeOpt systemd unit; local status does not attest any remote host. A Railway-linked GitHub deployment `5416476893` has a July 12 failure status, but current Railway service state is **UNKNOWN**. This is historical provenance, not evidence that Railway is active or stopped today.
+
+## C02-specific economic difference
+
+Before C02, market 1 does not exist. After C02, it exists **ACTIVE**. That newly satisfies D4's market-existence guard for owner-only `adminSeedPosition` (`0x0ef3a5f7`) and `adminSeedMarketFunding` (`0x2c96f1bc`) while migration is OPEN. The four D4 pause flags do not block these seeds. They still require ProtocolTimelock ownership and separate Safe 2/3 governance; **MKT1_INACTIVE does not remove their market-existence eligibility**.
+
+ACTIVE status would also pass a later D4 trade market-status check, but the currently verified migration state, trading pause, zero PME pointer, D6 pause and absent D4 shared ACL independently contain the reviewed replacement-perp route. A future C02-S2 review must refresh each guard. Generic Vault own-account operations, Clearing funding and legacy-authorized Vault/Insurance paths were independently available before C02; the evidence does not make them new market-1 routes. The unresolved C02-specific exposure is an unknown deployed function, relayer or keeper reacting to the new market, or maintenance drift, during an ACTIVE interval whose end is not guaranteed.
+
+## Exact operator evidence request
+
+For **`deoptv2-frontend`**, open **Vercel → Projects → deoptv2-frontend → Deployments → `dpl_FoAjCa4Z4D49pos1KuQ2z8Zntq3U` → Functions / deployment build output**. Supply a timestamped screenshot or export listing every built Node/Edge route, runtime, enabled state and aliases. In the same project, show **Cron Jobs** with every target path, schedule and enabled state, then **Settings → Environment Variables** showing *names and targets only* for chain, D1-D6, backend URL and execution/order flags. State effective non-secret enablement booleans separately; do not include raw values. The exact V2 deployed source is inaccessible through the current connectors, so the deployment ID must appear in the evidence.
+
+For **`deopt-frontend`**, use the same deployment Functions and project Cron Jobs sections for `dpl_VPtyktyXfAbaieSDxPmUUYwuF2MT`, and confirm whether `dpl_7QfMNWSstJVAMHZPxAQNN1YHrJTS` remains addressable. This must verify whether the inspected Git source matches the full built runtime and whether any extra transaction-capable function exists.
+
+For the **actual hosted Rust/backend, relayer, keeper or queue provider**, show the provider service list and scheduler/queue tab with timestamp, service ID, running/disabled state, deployment revision, chain ID, public old/replacement contract targets, order intake, broadcast and worker booleans, plus restart policy. For historical Railway project `5d110969-6d5a-4f78-ab01-60dc3efd55e3`, environment `9fa9cad6-cb27-43ad-b4ed-c8af4e416365`, show the current Services/Deployments list or a deletion record. **Redact** keys, passwords, tokens, auth headers, payloads, signing material and credential-bearing RPC URLs in every screenshot/export.
+
+Evidence **PASS** requires a complete deployed route/cron/worker inventory and provider-backed proof that no uncontrolled service can submit a market-1 economic write during the ACTIVE interval. An active uncontrolled route is **FAIL**. Any missing deployment or provider status remains **UNKNOWN**. See [the machine-readable checklist and evidence](../artifacts/perps_v2_replacement_deployment/c02_operational_evidence_mkt1_policy_decision_v2.json) for per-project decision use.
+
+## Separate MKT1 policy decision
+
+The [existing technical amendment proposal](../artifacts/perps_v2_replacement_deployment/mkt1_early_queue_policy_amendment_proposal_v1.json) remains intact. The operator's exact later choice is whether to replace the scheduling edge **`C02-S2 canonical PASS → MKT1-S1 eligible`** with **`C02-S1 canonical queue PASS → MKT1-S1 eligible`**. Preserve **`C02-S2 canonical PASS + MKT1-S1 canonical queue PASS → MKT1-S2 eligible`**. This changes neither the approved DAG today nor the separate Safe 2/3 scheduling and execution approvals.
+
+**Recommendation now: DEFER the policy approval until the deployment evidence above is complete.** Approval would permit a separate MKT1-S1 review, not scheduling itself. Rejection retains at least one additional 86,400-second Timelock delay after C02. Early queue can remove that protocol-imposed delay if both operations are ready, yet separate public postflight, new Safe confirmations and inclusion still take time; worst-case ACTIVE exposure remains unbounded. If C02 fails or is cancelled, do not execute MKT1 and reconcile the queue under separate governance. If MKT1 is delayed or fails after C02, maintain D4/D6 closure, withhold shared ACLs, halt downstream work and seek separately reviewed recovery. No automatic continuation or retry.
+
+The prior conditional MKT1 ETA (`2026-10-27 12:00 UTC`) and operation ID are **unapproved and time sensitive**. Its reviewed one-hour-buffered scheduling cutoff is `2026-10-26 11:00 UTC`. If that window or any operation parameter changes, derive a new ETA, ID and calldata in a separate review. The next milestone is **`C02_OPERATOR_VERCEL_EVIDENCE_COLLECTION`**. Independent read-only preparation may continue for `D3_TOKEN`, `D2_FEE_POLICY`, `GUARDIAN_POLICY`, `EXECUTOR_IDENTITY_REVIEW` and `ACL_POLICY_REVIEW`.

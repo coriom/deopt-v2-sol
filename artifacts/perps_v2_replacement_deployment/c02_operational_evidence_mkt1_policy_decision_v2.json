@@ -1,0 +1,172 @@
+{
+  "schema": "deopt.c02.operational_evidence_mkt1_policy_decision.v2",
+  "milestone": "DEOPT_V2_C02_OPERATIONAL_EVIDENCE_AND_MKT1_POLICY_DECISION_V2",
+  "reviewStatus": "PARTIAL",
+  "c02ExecutionEligibility": "NO",
+  "blockingReasons": [
+    "V2 deployed Functions and cron inventory unavailable from connected Vercel/GitHub source APIs",
+    "hosted Rust backend, relayer, keeper, queue and historical Railway current state unverified",
+    "early MKT1 scheduling policy is technically reviewed but not formally approved"
+  ],
+  "repository": {
+    "headBefore": "4b161b8d978181fc25ab451ed877fd4dcd55c972",
+    "branch": "main",
+    "frozenSourceRevision": "25c36670883604c1ef5229642ee6548aea6796c3",
+    "frozenSrcDiff": "NONE",
+    "reusedEvidence": [
+      {
+        "path": "artifacts/perps_v2_replacement_deployment/c02_remote_execution_isolation_attestation_v1.json",
+        "sha256": "ccdaaffd932f608ae0e498b135e55990f7af9217358edc6834019e1221b15280"
+      },
+      {
+        "path": "artifacts/perps_v2_replacement_deployment/mkt1_early_queue_policy_amendment_proposal_v1.json",
+        "sha256": "88672bcf7469371913b689b61a4e362324b69939c0aefab87a7fd0dfca534ae2"
+      },
+      {
+        "path": "artifacts/perps_v2_replacement_deployment/c02_s1_public_postflight_v1.json",
+        "sha256": "74f63322969b84d970a0d354fbca713822f779073b19f5cf52815662914af769"
+      },
+      {
+        "path": "artifacts/perps_v2_replacement_deployment/post_maintenance_dependency_dag_v1.json",
+        "sha256": "f3907236b928a50151f21ea748e3572ce8fde8fe5a090c0de8d3ca4d647e5b5d"
+      }
+    ]
+  },
+  "chain": {
+    "chainId": 84532,
+    "pinnedBlockNumber": 49585887,
+    "pinnedBlockHash": "0xc54bafd64b14e04ba3e287c24c1a17ff58f8b602229ae95f6e30c8f254640cb9",
+    "pinnedBlockTimestamp": 1792839046,
+    "pinnedBlockUtc": "2026-10-24T10:50:46Z",
+    "blockHashRechecked": true,
+    "rpcProvenance": "configured direct Base Sepolia RPC; endpoint redacted",
+    "c02OperationId": "0x9e10ee1c04280e36ba1d7144b5abd2d1a48b08fac54087bd5e7090d91030913e",
+    "c02Status": "QUEUED_UNEXECUTED",
+    "c02Eta": 1792929600,
+    "c02ExpiryInclusive": 1794139200,
+    "marketCount": 0,
+    "d4FourFlags": [true, true, true, true],
+    "d4Migration": "OPEN",
+    "d4RiskPointer": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110",
+    "d4PmePointer": "0x0000000000000000000000000000000000000000",
+    "d5MaxOracleDelay": 600,
+    "d6Paused": true,
+    "d4VaultAcl": false,
+    "d4InsuranceAcl": false,
+    "safeNonce": 30,
+    "safeThreshold": 2,
+    "timelockMinDelay": 86400
+  },
+  "vercel": {
+    "inspectionDateUtc": "2026-10-24",
+    "connectedTeam": "team_jh3uGhEAzuuNEO6gehL1vHE4",
+    "deploymentInventory": "PRODUCTION_METADATA_VERIFIED_SOURCE_PARTIAL",
+    "functionsVerification": "V1_SOURCE_PARTIAL_V2_UNKNOWN_DEPLOYED_BUILD_UNVERIFIED",
+    "cronsVerification": "UNKNOWN_FOR_BOTH_PROJECTS",
+    "projects": [
+      {
+        "name": "deoptv2-frontend",
+        "projectId": "prj_YADz33AWNuLnbnXYvQZOINFIhTTG",
+        "productionDeploymentId": "dpl_FoAjCa4Z4D49pos1KuQ2z8Zntq3U",
+        "productionGitCommit": "938ab3d779c0109ab24a98068799174bcd06a0b2",
+        "productionDeploymentState": "READY",
+        "productionAliasPresent": true,
+        "projectLiveFlag": false,
+        "listedDeploymentCount": 3,
+        "listedPreviewDeploymentCount": 0,
+        "environmentVariableNames": [],
+        "environmentNamesScope": "connected project listing with decrypt=false; no values fetched",
+        "exactGitHubCommitAccess": "404_NOT_FOUND",
+        "vercelDeploymentFileTree": "404_NOT_FOUND",
+        "vercelDirectFileFetch": "404_NOT_FOUND_FOR_PACKAGE_JSON",
+        "actualBuiltFunctionInventory": "UNKNOWN",
+        "actualCronInventory": "UNKNOWN",
+        "outboundTransactionCapability": "UNKNOWN",
+        "chainAndContractTargets": "UNKNOWN",
+        "externalBackendOrQueueConnection": "UNKNOWN",
+        "note": "The local deopt-v2-frontend checkout is a different repository/revision and is not substituted for this deployed commit. READY and live:false do not prove execution isolation."
+      },
+      {
+        "name": "deopt-frontend",
+        "projectId": "prj_TgSgRYiGQrwKfqhZTGW9UziiGggj",
+        "productionDeploymentId": "dpl_VPtyktyXfAbaieSDxPmUUYwuF2MT",
+        "productionGitCommit": "e4d8a3e9bb3608233ce698c18278d9f190323e8d",
+        "productionDeploymentState": "READY",
+        "productionAliasPresent": true,
+        "projectLiveFlag": false,
+        "listedDeploymentCount": 4,
+        "otherReadyTargetUnspecifiedDeployment": "dpl_7QfMNWSstJVAMHZPxAQNN1YHrJTS",
+        "environmentVariableNames": ["GITHUB_REPO", "GITHUB_BRANCH", "GITHUB_FILE_OPTIONS", "GITHUB_TOKEN", "RPC_137", "RPC_80002", "NEXT_PUBLIC_WC_PROJECT_ID"],
+        "environmentNamesScope": "connected project listing with decrypt=false; names and targets only, no values fetched",
+        "exactGitHubCommitAccess": "PASS",
+        "exactGitTreeTruncated": false,
+        "exactCommitApiRouteSource": [
+          {"path": "app/api/create-option/route.ts", "gitBlobSha": "a80e3da1ff93b7aae0ca60e3c248e885d97dab64", "sizeBytes": 8952, "kind": "Node POST route", "sourceFinding": "Uses viem createPublicClient/getContract for marginInfo and stateInfo reads; also attempts a GitHub file write for option metadata. No signer, wallet client, raw transaction or EVM write call found in this route."},
+          {"path": "app/api/create-future/route.ts", "gitBlobSha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391", "sizeBytes": 0},
+          {"path": "app/api/my-contracts/route.ts", "gitBlobSha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391", "sizeBytes": 0},
+          {"path": "app/api/sync-options/route.ts", "gitBlobSha": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391", "sizeBytes": 0}
+        ],
+        "sourceChainSelection": "Wallet provider lists Polygon and Polygon Amoy; public contract address keys are NEXT_PUBLIC_DEOPT_CONTRACT_137 and NEXT_PUBLIC_DEOPT_CONTRACT_80002. The Node route derives RPC_<chainId> from request input and only makes a best-effort public read.",
+        "sourceCronConfig": "No vercel.json in the exact commit tree; dashboard/runtime cron inventory remains UNKNOWN.",
+        "sourceExternalBackendOrQueue": "No Next.js rewrite or queue submission found in the inspected exact-commit source files; deployed runtime and any other integration remain UNKNOWN.",
+        "actualBuiltFunctionInventory": "UNKNOWN",
+        "actualCronInventory": "UNKNOWN",
+        "outboundBaseSepoliaTransactionCapability": "NO_PATH_FOUND_IN_INSPECTED_EXACT_COMMIT_SOURCE; NOT_PROVEN_FOR_DEPLOYED_RUNTIME",
+        "vercelDeploymentFileTree": "404_NOT_FOUND",
+        "vercelDirectFileFetch": "404_NOT_FOUND_FOR_ROUTE_TS"
+      }
+    ],
+    "evidenceLimit": "Connected Vercel project/deployment metadata and GitHub exact-commit source do not enumerate the built function manifest or current cron dashboard. Project-level custom routing rules are not Next.js app routes."
+  },
+  "otherInfrastructure": {
+    "rustBackend": {"localRepoHead": "ad8dd7466aeba6963d28687e825fe4df58ef32ee", "sourceCapabilities": ["transaction broadcaster", "funding worker", "liquidation worker", "impact-mid keeper", "order intake"], "sourceDefaultFlags": "disabled", "actualHostingProvider": "UNKNOWN", "deployedRevision": "UNKNOWN", "runningState": "UNKNOWN", "effectiveChainAndContracts": "UNKNOWN", "effectiveBroadcastAndWorkerFlags": "UNKNOWN"},
+    "githubActions": {"reviewedActiveWorkflows": ["Backend CI", "Backend Runtime E2E", "Backend PostgreSQL migration integrity"], "reviewedTriggers": "push and pull_request; no schedule trigger in these three workflow definitions", "reviewedCiBroadcastFlags": "disabled in source", "runtimeWorkerProof": "NONE; workflow metadata is not hosted-backend attestation"},
+    "localWsl": {"deoptDockerContainersObserved": ["deopt-v2g-l0-webhook-sink", "deopt-v2g-l0-grafana", "deopt-v2g-l0-prometheus", "deopt-v2g-l0-alertmanager"], "deoptBackendContainerObserved": false, "deoptSystemdUnitObserved": false, "scope": "local only; no inference about remote services"},
+    "historicalRailway": {"githubDeploymentId": 5416476893, "githubStatus": "failure", "statusTimestampUtc": "2026-07-12T21:39:53Z", "projectId": "5d110969-6d5a-4f78-ab01-60dc3efd55e3", "environmentId": "9fa9cad6-cb27-43ad-b4ed-c8af4e416365", "currentProviderState": "UNKNOWN", "interpretation": "historical reference only; neither active hosting nor current shutdown is established"},
+    "remoteBackendIsolation": "NOT_VERIFIED",
+    "relayerKeeperIsolation": "NOT_VERIFIED",
+    "executionServiceInventory": "PARTIAL"
+  },
+  "incrementalC02Risk": {
+    "before": "market 1 absent",
+    "afterIfExecuted": "market 1 exists and is ACTIVE immediately while D4/D6 maintenance is assumed intact",
+    "newlyReachableEconomicPaths": [
+      {"path": "D4.adminSeedPosition(address,uint256,int256,int256,int256)", "selector": "0x0ef3a5f7", "whyNew": "market-existence check would pass for market 1", "authority": "ProtocolTimelock owner; actual Safe 2/3 scheduling and separate execution required", "emergencyGuard": "four D4 pause flags do not block owner-only seeding", "marketActiveRequired": false, "publicExecutionAuthorized": false},
+      {"path": "D4.adminSeedMarketFunding(uint256,int256,uint64)", "selector": "0x2c96f1bc", "whyNew": "market-existence check would pass for market 1", "authority": "ProtocolTimelock owner; actual Safe 2/3 scheduling and separate execution required", "emergencyGuard": "four D4 pause flags do not block owner-only seeding", "marketActiveRequired": false, "publicExecutionAuthorized": false}
+    ],
+    "latentActiveMarketPath": "D4.applyTrade would pass its later isActive test, but current migration OPEN, tradingPaused true, PME pointer zero, D6 pause and absent D4 shared ACL still reject or prevent the maintained replacement-perp path. This must be rechecked before future C02 execution.",
+    "unchangedIndependentPaths": ["generic user Vault own-account deposit and withdrawal", "Clearing.fundClearing", "legacy-authorized Vault/Insurance actors", "D2 fee functions under their own controls"],
+    "materialUnresolvedC02SpecificRisks": ["unknown deployed V2 function or external Rust/relayer/keeper may detect and act on newly existing market 1", "owner-only migration seeding becomes market-eligible even if market is later marked INACTIVE", "market 1 can remain ACTIVE indefinitely if separate MKT1 operation is delayed or fails", "any drift in D4/D6 maintenance, executor/wiring or shared ACLs before future execution invalidates the bounded containment finding"],
+    "onchainContainmentReused": "PASS_BOUNDED",
+    "operationalContainment": "NOT_VERIFIED"
+  },
+  "mkt1PolicyDecision": {
+    "technicalReview": "PASS_REUSED_UNCHANGED",
+    "formalApprovalStatus": "PENDING_OPERATOR_DECISION",
+    "recommendedDecisionNow": "DEFER_UNTIL_VERCEL_AND_EXTERNAL_EXECUTION_EVIDENCE",
+    "approvedDagUnchanged": true,
+    "oldSchedulingEdge": "C02-S2 canonical postflight PASS -> MKT1_INACTIVE scheduling eligible",
+    "proposedSchedulingEdge": "C02-S1 canonical queue postflight PASS -> MKT1_INACTIVE scheduling eligible",
+    "preservedExecutionEdge": "C02-S2 canonical postflight PASS and MKT1-S1 canonical queue postflight PASS -> MKT1_INACTIVE execution eligible",
+    "requiredAdditionalGates": ["complete operational isolation attestation", "separate exact MKT1-S1 review and Safe 2/3 approval", "both Timelock operations ready before C02-S2 checkpoint", "fresh C02 economic-containment review and separate Safe 2/3 execution approval", "canonical C02-S2 postflight PASS before separate MKT1-S2 approval", "canonical MKT1-S2 postflight confirming INACTIVE and non-drift"],
+    "activeIntervalEffect": "existing DAG imposes at least 86400 seconds after C02 before MKT1 execution; early queue can remove that protocol-imposed interval if both operations are ready, but human confirmations and public postflights take nonzero time and worst-case exposure is unbounded",
+    "ifC02FailsOrCancelled": "Do not execute MKT1; preserve D4/D6 maintenance and reconcile queued MKT1 until separate cancellation or expiry decision",
+    "ifMkt1DelayedOrFails": "Market 1 remains ACTIVE; preserve D4/D6 maintenance and no D4 shared ACL, halt downstream work, reconcile and seek separate governance recovery; no automatic retry",
+    "operatorChoicesAfterEvidence": ["Approve only the exact scheduling-edge amendment, preserving all execution prerequisites and separate Safe boundaries", "Reject and retain current DAG with additional Timelock delay", "Defer pending unresolved Vercel/external execution evidence"],
+    "candidateEtaFromPriorProposal": 1793102400,
+    "candidateEtaStatus": "UNAPPROVED_AND_TIME_SENSITIVE; recalculate ID and all calldata if future review changes ETA",
+    "operatorReadySafeBuilderCreated": false,
+    "policyApprovalInThisMilestone": false
+  },
+  "operatorEvidenceRequests": [
+    {"id": "VERCEL_V2_FUNCTIONS", "project": "deoptv2-frontend", "deploymentId": "dpl_FoAjCa4Z4D49pos1KuQ2z8Zntq3U", "dashboard": "Vercel > Projects > deoptv2-frontend > Deployments > exact deployment > Functions / deployment build output", "required": "timestamped screenshot or export with exact deployment ID, every built Node/Edge function path, runtime, region and enabled status; include any production aliases and still-addressable preview routes", "redact": "request/response bodies, authorization headers, cookies, tokens, signing material and secret environment values", "decisionUse": "PASS only if every deployed write-capable route is identified and its Base Sepolia transaction/order capability is demonstrably absent or disabled; FAIL if an uncontrolled transaction route targets replacement contracts; otherwise UNKNOWN"},
+    {"id": "VERCEL_V2_CRONS_CONFIG", "project": "deoptv2-frontend", "deploymentId": "dpl_FoAjCa4Z4D49pos1KuQ2z8Zntq3U", "dashboard": "Vercel > Projects > deoptv2-frontend > Cron Jobs and Settings > Environment Variables (production names/targets only)", "required": "timestamped complete cron list, target paths, schedules and enabled state; environment key names/targets for chain, D1-D6, backend URL, execution/order/broadcast toggles; operator attestation of effective non-secret boolean states without raw values", "redact": "all secret values, RPC URLs with credentials, tokens and wallet material", "decisionUse": "No cron or a proven disabled/non-transaction cron supports PASS; an unreviewed market-1 write cron is FAIL; missing list is UNKNOWN"},
+    {"id": "VERCEL_V1_FUNCTIONS_CRONS", "project": "deopt-frontend", "deploymentId": "dpl_VPtyktyXfAbaieSDxPmUUYwuF2MT", "dashboard": "Vercel > Projects > deopt-frontend > Deployments > exact deployment > Functions; project Cron Jobs", "required": "timestamped built function and cron lists proving whether the exact-commit source routes are the full deployed runtime, including the target-unspecified READY deployment dpl_7QfMNWSstJVAMHZPxAQNN1YHrJTS if still addressable", "redact": "headers, payloads, token values, RPC URLs and wallet material", "decisionUse": "Confirm source-only findings or classify any extra write-capable route for separate review; incomplete built inventory remains UNKNOWN"},
+    {"id": "EXTERNAL_RUST_RELAYER_KEEPER", "project": "actual hosting provider and service names to be identified by operator", "dashboard": "hosting provider service/deployment list and scheduler/queue tabs", "required": "timestamped service IDs, running/disabled state, deployment revision, chain ID, public contract targets, order intake and broadcast/worker booleans, restart policy and signer role identities without credentials", "redact": "keys, secret values, API tokens, passwords, credential-bearing RPC URLs", "decisionUse": "PASS only after every transaction-capable service is accounted for and cannot act on new market 1 under reviewed controls; active uncontrolled capability is FAIL; absent provider inventory is UNKNOWN"},
+    {"id": "RAILWAY_HISTORICAL_REFERENCE", "project": "5d110969-6d5a-4f78-ab01-60dc3efd55e3", "environmentId": "9fa9cad6-cb27-43ad-b4ed-c8af4e416365", "dashboard": "Railway > exact project > production environment > Services and Deployments, or provider deletion record", "required": "timestamped proof of current service list and status or project deletion; if any service exists, supply non-secret deployment revision, chain and execution-role inventory", "redact": "environment values, keys, tokens and credential-bearing URLs", "decisionUse": "Historical GitHub failure alone remains UNKNOWN"}
+  ],
+  "nextMilestone": "C02_OPERATOR_VERCEL_EVIDENCE_COLLECTION",
+  "nextIndependentReadOnlyPreparations": ["D3_TOKEN", "D2_FEE_POLICY", "GUARDIAN_POLICY", "EXECUTOR_IDENTITY_REVIEW", "ACL_POLICY_REVIEW"],
+  "validation": {"focusedConsistencyChecksPassed": 52, "focusedConsistencyChecksFailed": 0, "freshForkTests": "NOT_RUN; prior verified isolated-fork evidence reused", "fullFoundrySuite": "NOT_RUN"},
+  "authorization": {"c02PublicExecution": false, "mkt1Scheduling": false, "mkt1Execution": false, "marketCreation": false, "migrationReplay": false, "publicTrading": false, "publicTransactionsSentByAgent": false, "cloudChangesByAgent": false}
+}
