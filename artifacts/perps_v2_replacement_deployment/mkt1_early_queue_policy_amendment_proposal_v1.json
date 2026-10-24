@@ -1,0 +1,161 @@
+{
+  "acceleratedDag": {
+    "failureHandling": "No automatic continuation. If C02 failed/cancelled, do not execute MKT1; leave queued until separate cancellation/expiry decision. If MKT1 fails after C02, keep D4/D6 closed, halt downstream work and reconcile; do not blindly retry.",
+    "maximumActiveInterval": "UNBOUNDED",
+    "potentialMinimumActiveInterval": "C02 canonical postflight plus separate human Safe approval and MKT1 inclusion, if MKT1 already ready; no guaranteed bound",
+    "requiredSafeActions": [
+      "MKT1 scheduling under separately approved amended policy",
+      "C02 execution",
+      "MKT1 execution"
+    ],
+    "safety": "INCONCLUSIVE_REMOTE_EVIDENCE_AND_POLICY_APPROVAL",
+    "sequence": [
+      "Separate formal policy approval; no approved DAG overwritten",
+      "Independent MKT1-S1 exact transaction review and Safe 2/3 authorization",
+      "Canonical MKT1 queue postflight PASS while market 1 absent",
+      "Wait until C02 and MKT1 both ready; refresh remote containment and D4/D6 maintenance",
+      "Separate C02-S2 Safe 2/3 authorization and execution exactly once",
+      "Canonical C02-S2 postflight PASS showing exact ACTIVE market 1 and non-drift",
+      "Refresh MKT1 operation, Safe nonce and exact market ID; separate Safe 2/3 execution approval",
+      "Execute MKT1 exactly once and verify INACTIVE plus non-drift"
+    ]
+  },
+  "approvalConditions": [
+    "Current remote backend/relayer/keeper execution inventory and isolation attested",
+    "Independent policy approval explicitly changes scheduling dependency only",
+    "Separate MKT1 scheduling final review with fresh ETA/nonce/operation ID and Safe 2/3 confirmations",
+    "Separate C02-S2 final review and Safe 2/3 approval after both queues ready",
+    "Separate MKT1-S2 review and Safe 2/3 approval after C02 public postflight PASS"
+  ],
+  "approvedDagPath": "artifacts/perps_v2_replacement_deployment/post_maintenance_dependency_dag_v1.json",
+  "approvedDagSha256": "f3907236b928a50151f21ea748e3572ce8fde8fe5a090c0de8d3ca4d647e5b5d",
+  "approvedDagUnchanged": true,
+  "c02": {
+    "eta": 1792929600,
+    "expiryInclusive": 1794139200,
+    "operationId": "0x9e10ee1c04280e36ba1d7144b5abd2d1a48b08fac54087bd5e7090d91030913e",
+    "status": "QUEUED_UNEXECUTED"
+  },
+  "executionAuthorized": false,
+  "existingDag": {
+    "failureHandling": "If C02 or MKT1 fails, halt downstream activity, preserve maintenance, reconcile and seek separate governance recovery.",
+    "maximumActiveInterval": "UNBOUNDED",
+    "minimumActiveIntervalSecondsProtocol": 86400,
+    "practicalWithOneHourSchedulingMarginSeconds": 90000,
+    "requiredSafeActions": [
+      "C02 execution",
+      "MKT1 scheduling",
+      "MKT1 execution"
+    ],
+    "safety": "INCONCLUSIVE_REMOTE_EVIDENCE"
+  },
+  "fork": {
+    "boundedEconomicStateUnchangedAfterC02AndInactive": true,
+    "c02ExecutedOnFork": true,
+    "c02ForkGasUsed": 363619,
+    "c02QueuePreservedAfterFailure": true,
+    "c02TargetFailureRejected": true,
+    "cancelledC02Rejected": true,
+    "earlyQueueAcceptedBeforeMarketExists": true,
+    "earlyQueueDidNotCreateMarket": true,
+    "existingDagDelaySeconds": 90000,
+    "existingDagForkPassed": true,
+    "forkOnly": true,
+    "forkStartBlock": 49541233,
+    "fundingRejectedAfterActiveC02": true,
+    "genuineSafeSignaturesTested": false,
+    "impactMidRejectedAfterActiveC02": true,
+    "inactiveAfterFailedC02Rejected": true,
+    "inactiveDiagnosticEta": 1793102400,
+    "inactiveDiagnosticOperationId": "0x9084148eadef227a5d6a93c30397474c6346f4b352585a153f66b6c0d8af448f",
+    "inactiveExecutedAfterC02": true,
+    "inactiveForkGasUsed": 46518,
+    "inactiveWithoutMarketRejected": true,
+    "liquidationRejectedAfterActiveC02": true,
+    "marketActiveAfterC02": true,
+    "marketInactiveAfterSetter": true,
+    "prematureInactiveRejected": true,
+    "publicTransactionSent": false,
+    "replayC02Rejected": true,
+    "replayInactiveRejected": true,
+    "safeAddressImpersonated": true,
+    "staleSafeNonceChangesHashOnly": true,
+    "wrongCallerRejected": true,
+    "wrongMarketIdRejected": true
+  },
+  "forkScope": "Fresh isolated Base Sepolia fork; Safe address impersonated for governance calls, so genuine Safe 2/3 signatures and public receipts were not tested.",
+  "milestone": "DEOPT_V2_C02_REMOTE_EXECUTION_ISOLATION_ATTESTATION_AND_MKT1_POLICY_AUTHORIZATION_REVIEW_V1",
+  "mkt1Inner": {
+    "arguments": [
+      1,
+      false,
+      false
+    ],
+    "calldata": "0x85477fb3000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "calldataKeccak256": "0xd2c425cabaea425fd78ddf833de798c6548718078ade79a8c28f0c220ccb017e",
+    "effectIfExecutedAfterC02": "market 1 ACTIVE -> INACTIVE; no market created by this setter",
+    "effectIfOnlyQueued": "none on D1",
+    "selector": "0x85477fb3",
+    "signature": "setMarketStatus(uint256,bool,bool)",
+    "target": "0x6B3D846536116082dC4E7227861C341Bb85Ee963",
+    "valueWei": 0
+  },
+  "oldHardEdge": {
+    "from": "C02_EXECUTION_CANONICAL_POSTFLIGHT_PASS",
+    "meaning": "C02 execution before MKT1 queue",
+    "to": "MKT1_INACTIVE_SCHEDULING_ELIGIBLE"
+  },
+  "operatorPolicyApproval": "REQUIRED",
+  "operatorReadyBuilderCreated": false,
+  "preservedExecutionHardEdges": [
+    {
+      "from": "C02_S2_CANONICAL_POSTFLIGHT_PASS",
+      "to": "MKT1_INACTIVE_EXECUTION_ELIGIBLE"
+    },
+    {
+      "from": "MKT1_INACTIVE_S1_CANONICAL_QUEUE_POSTFLIGHT_PASS",
+      "to": "MKT1_INACTIVE_EXECUTION_ELIGIBLE"
+    },
+    {
+      "from": "BOTH_TIMELOCK_OPERATIONS_READY",
+      "to": "C02_S2_OPERATOR_CHECKPOINT_ELIGIBLE"
+    },
+    {
+      "from": "REMOTE_OPERATIONAL_ATTESTATION_PASS",
+      "to": "C02_S2_OPERATOR_CHECKPOINT_ELIGIBLE"
+    }
+  ],
+  "proposedSchedulingHardEdge": {
+    "from": "C02_S1_CANONICAL_QUEUE_POSTFLIGHT_PASS",
+    "to": "MKT1_INACTIVE_SCHEDULING_ELIGIBLE"
+  },
+  "recommendedNextMilestone": "C02_REMOTE_OPERATIONAL_EVIDENCE_CHECKPOINT",
+  "schedulingAuthorized": false,
+  "securityRationale": "Earlier queue reduces protocol-imposed ACTIVE interval while retaining two independent Safe actions, full Timelock delay, C02 canonical execution before MKT1 execution and mandatory postflights. It does not prove economic containment or operational isolation.",
+  "source": {
+    "d1CreateMarket": "src/perp/PerpMarketRegistry.sol:539-608",
+    "d1StatusSetter": "src/perp/PerpMarketRegistry.sol:442-449",
+    "timelockExecute": "src/gouvernance/ProtocolTimelock.sol:320-354",
+    "timelockHashAndQueue": "src/gouvernance/ProtocolTimelock.sol:254-306"
+  },
+  "status": "PROPOSED_AMENDMENT_UNAPPROVED",
+  "technicalReview": "PASS",
+  "timelock": {
+    "bufferSeconds": 3600,
+    "bufferedSchedulingCutoff": 1793012400,
+    "candidateAbsentAtPinnedBlock": true,
+    "candidateOperationId": "0x9084148eadef227a5d6a93c30397474c6346f4b352585a153f66b6c0d8af448f",
+    "etaAndIdApproved": false,
+    "etaCandidate": 1793102400,
+    "etaCandidateUtc": "2026-10-27T12:00:00Z",
+    "executionRequiresMarketExistence": true,
+    "futureSchedulingRule": "eta >= actual scheduling block timestamp + live minDelay + 3600; changed ETA requires new ID/calldata/review",
+    "gracePeriodSecondsAtPinnedBlock": 1209600,
+    "identityRule": "keccak256(abi.encode(target,value,data,eta)); no salt or predecessor",
+    "minDelaySecondsAtPinnedBlock": 86400,
+    "onchainHashMatches": true,
+    "queueDoesNotRequireMarketExistence": true,
+    "readOnlyQueueSimulationMatches": true,
+    "safeNonceCommitted": false
+  }
+}

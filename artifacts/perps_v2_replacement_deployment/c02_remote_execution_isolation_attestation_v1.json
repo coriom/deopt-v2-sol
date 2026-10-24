@@ -1,0 +1,1053 @@
+{
+  "backendSourcePotentialCapabilities": {
+    "capabilities": [
+      "real transaction broadcaster",
+      "funding worker",
+      "liquidation worker",
+      "impact-mid keeper",
+      "order intake"
+    ],
+    "deployedEffectiveValues": "UNKNOWN; no secret values inspected",
+    "deployedRevision": "UNKNOWN; local source HEAD is not proven deployed revision",
+    "repoHead": "ad8dd7466aeba6963d28687e825fe4df58ef32ee",
+    "sourceDefaults": "execution/broadcast and worker flags default false",
+    "sourceReferences": [
+      "deopt-v2-backend/src/config/env.rs:149-195",
+      "deopt-v2-backend/src/config/env.rs:984-1033"
+    ]
+  },
+  "c02Eta": 1792929600,
+  "c02ExpiryInclusive": 1794139200,
+  "c02OperationId": "0x9e10ee1c04280e36ba1d7144b5abd2d1a48b08fac54087bd5e7090d91030913e",
+  "c02S2Blockers": [
+    "Vercel deployed function, cron and effective execution controls unverified",
+    "Rust backend, relayer, keeper, queue and historical Railway current state unverified",
+    "Proposed early MKT1 scheduling dependency has no formal policy approval",
+    "Fresh independent C02-S2 operator review and authorization still required"
+  ],
+  "c02S2ExecutionEligible": false,
+  "c02Status": "QUEUED_UNEXECUTED",
+  "chain": {
+    "block": {
+      "hash": "0xb12b9ca70f684679bd5125366d6a5c58955320c2288062e9f23d997bd342910c",
+      "number": 49538864,
+      "timestamp": 1792829641,
+      "timestampUtc": "2026-10-24T08:14:01Z"
+    },
+    "blockHashRechecked": true,
+    "chainId": 84532,
+    "rpcSource": "configured Base Sepolia direct RPC; endpoint redacted",
+    "runtimeHashes": {
+      "D1": "0x7aca46efbadcc4b8770e5f399deb54a381eb3f32bff45126a8a9564ad34c24c5",
+      "D4": "0x1ee5dc2756bea85a4ab327ff69f8652ef6aa0acf2883f00ad1a23c7f51f95785",
+      "D5": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c",
+      "D6": "0x3bad813e8654fddf86fb459a738d912b0c6c4dd4ad20119c52a4cc0dc1db834f"
+    },
+    "state": {
+      "c02Queued": true,
+      "d1ConfigPaused": false,
+      "d1Market1Exists": false,
+      "d1MarketCount": 0,
+      "d1Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "d1SettlementAllowed": true,
+      "d4Clearing": "0x0000000000000000000000000000000000000000",
+      "d4Flags": [
+        true,
+        true,
+        true,
+        true
+      ],
+      "d4Guardian": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "d4ImpactMidSource": "0x0000000000000000000000000000000000000000",
+      "d4Insurance": "0x0000000000000000000000000000000000000000",
+      "d4Migration": 0,
+      "d4Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "d4Pme": "0x0000000000000000000000000000000000000000",
+      "d4ResidualBadDebt": 0,
+      "d4Risk": "0x90caa6d5bc628577bc76d6cc8b775f983c75e110",
+      "d4Snapshot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "d5Delay": 600,
+      "d5Engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+      "d5Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "d6Engine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+      "d6Owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "d6Paused": true,
+      "d6RuntimeExecutor": false,
+      "d6TimelockExecutor": true,
+      "insuranceD4Acl": false,
+      "safeGuard": "0x0000000000000000000000000000000000000000",
+      "safeModules": [],
+      "safeNonce": 30,
+      "safeOwners": [
+        "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+        "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+        "0xa774c46c41064524df895bd7be9f294409798dfc"
+      ],
+      "safeThreshold": 2,
+      "timelockGracePeriod": 1209600,
+      "timelockMinDelay": 86400,
+      "timelockOwner": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+      "timelockQueuePaused": false,
+      "timelockSafeExecutor": true,
+      "timelockSafeProposer": true,
+      "vaultClearingLedger": 1000000000,
+      "vaultD4Acl": false,
+      "vaultInsuranceLedger": 2100010
+    }
+  },
+  "cloudConfigurationChanged": false,
+  "evidenceWrittenAtUtc": "2026-10-24T08:30:20.094721Z",
+  "executionServiceInventory": "PARTIAL",
+  "frozenSourceRevision": "25c36670883604c1ef5229642ee6548aea6796c3",
+  "frozenSourceUnchanged": true,
+  "independentPreparations": [
+    {
+      "blockerForGovernance": "exact token allowlist and spread policy not approved",
+      "directDagPrerequisite": "MAINTENANCE_VERIFIED",
+      "id": "D3_TOKEN",
+      "status": "READ_ONLY_PREPARATION_ELIGIBLE"
+    },
+    {
+      "blockerForGovernance": "fee routing, rebates and legacy liability isolation not finalized",
+      "directDagPrerequisite": "MAINTENANCE_VERIFIED",
+      "id": "D2_FEE_POLICY",
+      "status": "READ_ONLY_PREPARATION_ELIGIBLE"
+    },
+    {
+      "blockerForGovernance": "pause-only authority and Safe identity need separate review",
+      "directDagPrerequisite": "MAINTENANCE_VERIFIED",
+      "id": "GUARDIAN_POLICY",
+      "status": "READ_ONLY_PREPARATION_ELIGIBLE"
+    },
+    {
+      "blockerForGovernance": "runtime identity and first-trade guard operational evidence missing",
+      "directDagPrerequisite": "MAINTENANCE_VERIFIED",
+      "id": "EXECUTOR_IDENTITY_REVIEW",
+      "status": "READ_ONLY_PREPARATION_ELIGIBLE"
+    },
+    {
+      "blockerForGovernance": "dual-engine custody and no-double-funding plan unapproved",
+      "directDagPrerequisite": "MAINTENANCE_VERIFIED",
+      "id": "ACL_POLICY_REVIEW",
+      "status": "READ_ONLY_PREPARATION_ELIGIBLE"
+    }
+  ],
+  "inventoryStatus": "PARTIAL",
+  "liveRoleScope": "Known addresses and Vault historical engine list; Insurance mappings not enumerable",
+  "liveRoleState": {
+    "insuranceBackstopMapping": {
+      "D4": false,
+      "OpsSafe": false,
+      "Timelock": false,
+      "insuranceOwner": false,
+      "legacyMarginEngine": true,
+      "legacyOldEngine": false,
+      "legacyPme": false,
+      "legacyV1Engine": true,
+      "vaultHistoricalEngine0": false,
+      "vaultHistoricalEngine1": false,
+      "vaultHistoricalEngine2": false,
+      "vaultHistoricalEngine3": false,
+      "vaultHistoricalEngine4": true,
+      "vaultHistoricalEngine5": true,
+      "vaultHistoricalEngine6": false,
+      "vaultHistoricalEngine7": true
+    },
+    "insuranceOperatorMapping": {
+      "D4": false,
+      "OpsSafe": false,
+      "Timelock": false,
+      "insuranceOwner": false,
+      "legacyMarginEngine": false,
+      "legacyOldEngine": false,
+      "legacyPme": false,
+      "legacyV1Engine": false,
+      "vaultHistoricalEngine0": false,
+      "vaultHistoricalEngine1": false,
+      "vaultHistoricalEngine2": false,
+      "vaultHistoricalEngine3": false,
+      "vaultHistoricalEngine4": false,
+      "vaultHistoricalEngine5": false,
+      "vaultHistoricalEngine6": false,
+      "vaultHistoricalEngine7": false
+    },
+    "insuranceOwner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "legacyOldPauseFlags": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "legacyPmePaused": true,
+    "legacyV1PauseFlags": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "vaultEngineMapping": {
+      "D4": false,
+      "OpsSafe": false,
+      "Timelock": false,
+      "insuranceOwner": false,
+      "legacyMarginEngine": true,
+      "legacyOldEngine": true,
+      "legacyPme": false,
+      "legacyV1Engine": true,
+      "vaultHistoricalEngine0": false,
+      "vaultHistoricalEngine1": false,
+      "vaultHistoricalEngine2": true,
+      "vaultHistoricalEngine3": false,
+      "vaultHistoricalEngine4": true,
+      "vaultHistoricalEngine5": true,
+      "vaultHistoricalEngine6": true,
+      "vaultHistoricalEngine7": true
+    },
+    "vaultHistoricalEngineList": [
+      "0x6c5665de05e7314cb63cd77f82dfa86508a5b5f8",
+      "0xb36395b67d0798ada981731c9fa5239f4362b53b",
+      "0x009f38440f058d095b61e0e2ee7fabdf05be7500",
+      "0x287cef479be5889eefca847f9e73c860898f48cc",
+      "0xc6c592100723fe0c66343a16e95ec34cc0c2141c",
+      "0x506cd65a63c53c66ab572b9f9dd819b7bfe00d30",
+      "0x44702b0a3c329f2cc5b5c02c2123dc9386a46db9",
+      "0xa2bdc0efe80806ffda20189294dd8a5a1b426f15"
+    ],
+    "vaultMarginEngine": "0x506cd65a63c53c66ab572b9f9dd819b7bfe00d30"
+  },
+  "milestone": "DEOPT_V2_C02_REMOTE_EXECUTION_ISOLATION_ATTESTATION_AND_MKT1_POLICY_AUTHORIZATION_REVIEW_V1",
+  "onchainContainmentMeaning": "C02 ACTIVE status creates no observed new non-governance D4/D6 economic mutation while maintenance and ACLs remain; generic Vault/Clearing and legacy paths remain independently callable. Owner-only migration seeding becomes market-eligible and stays separately Timelock governed.",
+  "onchainContainmentScope": "BOUNDED_SOURCE_AND_GETTER_REVIEW",
+  "onchainEconomicContainment": "PASS",
+  "operatorEvidenceChecklist": [
+    "Export Vercel project/deployment route/function/cron metadata for both DeOpt projects, with deployment IDs, target, aliases and timestamps; omit secrets.",
+    "For each API/backend/relayer/keeper/queue show provider service ID, current status, revision, chain ID, public contract addresses, and booleans for order intake, execution, broadcast and scheduled jobs.",
+    "Provide current Railway service list for project 5d110969-6d5a-4f78-ab01-60dc3efd55e3 and environment 9fa9cad6-cb27-43ad-b4ed-c8af4e416365, or proof of deletion; historical GitHub failures do not suffice.",
+    "Show any active transaction-submitting identity and whether it has D6/legacy engine, Vault, Insurance or Safe governance authority; omit private key material.",
+    "Show provider timestamps and restart/auto-deploy policy so disabled state is current and stable through the proposed ACTIVE interval."
+  ],
+  "priorEvidenceSha256": {
+    "c02_active_market_containment_resolution_v1.json": "90e840b434e265704f414bf7cbedf3244978692c9a1bfd8df02f876ee5d494c4",
+    "c02_s1_public_postflight_v1.json": "74f63322969b84d970a0d354fbca713822f779073b19f5cf52815662914af769",
+    "mkt1_early_inactive_queue_feasibility_v1.json": "9eeb026da0cf7e6a0f05e5e7cdae68de0f82859035fc4b527cdfd8f435e7bee3",
+    "post_maintenance_dependency_dag_v1.json": "f3907236b928a50151f21ea748e3572ce8fde8fe5a090c0de8d3ca4d647e5b5d"
+  },
+  "publicTransactionsSent": false,
+  "recommendedNextMilestone": "C02_REMOTE_OPERATIONAL_EVIDENCE_CHECKPOINT",
+  "relayerKeeperIsolation": "NOT_VERIFIED",
+  "remoteBackendIsolation": "NOT_VERIFIED",
+  "repositoryHeadBefore": "5c08c54692e1930e52681ab8c46d2a57c2af443a",
+  "reviewStatus": "PARTIAL",
+  "roleBasedReachabilityMatrix": [
+    {
+      "action": "Open or close position",
+      "afterC02Reachability": "REJECTED",
+      "currentReachability": "REJECTED",
+      "emergencyMigrationGuard": "D6 paused; D4 migration OPEN and tradingPaused",
+      "entrypoint": "D6.executeTrade / executeTradeFromIntents -> D4.applyTrade",
+      "evidence": [
+        "src/matching/PerpMatchingEngineV2.sol:616-746",
+        "src/perp/PerpEngineTradingV2.sol:769-790",
+        "pinned D4/D6",
+        "fresh pinned block 49538864",
+        "frozen ABI selectors"
+      ],
+      "liveAuthorizedIdentity": "D6 Timelock bootstrap executor true, reviewed runtime executor false; D6 paused and D4 PME pointer zero",
+      "marketStatusDependency": "ACTIVE would satisfy a later market check",
+      "note": "",
+      "remotePossessionOfAuthority": "UNKNOWN; contract guards still reject maintained D6/D4 path",
+      "requiredCallerAuthority": "D6 approved executor and valid traders; D4 matchingEngine caller",
+      "requiredWiring": "D6 Engine D4; D4 matchingEngine currently ZERO",
+      "selectorsFromFrozenAbi": [
+        {
+          "contract": "PerpMatchingEngineV2",
+          "function": "executeTrade",
+          "selector": "0x7101c201"
+        },
+        {
+          "contract": "PerpMatchingEngineV2",
+          "function": "executeTradeFromIntents",
+          "selector": "0xb69459b0"
+        },
+        {
+          "contract": "PerpEngineV2",
+          "function": "applyTrade",
+          "selector": "0xb022e608"
+        }
+      ],
+      "sharedAclDependency": "D4 Vault authorization absent",
+      "verdict": "PASS"
+    },
+    {
+      "action": "Direct D4 trade",
+      "afterC02Reachability": "REJECTED",
+      "currentReachability": "REJECTED",
+      "emergencyMigrationGuard": "onlyMigrationSealed; whenTradingNotPaused",
+      "entrypoint": "D4.applyTrade",
+      "evidence": [
+        "src/perp/PerpEngineTradingV2.sol:769-790",
+        "pinned D4",
+        "fresh pinned block 49538864",
+        "frozen ABI selectors"
+      ],
+      "liveAuthorizedIdentity": "configured D4 matchingEngine, presently ZERO",
+      "marketStatusDependency": "ACTIVE satisfies later check only",
+      "note": "",
+      "remotePossessionOfAuthority": "UNKNOWN unless on-chain guard independently rejects the path",
+      "requiredCallerAuthority": "configured D4 matchingEngine, presently ZERO",
+      "requiredWiring": "D4 matchingEngine ZERO",
+      "selectorsFromFrozenAbi": [
+        {
+          "contract": "PerpEngineV2",
+          "function": "applyTrade",
+          "selector": "0xb022e608"
+        }
+      ],
+      "sharedAclDependency": "D4 Vault authorization absent",
+      "verdict": "PASS"
+    },
+    {
+      "action": "Liquidation",
+      "afterC02Reachability": "REJECTED; fork negative tested",
+      "currentReachability": "REJECTED",
+      "emergencyMigrationGuard": "onlyMigrationSealed; liquidationPaused true",
+      "entrypoint": "D4.liquidate",
+      "evidence": [
+        "src/perp/PerpEngineTradingV2.sol:879-905",
+        "fork liquidationRejectedAfterActiveC02",
+        "fresh pinned block 49538864",
+        "frozen ABI selectors"
+      ],
+      "liveAuthorizedIdentity": "permissionless once enabled",
+      "marketStatusDependency": "ACTIVE satisfies later check only",
+      "note": "",
+      "remotePossessionOfAuthority": "UNKNOWN unless on-chain guard independently rejects the path",
+      "requiredCallerAuthority": "permissionless once enabled",
+      "requiredWiring": "D4 Insurance and Clearing ZERO",
+      "selectorsFromFrozenAbi": [
+        {
+          "contract": "PerpEngineV2",
+          "function": "liquidate",
+          "selector": "0xc5d67c9d"
+        }
+      ],
+      "sharedAclDependency": "D4 Vault/Insurance ACL absent",
+      "verdict": "PASS"
+    },
+    {
+      "action": "Funding accrual or settlement",
+      "afterC02Reachability": "REJECTED; fork negative tested",
+      "currentReachability": "REJECTED",
+      "emergencyMigrationGuard": "onlyMigrationSealed; fundingPaused true; C02 funding disabled",
+      "entrypoint": "D4.updateFunding",
+      "evidence": [
+        "src/perp/PerpEngineTradingV2.sol:543-565",
+        "fork fundingRejectedAfterActiveC02",
+        "fresh pinned block 49538864",
+        "frozen ABI selectors"
+      ],
+      "liveAuthorizedIdentity": "public once enabled",
+      "marketStatusDependency": "Market existence would pass",
+      "note": "",
+      "remotePossessionOfAuthority": "UNKNOWN unless on-chain guard independently rejects the path",
+      "requiredCallerAuthority": "public once enabled",
+      "requiredWiring": "D4 market registry",
+      "selectorsFromFrozenAbi": [
+        {
+          "contract": "PerpEngineV2",
+          "function": "updateFunding",
+          "selector": "0x6ea9f139"
+        }
+      ],
+      "sharedAclDependency": "No new ACL",
+      "verdict": "PASS"
+    },
+    {
+      "action": "Impact-mid keeper write",
+      "afterC02Reachability": "REJECTED; fork negative tested",
+      "currentReachability": "REJECTED",
+      "emergencyMigrationGuard": "fundingPaused true",
+      "entrypoint": "D4.updateImpactMid",
+      "evidence": [
+        "src/perp/PerpEngineTradingV2.sol:449-459",
+        "fork impactMidRejectedAfterActiveC02",
+        "fresh pinned block 49538864",
+        "frozen ABI selectors"
+      ],
+      "liveAuthorizedIdentity": "only impactMidSource, currently ZERO",
+      "marketStatusDependency": "ACTIVE could satisfy existence",
+      "note": "",
+      "remotePossessionOfAuthority": "UNKNOWN unless on-chain guard independently rejects the path",
+      "requiredCallerAuthority": "only impactMidSource, currently ZERO",
+      "requiredWiring": "impactMidSource ZERO",
+      "selectorsFromFrozenAbi": [
+        {
+          "contract": "PerpEngineV2",
+          "function": "updateImpactMid",
+          "selector": "0x344e514a"
+        }
+      ],
+      "sharedAclDependency": "No new ACL",
+      "verdict": "PASS"
+    },
+    {
+      "action": "D5 risk computation",
+      "afterC02Reachability": "READ_ONLY",
+      "currentReachability": "READ_ONLY",
+      "emergencyMigrationGuard": "risk views may have independent pause/feed checks",
+      "entrypoint": "D5 public risk and withdrawal preview views",
+      "evidence": [
+        "src/perp/PerpRiskModule.sol:743-769",
+        "fresh pinned block 49538864",
+        "frozen ABI selectors"
+      ],
+      "liveAuthorizedIdentity": "public reads",
+      "marketStatusDependency": "ACTIVE can change view result",
+      "note": "A 600-second delay alone does not prove feed health.",
+      "remotePossessionOfAuthority": "UNKNOWN unless on-chain guard independently rejects the path",
+      "requiredCallerAuthority": "public reads",
+      "requiredWiring": "D5 Engine D4, delay 600",
+      "selectorsFromFrozenAbi": [
+        {
+          "contract": "PerpRiskModule",
+          "function": "computeAccountRisk",
+          "selector": "0x833087ef"
+        },
+        {
+          "contract": "PerpRiskModule",
+          "function": "previewWithdrawImpact",
+          "selector": "0x56c5289e"
+        }
+      ],
+      "sharedAclDependency": "No mutation",
+      "verdict": "PASS"
+    },
+    {
+      "action": "D3 seizure planning",
+      "afterC02Reachability": "READ_ONLY",
+      "currentReachability": "READ_ONLY",
+      "emergencyMigrationGuard": "D4 liquidation gate remains closed",
+      "entrypoint": "D3.computeSeizurePlan / previewEffectiveBaseValue",
+      "evidence": [
+        "src/liquidation/CollateralSeizer.sol:436-545",
+        "fresh pinned block 49538864",
+        "frozen ABI selectors"
+      ],
+      "liveAuthorizedIdentity": "public reads",
+      "marketStatusDependency": "No direct ACTIVE write",
+      "note": "",
+      "remotePossessionOfAuthority": "UNKNOWN unless on-chain guard independently rejects the path",
+      "requiredCallerAuthority": "public reads",
+      "requiredWiring": "legacy collateral RiskModule, not D5",
+      "selectorsFromFrozenAbi": [
+        {
+          "contract": "CollateralSeizer",
+          "function": "computeSeizurePlan",
+          "selector": "0x4054cac0"
+        },
+        {
+          "contract": "CollateralSeizer",
+          "function": "previewEffectiveBaseValue",
+          "selector": "0x6edd3e37"
+        }
+      ],
+      "sharedAclDependency": "No mutation",
+      "verdict": "PASS"
+    },
+    {
+      "action": "Migration position/funding seed",
+      "afterC02Reachability": "GOVERNANCE_GATED_POSSIBLE",
+      "currentReachability": "MARKET_ABSENT_REVERT",
+      "emergencyMigrationGuard": "onlyMigrationOpen; emergency flags do not prevent these owner writes",
+      "entrypoint": "D4.adminSeedPosition / adminSeedMarketFunding",
+      "evidence": [
+        "src/perp/PerpEngineTradingV2.sol:226-282",
+        "pinned D4 owner/migration",
+        "fresh pinned block 49538864",
+        "frozen ABI selectors"
+      ],
+      "liveAuthorizedIdentity": "ProtocolTimelock owner; Safe 2/3 must queue and later execute an exact separate operation",
+      "marketStatusDependency": "C02 satisfies market-exists precondition",
+      "note": "Do not treat emergency flags as protection from a separately approved migration operation.",
+      "remotePossessionOfAuthority": "NOT_VERIFIED; no direct owner EOA access, but Safe owner operational controls are not a remote-service inventory",
+      "requiredCallerAuthority": "onlyOwner ProtocolTimelock, separately governed",
+      "requiredWiring": "Market registry; market 1 must exist",
+      "risk": "Economically material governance path while migration OPEN; ACTIVE market satisfies market-existence precondition for position/funding seed",
+      "selectorsFromFrozenAbi": [
+        {
+          "contract": "PerpEngineV2",
+          "function": "adminSeedPosition",
+          "selector": "0x0ef3a5f7"
+        },
+        {
+          "contract": "PerpEngineV2",
+          "function": "adminSeedMarketFunding",
+          "selector": "0x2c96f1bc"
+        }
+      ],
+      "sharedAclDependency": "No new Vault/Insurance ACL",
+      "verdict": "PASS"
+    },
+    {
+      "action": "Residual bad debt seed",
+      "afterC02Reachability": "GOVERNANCE_GATED_UNCHANGED",
+      "currentReachability": "GOVERNANCE_GATED",
+      "emergencyMigrationGuard": "onlyMigrationOpen",
+      "entrypoint": "D4.adminSeedResidualBadDebt",
+      "evidence": [
+        "src/perp/PerpEngineTradingV2.sol:283-305",
+        "fresh pinned block 49538864",
+        "frozen ABI selectors"
+      ],
+      "liveAuthorizedIdentity": "ProtocolTimelock owner; Safe 2/3 must queue and later execute an exact separate operation",
+      "marketStatusDependency": "Independent of market existence",
+      "note": "",
+      "remotePossessionOfAuthority": "NOT_VERIFIED; no direct owner EOA access, but Safe owner operational controls are not a remote-service inventory",
+      "requiredCallerAuthority": "onlyOwner ProtocolTimelock",
+      "requiredWiring": "D4 owner authority",
+      "risk": "Economically material governance path while migration OPEN; ACTIVE market satisfies market-existence precondition for position/funding seed",
+      "selectorsFromFrozenAbi": [
+        {
+          "contract": "PerpEngineV2",
+          "function": "adminSeedResidualBadDebt",
+          "selector": "0x6067ee86"
+        }
+      ],
+      "sharedAclDependency": "No new ACL",
+      "verdict": "PASS"
+    },
+    {
+      "action": "Migration seal",
+      "afterC02Reachability": "REJECTED_BY_MISSING_POINTERS",
+      "currentReachability": "REJECTED_BY_MISSING_POINTERS",
+      "emergencyMigrationGuard": "onlyMigrationOpen; nonzero snapshot",
+      "entrypoint": "D4.sealMigration",
+      "evidence": [
+        "src/perp/PerpEngineTradingV2.sol:325-339",
+        "pinned pointers",
+        "fresh pinned block 49538864",
+        "frozen ABI selectors"
+      ],
+      "liveAuthorizedIdentity": "onlyOwner ProtocolTimelock",
+      "marketStatusDependency": "Independent of ACTIVE state",
+      "note": "",
+      "remotePossessionOfAuthority": "UNKNOWN unless on-chain guard independently rejects the path",
+      "requiredCallerAuthority": "onlyOwner ProtocolTimelock",
+      "requiredWiring": "Clearing and matchingEngine must be configured; both ZERO",
+      "selectorsFromFrozenAbi": [
+        {
+          "contract": "PerpEngineV2",
+          "function": "sealMigration",
+          "selector": "0x05d5af5b"
+        }
+      ],
+      "sharedAclDependency": "Shared ACL not checked by seal",
+      "verdict": "PASS"
+    },
+    {
+      "action": "D4 driven collateral or Insurance movement",
+      "afterC02Reachability": "REJECTED",
+      "currentReachability": "REJECTED",
+      "emergencyMigrationGuard": "D4 trading/liquidation guards closed",
+      "entrypoint": "Vault transferBetweenAccounts / Insurance backstop",
+      "evidence": [
+        "src/collateral/CollateralVaultActions.sol:180-215",
+        "src/core/InsuranceFund.sol:130-154",
+        "pinned ACL readbacks",
+        "fresh pinned block 49538864",
+        "frozen ABI selectors"
+      ],
+      "liveAuthorizedIdentity": "D4 ACL false in both shared contracts; legacy authorized engines remain listed separately",
+      "marketStatusDependency": "ACTIVE alone grants no access",
+      "note": "",
+      "remotePossessionOfAuthority": "UNKNOWN for legacy engine operators",
+      "requiredCallerAuthority": "D4 must pass Vault engine / Insurance backstop ACL",
+      "requiredWiring": "D4 Clearing/Insurance pointers ZERO",
+      "risk": "D4 cannot consume shared custody, but C02 does not revoke unrelated legacy authorities",
+      "selectorsFromFrozenAbi": [
+        {
+          "contract": "CollateralVault",
+          "function": "transferBetweenAccounts",
+          "selector": "0x3c341293"
+        },
+        {
+          "contract": "InsuranceFund",
+          "function": "coverVaultShortfall",
+          "selector": "0xd4c141c3"
+        }
+      ],
+      "sharedAclDependency": "D4 ACL false in both",
+      "verdict": "PASS"
+    },
+    {
+      "action": "User deposit or withdrawal",
+      "afterC02Reachability": "UNCHANGED_POSSIBLE",
+      "currentReachability": "POSSIBLE_IF_FUNDED",
+      "emergencyMigrationGuard": "Not controlled by D4 emergency flags",
+      "entrypoint": "Vault.deposit / withdraw / transferFromInternalAccount",
+      "evidence": [
+        "src/collateral/CollateralVaultActions.sol:41-180",
+        "fresh pinned block 49538864",
+        "frozen ABI selectors"
+      ],
+      "liveAuthorizedIdentity": "Own-account user calls; margin-engine hooks remain restricted to live legacy marginEngine",
+      "marketStatusDependency": "Independent of market 1",
+      "note": "Pre-existing custody surface; global no-collateral-movement claim would be false.",
+      "remotePossessionOfAuthority": "UNKNOWN; independent of C02",
+      "requiredCallerAuthority": "user controls own token/balance; respective Vault pause gates",
+      "requiredWiring": "Vault token support",
+      "risk": "Generic custody writes remain possible, but market 1 ACTIVE does not create this permission",
+      "selectorsFromFrozenAbi": [
+        {
+          "contract": "CollateralVault",
+          "function": "deposit",
+          "selector": "0x47e7ef24"
+        },
+        {
+          "contract": "CollateralVault",
+          "function": "withdraw",
+          "selector": "0xf3fef3a3"
+        },
+        {
+          "contract": "CollateralVault",
+          "function": "transferFromInternalAccount",
+          "selector": "0x54380bde"
+        }
+      ],
+      "sharedAclDependency": "Cannot spend another account absent separate ACL",
+      "verdict": "PASS"
+    },
+    {
+      "action": "Clearing funding",
+      "afterC02Reachability": "UNCHANGED_POSSIBLE",
+      "currentReachability": "POSSIBLE_IF_FUNDED",
+      "emergencyMigrationGuard": "Independent of D4 migration/pauses",
+      "entrypoint": "Clearing.fundClearing",
+      "evidence": [
+        "src/perp/PerpClearingAccountV2.sol:94-111",
+        "fresh pinned block 49538864",
+        "frozen ABI selectors"
+      ],
+      "liveAuthorizedIdentity": "Any token holder with allowance and funds",
+      "marketStatusDependency": "Independent of ACTIVE status",
+      "note": "",
+      "remotePossessionOfAuthority": "UNKNOWN; independent of C02",
+      "requiredCallerAuthority": "public with token allowance/funds",
+      "requiredWiring": "Vault deposit path",
+      "risk": "Generic funding remains possible and must not be described as globally disabled",
+      "selectorsFromFrozenAbi": [
+        {
+          "contract": "PerpClearingAccountV2",
+          "function": "fundClearing",
+          "selector": "0xcbf68546"
+        }
+      ],
+      "sharedAclDependency": "Deposits own transferred tokens",
+      "verdict": "PASS"
+    },
+    {
+      "action": "Fee consumption or distribution",
+      "afterC02Reachability": "NO_C02_TRIGGER",
+      "currentReachability": "NO_C02_TRIGGER",
+      "emergencyMigrationGuard": "Trade blocked; D2 owner writes separately governed",
+      "entrypoint": "D2.consumeFees / owner fee routing",
+      "evidence": [
+        "src/fees/FeesManagerV2.sol:71-180",
+        "src/perp/PerpEngineTradingV2.sol:570-610",
+        "fresh pinned block 49538864",
+        "frozen ABI selectors"
+      ],
+      "liveAuthorizedIdentity": "fee consumer or owner, per method",
+      "marketStatusDependency": "ACTIVE alone does not consume fees",
+      "note": "Existing fee liabilities and account claims are independent.",
+      "remotePossessionOfAuthority": "UNKNOWN unless on-chain guard independently rejects the path",
+      "requiredCallerAuthority": "fee consumer or owner, per method",
+      "requiredWiring": "D4 fee path depends on trade; D4 route closed",
+      "selectorsFromFrozenAbi": [
+        {
+          "contract": "FeesManagerV2",
+          "function": "consumeFees",
+          "selector": "0x3e1686b1"
+        },
+        {
+          "contract": "FeesManagerV2",
+          "function": "setFeeConsumer",
+          "selector": "0x677682c4"
+        }
+      ],
+      "sharedAclDependency": "D4 fee consumer grant separately required",
+      "verdict": "PASS"
+    },
+    {
+      "action": "D2 Merkle tier claim",
+      "afterC02Reachability": "UNCHANGED",
+      "currentReachability": "INDEPENDENT_IF_CONFIGURED",
+      "emergencyMigrationGuard": "Independent of D4 maintenance",
+      "entrypoint": "D2.claimTier",
+      "evidence": [
+        "src/fees/FeesManagerV2.sol:197-225",
+        "fresh pinned block 49538864",
+        "frozen ABI selectors"
+      ],
+      "liveAuthorizedIdentity": "account with valid Merkle proof",
+      "marketStatusDependency": "No ACTIVE dependency",
+      "note": "",
+      "remotePossessionOfAuthority": "UNKNOWN unless on-chain guard independently rejects the path",
+      "requiredCallerAuthority": "account with valid Merkle proof",
+      "requiredWiring": "D2 nonzero root",
+      "selectorsFromFrozenAbi": [
+        {
+          "contract": "FeesManagerV2",
+          "function": "claimTier",
+          "selector": "0xa511348a"
+        }
+      ],
+      "sharedAclDependency": "No custody transfer",
+      "verdict": "PASS"
+    },
+    {
+      "action": "Market settlement or expiry",
+      "afterC02Reachability": "REJECTED",
+      "currentReachability": "REJECTED",
+      "emergencyMigrationGuard": "D6 paused; D4 migration OPEN/tradingPaused",
+      "entrypoint": "No separate D1 market settlement mutator found; D4 close uses applyTrade",
+      "evidence": [
+        "src/perp/PerpMarketRegistry.sol:420-608",
+        "src/perp/PerpEngineTradingV2.sol:769-879",
+        "src/matching/PerpMatchingEngineV2.sol:616-746",
+        "fresh pinned block 49538864",
+        "source review"
+      ],
+      "liveAuthorizedIdentity": "D6 executor / D4 caller if close",
+      "marketStatusDependency": "ACTIVE alone cannot close or settle",
+      "note": "",
+      "remotePossessionOfAuthority": "UNKNOWN unless on-chain guard independently rejects the path",
+      "requiredCallerAuthority": "D6 executor / D4 caller if close",
+      "requiredWiring": "D4 matchingEngine ZERO",
+      "selectorsFromFrozenAbi": [],
+      "sharedAclDependency": "D4 shared ACL absent",
+      "verdict": "PASS"
+    },
+    {
+      "action": "Market status update",
+      "afterC02Reachability": "GOVERNANCE_GATED",
+      "currentReachability": "UNKNOWN_MARKET_REVERT",
+      "emergencyMigrationGuard": "whenConfigNotPaused; live configPaused false",
+      "entrypoint": "D1.setMarketStatus(1,false,false)",
+      "evidence": [
+        "src/perp/PerpMarketRegistry.sol:442-449",
+        "fork early-queue/replay results",
+        "fresh pinned block 49538864",
+        "frozen ABI selectors"
+      ],
+      "liveAuthorizedIdentity": "onlyOwner ProtocolTimelock",
+      "marketStatusDependency": "Absent market reverts; ACTIVE market can be disabled",
+      "note": "",
+      "remotePossessionOfAuthority": "UNKNOWN unless on-chain guard independently rejects the path",
+      "requiredCallerAuthority": "onlyOwner ProtocolTimelock",
+      "requiredWiring": "D1 market must exist at execution",
+      "selectorsFromFrozenAbi": [
+        {
+          "contract": "PerpMarketRegistry",
+          "function": "setMarketStatus",
+          "selector": "0x85477fb3"
+        }
+      ],
+      "sharedAclDependency": "No custody ACL",
+      "verdict": "PASS"
+    },
+    {
+      "action": "Remote order intake / relayers / keepers",
+      "afterC02Reachability": "UNKNOWN",
+      "currentReachability": "UNKNOWN",
+      "emergencyMigrationGuard": "On-chain guarded routes reject; off-chain intake may still run",
+      "entrypoint": "hosted APIs, workers, schedulers, broadcaster",
+      "evidence": [
+        "../deopt-v2-backend/src/config/env.rs:149-195",
+        "connected Vercel inventory",
+        "Railway/provider inventory unavailable",
+        "fresh pinned block 49538864",
+        "source review"
+      ],
+      "liveAuthorizedIdentity": "No enumerated remote identities; on-chain PME runtime executor false for reviewed address",
+      "marketStatusDependency": "ACTIVE may be surfaced to users or automation",
+      "note": "Off-chain trade acceptance and other contract routes require separate attestation.",
+      "remotePossessionOfAuthority": "UNKNOWN",
+      "requiredCallerAuthority": "effective deployment configuration and credentials unknown",
+      "requiredWiring": "may reference old or new addresses",
+      "selectorsFromFrozenAbi": [],
+      "sharedAclDependency": "Can submit transactions; cannot bypass D4/D6 guards",
+      "verdict": "UNKNOWN"
+    },
+    {
+      "action": "Legacy margin-engine custody hooks",
+      "afterC02Reachability": "UNCHANGED_POSSIBLE",
+      "currentReachability": "POSSIBLE under Vault rules",
+      "emergencyMigrationGuard": "Vault-specific pauses and account checks; D4 emergency flags do not govern legacy margin engine",
+      "entrypoint": "Vault.depositFor / withdrawFor / transferBetweenAccounts",
+      "evidence": [
+        "src/collateral/CollateralVaultActions.sol:67-190",
+        "fresh pinned Vault marginEngine/authorizedEngine reads"
+      ],
+      "liveAuthorizedIdentity": "0x506cd65a63c53c66ab572b9f9dd819b7bfe00d30",
+      "marketStatusDependency": "NONE",
+      "remotePossessionOfAuthority": "UNKNOWN",
+      "requiredCallerAuthority": "onlyMarginEngine",
+      "risk": "Independent legacy custody authority remains and remote operator ownership is unverified",
+      "selectorsFromFrozenAbi": [
+        {
+          "contract": "CollateralVault",
+          "function": "depositFor",
+          "selector": "0xb3db428b"
+        },
+        {
+          "contract": "CollateralVault",
+          "function": "withdrawFor",
+          "selector": "0x9f1d9267"
+        },
+        {
+          "contract": "CollateralVault",
+          "function": "transferBetweenAccounts",
+          "selector": "0x3c341293"
+        }
+      ],
+      "sharedAclDependency": "Legacy margin engine live",
+      "verdict": "PASS_BOUNDED_NO_NEW_C02_REACHABILITY"
+    },
+    {
+      "action": "Insurance treasury/backstop movement",
+      "afterC02Reachability": "UNCHANGED_POSSIBLE",
+      "currentReachability": "POSSIBLE for separately authorized identities",
+      "emergencyMigrationGuard": "Insurance funding/withdrawal pauses, independent of D4 flags",
+      "entrypoint": "Insurance.depositToVault / withdrawFromVault / coverVaultShortfall",
+      "evidence": [
+        "src/core/InsuranceFund.sol:346-456",
+        "fresh pinned Insurance ACL and owner reads"
+      ],
+      "liveAuthorizedIdentity": "Owner ProtocolTimelock; bounded checked operator identities false; legacy margin/V1 backstop callers true; D4 false",
+      "marketStatusDependency": "NONE",
+      "remotePossessionOfAuthority": "UNKNOWN for non-enumerable mappings",
+      "requiredCallerAuthority": "owner or operator for funding; owner for withdrawal; backstop caller for cover",
+      "risk": "Independent live shared-custody path must remain in operational inventory",
+      "selectorsFromFrozenAbi": [
+        {
+          "contract": "InsuranceFund",
+          "function": "depositToVault",
+          "selector": "0xa3d11158"
+        },
+        {
+          "contract": "InsuranceFund",
+          "function": "withdrawFromVault",
+          "selector": "0xecf3d7e8"
+        },
+        {
+          "contract": "InsuranceFund",
+          "function": "coverVaultShortfall",
+          "selector": "0xd4c141c3"
+        }
+      ],
+      "sharedAclDependency": "Existing legacy backstop and Vault ACL; D4 false",
+      "verdict": "PASS_BOUNDED_NO_NEW_C02_REACHABILITY"
+    }
+  ],
+  "serviceInventory": [
+    {
+      "aliasesPresent": true,
+      "chainAndContractConfig": "UNKNOWN",
+      "cronInventory": "UNKNOWN",
+      "deploymentCreatedUnixMs": 1772059035483,
+      "deploymentState": "READY",
+      "environment": "production",
+      "evidence": [
+        "Vercel connected get_project",
+        "Vercel connected list_deployments",
+        "Vercel connected get_deployment",
+        "Vercel connected list_project_routes returned zero project-level custom routes"
+      ],
+      "functionInventory": "UNKNOWN",
+      "id": "vercel-deoptv2-frontend",
+      "knownPreviewDeployments": [],
+      "latestDeploymentCommit": "938ab3d779c0109ab24a98068799174bcd06a0b2",
+      "latestDeploymentId": "dpl_FoAjCa4Z4D49pos1KuQ2z8Zntq3U",
+      "orderIntake": "UNKNOWN",
+      "project": "deoptv2-frontend",
+      "projectId": "prj_YADz33AWNuLnbnXYvQZOINFIhTTG",
+      "projectLiveFlag": false,
+      "provider": "Vercel",
+      "reason": "Connected Vercel project/deployment metadata lacks app function/cron/effective env inventory; GitHub-built deployment file-tree API returned 404. READY and live:false do not attest that write paths are disabled.",
+      "runtimeEnabled": "UNKNOWN",
+      "transactionSubmission": "UNKNOWN"
+    },
+    {
+      "aliasesPresent": true,
+      "chainAndContractConfig": "UNKNOWN",
+      "cronInventory": "UNKNOWN",
+      "deploymentCreatedUnixMs": 1769693563514,
+      "deploymentState": "READY",
+      "environment": "production and historical preview",
+      "evidence": [
+        "Vercel connected get_project",
+        "Vercel connected list_deployments",
+        "Vercel connected get_deployment",
+        "Vercel connected list_project_routes returned zero project-level custom routes"
+      ],
+      "functionInventory": "UNKNOWN",
+      "id": "vercel-deopt-frontend",
+      "knownPreviewDeployments": [
+        {
+          "createdUnixMs": 1765796315181,
+          "id": "dpl_7QfMNWSstJVAMHZPxAQNN1YHrJTS",
+          "state": "READY"
+        }
+      ],
+      "latestDeploymentCommit": "e4d8a3e9bb3608233ce698c18278d9f190323e8d",
+      "latestDeploymentId": "dpl_VPtyktyXfAbaieSDxPmUUYwuF2MT",
+      "orderIntake": "UNKNOWN",
+      "project": "deopt-frontend",
+      "projectId": "prj_TgSgRYiGQrwKfqhZTGW9UziiGggj",
+      "projectLiveFlag": false,
+      "provider": "Vercel",
+      "reason": "Metadata does not expose serverless route/cron inventory or effective non-secret write controls; historic preview URL may still be reachable.",
+      "runtimeEnabled": "UNKNOWN",
+      "transactionSubmission": "UNKNOWN"
+    },
+    {
+      "chainAndContractConfig": "UNKNOWN",
+      "cronInventory": "UNKNOWN",
+      "environment": "awake-ambition / production",
+      "environmentId": "9fa9cad6-cb27-43ad-b4ed-c8af4e416365",
+      "evidence": [
+        "GitHub deployments API",
+        "GitHub deployment status API",
+        "backend deployment preflight document"
+      ],
+      "id": "rust-backend-railway-historical-reference",
+      "lastKnownGitHubDeploymentCommit": "22e48beb7343d8f54d7fcf587d26b2ee9ac41421",
+      "lastKnownGitHubDeploymentId": 5416476893,
+      "lastKnownGitHubStatus": "failure",
+      "lastKnownStatusTimestamp": "2026-07-12T21:39:53Z",
+      "orderIntake": "UNKNOWN",
+      "projectId": "5d110969-6d5a-4f78-ab01-60dc3efd55e3",
+      "provider": "Railway reference via GitHub deployments only",
+      "reason": "No connected Railway provider access or current service observation. July GitHub failure is not proof of October shutdown; user identifies Vercel as actual current hosting lead.",
+      "runtimeEnabled": "UNKNOWN",
+      "serviceExistsNow": "UNKNOWN",
+      "transactionSubmission": "UNKNOWN"
+    },
+    {
+      "activeWorkflows": [
+        "Backend CI",
+        "Backend Runtime E2E",
+        "Backend PostgreSQL migration integrity"
+      ],
+      "evidence": [
+        "GitHub Actions workflow listing",
+        "backend .github/workflows source at local HEAD ad8dd7466aeba6963d28687e825fe4df58ef32ee"
+      ],
+      "id": "github-actions-backend",
+      "provider": "GitHub Actions",
+      "repository": "coriom/deopt-v2-backend",
+      "runtimeEnabled": "Workflow definitions active; no continuously running service established",
+      "transactionSubmission": "NO for reviewed CI/E2E definitions with broadcast flags disabled and empty test signer inputs; other repositories or provider jobs UNKNOWN",
+      "triggers": "push/pull_request only in reviewed workflows; no schedule trigger in reviewed source"
+    },
+    {
+      "evidence": [
+        "docker ps -a names/images/status",
+        "systemctl list-units and list-unit-files names",
+        "process comm inventory; no process arguments read"
+      ],
+      "id": "local-wsl-containers-and-units",
+      "provider": "Local WSL Docker/systemd",
+      "runningDeoptBackendContainer": false,
+      "runningDeoptContainers": [
+        "deopt-v2g-l0-webhook-sink",
+        "deopt-v2g-l0-grafana",
+        "deopt-v2g-l0-prometheus",
+        "deopt-v2g-l0-alertmanager"
+      ],
+      "runningDeoptSystemdUnit": false,
+      "scope": "local host only, never remote attestation",
+      "transactionSubmission": "UNKNOWN for webhook sink; monitoring containers are not evidence of remote execution state"
+    },
+    {
+      "chainAndContractConfig": "UNKNOWN",
+      "evidence": [
+        "No connected inventory for external VPS, queue or hosted worker providers"
+      ],
+      "id": "unidentified-relayers-keepers-vps-queues",
+      "provider": "UNKNOWN",
+      "runtimeEnabled": "UNKNOWN",
+      "transactionSubmission": "UNKNOWN"
+    }
+  ],
+  "testEvidence": {
+    "focusedAbiSelectorGroups": 16,
+    "focusedForkBehaviorChecksFailed": 0,
+    "focusedForkBehaviorChecksPassed": 22,
+    "focusedStaticAssertionsFailed": 0,
+    "focusedStaticAssertionsPassed": 23,
+    "freshFork": {
+      "boundedEconomicStateUnchangedAfterC02AndInactive": true,
+      "c02ExecutedOnFork": true,
+      "c02ForkGasUsed": 363619,
+      "c02QueuePreservedAfterFailure": true,
+      "c02TargetFailureRejected": true,
+      "cancelledC02Rejected": true,
+      "earlyQueueAcceptedBeforeMarketExists": true,
+      "earlyQueueDidNotCreateMarket": true,
+      "existingDagDelaySeconds": 90000,
+      "existingDagForkPassed": true,
+      "forkOnly": true,
+      "forkStartBlock": 49541233,
+      "fundingRejectedAfterActiveC02": true,
+      "genuineSafeSignaturesTested": false,
+      "impactMidRejectedAfterActiveC02": true,
+      "inactiveAfterFailedC02Rejected": true,
+      "inactiveDiagnosticEta": 1793102400,
+      "inactiveDiagnosticOperationId": "0x9084148eadef227a5d6a93c30397474c6346f4b352585a153f66b6c0d8af448f",
+      "inactiveExecutedAfterC02": true,
+      "inactiveForkGasUsed": 46518,
+      "inactiveWithoutMarketRejected": true,
+      "liquidationRejectedAfterActiveC02": true,
+      "marketActiveAfterC02": true,
+      "marketInactiveAfterSetter": true,
+      "prematureInactiveRejected": true,
+      "publicTransactionSent": false,
+      "replayC02Rejected": true,
+      "replayInactiveRejected": true,
+      "safeAddressImpersonated": true,
+      "staleSafeNonceChangesHashOnly": true,
+      "wrongCallerRejected": true,
+      "wrongMarketIdRejected": true
+    },
+    "fullFoundrySuite": "NOT_RUN",
+    "historicalForkReused": false
+  },
+  "unresolvedOperationalEvidence": [
+    "Current Vercel deployment function and cron inventory, including all production and still-addressable preview URLs.",
+    "Effective non-secret chain ID, replacement/legacy addresses, backend URL, order-intake and broadcast/worker enablement for each deployed runtime.",
+    "Provider-backed running/disabled status and deployment revision for Rust API, relayers, liquidation/funding/impact keepers, queues and retry workers.",
+    "Current existence/status of historical Railway project/environment, or provider-backed proof it was retired.",
+    "Inventory of VPS/container hosts and external schedulers with transaction-capable identities; map any signer or Safe owner operations without exposing keys.",
+    "Operational proof that no active service can use market 1 during ACTIVE interval; on-chain guards alone are bounded."
+  ],
+  "unsafeEntrypoints": [
+    "No newly unguarded permissionless D4/D6 market-1 economic write found.",
+    "D4 owner-only adminSeedPosition/adminSeedMarketFunding become actionable after market 1 exists despite four emergency flags; requires independent Timelock governance.",
+    "Vault generic own-account deposit/withdraw and Clearing fundClearing remain usable independent of C02; legacy Vault/Insurance authorizations persist.",
+    "Unknown deployed backend, Vercel function, relayer or keeper submission and order-intake paths cannot be classified safe."
+  ],
+  "vercelScope": {
+    "connectedTeamCount": 1,
+    "connectedTeamId": "team_jh3uGhEAzuuNEO6gehL1vHE4",
+    "cronJobsVerified": false,
+    "deoptProjectSearchCount": 2,
+    "deployedSourceVerified": false,
+    "effectiveEnvironmentVerified": false,
+    "note": "Project-level custom route listing does not enumerate Next.js app routes/functions. No secret-bearing environment values were requested.",
+    "productionAndPreviewMetadataInspected": true,
+    "projectLevelCustomRoutes": 0,
+    "serverlessFunctionsVerified": false
+  }
+}
