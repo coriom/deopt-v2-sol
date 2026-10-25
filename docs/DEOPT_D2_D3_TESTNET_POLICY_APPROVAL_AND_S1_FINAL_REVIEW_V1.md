@@ -1,0 +1,38 @@
+# DeOpt Base Sepolia D2/D3 policy approval and offline scheduling review
+
+## Decision and scope
+
+The operator approved a **Base Sepolia testnet policy**, with no public scheduling or execution authorization. D3 keeps its compatible collateral RiskModule. D4 keeps D5 PerpRiskModule. The approved [DAG v2](../artifacts/perps_v2_replacement_deployment/post_maintenance_dependency_dag_v2.json) replaces the incompatible D3-to-D5 governance write with `D3_RISK_COMPAT_VERIFIED`, a read-only gate after D3_TOKEN's canonical postflight and before C13. The original DAG and previous blocked findings remain intact.
+
+The approved D3 policy explicitly enables mUSDC with a 5 bps seizure spread. The approved D2 PERP policy sets maker 0 bps and taker 2 bps in each of five tiers, with no rebates. In the contract's units, these are 0 and 200 ppm. The current ProtocolTimelock remains the fee recipient. This does not alter OPTION fees, legacy liabilities, fee-vault configuration, or D4's currently disabled D2 consumer path.
+
+## Fresh source and chain review
+
+At Base Sepolia block **49,976,909**, hash `0x174be2bf5d0c07e4ec4882448769ad6be2bd2125499f382e6dc15a4900a37ac7`, timestamp **2026-10-25 08:34:10 UTC**, direct pinned public RPC reads found Safe nonce **30**, threshold **2 of 3**, the reviewed three owners, no modules, and zero guard. ProtocolTimelock has the Safe as proposer and executor, minimum delay **86,400 seconds**, and C02 remains queued. All six proposed D2/D3 operations were absent at this block. The deployed Safe `getTransactionHash` and Timelock `hashOperation` matched independently reconstructed hashes. Read-only `eth_call` simulations of Safe-to-Timelock queueing and Timelock-to-target setters succeeded; they do not prove genuine signatures or public execution.
+
+D3 still points to the compatible collateral RiskModule at `0xc0f019005a25524a34F2Ee8839DCDCC50715DD7B`, which has `baseCollateralToken=mUSDC` and `collateralConfigs(mUSDC)=(10000,true)`. D3's mUSDC seize config remains unset; its effective default discount is 10000 bps. D2 remains owned by ProtocolTimelock, with the same recipient, zero rebate budget, zero rebate funding account, zero protocol fee vault, zero Merkle root, and its five original PERP profiles. The separate legacy FeesManager's mUSDC rebate budget is **999,977 raw units**, while D2's is **zero**. No liability migration is included.
+
+D4's four emergency flags remain true, migration OPEN, its D5 risk pointer intact, and its PME/CollateralSeizer/FeesManagerV2 pointers zero; D6 is paused. D4 is not authorized in the shared Vault or Insurance. D1 has no created market. The frozen Solidity implementation was not changed. Source inspection confirms D3's setter changes only the token seize configuration and D2's setter changes only one profile; neither setter transfers collateral or creates a market. Keeping the Timelock as fee recipient is bounded by the current disabled D4 fee consumer, zero D2 rebate liabilities, and separate future activation gates. This is a scheduling review, not approval of fee collection or trading.
+
+## Six distinct unsigned scheduling intents
+
+All six use the custom `queueTransaction(address,uint256,bytes,uint256)`, zero ETH and one Safe CALL each. The common **proposed ETA** is **2026-10-27 12:00:00 UTC** (`1793102400`). The buffered public scheduling cutoff is **2026-10-26 11:00:00 UTC** (`1793012400`). At each actual scheduling block the operator must verify `ETA >= block.timestamp + live minDelay + 3600`; otherwise stop and commission a new review. Changing ETA changes every operation ID, calldata, and SafeTx hash.
+
+| Action | Target setter | Conditional Safe nonce | Timelock operation ID | Conditional SafeTx hash | Builder SHA-256 |
+| --- | --- | ---: | --- | --- | --- |
+| D3_TOKEN | `setTokenSeizeConfig(mUSDC,5,true)` | 30 | `0x6678a5eefb1b1a1b7a9ff4aa5795e1ba7d09fba63ee59917d454e07fe2208c0d` | `0x9d0b933d4297d637a8ce2adcf32af319ce88dfc590260acf6bc8614dfc25c9d9` | `d4979b07fbe862ac423d0746317e2ae75570559b4b661bf8d4a7f159a4144c40` |
+| D2 tier 0 | `setFeeProfile(0,PERP,0,200)` | 31 | `0x1976519a08a3a7e65cbe1a2f77fcf0f5fa0f783ccb6c7ef0e6c87b7481caf45b` | `0xf0063ea75d9f6e6b2ce521d73cd924cf460ea4443b49179217fbda616565e61b` | `a96781dd681977695a19137de80e79f2f487afb89b28d7f1b010e2fdfea7d6be` |
+| D2 tier 1 | `setFeeProfile(1,PERP,0,200)` | 32 | `0xb79986810ad3e08b5495a8edeaed0654da513ef6acfa15e8ff1d496ff2ef4a11` | `0xf976a20a5648c068fae109f796edaadfc32b28b8dd64f45101d2dfa4422cf5c4` | `c94660b2f674b412966bde08347477ad5f81be00def9554d184a366970c5c923` |
+| D2 tier 2 | `setFeeProfile(2,PERP,0,200)` | 33 | `0x48b66ca38c21064a6605af4038a657a191a56f327784dc1e0d0bffdc21075a62` | `0xe23662c28fe27b9c920f7a4ebaacb3e554c26dc5c01d187fad8861ca4a05d90f` | `862f6a62c33e73df98dbad816babb97cb60127f35d0547df80f2ae106822d33b` |
+| D2 tier 3 | `setFeeProfile(3,PERP,0,200)` | 34 | `0xaaf8ae230522b4a6b08a365be6e87f2544392e729b559db44968912b3a177f76` | `0xf219f8384e48cee81511808c0f93e9a934ce3786a05b9e32c41b28f3c9893090` | `68782a3d3875e53929a9b491e7d6ab32fe1547cd2e27471c2348c80ee3da4dc9` |
+| D2 tier 4 | `setFeeProfile(4,PERP,0,200)` | 35 | `0x9ec2e37332d4dbb27791ae7f4de7e852147b344f58210e61adb7b2f95a8d5b49` | `0x53dee1de9c83ca1008cc08a278efe81a9bd765898e1d099da80edd4311559543` | `cc26bb8cb57d91e91601317e27342c2b33a16d1e2a23b83a13755fedd7811c2e` |
+
+Each complete inner and outer calldata, calldata length, Keccak-256, SHA-256, exact Safe envelope and Builder path is in the [unsigned intent](../artifacts/perps_v2_replacement_deployment/d2_d3_s1_unsigned_intents_v1.json). The zero Safe gas/refund fields follow the previously successful Safe CALL convention and were independently checked through deployed `getTransactionHash`; wallet gas is a separate live operator check. Builder JSON does not bind the nonce or provide signatures. Nonces 31–35 and their hashes are conditional on separate earlier Safe transactions and canonical postflights. A changed nonce or envelope requires renewed review. No batching, MultiSend, or delegatecall is included.
+
+## Verification and stopping points
+
+`forge test -j 1 --match-path test/fork/DeoptD2D3ApprovedPolicyFork.t.sol -vv` passed **3/3** on an isolated fork of the pinned block. It queued six exact operations using Safe-address impersonation, rejected premature and unauthorized calls, executed after the simulated ETA, verified D3 and all five D2 profiles, retained maintenance and the legacy rebate budget, and rejected replay. This did **not** test real Safe 2/3 signatures. `python3 -m unittest tools.perps_v2_cutover.test_d2_d3_approved_policy_artifacts -v` passed **4/4** offline identity, DAG, intent and Builder checks. No public state changed.
+
+The smallest next separately authorized action is **D3_TOKEN S1 operator Safe authorization review** for the exact one-action unsigned package. Immediately before any separately authorized scheduling, recheck chain ID, Safe nonce and ownership, full envelope and SafeTx hash, Timelock queue/ETA margin, D3/D4/D5/D6 maintenance, D2 recipient, duplicate Safe proposals, a passing Safe UI simulation, full wallet gas/balance, and two genuine Safe owner confirmations. Require a canonical public Safe/Timelock scheduling postflight before considering the next operation. Do not promote the D3 risk compatibility gate or C13 until D3_TOKEN has actually executed and its public postflight passed. Do not mark D2_FEE_POLICY complete until all five tiers have separately executed and been verified.
+
+**Public scheduling, execution, Safe proposal, C02 execution, emergency release, migration and trading remain unauthorized.**

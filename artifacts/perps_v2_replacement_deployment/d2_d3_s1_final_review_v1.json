@@ -1,0 +1,63 @@
+{
+  "actionOrder": [
+    "D3_TOKEN",
+    "D2_PERP_TIER_0",
+    "D2_PERP_TIER_1",
+    "D2_PERP_TIER_2",
+    "D2_PERP_TIER_3",
+    "D2_PERP_TIER_4"
+  ],
+  "bufferSeconds": 3600,
+  "bufferedSchedulingCutoff": 1793012400,
+  "chainId": 84532,
+  "cutoffUtc": "2026-10-26T11:00:00+00:00",
+  "d2RecipientAccounting": "PASS_BOUNDED; Timelock is current nonzero recipient; D2 emits charge and D4 would transfer to recipient Vault account only after separate activation; no PFV hooks, insurance credit or historical rebate copy",
+  "d3Compatibility": "PASS; retain legacy collateral risk pointer, no D3-to-D5 wiring",
+  "eta": 1793102400,
+  "etaUtc": "2026-10-27T12:00:00+00:00",
+  "firstAction": "D3_TOKEN scheduling authorization is the smallest separate next milestone; no public action approved by this package",
+  "frozenSourceRevision": "25c36670883604c1ef5229642ee6548aea6796c3",
+  "intentPath": "artifacts/perps_v2_replacement_deployment/d2_d3_s1_unsigned_intents_v1.json",
+  "liveSnapshotPath": "artifacts/perps_v2_replacement_deployment/d2_d3_testnet_policy_live_snapshot_v1.json",
+  "maintenance": "PASS; D4 four flags true, migration OPEN, PME/seizer/fee pointers zero, D5 delay 600, D6 paused, shared D4 ACL absent",
+  "operationCount": 6,
+  "policyApprovalPath": "artifacts/perps_v2_replacement_deployment/d2_d3_testnet_policy_approval_v1.json",
+  "publicTransactionsSent": false,
+  "reviewBlock": {
+    "hash": "0x174be2bf5d0c07e4ec4882448769ad6be2bd2125499f382e6dc15a4900a37ac7",
+    "number": 49976909,
+    "timestamp": 1792917250,
+    "utc": "2026-10-25T08:34:10+00:00"
+  },
+  "safeGovernance": {
+    "address": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "domainSeparator": "0x2c0d582d9c9e132109be0c6b670d4740fd7774bb12703c7888886a9b7748656a",
+    "guard": "0x0000000000000000000000000000000000000000",
+    "modules": [],
+    "nonceObserved": 30,
+    "owners": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "threshold": 2,
+    "zeroGasRefundConvention": "proposed based on successful prior reviewed Safe CALLs; must match actual Safe UI transaction"
+  },
+  "schema": "deopt.d2-d3-testnet-policy-s1-final-review.v1",
+  "status": "PASS_OFFLINE_WITH_CONDITIONAL_SAFE_SEQUENCE",
+  "timelock": {
+    "address": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "gracePeriod": 1209600,
+    "minDelay": 86400,
+    "queuePaused": false,
+    "safeExecutor": true,
+    "safeProposer": true
+  },
+  "unresolvedOperatorSide": [
+    "Safe UI simulation and full wallet gas/balance",
+    "two genuine Safe owner confirmations for each of six distinct Safe transactions",
+    "no duplicate pending Safe proposal",
+    "fresh nonce, operation state, ETA margin, maintenance and fee recipient before each scheduling",
+    "canonical postflight after each; no automatic continuation"
+  ]
+}

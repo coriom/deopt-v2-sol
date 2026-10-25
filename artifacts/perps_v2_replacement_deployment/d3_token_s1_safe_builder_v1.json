@@ -1,0 +1,51 @@
+{
+  "chainId": "84532",
+  "createdAt": 1792917250000,
+  "meta": {
+    "createdFromOwnerAddress": "",
+    "createdFromSafeAddress": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "description": "One unsigned Safe CALL to custom Timelock queueTransaction. No public scheduling approved. Builder does not bind nonce or gas/refund envelope.",
+    "name": "OFFLINE_REVIEW_ONLY_NOT_AUTHORIZED_D3_TOKEN_S1",
+    "txBuilderVersion": "1.18.0"
+  },
+  "transactions": [
+    {
+      "contractInputsValues": {
+        "data": "0x203666170000000000000000000000006eae407f5640b006fac9965182e238582a3b412e00000000000000000000000000000000000000000000000000000000000000050000000000000000000000000000000000000000000000000000000000000001",
+        "eta": "1793102400",
+        "target": "0x43Ac3782e75018981a8F8d210049f2A185b07331",
+        "value": "0"
+      },
+      "contractMethod": {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "target",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "value",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "data",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint256",
+            "name": "eta",
+            "type": "uint256"
+          }
+        ],
+        "name": "queueTransaction",
+        "payable": false
+      },
+      "data": "0x8e361cdf00000000000000000000000043ac3782e75018981a8f8d210049f2a185b0733100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ae092400000000000000000000000000000000000000000000000000000000000000064203666170000000000000000000000006eae407f5640b006fac9965182e238582a3b412e0000000000000000000000000000000000000000000000000000000000000005000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000",
+      "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "value": "0"
+    }
+  ],
+  "version": "1.0"
+}

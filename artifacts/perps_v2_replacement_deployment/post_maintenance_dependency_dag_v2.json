@@ -1,0 +1,1870 @@
+{
+  "chainId": 84532,
+  "edges": [
+    {
+      "from": "MAINTENANCE_VERIFIED",
+      "hard": true,
+      "to": "C20"
+    },
+    {
+      "from": "C20",
+      "hard": true,
+      "to": "C12"
+    },
+    {
+      "from": "C20",
+      "hard": true,
+      "to": "ORACLE_AND_RISK_POLICY"
+    },
+    {
+      "from": "MAINTENANCE_VERIFIED",
+      "hard": true,
+      "to": "C01"
+    },
+    {
+      "from": "C01",
+      "hard": true,
+      "to": "C02"
+    },
+    {
+      "from": "C02",
+      "hard": true,
+      "to": "MKT1_INACTIVE"
+    },
+    {
+      "from": "MKT1_INACTIVE",
+      "hard": true,
+      "to": "C03"
+    },
+    {
+      "from": "C03",
+      "hard": true,
+      "to": "MKT2_INACTIVE"
+    },
+    {
+      "from": "MKT1_INACTIVE",
+      "hard": true,
+      "to": "C04"
+    },
+    {
+      "from": "MKT2_INACTIVE",
+      "hard": true,
+      "to": "C05"
+    },
+    {
+      "from": "C04",
+      "hard": true,
+      "to": "C07"
+    },
+    {
+      "from": "C05",
+      "hard": true,
+      "to": "C07"
+    },
+    {
+      "from": "C07",
+      "hard": true,
+      "to": "C08"
+    },
+    {
+      "from": "MAINTENANCE_VERIFIED",
+      "hard": true,
+      "to": "D3_TOKEN"
+    },
+    {
+      "from": "C20",
+      "hard": true,
+      "to": "D3_RISK_COMPAT_VERIFIED"
+    },
+    {
+      "from": "D3_TOKEN",
+      "hard": true,
+      "to": "D3_RISK_COMPAT_VERIFIED"
+    },
+    {
+      "from": "MAINTENANCE_VERIFIED",
+      "hard": true,
+      "to": "D2_FEE_POLICY"
+    },
+    {
+      "from": "D2_FEE_POLICY",
+      "hard": true,
+      "to": "C24"
+    },
+    {
+      "from": "D2_FEE_POLICY",
+      "hard": true,
+      "to": "C14"
+    },
+    {
+      "from": "C14",
+      "hard": true,
+      "to": "C15"
+    },
+    {
+      "from": "C24",
+      "hard": true,
+      "to": "C15"
+    },
+    {
+      "from": "D3_TOKEN",
+      "hard": true,
+      "to": "C13"
+    },
+    {
+      "from": "D3_RISK_COMPAT_VERIFIED",
+      "hard": true,
+      "to": "C13"
+    },
+    {
+      "from": "MAINTENANCE_VERIFIED",
+      "hard": true,
+      "to": "C16"
+    },
+    {
+      "from": "MAINTENANCE_VERIFIED",
+      "hard": true,
+      "to": "C17"
+    },
+    {
+      "from": "C12",
+      "hard": true,
+      "to": "C11"
+    },
+    {
+      "from": "C16",
+      "hard": true,
+      "to": "C11"
+    },
+    {
+      "from": "C12",
+      "hard": true,
+      "to": "D4_OTHER_WIRING"
+    },
+    {
+      "from": "C11",
+      "hard": true,
+      "to": "D4_OTHER_WIRING"
+    },
+    {
+      "from": "MAINTENANCE_VERIFIED",
+      "hard": true,
+      "to": "GUARDIAN_POLICY"
+    },
+    {
+      "from": "GUARDIAN_POLICY",
+      "hard": true,
+      "to": "C06"
+    },
+    {
+      "from": "GUARDIAN_POLICY",
+      "hard": true,
+      "to": "C18"
+    },
+    {
+      "from": "GUARDIAN_POLICY",
+      "hard": true,
+      "to": "C19"
+    },
+    {
+      "from": "GUARDIAN_POLICY",
+      "hard": true,
+      "to": "C21"
+    },
+    {
+      "from": "MAINTENANCE_VERIFIED",
+      "hard": true,
+      "to": "EXECUTOR_IDENTITY_REVIEW"
+    },
+    {
+      "from": "EXECUTOR_IDENTITY_REVIEW",
+      "hard": true,
+      "to": "C23"
+    },
+    {
+      "from": "C11",
+      "hard": true,
+      "to": "C23"
+    },
+    {
+      "from": "C23",
+      "hard": true,
+      "to": "C22"
+    },
+    {
+      "from": "MAINTENANCE_VERIFIED",
+      "hard": true,
+      "to": "ACL_POLICY_REVIEW"
+    },
+    {
+      "from": "C11",
+      "hard": true,
+      "to": "MIGRATION_PREFLIGHT"
+    },
+    {
+      "from": "C12",
+      "hard": true,
+      "to": "MIGRATION_PREFLIGHT"
+    },
+    {
+      "from": "C13",
+      "hard": true,
+      "to": "MIGRATION_PREFLIGHT"
+    },
+    {
+      "from": "C15",
+      "hard": true,
+      "to": "MIGRATION_PREFLIGHT"
+    },
+    {
+      "from": "C16",
+      "hard": true,
+      "to": "MIGRATION_PREFLIGHT"
+    },
+    {
+      "from": "C17",
+      "hard": true,
+      "to": "MIGRATION_PREFLIGHT"
+    },
+    {
+      "from": "C08",
+      "hard": true,
+      "to": "MIGRATION_PREFLIGHT"
+    },
+    {
+      "from": "D4_OTHER_WIRING",
+      "hard": true,
+      "to": "MIGRATION_PREFLIGHT"
+    },
+    {
+      "from": "ORACLE_AND_RISK_POLICY",
+      "hard": true,
+      "to": "MIGRATION_PREFLIGHT"
+    },
+    {
+      "from": "ACL_POLICY_REVIEW",
+      "hard": true,
+      "to": "MIGRATION_PREFLIGHT"
+    },
+    {
+      "from": "MIGRATION_PREFLIGHT",
+      "hard": true,
+      "to": "MIGRATION_SEED_01"
+    },
+    {
+      "from": "MIGRATION_SEED_01",
+      "hard": true,
+      "to": "MIGRATION_SEED_02"
+    },
+    {
+      "from": "MIGRATION_SEED_02",
+      "hard": true,
+      "to": "MIGRATION_SEED_03"
+    },
+    {
+      "from": "MIGRATION_SEED_03",
+      "hard": true,
+      "to": "MIGRATION_SEED_04"
+    },
+    {
+      "from": "MIGRATION_SEED_04",
+      "hard": true,
+      "to": "MIGRATION_SEED_05"
+    },
+    {
+      "from": "MIGRATION_SEED_05",
+      "hard": true,
+      "to": "MIGRATION_SEED_06"
+    },
+    {
+      "from": "MIGRATION_SEED_06",
+      "hard": true,
+      "to": "MIGRATION_SEED_07"
+    },
+    {
+      "from": "MIGRATION_SEED_07",
+      "hard": true,
+      "to": "MIGRATION_SEED_08"
+    },
+    {
+      "from": "MIGRATION_SEED_08",
+      "hard": true,
+      "to": "ECONOMIC_EQUALITY"
+    },
+    {
+      "from": "ECONOMIC_EQUALITY",
+      "hard": true,
+      "to": "MIGRATION_SEAL"
+    },
+    {
+      "from": "C11",
+      "hard": true,
+      "to": "MIGRATION_SEAL"
+    },
+    {
+      "from": "C12",
+      "hard": true,
+      "to": "MIGRATION_SEAL"
+    },
+    {
+      "from": "C16",
+      "hard": true,
+      "to": "MIGRATION_SEAL"
+    },
+    {
+      "from": "MIGRATION_SEAL",
+      "hard": true,
+      "to": "C25"
+    },
+    {
+      "from": "ACL_POLICY_REVIEW",
+      "hard": true,
+      "to": "C25"
+    },
+    {
+      "from": "MIGRATION_SEAL",
+      "hard": true,
+      "to": "C26"
+    },
+    {
+      "from": "ACL_POLICY_REVIEW",
+      "hard": true,
+      "to": "C26"
+    },
+    {
+      "from": "C25",
+      "hard": true,
+      "to": "STRANDED_VAULT_REVOKE"
+    },
+    {
+      "from": "C26",
+      "hard": true,
+      "to": "STRANDED_VAULT_REVOKE"
+    },
+    {
+      "from": "C25",
+      "hard": true,
+      "to": "STRANDED_INSURANCE_REVOKE"
+    },
+    {
+      "from": "C26",
+      "hard": true,
+      "to": "STRANDED_INSURANCE_REVOKE"
+    },
+    {
+      "from": "MIGRATION_SEAL",
+      "hard": true,
+      "to": "FIRST_TRADE_GUARD"
+    },
+    {
+      "from": "C25",
+      "hard": true,
+      "to": "FIRST_TRADE_GUARD"
+    },
+    {
+      "from": "C26",
+      "hard": true,
+      "to": "FIRST_TRADE_GUARD"
+    },
+    {
+      "from": "C22",
+      "hard": true,
+      "to": "FIRST_TRADE_GUARD"
+    },
+    {
+      "from": "FIRST_TRADE_GUARD",
+      "hard": true,
+      "to": "D1_RELEASE_GLOBAL"
+    },
+    {
+      "from": "D1_RELEASE_GLOBAL",
+      "hard": true,
+      "to": "D1_RELEASE_CONFIG"
+    },
+    {
+      "from": "D1_RELEASE_CONFIG",
+      "hard": true,
+      "to": "MKT1_RESTRICTED_ACTIVATE"
+    },
+    {
+      "from": "MKT1_RESTRICTED_ACTIVATE",
+      "hard": true,
+      "to": "D1_REPAUSE_CONFIG"
+    },
+    {
+      "from": "D1_REPAUSE_CONFIG",
+      "hard": true,
+      "to": "D4_SELECTIVE_RELEASE"
+    },
+    {
+      "from": "D4_SELECTIVE_RELEASE",
+      "hard": true,
+      "to": "D6_SELECTIVE_RELEASE"
+    },
+    {
+      "from": "FIRST_TRADE_GUARD",
+      "hard": true,
+      "to": "RESTRICTED_FIRST_TRADE"
+    },
+    {
+      "from": "D6_SELECTIVE_RELEASE",
+      "hard": true,
+      "to": "RESTRICTED_FIRST_TRADE"
+    },
+    {
+      "from": "RESTRICTED_FIRST_TRADE",
+      "hard": true,
+      "to": "BROADER_ACTIVATION"
+    }
+  ],
+  "hardOrderingNotes": [
+    "C20 canonical execution and D5=600 readback strictly precede C12 scheduling or authorization; not only a queue event.",
+    "D1 createMarket makes each market active immediately; keep D4/D6 maintenance closed and deactivate each market with a separate canonical operation before cutover.",
+    "D1 config pause must follow market/deviation configuration because it blocks admin setters.",
+    "Future market activation requires separately authorized owner unpause of D1 global and config pause, market-status change, and config re-pause while D4/D6 remain closed.",
+    "Safe scheduling and Timelock execution are independent approvals/receipts for every governed node; no ETA or Safe nonce is fixed here.",
+    "Migration seeds occur before irreversible seal; shared D4 grants follow seal under the reviewed transition manifest.",
+    "D6 runtime executor grant and inventory check precede Timelock bootstrap executor removal; PME remains paused.",
+    "No initial maintenance release until sealed migration, ACLs, fresh-domain guard, and separate closed-test approval."
+  ],
+  "nodes": [
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": false,
+      "currentState": "M1/M2 complete",
+      "dependsOn": [],
+      "failureOrAmbiguity": "Stop at review blocker; revise in a separate milestone",
+      "id": "MAINTENANCE_VERIFIED",
+      "independentPreparation": false,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": null,
+      "methodOrReview": "canonical public receipt and pinned readback",
+      "priority": "HARD_GATE",
+      "publicTimelockExecuteRequired": false,
+      "publicTimelockScheduleRequired": false,
+      "requiredReadback": "D4 closed and D6 paused",
+      "requiredTargetState": "D4 closed and D6 paused",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "M1/M2 postflight evidence",
+      "target": "D4+D6"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "maxOracleDelay=0",
+      "dependsOn": [
+        "MAINTENANCE_VERIFIED"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "C20",
+      "independentPreparation": true,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "setMaxOracleDelay(uint256)",
+      "priority": "FIRST",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "canonical execution receipt; MaxOracleDelaySet(0,600); fresh D5.maxOracleDelay()==600",
+      "requiredTargetState": "maxOracleDelay=600 seconds",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpRiskModule.sol:314; corrected C12/C20 manifest C20",
+      "target": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "riskModule=zero",
+      "dependsOn": [
+        "C20"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "C12",
+      "independentPreparation": false,
+      "knownBlockers": [
+        "C20 not yet executed"
+      ],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "setRiskModule(address)",
+      "priority": "HARD_GATE",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "C20 executed and D5=600 before C12 queue; D4 pointer D5 after separate receipt",
+      "requiredTargetState": "riskModule=D5",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpEngineAdmin.sol:198; corrected C12/C20 manifest C12",
+      "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": false,
+      "currentState": "constructor oracle/vault/base token set; market-specific policy pending",
+      "dependsOn": [
+        "C20"
+      ],
+      "failureOrAmbiguity": "Stop at review blocker; revise in a separate milestone",
+      "id": "ORACLE_AND_RISK_POLICY",
+      "independentPreparation": true,
+      "knownBlockers": [
+        "complete policy parameters require separate review"
+      ],
+      "mandatoryDelaySeconds": null,
+      "methodOrReview": "read-only policy approval; any changes individually governed",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": false,
+      "publicTimelockScheduleRequired": false,
+      "requiredReadback": "review source-backed oracle freshness and collateral config for every intended token",
+      "requiredTargetState": "validated oracle router, settlement, collateral weights and stress/margin policy",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpRiskModule.sol:293-317; src/collateral/CollateralVaultAdmin.sol:190",
+      "target": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "mUSDC settlement disallowed",
+      "dependsOn": [
+        "MAINTENANCE_VERIFIED"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "C01",
+      "independentPreparation": true,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "setSettlementAssetAllowed(address,bool)",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "isSettlementAssetAllowed(mUSDC)=true",
+      "requiredTargetState": "mUSDC allowed",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpMarketRegistry.sol:426; corrected manifest C01",
+      "target": "0x6B3D846536116082dC4E7227861C341Bb85Ee963"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "market 1 absent",
+      "dependsOn": [
+        "C01"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "C02",
+      "independentPreparation": false,
+      "knownBlockers": [
+        "active-at-creation must remain isolated by D4/D6 closure"
+      ],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "createMarket(...)",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "marketId=1; exact params/oracle; isActive=true immediately",
+      "requiredTargetState": "ETH-PERP market 1 created; creates ACTIVE by source",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpMarketRegistry.sol:540-608; corrected manifest C02",
+      "target": "0x6B3D846536116082dC4E7227861C341Bb85Ee963"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "market 1 active immediately after creation",
+      "dependsOn": [
+        "C02"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "MKT1_INACTIVE",
+      "independentPreparation": false,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "setMarketStatus(1,false,false)",
+      "priority": "HARD_GATE",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "getMarket(1).isActive=false",
+      "requiredTargetState": "market 1 inactive pending restricted activation",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpMarketRegistry.sol:442",
+      "target": "0x6B3D846536116082dC4E7227861C341Bb85Ee963"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "market 2 absent",
+      "dependsOn": [
+        "MKT1_INACTIVE"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "C03",
+      "independentPreparation": false,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "createMarket(...)",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "marketId=2; exact params/oracle; isActive=true immediately",
+      "requiredTargetState": "BTC-PERP market 2 created; creates ACTIVE by source",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpMarketRegistry.sol:540-608; corrected manifest C03",
+      "target": "0x6B3D846536116082dC4E7227861C341Bb85Ee963"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "market 2 active immediately after creation",
+      "dependsOn": [
+        "C03"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "MKT2_INACTIVE",
+      "independentPreparation": false,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "setMarketStatus(2,false,false)",
+      "priority": "HARD_GATE",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "getMarket(2).isActive=false",
+      "requiredTargetState": "market 2 inactive pending restricted activation",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpMarketRegistry.sol:442",
+      "target": "0x6B3D846536116082dC4E7227861C341Bb85Ee963"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "market 1 execution deviation unconfigured",
+      "dependsOn": [
+        "MKT1_INACTIVE"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "C04",
+      "independentPreparation": false,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "setMaxExecutionDeviationBps(1,100)",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "market 1 maxExecutionDeviationBps=100",
+      "requiredTargetState": "market 1 100 bps or separately reapproved",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpMarketRegistry.sol:521; corrected manifest C04",
+      "target": "0x6B3D846536116082dC4E7227861C341Bb85Ee963"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "market 2 execution deviation unconfigured",
+      "dependsOn": [
+        "MKT2_INACTIVE"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "C05",
+      "independentPreparation": false,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "setMaxExecutionDeviationBps(2,100)",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "market 2 maxExecutionDeviationBps=100",
+      "requiredTargetState": "market 2 100 bps or separately reapproved",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpMarketRegistry.sol:521; corrected manifest C05",
+      "target": "0x6B3D846536116082dC4E7227861C341Bb85Ee963"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "creation/config open",
+      "dependsOn": [
+        "C04",
+        "C05"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "C07",
+      "independentPreparation": false,
+      "knownBlockers": [
+        "configPaused blocks later registry setters until separate owner release"
+      ],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "setEmergencyModes(true,true)",
+      "priority": "HARD_GATE",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "creationPaused=true; configPaused=true; markets inactive",
+      "requiredTargetState": "creationPaused=true and configPaused=true",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpMarketRegistry.sol:405; corrected manifest C07",
+      "target": "0x6B3D846536116082dC4E7227861C341Bb85Ee963"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "global pause false",
+      "dependsOn": [
+        "C07"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "C08",
+      "independentPreparation": false,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "pause()",
+      "priority": "HARD_GATE",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "paused=true; later status changes require separate owner unpause",
+      "requiredTargetState": "global pause true",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpMarketRegistry.sol:357; corrected manifest C08",
+      "target": "0x6B3D846536116082dC4E7227861C341Bb85Ee963"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "mUSDC seize config unset; default enabled with zero spread",
+      "dependsOn": [
+        "MAINTENANCE_VERIFIED"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "D3_TOKEN",
+      "independentPreparation": true,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "setTokenSeizeConfig(address,uint16,bool)",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "seizeConfigs(mUSDC)==(5,true,true); D3 compatible risk pointer and D4/D6 maintenance intact",
+      "requiredTargetState": "mUSDC seizeConfigs=(spreadBps=5,isEnabled=true,isSet=true); Base Sepolia only",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/liquidation/CollateralSeizer.sol:203; trusted token policy required",
+      "target": "0x43Ac3782e75018981a8F8d210049f2A185b07331"
+    },
+    {
+      "authority": "Independent read-only compatibility review after D3_TOKEN public postflight; no Safe/Timelock transaction",
+      "canonicalReceiptRequired": false,
+      "currentState": "D3 points to compatible collateral RiskModule 0xc0f019005a25524a34F2Ee8839DCDCC50715DD7B; D4 independently points to D5",
+      "dependsOn": [
+        "C20",
+        "D3_TOKEN"
+      ],
+      "failureOrAmbiguity": "Block C13 and preserve pointers and maintenance; reconcile ABI and live config read-only",
+      "id": "D3_RISK_COMPAT_VERIFIED",
+      "independentPreparation": false,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": null,
+      "methodOrReview": "read-only ABI and collateral compatibility gate; no D3.setRiskModule operation",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": false,
+      "publicTimelockScheduleRequired": false,
+      "requiredReadback": "D3 riskModule()==compatible collateral RiskModule; baseCollateralToken()==mUSDC; collateralConfigs(mUSDC)==(10000,true); D3 seizeConfigs(mUSDC)==(5,true,true) after D3_TOKEN postflight; D3 Vault/Oracle and ownership unchanged; D4 riskModule()==D5; D4/D6 maintenance intact",
+      "requiredTargetState": "verified compatible D3 collateral-risk pointer without state change",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/liquidation/CollateralSeizer.sol:12-17,306-323; src/risk/RiskModuleStorage.sol:202-223; approved d3_risk_dag_amendment_proposal_v1.json",
+      "target": "READ_ONLY_D3_D4"
+    },
+    {
+      "approvedSuboperations": [
+        "D2_PERP_TIER_0",
+        "D2_PERP_TIER_1",
+        "D2_PERP_TIER_2",
+        "D2_PERP_TIER_3",
+        "D2_PERP_TIER_4"
+      ],
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": false,
+      "currentState": "Operator approved Base Sepolia policy; five PERP profiles remain constructor defaults until separately executed",
+      "dependsOn": [
+        "MAINTENANCE_VERIFIED"
+      ],
+      "failureOrAmbiguity": "Stop at review blocker; revise in a separate milestone",
+      "id": "D2_FEE_POLICY",
+      "independentPreparation": true,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": null,
+      "methodOrReview": "approved policy gate plus five independent setFeeProfile(uint8,PERP,0,200) Timelock suboperations; no batch",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": false,
+      "publicTimelockScheduleRequired": false,
+      "requiredReadback": "all five PERP profiles (0,200) and five canonical postflights before C24/C14; Timelock recipient; zero new-D2 budget/root/funding account/fee vault; legacy budget unchanged",
+      "requiredTargetState": "all five PERP tiers maker=0ppm/taker=200ppm; Timelock recipient; zero rebate budget/root/funding account/fee vault; legacy liability separate",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/fees/FeesManagerV2.sol:110-167",
+      "target": "0x9947F42cC29A32992bbf2030ee49E35C839EDEd5"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "D4 fee consumer=false",
+      "dependsOn": [
+        "D2_FEE_POLICY"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "C24",
+      "independentPreparation": false,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "setFeeConsumer(address,bool)",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "isFeeConsumer(D4)=true; D4/D6 remain closed",
+      "requiredTargetState": "D4 fee consumer=true once fee policy approved",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/fees/FeesManagerV2.sol:141; corrected manifest C24",
+      "target": "0x9947F42cC29A32992bbf2030ee49E35C839EDEd5"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "feesManagerV2=zero",
+      "dependsOn": [
+        "D2_FEE_POLICY"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "C14",
+      "independentPreparation": false,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "setFeesManagerV2(address)",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "feesManagerV2()==D2",
+      "requiredTargetState": "feesManagerV2=D2",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpEngineAdmin.sol:226; corrected manifest C14",
+      "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "useFeesManagerV2=false",
+      "dependsOn": [
+        "C14",
+        "C24"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "C15",
+      "independentPreparation": false,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "setUseFeesManagerV2(bool)",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "useFeesManagerV2()==true; liabilities unchanged",
+      "requiredTargetState": "useFeesManagerV2=true after fee routing and consumer permissions",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpEngineAdmin.sol:234; corrected manifest C15",
+      "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "collateralSeizer=zero",
+      "dependsOn": [
+        "D3_TOKEN",
+        "D3_RISK_COMPAT_VERIFIED"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "C13",
+      "independentPreparation": false,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "setCollateralSeizer(address)",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "collateralSeizer()==D3",
+      "requiredTargetState": "collateralSeizer=D3",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpEngineAdmin.sol:204; corrected manifest C13",
+      "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "clearingAccount=zero",
+      "dependsOn": [
+        "MAINTENANCE_VERIFIED"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "C16",
+      "independentPreparation": true,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "setClearingAccount(address)",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "clearingAccount()==canonical shared Clearing; ledger remains 1000000000",
+      "requiredTargetState": "clearingAccount=shared Clearing",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpEngineTradingV2.sol:172; corrected manifest C16",
+      "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "insuranceFund=zero",
+      "dependsOn": [
+        "MAINTENANCE_VERIFIED"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "C17",
+      "independentPreparation": true,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "setInsuranceFund(address)",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "insuranceFund()==shared Insurance; no backstop grant yet",
+      "requiredTargetState": "insuranceFund=shared InsuranceFund",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpEngineAdmin.sol:217; corrected manifest C17",
+      "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "matchingEngine=zero",
+      "dependsOn": [
+        "C12",
+        "C16"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "C11",
+      "independentPreparation": false,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "setMatchingEngine(address)",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "matchingEngine()==D6; D6.paused=true; D4 flags true",
+      "requiredTargetState": "matchingEngine=D6 while D6 remains paused",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpEngineAdmin.sol:171; corrected manifest C11",
+      "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": false,
+      "currentState": "registry/vault/oracle constructor references present; impact source zero",
+      "dependsOn": [
+        "C12",
+        "C11"
+      ],
+      "failureOrAmbiguity": "Stop at review blocker; revise in a separate milestone",
+      "id": "D4_OTHER_WIRING",
+      "independentPreparation": false,
+      "knownBlockers": [
+        "impact source and caps require separate policy"
+      ],
+      "mandatoryDelaySeconds": null,
+      "methodOrReview": "verify existing pointers; setImpactMidSource/launch cap only if required",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": false,
+      "publicTimelockScheduleRequired": false,
+      "requiredReadback": "oracle/vault/registry exact; funding disabled until impact source and policy reviewed",
+      "requiredTargetState": "all additional source-backed pointers and launch caps reviewed",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpEngineViews.sol:11-20; src/perp/PerpEngineAdmin.sol:185,192,242",
+      "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": false,
+      "currentState": "D4 guardian=Timelock; D1/D5/D6 zero",
+      "dependsOn": [
+        "MAINTENANCE_VERIFIED"
+      ],
+      "failureOrAmbiguity": "Stop at review blocker; revise in a separate milestone",
+      "id": "GUARDIAN_POLICY",
+      "independentPreparation": true,
+      "knownBlockers": [
+        "individual authority review"
+      ],
+      "mandatoryDelaySeconds": null,
+      "methodOrReview": "read-only capability and identity review",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": false,
+      "publicTimelockScheduleRequired": false,
+      "requiredReadback": "negative tests guardian cannot unpause/recover owner",
+      "requiredTargetState": "reviewed Safe guardian pause-only policy",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpMarketRegistry.sol:344; src/perp/PerpEngineAdmin.sol:54; src/perp/PerpRiskModule.sol:280; src/matching/PerpMatchingEngineV2.sol:378",
+      "target": "D1+D4+D5+D6"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "guardian as pinned readback",
+      "dependsOn": [
+        "GUARDIAN_POLICY"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "C06",
+      "independentPreparation": false,
+      "knownBlockers": [
+        "separate final review and authorization"
+      ],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "setGuardian(address)",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "guardian()==OPS Safe; owner unchanged; pause-only negative checks",
+      "requiredTargetState": "guardian=OPS Safe after policy approval",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpMarketRegistry.sol:344; corrected manifest C06",
+      "target": "0x6B3D846536116082dC4E7227861C341Bb85Ee963"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "guardian as pinned readback",
+      "dependsOn": [
+        "GUARDIAN_POLICY"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "C18",
+      "independentPreparation": false,
+      "knownBlockers": [
+        "separate final review and authorization"
+      ],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "setGuardian(address)",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "guardian()==OPS Safe; owner unchanged; pause-only negative checks",
+      "requiredTargetState": "guardian=OPS Safe after policy approval",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpEngineAdmin.sol:54; corrected manifest C18",
+      "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "guardian as pinned readback",
+      "dependsOn": [
+        "GUARDIAN_POLICY"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "C19",
+      "independentPreparation": false,
+      "knownBlockers": [
+        "separate final review and authorization"
+      ],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "setGuardian(address)",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "guardian()==OPS Safe; owner unchanged; pause-only negative checks",
+      "requiredTargetState": "guardian=OPS Safe after policy approval",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpRiskModule.sol:280; corrected manifest C19",
+      "target": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "guardian as pinned readback",
+      "dependsOn": [
+        "GUARDIAN_POLICY"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "C21",
+      "independentPreparation": false,
+      "knownBlockers": [
+        "separate final review and authorization"
+      ],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "setGuardian(address)",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "guardian()==OPS Safe; owner unchanged; pause-only negative checks",
+      "requiredTargetState": "guardian=OPS Safe after policy approval",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/matching/PerpMatchingEngineV2.sol:378; corrected manifest C21",
+      "target": "0xeeA4e5d891B90D3d99E9C4e2c61069911477110E"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": false,
+      "currentState": "Timelock executor true; runtime executor false",
+      "dependsOn": [
+        "MAINTENANCE_VERIFIED"
+      ],
+      "failureOrAmbiguity": "Stop at review blocker; revise in a separate milestone",
+      "id": "EXECUTOR_IDENTITY_REVIEW",
+      "independentPreparation": false,
+      "knownBlockers": [
+        "candidate identity requires separate operational evidence"
+      ],
+      "mandatoryDelaySeconds": null,
+      "methodOrReview": "read-only identity and permissions review",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": false,
+      "publicTimelockScheduleRequired": false,
+      "requiredReadback": "candidate 0x58Ad... authenticated; no public grant yet",
+      "requiredTargetState": "runtime address identity and first-trade guard policy approved",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/matching/PerpMatchingEngineV2.sol:384",
+      "target": "0xeeA4e5d891B90D3d99E9C4e2c61069911477110E"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "runtime executor false",
+      "dependsOn": [
+        "EXECUTOR_IDENTITY_REVIEW",
+        "C11"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "C23",
+      "independentPreparation": false,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "setExecutor(address,bool)",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "isExecutor(runtime)=true; paused=true",
+      "requiredTargetState": "reviewed runtime executor true while PME paused",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/matching/PerpMatchingEngineV2.sol:384; corrected manifest C23",
+      "target": "0xeeA4e5d891B90D3d99E9C4e2c61069911477110E"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "Timelock bootstrap executor true",
+      "dependsOn": [
+        "C23"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "C22",
+      "independentPreparation": false,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "setExecutor(address,bool)",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "isExecutor(Timelock)=false; runtime=true; D6 paused=true",
+      "requiredTargetState": "bootstrap executor false only after runtime grant verified",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/matching/PerpMatchingEngineV2.sol:384; corrected manifest C22",
+      "target": "0xeeA4e5d891B90D3d99E9C4e2c61069911477110E"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": false,
+      "currentState": "D4 unauthorized; stranded old Engine grants persist",
+      "dependsOn": [
+        "MAINTENANCE_VERIFIED"
+      ],
+      "failureOrAmbiguity": "Stop at review blocker; revise in a separate milestone",
+      "id": "ACL_POLICY_REVIEW",
+      "independentPreparation": false,
+      "knownBlockers": [
+        "exact dual-engine cutover and withdrawal policy requires review"
+      ],
+      "mandatoryDelaySeconds": null,
+      "methodOrReview": "read-only ACL/ledger review",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": false,
+      "publicTimelockScheduleRequired": false,
+      "requiredReadback": "D4 flags true; D6 paused; Clearing ledger unchanged; plan old grants separately",
+      "requiredTargetState": "bounded dual-engine policy and no-double-funding plan approved",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "shared_acl_transition_manifest.json; src/collateral/CollateralVaultAdmin.sol:175; src/core/InsuranceFund.sol:346",
+      "target": "Vault+Insurance"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": false,
+      "currentState": "OPEN; no seeded positions",
+      "dependsOn": [
+        "C11",
+        "C12",
+        "C13",
+        "C15",
+        "C16",
+        "C17",
+        "C08",
+        "D4_OTHER_WIRING",
+        "ORACLE_AND_RISK_POLICY",
+        "ACL_POLICY_REVIEW"
+      ],
+      "failureOrAmbiguity": "Stop at review blocker; revise in a separate milestone",
+      "id": "MIGRATION_PREFLIGHT",
+      "independentPreparation": false,
+      "knownBlockers": [
+        "configuration and each seed require independent review"
+      ],
+      "mandatoryDelaySeconds": null,
+      "methodOrReview": "read-only migration preflight",
+      "priority": "HARD_GATE",
+      "publicTimelockExecuteRequired": false,
+      "publicTimelockScheduleRequired": false,
+      "requiredReadback": "eight seed intents separately reviewed; no Clearing refill",
+      "requiredTargetState": "approved exact snapshot replay package and non-duplication checks",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpEngineTradingV2.sol:226-303; migration_replay_package.json",
+      "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "OPEN; seed not yet applied",
+      "dependsOn": [
+        "MIGRATION_PREFLIGHT"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "MIGRATION_SEED_01",
+      "independentPreparation": false,
+      "knownBlockers": [
+        "separate review/authorization for this one seed"
+      ],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "adminSeedMarketFunding(uint256,int256,uint64)",
+      "priority": "HARD_GATE",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "MarketState(marketId) := (cumulativeFundingRate1e18, lastFundingTimestamp); no Vault/Clearing funding",
+      "requiredTargetState": "exact canonical {'kind': 'market', 'marketId': 1} seeded once",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpEngineTradingV2.sol:226-303; migration_replay_package.json",
+      "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "OPEN; seed not yet applied",
+      "dependsOn": [
+        "MIGRATION_SEED_01"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "MIGRATION_SEED_02",
+      "independentPreparation": false,
+      "knownBlockers": [
+        "separate review/authorization for this one seed"
+      ],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "adminSeedMarketFunding(uint256,int256,uint64)",
+      "priority": "HARD_GATE",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "MarketState(marketId) := (cumulativeFundingRate1e18, lastFundingTimestamp); no Vault/Clearing funding",
+      "requiredTargetState": "exact canonical {'kind': 'market', 'marketId': 2} seeded once",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpEngineTradingV2.sol:226-303; migration_replay_package.json",
+      "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "OPEN; seed not yet applied",
+      "dependsOn": [
+        "MIGRATION_SEED_02"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "MIGRATION_SEED_03",
+      "independentPreparation": false,
+      "knownBlockers": [
+        "separate review/authorization for this one seed"
+      ],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "priority": "HARD_GATE",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "position(trader,marketId) := (size, openNotional, lastCumFundingRate) AND OI updated via _updateMarketOpenInterest; no Vault/Clearing funding",
+      "requiredTargetState": "exact canonical {'kind': 'position', 'marketId': 1, 'trader': '0x290bd12c93e467bf51c51f5273d35bddb19e9274'} seeded once",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpEngineTradingV2.sol:226-303; migration_replay_package.json",
+      "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "OPEN; seed not yet applied",
+      "dependsOn": [
+        "MIGRATION_SEED_03"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "MIGRATION_SEED_04",
+      "independentPreparation": false,
+      "knownBlockers": [
+        "separate review/authorization for this one seed"
+      ],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "priority": "HARD_GATE",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "position(trader,marketId) := (size, openNotional, lastCumFundingRate) AND OI updated via _updateMarketOpenInterest; no Vault/Clearing funding",
+      "requiredTargetState": "exact canonical {'kind': 'position', 'marketId': 1, 'trader': '0x475fe397fa56884952d350aa9ee1c3946964bc0c'} seeded once",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpEngineTradingV2.sol:226-303; migration_replay_package.json",
+      "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "OPEN; seed not yet applied",
+      "dependsOn": [
+        "MIGRATION_SEED_04"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "MIGRATION_SEED_05",
+      "independentPreparation": false,
+      "knownBlockers": [
+        "separate review/authorization for this one seed"
+      ],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "priority": "HARD_GATE",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "position(trader,marketId) := (size, openNotional, lastCumFundingRate) AND OI updated via _updateMarketOpenInterest; no Vault/Clearing funding",
+      "requiredTargetState": "exact canonical {'kind': 'position', 'marketId': 1, 'trader': '0x66858286feea78a05ea093673ea1535e0a52002d'} seeded once",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpEngineTradingV2.sol:226-303; migration_replay_package.json",
+      "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "OPEN; seed not yet applied",
+      "dependsOn": [
+        "MIGRATION_SEED_05"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "MIGRATION_SEED_06",
+      "independentPreparation": false,
+      "knownBlockers": [
+        "separate review/authorization for this one seed"
+      ],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "priority": "HARD_GATE",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "position(trader,marketId) := (size, openNotional, lastCumFundingRate) AND OI updated via _updateMarketOpenInterest; no Vault/Clearing funding",
+      "requiredTargetState": "exact canonical {'kind': 'position', 'marketId': 1, 'trader': '0x77ca9dd6ccce2d692fb23877a2db7178807b0020'} seeded once",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpEngineTradingV2.sol:226-303; migration_replay_package.json",
+      "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "OPEN; seed not yet applied",
+      "dependsOn": [
+        "MIGRATION_SEED_06"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "MIGRATION_SEED_07",
+      "independentPreparation": false,
+      "knownBlockers": [
+        "separate review/authorization for this one seed"
+      ],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "priority": "HARD_GATE",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "position(trader,marketId) := (size, openNotional, lastCumFundingRate) AND OI updated via _updateMarketOpenInterest; no Vault/Clearing funding",
+      "requiredTargetState": "exact canonical {'kind': 'position', 'marketId': 1, 'trader': '0x8b94a83d1ad3bd2337b1886e7962ca8e0bba9a34'} seeded once",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpEngineTradingV2.sol:226-303; migration_replay_package.json",
+      "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "OPEN; seed not yet applied",
+      "dependsOn": [
+        "MIGRATION_SEED_07"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "MIGRATION_SEED_08",
+      "independentPreparation": false,
+      "knownBlockers": [
+        "separate review/authorization for this one seed"
+      ],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "adminSeedPosition(address,uint256,int256,int256,int256)",
+      "priority": "HARD_GATE",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "position(trader,marketId) := (size, openNotional, lastCumFundingRate) AND OI updated via _updateMarketOpenInterest; no Vault/Clearing funding",
+      "requiredTargetState": "exact canonical {'kind': 'position', 'marketId': 1, 'trader': '0xff287410852b9328437eac353720e5476bc5f837'} seeded once",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpEngineTradingV2.sol:226-303; migration_replay_package.json",
+      "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": false,
+      "currentState": "migration not yet replayed",
+      "dependsOn": [
+        "MIGRATION_SEED_08"
+      ],
+      "failureOrAmbiguity": "Stop at review blocker; revise in a separate milestone",
+      "id": "ECONOMIC_EQUALITY",
+      "independentPreparation": false,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": null,
+      "methodOrReview": "read-only reconciliation",
+      "priority": "HARD_GATE",
+      "publicTimelockExecuteRequired": false,
+      "publicTimelockScheduleRequired": false,
+      "requiredReadback": "6 positions, 1001002 long/short OI, zero residual debt, funding baselines, snapshot hash and 1000000000 Clearing ledger",
+      "requiredTargetState": "independent exact snapshot equality and shared balances",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "artifacts/perps_v2_final_snapshot/manifest.json; migration_replay_package.json",
+      "target": "D4+Shared"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "OPEN",
+      "dependsOn": [
+        "ECONOMIC_EQUALITY",
+        "C11",
+        "C12",
+        "C16"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "MIGRATION_SEAL",
+      "independentPreparation": false,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "sealMigration(bytes32)",
+      "priority": "HARD_GATE",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "migrationState=SEALED; snapshotHash exact; D4 flags true; D6 paused",
+      "requiredTargetState": "SEALED with canonical snapshot hash",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpEngineTradingV2.sol:325; migration_replay_package.json",
+      "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "D4 not authorized",
+      "dependsOn": [
+        "MIGRATION_SEAL",
+        "ACL_POLICY_REVIEW"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "C25",
+      "independentPreparation": false,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "setAuthorizedEngine(address,bool)",
+      "priority": "HARD_GATE",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "isAuthorizedEngine(D4)=true; no ledger movement",
+      "requiredTargetState": "D4 authorized only after seal and dual-engine review",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/collateral/CollateralVaultAdmin.sol:175; shared_acl_transition_manifest.json",
+      "target": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "D4 not authorized",
+      "dependsOn": [
+        "MIGRATION_SEAL",
+        "ACL_POLICY_REVIEW"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "C26",
+      "independentPreparation": false,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "setBackstopCaller(address,bool)",
+      "priority": "HARD_GATE",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "isBackstopCaller(D4)=true; no liability movement",
+      "requiredTargetState": "D4 backstop authorized only after seal and review",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/core/InsuranceFund.sol:346; shared_acl_transition_manifest.json",
+      "target": "0x009f38440F058d095b61E0E2ee7fAbDF05BE7500"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "stranded Engine grant may remain",
+      "dependsOn": [
+        "C25",
+        "C26"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "STRANDED_VAULT_REVOKE",
+      "independentPreparation": false,
+      "knownBlockers": [
+        "prove no old Engine operational dependency"
+      ],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "setAuthorizedEngine(stranded,false)",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "stranded Vault authorization false; historical balances unchanged",
+      "requiredTargetState": "stranded Vault grant false after dependency audit",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "shared_acl_transition_manifest.json",
+      "target": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "stranded Engine grant may remain",
+      "dependsOn": [
+        "C25",
+        "C26"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "STRANDED_INSURANCE_REVOKE",
+      "independentPreparation": false,
+      "knownBlockers": [
+        "prove no old Engine operational dependency"
+      ],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "setBackstopCaller(stranded,false)",
+      "priority": "NORMAL",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "stranded Insurance authorization false; historical liabilities unchanged",
+      "requiredTargetState": "stranded Insurance grant false after dependency audit",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "shared_acl_transition_manifest.json",
+      "target": "0x009f38440F058d095b61E0E2ee7fAbDF05BE7500"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": false,
+      "currentState": "old guard bound to old identities",
+      "dependsOn": [
+        "MIGRATION_SEAL",
+        "C25",
+        "C26",
+        "C22"
+      ],
+      "failureOrAmbiguity": "Stop at review blocker; revise in a separate milestone",
+      "id": "FIRST_TRADE_GUARD",
+      "independentPreparation": false,
+      "knownBlockers": [
+        "new guard and fresh trader signatures require separate review"
+      ],
+      "mandatoryDelaySeconds": null,
+      "methodOrReview": "offline guard package review",
+      "priority": "HARD_GATE",
+      "publicTimelockExecuteRequired": false,
+      "publicTimelockScheduleRequired": false,
+      "requiredReadback": "fresh signatures and exact one-shot limits; no historical signature reuse",
+      "requiredTargetState": "new D4/D6/runtime/domain/nonce bound one-shot guard",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "D6 EIP-712 domain and prior first-trade policy",
+      "target": "D4+D6"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "global pause true",
+      "dependsOn": [
+        "FIRST_TRADE_GUARD"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "D1_RELEASE_GLOBAL",
+      "independentPreparation": false,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "unpause()",
+      "priority": "HARD_GATE",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "paused=false; creationPaused=true; configPaused=true; D4/D6 closed",
+      "requiredTargetState": "global pause false while D4/D6 remain closed",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpMarketRegistry.sol:365",
+      "target": "0x6B3D846536116082dC4E7227861C341Bb85Ee963"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "config pause true",
+      "dependsOn": [
+        "D1_RELEASE_GLOBAL"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "D1_RELEASE_CONFIG",
+      "independentPreparation": false,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "unpauseConfig()",
+      "priority": "HARD_GATE",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "configPaused=false; D4/D6 closed",
+      "requiredTargetState": "config pause false temporarily for reviewed market status",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpMarketRegistry.sol:397",
+      "target": "0x6B3D846536116082dC4E7227861C341Bb85Ee963"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "market 1 inactive",
+      "dependsOn": [
+        "D1_RELEASE_CONFIG"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "MKT1_RESTRICTED_ACTIVATE",
+      "independentPreparation": false,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "setMarketStatus(1,true,false)",
+      "priority": "HARD_GATE",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "market 1 active; market 2 inactive; D4/D6 closed",
+      "requiredTargetState": "market 1 active for one guarded closed test",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpMarketRegistry.sol:442",
+      "target": "0x6B3D846536116082dC4E7227861C341Bb85Ee963"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "config pause temporarily false",
+      "dependsOn": [
+        "MKT1_RESTRICTED_ACTIVATE"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "D1_REPAUSE_CONFIG",
+      "independentPreparation": false,
+      "knownBlockers": [],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "pauseConfig()",
+      "priority": "HARD_GATE",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "configPaused=true; creationPaused=true; D4/D6 closed",
+      "requiredTargetState": "config pause true while market 1 active",
+      "safeStoppingState": "D4 four emergency flags true; D6 paused true; no automatic next operation",
+      "source": "src/perp/PerpMarketRegistry.sol:389",
+      "target": "0x6B3D846536116082dC4E7227861C341Bb85Ee963"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "four emergency flags true",
+      "dependsOn": [
+        "D1_REPAUSE_CONFIG"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "D4_SELECTIVE_RELEASE",
+      "independentPreparation": false,
+      "knownBlockers": [
+        "separate final authorization and backend controls"
+      ],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "individual owner-only unpause method(s)",
+      "priority": "HARD_GATE",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "only approved flags released; other flags remain true",
+      "requiredTargetState": "minimum reviewed D4 restrictions released for one closed test",
+      "safeStoppingState": "D6 remains paused; D4 release is recorded and no further opening occurs; separately authorize re-close if test blocked",
+      "source": "src/perp/PerpEngineAdmin.sol:71,87,103,119",
+      "target": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": true,
+      "currentState": "paused true",
+      "dependsOn": [
+        "D4_SELECTIVE_RELEASE"
+      ],
+      "failureOrAmbiguity": "Stop; reconcile Safe nonce, public receipts, custom Timelock ID/events and live state read-only; never retry automatically",
+      "id": "D6_SELECTIVE_RELEASE",
+      "independentPreparation": false,
+      "knownBlockers": [
+        "separate final authorization and backend controls",
+        "actual release and re-pause contingency require a dedicated final governance review"
+      ],
+      "mandatoryDelaySeconds": 86400,
+      "methodOrReview": "unpause()",
+      "priority": "HARD_GATE",
+      "publicTimelockExecuteRequired": true,
+      "publicTimelockScheduleRequired": true,
+      "requiredReadback": "paused=false only after guard and exact closed test readiness",
+      "requiredTargetState": "paused false only for reviewed one-shot test",
+      "safeStoppingState": "RESTRICTED_ACTIVE_WINDOW_NOT_SAFE_IDLE: guard, backend and executor controls monitored; no further action if any mismatch; separately authorize emergency re-pause",
+      "source": "src/matching/PerpMatchingEngineV2.sol:418",
+      "target": "0xeeA4e5d891B90D3d99E9C4e2c61069911477110E"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": false,
+      "currentState": "no public trading route",
+      "dependsOn": [
+        "FIRST_TRADE_GUARD",
+        "D6_SELECTIVE_RELEASE"
+      ],
+      "failureOrAmbiguity": "Stop at review blocker; revise in a separate milestone",
+      "id": "RESTRICTED_FIRST_TRADE",
+      "independentPreparation": false,
+      "knownBlockers": [
+        "separate test authorization required"
+      ],
+      "mandatoryDelaySeconds": null,
+      "methodOrReview": "fresh EIP-712 orders and exact one-shot execution",
+      "priority": "HARD_GATE",
+      "publicTimelockExecuteRequired": false,
+      "publicTimelockScheduleRequired": false,
+      "requiredReadback": "receipt, position/OI/funding/fee/custody equality; guard consumed",
+      "requiredTargetState": "one reviewed guarded closed test",
+      "safeStoppingState": "Record exact observed live restrictions and accounting; do not assert maintenance-closed after any release; separately authorize re-pause or rollback as needed",
+      "source": "D6 EIP-712 domain and first-trade guard policy",
+      "target": "D4+D6"
+    },
+    {
+      "authority": "ProtocolTimelock owner via OPS Safe 2/3",
+      "canonicalReceiptRequired": false,
+      "currentState": "restricted test not run",
+      "dependsOn": [
+        "RESTRICTED_FIRST_TRADE"
+      ],
+      "failureOrAmbiguity": "Stop at review blocker; revise in a separate milestone",
+      "id": "BROADER_ACTIVATION",
+      "independentPreparation": false,
+      "knownBlockers": [
+        "restricted test acceptance and explicit new authorization"
+      ],
+      "mandatoryDelaySeconds": null,
+      "methodOrReview": "separate governance review",
+      "priority": "LAST",
+      "publicTimelockExecuteRequired": false,
+      "publicTimelockScheduleRequired": false,
+      "requiredReadback": "independent acceptance and rollback controls",
+      "requiredTargetState": "possible later selective activation",
+      "safeStoppingState": "Record exact observed live restrictions and accounting; do not assert maintenance-closed after any release; separately authorize re-pause or rollback as needed",
+      "source": "source-backed activation and risk controls",
+      "target": "D4+D6+D1"
+    }
+  ],
+  "parallelPreparationExamples": [
+    "C20",
+    "C01",
+    "D3_TOKEN",
+    "D2_FEE_POLICY",
+    "GUARDIAN_POLICY",
+    "EXECUTOR_IDENTITY_REVIEW",
+    "ACL_POLICY_REVIEW"
+  ],
+  "reviewBlock": {
+    "hash": "0xb4050292b8a8be3baf5d3eef6d7529649dfd219e5b86417c90418bd2970593e9",
+    "number": 48350033,
+    "timestamp": 1792468354
+  },
+  "schema": "deopt.post_maintenance_dependency_dag.v2",
+  "status": "APPROVED_TESTNET_POLICY_NO_PUBLIC_OPERATION_AUTHORIZED",
+  "supersedes": {
+    "path": "artifacts/perps_v2_replacement_deployment/post_maintenance_dependency_dag_v1.json",
+    "sha256": "f3907236b928a50151f21ea748e3572ce8fde8fe5a090c0de8d3ca4d647e5b5d"
+  },
+  "testnetPolicyApproval": {
+    "d2FeeRecipient": "ProtocolTimelock unchanged",
+    "d2PerpAllFiveTiers": {
+      "makerPpm": 0,
+      "takerPpm": 200
+    },
+    "d2Rebates": "zero; legacy liabilities isolated",
+    "d3Musdc": {
+      "enabled": true,
+      "spreadBps": 5
+    },
+    "d3RiskDAGCorrection": "APPROVED",
+    "publicSchedulingOrExecutionAuthorized": false,
+    "scope": "Base Sepolia 84532 only",
+    "source": "explicit operator message DEOPT_D2_D3_TESTNET_POLICY_APPROVAL_V1"
+  },
+  "topologicalOrder": [
+    "MAINTENANCE_VERIFIED",
+    "C20",
+    "C12",
+    "ORACLE_AND_RISK_POLICY",
+    "C01",
+    "C02",
+    "MKT1_INACTIVE",
+    "C03",
+    "MKT2_INACTIVE",
+    "C04",
+    "C05",
+    "C07",
+    "C08",
+    "D3_TOKEN",
+    "D3_RISK_COMPAT_VERIFIED",
+    "D2_FEE_POLICY",
+    "C24",
+    "C14",
+    "C15",
+    "C13",
+    "C16",
+    "C17",
+    "C11",
+    "D4_OTHER_WIRING",
+    "GUARDIAN_POLICY",
+    "C06",
+    "C18",
+    "C19",
+    "C21",
+    "EXECUTOR_IDENTITY_REVIEW",
+    "C23",
+    "C22",
+    "ACL_POLICY_REVIEW",
+    "MIGRATION_PREFLIGHT",
+    "MIGRATION_SEED_01",
+    "MIGRATION_SEED_02",
+    "MIGRATION_SEED_03",
+    "MIGRATION_SEED_04",
+    "MIGRATION_SEED_05",
+    "MIGRATION_SEED_06",
+    "MIGRATION_SEED_07",
+    "MIGRATION_SEED_08",
+    "ECONOMIC_EQUALITY",
+    "MIGRATION_SEAL",
+    "C25",
+    "C26",
+    "STRANDED_VAULT_REVOKE",
+    "STRANDED_INSURANCE_REVOKE",
+    "FIRST_TRADE_GUARD",
+    "D1_RELEASE_GLOBAL",
+    "D1_RELEASE_CONFIG",
+    "MKT1_RESTRICTED_ACTIVATE",
+    "D1_REPAUSE_CONFIG",
+    "D4_SELECTIVE_RELEASE",
+    "D6_SELECTIVE_RELEASE",
+    "RESTRICTED_FIRST_TRADE",
+    "BROADER_ACTIVATION"
+  ]
+}

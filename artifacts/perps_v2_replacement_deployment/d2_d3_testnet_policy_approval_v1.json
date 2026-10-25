@@ -1,0 +1,57 @@
+{
+  "approved": {
+    "d2FeeRecipient": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "d2PerpFeeProfiles": [
+      {
+        "makerPpm": 0,
+        "takerPpm": 200,
+        "tier": 0
+      },
+      {
+        "makerPpm": 0,
+        "takerPpm": 200,
+        "tier": 1
+      },
+      {
+        "makerPpm": 0,
+        "takerPpm": 200,
+        "tier": 2
+      },
+      {
+        "makerPpm": 0,
+        "takerPpm": 200,
+        "tier": 3
+      },
+      {
+        "makerPpm": 0,
+        "takerPpm": 200,
+        "tier": 4
+      }
+    ],
+    "d2Rebates": "zero; legacy liabilities separate",
+    "d3Architecture": "retain existing collateral RiskModule; D4 retains D5",
+    "d3DagCorrection": "replace D3-to-D5 setter with read-only compatibility gate before C13",
+    "d3Musdc": {
+      "enabled": true,
+      "spreadBps": 5
+    }
+  },
+  "approvedDagV2Path": "artifacts/perps_v2_replacement_deployment/post_maintenance_dependency_dag_v2.json",
+  "approvedDagV2Sha256": "ac69c9a4996fca597284339eb3f70f3650661a61d3f918bc86b8483a35c90fbf",
+  "chainId": 84532,
+  "notAuthorized": [
+    "public scheduling",
+    "public execution",
+    "Safe proposal",
+    "signing",
+    "broadcasting",
+    "C02 execution",
+    "D4/D6 maintenance release",
+    "migration",
+    "trading"
+  ],
+  "previousDagV1Sha256": "f3907236b928a50151f21ea748e3572ce8fde8fe5a090c0de8d3ca4d647e5b5d",
+  "schema": "deopt.d2-d3-testnet-policy-approval.v1",
+  "scope": "Base Sepolia testnet policy only",
+  "source": "explicit operator message DEOPT_D2_D3_TESTNET_POLICY_APPROVAL_V1"
+}
