@@ -1,0 +1,133 @@
+{
+  "c02ExecutionAuthorized": false,
+  "chainId": 84532,
+  "d2ExecutionAuthorized": false,
+  "dependency": {
+    "d3TokenOperationId": "0x6678a5eefb1b1a1b7a9ff4aa5795e1ba7d09fba63ee59917d454e07fe2208c0d",
+    "d3TokenQueued": true,
+    "d3TokenS1PublicPostflight": "PASS",
+    "postflightPath": "artifacts/perps_v2_replacement_deployment/d3_token_s1_public_postflight_v1.json",
+    "postflightSha256": "0bc82957068c07b0d0b3320c7b40b47e84687757c80bc8b7bb4a92ff26dbd1ba"
+  },
+  "exactTransactionReview": "PASS_READ_ONLY",
+  "milestone": "DEOPT_D2_D3_SIX_OPERATION_SAFE_SCHEDULING_RUN_V1",
+  "operationCount": 6,
+  "operationIndex": 2,
+  "prestate": {
+    "c02Queued": true,
+    "d2FeeRecipient": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "d2PerpTier0ApprovedAfterFutureExecutionPpm": [
+      0,
+      200
+    ],
+    "d2PerpTier0BeforePpm": [
+      50,
+      300
+    ],
+    "d2RebateBudgetRaw": 0,
+    "d3RiskPointer": "0xc0f019005a25524a34f2ee8839dcdcc50715dd7b",
+    "d3SeizeConfig": [
+      0,
+      0,
+      0
+    ],
+    "d4FourEmergencyFlags": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "d4InsuranceAuthorized": false,
+    "d4MigrationOpen": true,
+    "d4PmePointer": "0x0000000000000000000000000000000000000000",
+    "d4RiskPointer": "0x90caa6d5bc628577bc76d6cc8b775f983c75e110",
+    "d4VaultAuthorized": false,
+    "d6Paused": true,
+    "legacyRebateBudgetRaw": 999977,
+    "market1Absent": true
+  },
+  "publicTransactionHash": null,
+  "publicTransactionsSentByAgent": false,
+  "requiredOperatorChecks": [
+    "Separate explicit approval for one tier-0 scheduling transaction only",
+    "Refresh chain ID, Safe nonce 31, owners, threshold, modules, guard, Timelock queue, maintenance, C02 and market state immediately before action",
+    "ETA >= actual scheduling block timestamp + live minDelay + 3600; if false stop and independently review replacement ETA and derived identities",
+    "Verify one zero-value CALL to ProtocolTimelock, tier=0, ProductKind.PERP=1, maker=0ppm, taker=200ppm, complete zero gas/refund envelope and exact SafeTx hash",
+    "Require Safe UI simulation PASS, acceptable full wallet gas and balance, no conflicting proposal, and two genuine owner confirmations",
+    "After one operator-submitted public transaction, supply hash for independent canonical postflight before tier 1"
+  ],
+  "reviewBlock": {
+    "hash": "0x3a8517428d927fbfec563adb2fc82df88d6ad32045b63a1c8d409abab842618c",
+    "number": 50004105,
+    "timestamp": 1792922689,
+    "utc": "2026-10-25T10:04:49+00:00"
+  },
+  "reviewedBuilderPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_0_s1_safe_builder_v1.json",
+  "reviewedBuilderSha256": "a96781dd681977695a19137de80e79f2f487afb89b28d7f1b010e2fdfea7d6be",
+  "safe": {
+    "address": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "fullWalletGasAndBalance": "PENDING_OPERATOR",
+    "guard": "0x0000000000000000000000000000000000000000",
+    "modules": [],
+    "nonce": 31,
+    "owners": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "safeEnvelope": {
+      "baseGas": "0",
+      "data": "0x8e361cdf0000000000000000000000009947f42cc29a32992bbf2030ee49e35c839eded500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ae092400000000000000000000000000000000000000000000000000000000000000084f6524d5800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000",
+      "gasPrice": "0",
+      "gasToken": "0x0000000000000000000000000000000000000000",
+      "nonce": 31,
+      "operation": 0,
+      "refundReceiver": "0x0000000000000000000000000000000000000000",
+      "safeTxGas": "0",
+      "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "value": "0"
+    },
+    "safeTxHash": "0xf0063ea75d9f6e6b2ce521d73cd924cf460ea4443b49179217fbda616565e61b",
+    "safeUiSimulation": "PENDING_OPERATOR",
+    "threshold": 2,
+    "twoGenuineOwnerConfirmations": "PENDING_OPERATOR"
+  },
+  "safeTransactionServiceRead": {
+    "httpStatus": 200,
+    "limitation": "Off-chain index can lag; operator must inspect Safe UI immediately before approval",
+    "nonce31ConflictObserved": false,
+    "observedNonces": [
+      11,
+      10
+    ],
+    "source": "https://safe-transaction-base-sepolia.safe.global",
+    "unexecutedProposalCount": 2
+  },
+  "schema": "deopt.d2-perp-tier-0-s1-operator-checkpoint.v1",
+  "status": "AWAITING_OPERATOR_SAFE_ACTION",
+  "timelock": {
+    "address": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "bufferedSchedulingCutoff": 1793012400,
+    "cutoffMarginSecondsAtReview": 89711,
+    "deployedHashOperationMatch": true,
+    "eta": 1793102400,
+    "innerArgs": [
+      0,
+      1,
+      0,
+      200
+    ],
+    "innerCalldata": "0xf6524d5800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c8",
+    "innerCalldataKeccak256": "0x9d9a42e1dd2b52e774708826b8be513d438b994581f9025da7c350a79ab1f5ef",
+    "innerFunction": "setFeeProfile(uint8,uint8,int32,int32)",
+    "operationId": "0x1976519a08a3a7e65cbe1a2f77fcf0f5fa0f783ccb6c7ef0e6c87b7481caf45b",
+    "outerCalldata": "0x8e361cdf0000000000000000000000009947f42cc29a32992bbf2030ee49e35c839eded500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ae092400000000000000000000000000000000000000000000000000000000000000084f6524d5800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000",
+    "outerCalldataKeccak256": "0x3c14289bb55200f8ef87686f2f961090aeeb24f46748acf39347cd1692885340",
+    "outerFunction": "queueTransaction(address,uint256,bytes,uint256)",
+    "queued": false,
+    "readOnlyQueueCall": "PASS",
+    "target": "0x9947F42cC29A32992bbf2030ee49E35C839EDEd5",
+    "value": "0"
+  },
+  "tradingAuthorized": false
+}
