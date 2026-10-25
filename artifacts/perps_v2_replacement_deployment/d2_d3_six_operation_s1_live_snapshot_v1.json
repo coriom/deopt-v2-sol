@@ -1,0 +1,150 @@
+{
+  "addresses": {
+    "d1": "0x6B3D846536116082dC4E7227861C341Bb85Ee963",
+    "d2": "0x9947F42cC29A32992bbf2030ee49E35C839EDEd5",
+    "d3": "0x43Ac3782e75018981a8F8d210049f2A185b07331",
+    "d4": "0xd0901DE8f6de72aecC716CA1465C4Cf58a0B99fB",
+    "d5": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110",
+    "d6": "0xeeA4e5d891B90D3d99E9C4e2c61069911477110E",
+    "insurance": "0x009f38440F058d095b61E0E2ee7fAbDF05BE7500",
+    "legacyFees": "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f",
+    "legacyRisk": "0xc0f019005a25524a34F2Ee8839DCDCC50715DD7B",
+    "safe": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "tl": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "vault": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3"
+  },
+  "block": {
+    "hash": "0x1ae6d555e94d0507a74bb03dbd84879ec2133ecd2749cb3e10ae5d40964ae4a3",
+    "number": 49984504,
+    "timestamp": 1792918769,
+    "utc": "2026-10-25T08:59:29+00:00"
+  },
+  "chainId": 84532,
+  "d1.market1": 0,
+  "d1.musdcAllowed": 1,
+  "d1.nextMarketId": 1,
+  "d1.owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+  "d2.budget": 0,
+  "d2.code": {
+    "keccak256": "0x732101d67fb112f6d3159f32852071bbf995f8bd1995335cf9a2b0f167d08726",
+    "lengthBytes": 6727
+  },
+  "d2.d4Consumer": 0,
+  "d2.feeRecipient": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+  "d2.merkleRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "d2.owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+  "d2.perpProfile0": [
+    50,
+    300
+  ],
+  "d2.perpProfile1": [
+    0,
+    250
+  ],
+  "d2.perpProfile2": [
+    -50,
+    200
+  ],
+  "d2.perpProfile3": [
+    -75,
+    175
+  ],
+  "d2.perpProfile4": [
+    -100,
+    150
+  ],
+  "d2.protocolFeeVault": "0x0000000000000000000000000000000000000000",
+  "d2.rebateFundingAccount": "0x0000000000000000000000000000000000000000",
+  "d2.rootValidFrom": 0,
+  "d2.rootValidUntil": 0,
+  "d3.code": {
+    "keccak256": "0x6d199e027af598ee903513a1ab41e27e2937115c79b8ec85e386d739615befcb",
+    "lengthBytes": 6432
+  },
+  "d3.collateralVault": "0x00340c360353a5ab784c5bc5c44322a6af0625d3",
+  "d3.discount": 10000,
+  "d3.musdcCfg": [
+    0,
+    0,
+    0
+  ],
+  "d3.oracle": "0xb416406f200b2ef3d7a86a5d5877ed41d9b1a581",
+  "d3.oracleMaxDelay": 600,
+  "d3.owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+  "d3.riskModule": "0xc0f019005a25524a34f2ee8839dcdcc50715dd7b",
+  "d4.collateralOpsPaused": 1,
+  "d4.collateralSeizer": "0x0000000000000000000000000000000000000000",
+  "d4.feesManagerV2": "0x0000000000000000000000000000000000000000",
+  "d4.fundingPaused": 1,
+  "d4.insuranceFund": "0x0000000000000000000000000000000000000000",
+  "d4.liquidationPaused": 1,
+  "d4.matchingEngine": "0x0000000000000000000000000000000000000000",
+  "d4.migrationSnapshotHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "d4.migrationState": 0,
+  "d4.riskModule": "0x90caa6d5bc628577bc76d6cc8b775f983c75e110",
+  "d4.tradingPaused": 1,
+  "d4.useFeesManagerV2": 0,
+  "d5.code": {
+    "keccak256": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c",
+    "lengthBytes": 9894
+  },
+  "d5.maxOracleDelay": 600,
+  "d5.owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+  "d5.perpEngine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+  "d6.owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+  "d6.paused": 1,
+  "d6.perpEngine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+  "insurance.d4Auth": 0,
+  "legacyFees.budget": 999977,
+  "legacyRisk.baseCollateralToken": "0x6eae407f5640b006fac9965182e238582a3b412e",
+  "legacyRisk.code": {
+    "keccak256": "0x6e17b8bcb36e4ced1b705cacb511df1640d183c58049d703be1980caf5b0d138",
+    "lengthBytes": 18323
+  },
+  "legacyRisk.collateralVault": "0x00340c360353a5ab784c5bc5c44322a6af0625d3",
+  "legacyRisk.guardian": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+  "legacyRisk.maxOracleDelay": 600,
+  "legacyRisk.musdcCfg": [
+    10000,
+    1
+  ],
+  "legacyRisk.oracle": "0xb416406f200b2ef3d7a86a5d5877ed41d9b1a581",
+  "legacyRisk.owner": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+  "musdc": "0x6eAe407f5640B006faC9965182e238582A3B412E",
+  "rpc": "https://sepolia.base.org",
+  "safe.VERSION": "1.4.1",
+  "safe.code": {
+    "keccak256": "0xd7d408ebcd99b2b70be43e20253d6d92a8ea8fab29bd3be7f55b10032331fb4c",
+    "lengthBytes": 171
+  },
+  "safe.domainSeparator": "0x2c0d582d9c9e132109be0c6b670d4740fd7774bb12703c7888886a9b7748656a",
+  "safe.getOwners": [
+    "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+    "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+    "0xa774c46c41064524df895bd7be9f294409798dfc"
+  ],
+  "safe.getThreshold": 2,
+  "safe.guard": "0x0000000000000000000000000000000000000000",
+  "safe.modules": {
+    "modules": [],
+    "next": "0x0000000000000000000000000000000000000001"
+  },
+  "safe.nonce": 30,
+  "tl.GRACE_PERIOD": 1209600,
+  "tl.c02Queued": 1,
+  "tl.code": {
+    "keccak256": "0xb20f9fa764b46a832c7665f07c1b9c3cd6506a58f6885c0e12e88e9bbc55233c",
+    "lengthBytes": 4228
+  },
+  "tl.executor": 1,
+  "tl.minDelay": 86400,
+  "tl.owner": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+  "tl.proposer": 1,
+  "tl.queuePaused": 0,
+  "vault.d4Auth": 0,
+  "vault.musdcCfg": [
+    1,
+    6,
+    10000
+  ]
+}

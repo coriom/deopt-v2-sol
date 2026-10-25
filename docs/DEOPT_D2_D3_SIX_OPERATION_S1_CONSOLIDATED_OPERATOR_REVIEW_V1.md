@@ -1,0 +1,39 @@
+# DeOpt D2/D3 six-operation S1 consolidated operator readiness
+
+**Verdict: PASS for one consolidated offline review. No public scheduling is authorized by this report.** Six independent, unsigned, one-action Safe Builder files remain valid against the pinned review block. D3_TOKEN is first; each D2 tier's nonce and SafeTx hash depend on the earlier public Safe executions and canonical scheduling postflights.
+
+## Fresh review
+
+Direct Base Sepolia RPC reads at block **49,984,504**, hash `0x1ae6d555e94d0507a74bb03dbd84879ec2133ecd2749cb3e10ae5d40964ae4a3`, timestamp **2026-10-25 08:59:29 UTC**, showed chain ID **84532**. All tracked Safe, Timelock, D1–D6, legacy collateral RiskModule, Vault and Insurance readbacks were unchanged from the approved pinned snapshot at block 49,976,909. Safe nonce remains **30**, threshold **2/3**, with the reviewed three owners, no modules, and zero guard. ProtocolTimelock minimum delay remains **86,400 seconds**, and the Safe remains proposer and executor.
+
+D4's four emergency flags remain true; migration OPEN; its D5 risk pointer intact and PME/CollateralSeizer/FeesManagerV2 pointers zero. D6 remains paused. D3 retains the compatible collateral RiskModule, and its mUSDC token configuration is still unset. D2's five PERP profiles remain at the prior values, fee recipient remains ProtocolTimelock, its rebate budget is zero, and the legacy rebate budget remains **999,977 raw units** in the separate legacy ledger. D4 has no shared Vault or Insurance authorization. C02 remains queued and market 1 absent. This is bounded getter and scoped-event evidence, not an exhaustive storage proof.
+
+All six exact Timelock operation IDs read **unqueued** at the review block. The deployed `hashOperation` and Safe `getTransactionHash` matched every committed intent. A scoped Timelock log scan for D2 and D3 targets from block 49,976,910 through 49,984,504 found **zero** queue, cancel, or execution events. This covers activity since the prior validated snapshot; the operator must recheck for activity before each action.
+
+## Six separate actions
+
+The common proposed ETA is **2026-10-27 12:00 UTC** (`1793102400`). The latest scheduling block allowed by the approved one-hour buffer is **2026-10-26 11:00 UTC** (`1793012400`). At the review block, **93,631 seconds** remained until that cutoff. Each actual scheduling block must satisfy `ETA >= block.timestamp + live minDelay + 3600`. If this fails for any remaining action, stop; a new ETA requires new operation IDs, calldata, unsigned Builders and SafeTx hashes.
+
+| Order | Operator label | Exact setter | Conditional Safe nonce | Operation ID | Conditional SafeTx hash | Builder |
+| --- | --- | --- | ---: | --- | --- | --- |
+| 1 | D3_TOKEN | `setTokenSeizeConfig(mUSDC,5,true)` | 30 | `0x6678a5eefb1b1a1b7a9ff4aa5795e1ba7d09fba63ee59917d454e07fe2208c0d` | `0x9d0b933d4297d637a8ce2adcf32af319ce88dfc590260acf6bc8614dfc25c9d9` | [D3](../artifacts/perps_v2_replacement_deployment/d3_token_s1_safe_builder_v1.json) |
+| 2 | D2_TIER_1 (contract tier 0) | `setFeeProfile(0,PERP,0,200)` | 31 | `0x1976519a08a3a7e65cbe1a2f77fcf0f5fa0f783ccb6c7ef0e6c87b7481caf45b` | `0xf0063ea75d9f6e6b2ce521d73cd924cf460ea4443b49179217fbda616565e61b` | [tier 0](../artifacts/perps_v2_replacement_deployment/d2_perp_tier_0_s1_safe_builder_v1.json) |
+| 3 | D2_TIER_2 (contract tier 1) | `setFeeProfile(1,PERP,0,200)` | 32 | `0xb79986810ad3e08b5495a8edeaed0654da513ef6acfa15e8ff1d496ff2ef4a11` | `0xf976a20a5648c068fae109f796edaadfc32b28b8dd64f45101d2dfa4422cf5c4` | [tier 1](../artifacts/perps_v2_replacement_deployment/d2_perp_tier_1_s1_safe_builder_v1.json) |
+| 4 | D2_TIER_3 (contract tier 2) | `setFeeProfile(2,PERP,0,200)` | 33 | `0x48b66ca38c21064a6605af4038a657a191a56f327784dc1e0d0bffdc21075a62` | `0xe23662c28fe27b9c920f7a4ebaacb3e554c26dc5c01d187fad8861ca4a05d90f` | [tier 2](../artifacts/perps_v2_replacement_deployment/d2_perp_tier_2_s1_safe_builder_v1.json) |
+| 5 | D2_TIER_4 (contract tier 3) | `setFeeProfile(3,PERP,0,200)` | 34 | `0xaaf8ae230522b4a6b08a365be6e87f2544392e729b559db44968912b3a177f76` | `0xf219f8384e48cee81511808c0f93e9a934ce3786a05b9e32c41b28f3c9893090` | [tier 3](../artifacts/perps_v2_replacement_deployment/d2_perp_tier_3_s1_safe_builder_v1.json) |
+| 6 | D2_TIER_5 (contract tier 4) | `setFeeProfile(4,PERP,0,200)` | 35 | `0x9ec2e37332d4dbb27791ae7f4de7e852147b344f58210e61adb7b2f95a8d5b49` | `0x53dee1de9c83ca1008cc08a278efe81a9bd765898e1d099da80edd4311559543` | [tier 4](../artifacts/perps_v2_replacement_deployment/d2_perp_tier_4_s1_safe_builder_v1.json) |
+
+Each Builder has exactly one zero-ETH `CALL` to the custom ProtocolTimelock; none has MultiSend or delegatecall. The complete inner and outer calldata, hashes, target, approved parameters, operation ID, Builder SHA-256 and Safe envelope are in the [committed unsigned intents](../artifacts/perps_v2_replacement_deployment/d2_d3_s1_unsigned_intents_v1.json). The envelope uses `safeTxGas=baseGas=gasPrice=0` and zero gas token/refund receiver, matching the separately reviewed convention. Safe Builder files themselves **do not bind the nonce or envelope**. The hashes above are conditional; any changed nonce or hash-relevant field requires renewed review.
+
+## Shortest safe operator sequence
+
+1. Obtain **separate explicit approval** for D3_TOKEN's exact one-action Safe transaction. Immediately before action, refresh chain ID, Safe nonce and governance, Timelock minDelay and queue state, D3/D4/D5/D6 maintenance, C02/market state, and the actual scheduling-block ETA margin. Require a passing Safe UI simulation, full wallet gas/balance check, no conflicting pending Safe proposal, matching deployed SafeTx hash and two genuine owner confirmations.
+2. The operator may submit **one** approved Safe scheduling transaction. Reconcile its canonical receipt, exact Safe `ExecutionSuccess`, nonce advance, Timelock `TransactionQueued`, queued/unexecuted state, unchanged D3/D2 target configuration and economic maintenance. If failed or inconclusive, **stop**. No automatic retry.
+3. Repeat the same approval, fresh nonce/hash check, simulation and public postflight **separately** for D2 contract tiers 0, 1, 2, 3 and 4. Advance only after the preceding canonical scheduling postflight passes. An unrelated Safe transaction invalidates the planned nonce sequence. Do not batch or share owner confirmations.
+4. If the cutoff approaches before all six are scheduled, stop the remaining actions and independently review a new coordinated ETA and its derived identities. Scheduling any of these operations does **not** authorize its later Timelock execution. D3_RISK_COMPAT_VERIFIED and C13 remain gated on D3_TOKEN's eventual public execution and read-only compatibility postflight; D2_FEE_POLICY remains incomplete until all five tiers have executed and been verified in separate future milestones.
+
+## Verification and limits
+
+Fresh offline artifact tests: **5/5 PASS**. Focused isolated fork at block 49,984,504: **3/3 PASS**, including six independent queues, pre-ETA rejection, execution after simulated ETA, maintenance and legacy-liability non-drift, wrong tier/ETA and unauthorized-call rejection, and replay protection. The fork impersonated the Safe address; it did not verify genuine Safe 2/3 signatures. Actual Safe UI simulation, pending proposal inventory, wallet gas/balance and real confirmations remain mandatory operator checks. No public transaction or Safe proposal was sent by this review.
+
+The machine-readable [consolidated evidence](../artifacts/perps_v2_replacement_deployment/d2_d3_six_operation_s1_consolidated_operator_readiness_v1.json) and [fresh snapshot](../artifacts/perps_v2_replacement_deployment/d2_d3_six_operation_s1_live_snapshot_v1.json) preserve exact readbacks and per-operation stop conditions.

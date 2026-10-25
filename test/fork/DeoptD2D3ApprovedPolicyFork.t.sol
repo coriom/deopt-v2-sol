@@ -57,7 +57,7 @@ contract DeoptD2D3ApprovedPolicyForkTest is Test {
             vm.skip(true, "Set DEOPT_POLICY_FORK_RPC to Base Sepolia RPC");
             return;
         }
-        vm.createSelectFork(rpc, 49_976_909);
+        vm.createSelectFork(rpc, vm.envOr("DEOPT_POLICY_FORK_BLOCK", uint256(49_976_909)));
         assertEq(block.chainid, 84532);
         timelock = ProtocolTimelock(payable(TIMELOCK));
         seizer = CollateralSeizer(D3);

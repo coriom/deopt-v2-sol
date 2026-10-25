@@ -104,6 +104,28 @@ class ApprovedPolicyArtifacts(unittest.TestCase):
             args = action["contractInputsValues"]
             self.assertEqual((args["target"].lower(), args["value"], args["data"].lower(), int(args["eta"])), (op["target"].lower(), "0", op["innerCalldata"].lower(), op["eta"]))
 
+    def test_consolidated_readiness_matches_committed_intents(self):
+        review = load("d2_d3_six_operation_s1_consolidated_operator_readiness_v1.json")
+        bundle = load("d2_d3_s1_unsigned_intents_v1.json")
+        snapshot = load("d2_d3_six_operation_s1_live_snapshot_v1.json")
+        self.assertEqual(review["chainId"], 84532)
+        self.assertEqual(review["reviewBlock"], snapshot["block"])
+        self.assertEqual(review["safe"]["nonce"], 30)
+        self.assertEqual(review["safe"]["threshold"], 2)
+        self.assertEqual(review["latestBufferedSchedulingTime"], bundle["eta"] - 86400 - 3600)
+        self.assertEqual(review["liveSnapshotSha256"], hashlib.sha256((ROOT / review["liveSnapshotPath"]).read_bytes()).hexdigest())
+        self.assertEqual(review["reviewedIntentsSha256"], hashlib.sha256((ROOT / review["reviewedIntentsPath"]).read_bytes()).hexdigest())
+        self.assertEqual(review["operationCount"], len(bundle["operations"]))
+        for i, (op, intent) in enumerate(zip(review["operations"], bundle["operations"], strict=True)):
+            self.assertEqual(op["name"], intent["name"])
+            self.assertEqual(op["operationId"], intent["timelockOperationId"])
+            self.assertEqual(op["outerTimelockCalldata"], intent["outerCalldata"])
+            self.assertEqual(op["safeTxHashConditional"], intent["safeTxHashOnchain"])
+            self.assertEqual(op["safeNonceConditional"], 30 + i)
+            self.assertFalse(op["operationQueuedAtReview"])
+            self.assertEqual(op["builderSha256"], hashlib.sha256((ROOT / op["builderPath"]).read_bytes()).hexdigest())
+        self.assertFalse(review["publicTransactionsSentByAgent"])
+
 
 if __name__ == "__main__":
     unittest.main()
