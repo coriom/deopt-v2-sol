@@ -1,0 +1,52 @@
+{
+  "schema": "deopt.d2-d3-operator-policy-decision.v1",
+  "status": "REQUIRES_OPERATOR_ECONOMIC_AND_DAG_APPROVAL",
+  "chainId": 84532,
+  "pinnedBlock": {"number": 49923585, "hash": "0x42f0460e2c6532f4b33915fae9afda2b882ce62c3e7c79fda669b837d35fa954", "timestamp": 1792906585},
+  "d3TokenDecision": {
+    "token": "0x6eAe407f5640B006faC9965182e238582A3B412E",
+    "recommendedEnablement": true,
+    "recommendedSpreadBps": 5,
+    "alternativeSpreadBps": 0,
+    "currentStorage": {"spreadBps": 0, "isEnabled": false, "isSet": false},
+    "currentEffectiveBehavior": "Unset is treated as enabled with zero spread; legacy mUSDC weight is 10000 bps, yielding discount 10000 bps.",
+    "proposedEffectiveDiscountBps": 9995,
+    "example": "For a 100.000000 mUSDC effective seizure target and sufficient balance, 5 bps spread requires 100.050026 mUSDC gross seizure; effective credit is 100.000000 after integer rounding. This is on the liquidation penalty target, not the trade notional.",
+    "justification": "mUSDC is the only currently listed Vault collateral token and the base token. The frozen D3 source cites a 0..5 bps typical stable-token spread; 5 bps is the upper end of that example, gives a small liquidation incentive, and remains a discretionary testnet policy choice rather than a protocol requirement.",
+    "equityEffect": "The trader loses the full gross token amount transferred to the liquidator; the planner credits only the discounted effective amount. The spread adds to any separate liquidation penalty and needs explicit operator acceptance.",
+    "unsupportedTokens": "D3 setter accepts nonzero unsupported addresses, but valuation rejects a token not supported by Vault; do not configure them.",
+    "oracleDependency": "Base mUSDC valuation avoids token/base conversion. Any future non-base token needs Vault support, legacy collateral weight, oracle price and the D3 600-second freshness check.",
+    "approval": "REQUIRED; no calldata promoted"
+  },
+  "d2FeeDecision": {
+    "address": "0x9947F42cC29A32992bbf2030ee49E35C839EDEd5",
+    "runtimeKeccak256": "0x732101d67fb112f6d3159f32852071bbf995f8bd1995335cf9a2b0f167d08726",
+    "recommendedPerpProfiles": [{"tier": 0, "makerPpm": 0, "takerPpm": 200}, {"tier": 1, "makerPpm": 0, "takerPpm": 200}, {"tier": 2, "makerPpm": 0, "takerPpm": 200}, {"tier": 3, "makerPpm": 0, "takerPpm": 200}, {"tier": 4, "makerPpm": 0, "takerPpm": 200}],
+    "makerBps": 0,
+    "takerBps": 2,
+    "feeBasis": "PERP matched-trade notional; D2 distinguishes maker/taker and ORDERBOOK/RFQ, not opening versus closing. D4 charges each matched side separately. OPTION fee basis is premium and is outside this recommendation.",
+    "rfqDiscounts": "Keep currently zero PERP RFQ discounts; no RFQ activation is authorized.",
+    "historicalComparison": "The historical 2-bps-per-side target would charge 4 bps total across one maker and one taker. This 0/2 bps proposal charges 2 bps total, and lowers current tier-0 defaults from 0.5/3 bps. It is a new testnet proposal, not automatic reuse of legacy policy.",
+    "example": "On 100.000000 mUSDC notional, maker charge 0 and taker charge 0.020000 mUSDC, before any separately authorized trading path.",
+    "feeRecipient": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "recipientRole": "Current D2 recipient and owner is ProtocolTimelock. It may receive an internal CollateralVault account credit if D4 later charges fees; this is governance-controlled revenue, not an InsuranceFund deposit or D2 custody transfer. Later treasury withdrawals/routing need separate review.",
+    "protocolFeeVault": "Keep zero; fee hooks disabled. Do not claim ProtocolFeeVault bucket accounting or InsuranceFund funding. A future fee-vault route requires separate address, backing, accounting and authorization review.",
+    "rebatePolicy": "No maker rebates in any PERP tier; keep rebateFundingAccount=zero, mUSDC rebateBudget=0 and Merkle root=zero until separately backed and reviewed. Do not copy legacy liability.",
+    "legacyLiability": {"manager": "0x00dA0B9876bcBf0c79CB5BcAcfEBAFb8C7Ad774f", "musdcRebateBudgetRaw": 999977, "replacementD2BudgetRaw": 0, "treatment": "Keep entirely on legacy ledger; no migration, writeoff or duplicate funding authorized"},
+    "currentD4FeeConsumer": false,
+    "activationBoundary": "D2 policy approval and separate per-tier governance reviews precede C24, C14 and C15. D4 emergency flags and D6 pause remain. No new fee consumer or trading activation in this milestone.",
+    "approval": "REQUIRED; approve all five PERP tier profiles, recipient, no-rebate/no-vault posture, and OPTION exclusion explicitly"
+  },
+  "decisionTable": [
+    {"decision": "D3 risk architecture", "recommendation": "retain existing collateral RiskModule and amend DAG", "alternative": "new adapter/replacement only if legacy dependency rejected", "consequence": "avoids broken D5 ABI and redeployment", "confidence": "HIGH for ABI; governance amendment pending"},
+    {"decision": "D3 mUSDC seizure", "recommendation": "enable=true, spread=5 bps", "alternative": "explicit 0 bps", "consequence": "5 bps adds about 0.05% gross seize on the penalty target", "confidence": "MEDIUM economic judgment; source/fork math HIGH"},
+    {"decision": "D2 PERP fees", "recommendation": "all tiers maker=0 bps, taker=2 bps", "alternative": "2/2 bps historical target", "consequence": "one maker+taker match pays 2 bps total, no unbacked rebates", "confidence": "MEDIUM economic judgment; source/fork math HIGH"},
+    {"decision": "D2 revenue route", "recommendation": "retain Timelock recipient and zero ProtocolFeeVault", "alternative": "separate fee-vault/Insurance routing review", "consequence": "Vault internal credits would accrue to Timelock; no PFV hooks or Insurance funding", "confidence": "HIGH for current code; treasury policy pending"}
+  ],
+  "dependencySequence": ["Operator approves or rejects proposed D3 DAG correction plus exact D3/D2 values", "D3_TOKEN separate Timelock schedule, execution and canonical postflight", "D3_RISK_COMPAT_VERIFIED read-only gate if amendment approved; otherwise D3_RISK and C13 stay blocked", "C13 separate Timelock wire of D4 seizer to D3 after its final review", "D2_FEE_POLICY independent operator decision, then separately reviewed profile transactions", "C24 and C14 independently after fee policy; C15 only after both, without releasing maintenance"],
+  "tests": {"newIsolatedFork": "5 passed, 0 failed, 0 skipped at block 49923585", "existingBoundaryFork": "6 passed, 0 failed, 0 skipped at block 49914620", "realSafeSignatures": "NOT_TESTED"},
+  "unsignedGovernanceArtifacts": null,
+  "publicTransactionsSent": false,
+  "c02ExecutionAuthorized": false,
+  "publicTradingAuthorized": false
+}

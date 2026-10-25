@@ -1,0 +1,64 @@
+{
+  "schema": "deopt.d3-risk-abi-resolution.v1",
+  "verdict": "PREFERRED_EXISTING_COMPATIBLE_MODULE; GOVERNANCE_DAG_CORRECTION_REQUIRES_APPROVAL",
+  "chainId": 84532,
+  "frozenSourceRevision": "25c36670883604c1ef5229642ee6548aea6796c3",
+  "startingHead": "2f77ea77eceda5a57c2f34022621b51d098a1f96",
+  "pinnedBlock": {
+    "number": 49923585,
+    "hash": "0x42f0460e2c6532f4b33915fae9afda2b882ce62c3e7c79fda669b837d35fa954",
+    "timestamp": 1792906585,
+    "rpc": "https://sepolia.base.org; eth_call and eth_getCode pinned to block number"
+  },
+  "d3": {
+    "address": "0x43Ac3782e75018981a8F8d210049f2A185b07331",
+    "runtimeKeccak256": "0x6d199e027af598ee903513a1ab41e27e2937115c79b8ec85e386d739615befcb",
+    "owner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "currentRiskPointer": "0xc0f019005a25524a34F2Ee8839DCDCC50715DD7B",
+    "constructorRiskPointer": "0xc0f019005a25524a34f2ee8839dcdcc50715dd7b",
+    "requiredRiskInterface": [
+      {"signature": "baseCollateralToken()", "selector": "0x20d0d069", "returns": ["address"]},
+      {"signature": "collateralConfigs(address)", "selector": "0x8cf18e64", "returns": ["uint64 weightBps", "bool isEnabled"]}
+    ],
+    "source": "src/liquidation/CollateralSeizer.sol:12-17,115-134,306-323,436-505"
+  },
+  "compatibleExistingRiskModule": {
+    "address": "0xc0f019005a25524a34F2Ee8839DCDCC50715DD7B",
+    "runtimeKeccak256": "0x6e17b8bcb36e4ced1b705cacb511df1640d183c58049d703be1980caf5b0d138",
+    "owner": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "guardian": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "baseCollateralToken": "0x6eAe407f5640B006faC9965182e238582A3B412E",
+    "collateralVault": "0x00340C360353a5AB784c5Bc5c44322A6AF0625D3",
+    "oracle": "0xB416406F200B2Ef3D7a86A5D5877Ed41D9B1A581",
+    "musdcCollateralConfig": {"weightBps": 10000, "isEnabled": true},
+    "maxOracleDelaySeconds": 600,
+    "source": "src/risk/RiskModuleStorage.sol:202-223; deployed getter calls at pinned block"
+  },
+  "replacementPerpRiskModule": {
+    "address": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110",
+    "runtimeKeccak256": "0x8c782209845865d35ecff80c00525ef3f0f335bea4e7b9846f01199c60fb5a2c",
+    "baseCollateralTokenSupported": true,
+    "collateralConfigsGetterSupported": false,
+    "pinnedCallResult": "eth_call collateralConfigs(mUSDC) reverted",
+    "perpEngine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+    "maxOracleDelaySeconds": 600,
+    "source": "src/perp/PerpRiskModule.sol; D5 uses Vault collateralFactorBps, not legacy collateralConfigs"
+  },
+  "rootCause": "The approved D3_RISK DAG node assumes D3 must point to D5, but D3 was deployed with the older collateral RiskModule and calls its public collateralConfigs mapping getter. D5 is dedicated to perp account risk and does not implement that getter.",
+  "executionImpact": {
+    "directPlanner": "With D3 locally pointed at D5, nonzero computeSeizurePlan and tokenDiscountBps revert. With the current legacy pointer, both read successfully.",
+    "perpLiquidation": "PerpEngineSeizureLib catches planner reverts and returns zero; PerpEngineLiquidationLib then tries a direct settlement-asset skim. ABI mismatch therefore silently degrades the planner and can change shortfall/insurance/bad-debt outcomes, even where the outer liquidation does not revert.",
+    "currentReachability": "D4 collateralSeizer and InsuranceFund pointers are zero, liquidationPaused=true, migration OPEN, and D4 Vault/Insurance authorization=false; no current D4 liquidation path uses D3.",
+    "otherConsumers": "Source search found PerpEngineLens preview wrapped in try/catch. No other in-repository production call to computeSeizurePlan was found.",
+    "sources": ["src/perp/PerpEngineSeizureLib.sol:42-52", "src/perp/PerpEngineLiquidationLib.sol:160-220", "src/lens/PerpEngineLens.sol:540-565"]
+  },
+  "preferredRemediation": "Keep D3 pointed to the existing Timelock-owned collateral RiskModule; keep D4 pointed to D5. Seek explicit approval for a narrow DAG correction replacing state-changing D3_RISK-to-D5 with a read-only compatibility gate before C13. Do not execute D3.setRiskModule(D5).",
+  "redeploymentRequiredForPreferredPath": false,
+  "alternatives": [
+    {"option": "Reuse another compatible module", "verdict": "UNNECESSARY; the deployed pointer already satisfies the exact ABI and matching Vault/Oracle/base-token configuration"},
+    {"option": "Minimal adapter or replacement", "verdict": "NOT REQUIRED on present evidence; if future policy forbids use of the legacy collateral RiskModule, a new module must expose the two D3 getters with exact ABI, carry approved per-token weights and ownership, and undergo D3 pointer governance plus renewed C13 and liquidation tests. No adapter/deployment is authorized here."}
+  ],
+  "remainingRisk": "The shared legacy collateral RiskModule can change its token weights under Timelock governance. Recheck D3-to-risk ABI, mUSDC weight, base token, Vault/Oracle identity, guardian and pauses before D3_TOKEN, C13, and any liquidation release. Future non-base tokens require coordinated legacy-risk and Vault configuration plus oracle freshness review.",
+  "forkEvidence": {"newFile": "test/fork/DeoptD3D2DecisionFork.t.sol", "newTestsPassed": 5, "existingFocusedTestsPassed": 6, "forkImpersonation": "Timelock impersonated locally only; real Safe 2/3 signatures and public governance not tested"},
+  "publicTransactionsSent": false
+}

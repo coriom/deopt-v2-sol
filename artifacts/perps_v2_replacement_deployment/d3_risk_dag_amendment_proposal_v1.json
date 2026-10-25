@@ -1,0 +1,25 @@
+{
+  "schema": "deopt.d3-risk-dag-amendment-proposal.v1",
+  "status": "PROPOSED_NOT_APPROVED",
+  "canonicalDagPath": "artifacts/perps_v2_replacement_deployment/post_maintenance_dependency_dag_v1.json",
+  "canonicalDagSha256": "f3907236b928a50151f21ea748e3572ce8fde8fe5a090c0de8d3ca4d647e5b5d",
+  "existingRule": {
+    "node": "D3_RISK",
+    "dependencies": ["C20", "D3_TOKEN"],
+    "action": "D3.setRiskModule(D5) via Safe and Timelock",
+    "requiredReadback": "D3.riskModule()==D5",
+    "downstream": "C13 depends on D3_RISK"
+  },
+  "proposedRule": {
+    "node": "D3_RISK_COMPAT_VERIFIED",
+    "dependencies": ["C20 canonical postflight", "D3_TOKEN canonical postflight"],
+    "action": "Independent read-only check of D3 current pointer and exact collateral ABI; no state-changing D3 Risk setter",
+    "requiredReadback": "D3.riskModule()==0xc0f019005a25524a34F2Ee8839DCDCC50715DD7B; baseCollateralToken=mUSDC; collateralConfigs(mUSDC)=(10000,true); D3 owner=Timelock; Vault and Oracle identities unchanged; explicit D3 token config approved; D4 riskModule()==D5; D4/D6 maintenance intact",
+    "downstream": "C13 depends on D3_TOKEN and D3_RISK_COMPAT_VERIFIED; C13 remains a separately reviewed Safe/Timelock operation"
+  },
+  "unchangedBoundaries": ["D3_TOKEN requires separate economic approval and public postflight", "C13 must retain Safe 2/3 and custom Timelock delay", "D4 stays on D5 for perp risk", "D4/D6 maintenance remains until separate authorization", "No automatic protocol transaction"],
+  "rationale": "The deployed D3 constructor selected the legacy collateral RiskModule, whose getter ABI matches D3. D5 lacks collateralConfigs(address), so the old D3_RISK state target is unsafe.",
+  "operatorDecision": "Approve or reject this exact dependency correction in a separate governance-policy decision. Technical PASS is not policy approval.",
+  "approvedDagModified": false,
+  "unsignedGovernanceTransaction": null
+}
