@@ -1,0 +1,187 @@
+{
+  "baseline": {
+    "frozenSourceDiffEmpty": true,
+    "frozenSourceRevision": "25c36670883604c1ef5229642ee6548aea6796c3",
+    "lastCommit": "a60aeca1bfb635c4a1d959abe58d9704f8f688c9",
+    "priorCumulativeLedgerSha256": "3f3dcad9e993c16a9d86485e139fefb9c13f8a6bead672344f2d3535c472c8a6",
+    "priorD3PostflightSha256": "0bc82957068c07b0d0b3320c7b40b47e84687757c80bc8b7bb4a92ff26dbd1ba"
+  },
+  "c02ExecutionAuthorized": false,
+  "chainId": 84532,
+  "checks": {
+    "boundedSharedEconomicNonDrift": "PASS_BOUNDED",
+    "builderShaAndOperationIdentity": "PASS_ALL_FIVE",
+    "d3CanonicalQueue": "PASS",
+    "fiveD2OperationsUnqueued": "PASS",
+    "fullWalletGasBalance": "PENDING_OPERATOR",
+    "historicalD2D3EventScan": "PASS_NO_NEW_EVENTS",
+    "maintenance": "PASS",
+    "safeAndTimelockGovernance": "PASS",
+    "safeUiSimulation": "PENDING_OPERATOR",
+    "tier0DeployedSafeTxHash": "MATCH",
+    "tier0ReadOnlyQueueCall": "PASS"
+  },
+  "limitations": [
+    "Pinned reads and scoped Timelock logs are bounded evidence, not exhaustive storage verification",
+    "Safe Transaction Service index may lag; Safe UI pending proposals must be refreshed",
+    "No genuine owner signatures or full Safe wallet gas simulation were performed",
+    "ERC-20 wallet balance and internal Vault ledger balance are distinct; non-drift assertion uses internal Vault ledger"
+  ],
+  "milestone": "DEOPT_D2_S1_COMPLETE_REMAINING_FIVE_AND_S2_PREPARATION_V1",
+  "mkt1ActionAuthorized": false,
+  "operations": [
+    {
+      "builderPath": "artifacts/perps_v2_replacement_deployment/d3_token_s1_safe_builder_v1.json",
+      "builderSha256": "d4979b07fbe862ac423d0746317e2ae75570559b4b661bf8d4a7f159a4144c40",
+      "name": "D3_TOKEN",
+      "operationId": "0x6678a5eefb1b1a1b7a9ff4aa5795e1ba7d09fba63ee59917d454e07fe2208c0d",
+      "postflight": "PASS",
+      "queued": true
+    },
+    {
+      "builderPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_0_s1_safe_builder_v1.json",
+      "builderSha256": "a96781dd681977695a19137de80e79f2f487afb89b28d7f1b010e2fdfea7d6be",
+      "name": "D2_PERP_TIER_0",
+      "operationId": "0x1976519a08a3a7e65cbe1a2f77fcf0f5fa0f783ccb6c7ef0e6c87b7481caf45b",
+      "postflight": "PENDING",
+      "queued": false
+    },
+    {
+      "builderPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_1_s1_safe_builder_v1.json",
+      "builderSha256": "c94660b2f674b412966bde08347477ad5f81be00def9554d184a366970c5c923",
+      "name": "D2_PERP_TIER_1",
+      "operationId": "0xb79986810ad3e08b5495a8edeaed0654da513ef6acfa15e8ff1d496ff2ef4a11",
+      "postflight": "PENDING",
+      "queued": false
+    },
+    {
+      "builderPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_2_s1_safe_builder_v1.json",
+      "builderSha256": "862f6a62c33e73df98dbad816babb97cb60127f35d0547df80f2ae106822d33b",
+      "name": "D2_PERP_TIER_2",
+      "operationId": "0x48b66ca38c21064a6605af4038a657a191a56f327784dc1e0d0bffdc21075a62",
+      "postflight": "PENDING",
+      "queued": false
+    },
+    {
+      "builderPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_3_s1_safe_builder_v1.json",
+      "builderSha256": "68782a3d3875e53929a9b491e7d6ab32fe1547cd2e27471c2348c80ee3da4dc9",
+      "name": "D2_PERP_TIER_3",
+      "operationId": "0xaaf8ae230522b4a6b08a365be6e87f2544392e729b559db44968912b3a177f76",
+      "postflight": "PENDING",
+      "queued": false
+    },
+    {
+      "builderPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_4_s1_safe_builder_v1.json",
+      "builderSha256": "cc26bb8cb57d91e91601317e27342c2b33a16d1e2a23b83a13755fedd7811c2e",
+      "name": "D2_PERP_TIER_4",
+      "operationId": "0x9ec2e37332d4dbb27791ae7f4de7e852147b344f58210e61adb7b2f95a8d5b49",
+      "postflight": "PENDING",
+      "queued": false
+    }
+  ],
+  "publicTradingAuthorized": false,
+  "publicTransactionsSentByAgent": false,
+  "reviewBlock": {
+    "hash": "0xf3ed8276bfbde7fc302759ef5bdd130daab66bca823e7a7f366dc58f1c33037f",
+    "number": 50285641,
+    "timestamp": 1792978997,
+    "utc": "2026-10-26T01:43:17+00:00"
+  },
+  "rpcProvenance": {
+    "pinnedState": "https://sepolia.base.org",
+    "scopedD2D3LogsAfterPriorPostflight": 0,
+    "scopedTimelockLogs": "https://base-sepolia-rpc.publicnode.com",
+    "timelockLogChunks": 29,
+    "timelockLogRange": [
+      50004106,
+      50285641
+    ]
+  },
+  "s2ExecutionAuthorized": false,
+  "safe": {
+    "address": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "guard": "0x0000000000000000000000000000000000000000",
+    "modules": [],
+    "nonce": 31,
+    "owners": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "safeTransactionService": {
+      "limitation": "Service may lag; operator must refresh Safe UI immediately before action",
+      "nonce31ProposalObserved": false,
+      "unexecutedProposalNonces": [
+        10,
+        11
+      ]
+    },
+    "threshold": 2
+  },
+  "schema": "deopt.d2_d3.s1.read_only_resume.v3",
+  "state": {
+    "c02Queued": true,
+    "d1MarketCount": 0,
+    "d2FeeRecipient": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "d2PerpFeeProfilesPpm": [
+      [
+        50,
+        300
+      ],
+      [
+        0,
+        250
+      ],
+      [
+        -50,
+        200
+      ],
+      [
+        -75,
+        175
+      ],
+      [
+        -100,
+        150
+      ]
+    ],
+    "d2RebateBudgetRaw": 0,
+    "d3RiskPointer": "0xc0f019005a25524a34f2ee8839dcdcc50715dd7b",
+    "d3TokenConfig": [
+      0,
+      false,
+      false
+    ],
+    "d4EmergencyFlags": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "d4MigrationState": 0,
+    "d4PmePointer": "0x0000000000000000000000000000000000000000",
+    "d4RiskPointer": "0x90caa6d5bc628577bc76d6cc8b775f983c75e110",
+    "d5OracleDelay": 600,
+    "d6Paused": true,
+    "insuranceD4Authorized": false,
+    "legacyRebateBudgetRaw": 999977,
+    "market1Exists": false,
+    "vaultD4Authorized": false,
+    "vaultMusdcLedgerSamples": {
+      "d2": 0,
+      "d3": 0,
+      "safe": 0,
+      "timelock": 8684
+    }
+  },
+  "timelock": {
+    "address": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "bufferedCutoff": 1793012400,
+    "eta": 1793102400,
+    "minDelay": 86400,
+    "queuePaused": false,
+    "remainingCutoffSecondsAtReview": 33403,
+    "safeExecutor": true,
+    "safeProposer": true
+  }
+}
