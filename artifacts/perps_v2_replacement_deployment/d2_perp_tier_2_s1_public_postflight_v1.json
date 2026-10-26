@@ -1,0 +1,296 @@
+{
+  "beforeBlock": {
+    "hash": "0x3d94d349dafaa7a7938c0769d91f46e34aad4d204599a9dfade1eb2e1ef862b1",
+    "number": 50302632,
+    "timestamp": 1792982395
+  },
+  "beforeReadbacks": {
+    "d1.market1Exists": false,
+    "d1.totalMarkets": 0,
+    "d2.feeRecipient": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "d2.perpProfile0": [
+      50,
+      300
+    ],
+    "d2.perpProfile2": [
+      -50,
+      200
+    ],
+    "d2.rebateBudget": 0,
+    "d3.musdcCfg": [
+      0,
+      false,
+      false
+    ],
+    "d3.riskModule": "0xc0f019005a25524a34f2ee8839dcdcc50715dd7b",
+    "d4.collateralOpsPaused": true,
+    "d4.fundingPaused": true,
+    "d4.liquidationPaused": true,
+    "d4.matchingEngine": "0x0000000000000000000000000000000000000000",
+    "d4.migrationState": 0,
+    "d4.riskModule": "0x90caa6d5bc628577bc76d6cc8b775f983c75e110",
+    "d4.tradingPaused": true,
+    "d5.maxOracleDelay": 600,
+    "d6.paused": true,
+    "insurance.d4Auth": false,
+    "legacyFees.rebateBudget": 999977,
+    "queue.C02": true,
+    "queue.D2_PERP_TIER_0": true,
+    "queue.D2_PERP_TIER_1": true,
+    "queue.D2_PERP_TIER_2": false,
+    "queue.D2_PERP_TIER_3": false,
+    "queue.D2_PERP_TIER_4": false,
+    "queue.D3_TOKEN": true,
+    "safe.nonce": 33,
+    "vault.balances.d2": 0,
+    "vault.balances.d3": 0,
+    "vault.balances.safe": 0,
+    "vault.balances.timelock": 8684,
+    "vault.d4Auth": false
+  },
+  "boundedSharedEconomicNonDrift": "PASS_BOUNDED",
+  "c02ExecutionAuthorized": false,
+  "canonicalPublicTransactionHash": "0x1ebed3dfdf4e50dac89188fb7e1c71994ed897fb31666596914904011d483937",
+  "chainId": 84532,
+  "evidenceLimitations": [
+    "Current public RPCs do not provide debug_traceTransaction (HTTP 401 or method unavailable); wrapper address and selector match prior canonical traced path, while current Safe multisig event, Safe success, exact Timelock queue event, calldata inclusion and state corroborate this scheduling path",
+    "Getter and scoped-event checks are bounded, not exhaustive storage verification",
+    "Safe owner signature bytes from public events were omitted; agent collected no confirmations",
+    "Scheduling does not apply the fee profile until separate S2 execution"
+  ],
+  "freshBlock": {
+    "hash": "0xe30748c0914f62dd740222dfe984834eb12b875fc62c8b05fdd9373d4b5497a6",
+    "number": 50319494,
+    "timestamp": 1792985767,
+    "utc": "2026-10-26T03:36:07+00:00"
+  },
+  "freshReadbacks": {
+    "d1.market1Exists": false,
+    "d1.musdcAllowed": true,
+    "d1.nextMarketId": 1,
+    "d1.totalMarkets": 0,
+    "d2.feeRecipient": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "d2.perpProfile0": [
+      50,
+      300
+    ],
+    "d2.perpProfile1": [
+      0,
+      250
+    ],
+    "d2.perpProfile2": [
+      -50,
+      200
+    ],
+    "d2.perpProfile3": [
+      -75,
+      175
+    ],
+    "d2.perpProfile4": [
+      -100,
+      150
+    ],
+    "d2.rebateBudget": 0,
+    "d3.musdcCfg": [
+      0,
+      false,
+      false
+    ],
+    "d3.riskModule": "0xc0f019005a25524a34f2ee8839dcdcc50715dd7b",
+    "d4.collateralOpsPaused": true,
+    "d4.collateralSeizer": "0x0000000000000000000000000000000000000000",
+    "d4.feesManagerV2": "0x0000000000000000000000000000000000000000",
+    "d4.fundingPaused": true,
+    "d4.liquidationPaused": true,
+    "d4.matchingEngine": "0x0000000000000000000000000000000000000000",
+    "d4.migrationSnapshotHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "d4.migrationState": 0,
+    "d4.riskModule": "0x90caa6d5bc628577bc76d6cc8b775f983c75e110",
+    "d4.tradingPaused": true,
+    "d4.useFeesManagerV2": false,
+    "d5.maxOracleDelay": 600,
+    "d5.perpEngine": "0xd0901de8f6de72aecc716ca1465c4cf58a0b99fb",
+    "d6.paused": true,
+    "insurance.d4Auth": false,
+    "legacyFees.rebateBudget": 999977,
+    "musdc.balance.d2": 0,
+    "musdc.balance.d3": 0,
+    "musdc.balance.safe": 0,
+    "musdc.balance.timelock": 1000000,
+    "queue.C02": true,
+    "queue.D2_PERP_TIER_0": true,
+    "queue.D2_PERP_TIER_1": true,
+    "queue.D2_PERP_TIER_2": true,
+    "queue.D2_PERP_TIER_3": false,
+    "queue.D2_PERP_TIER_4": false,
+    "queue.D3_TOKEN": true,
+    "safe.guard": "0x0000000000000000000000000000000000000000",
+    "safe.modules": [],
+    "safe.modulesNext": "0x0000000000000000000000000000000000000001",
+    "safe.nonce": 34,
+    "safe.owners": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "safe.threshold": 2,
+    "tl.executorsSafe": true,
+    "tl.gracePeriod": 1209600,
+    "tl.minDelay": 86400,
+    "tl.proposersSafe": true,
+    "tl.queuePaused": false,
+    "vault.balances.d2": 0,
+    "vault.balances.d3": 0,
+    "vault.balances.safe": 0,
+    "vault.balances.timelock": 8684,
+    "vault.d4Auth": false
+  },
+  "maintenance": {
+    "c02Queued": true,
+    "d2Tiers0To2Queued": true,
+    "d3TokenQueued": true,
+    "d4FourFlags": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "d4MigrationOpen": true,
+    "d4PmePointer": "0x0000000000000000000000000000000000000000",
+    "d4RiskPointer": "0x90caa6d5bc628577bc76d6cc8b775f983c75e110",
+    "d5OracleDelay": 600,
+    "d6Paused": true,
+    "insuranceD4Authorized": false,
+    "market1Absent": true,
+    "vaultD4Authorized": false
+  },
+  "milestone": "DEOPT_D2_S1_COMPLETE_REMAINING_FIVE_AND_S2_PREPARATION_V1",
+  "operationCount": 6,
+  "operationIndex": 4,
+  "outer": {
+    "callTrace": "UNAVAILABLE_PUBLIC_RPCS",
+    "classification": "KNOWN_METAMASK_DELEGATION_MANAGER_PATH",
+    "containsExactReviewedTimelockCalldata": true,
+    "from": "0xb42f812a44c22cc6b861478900401ee759ebead6",
+    "sameWrapperAsPriorCanonicalC01C12": true,
+    "selector": "0xcef6d209",
+    "to": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+    "value": 0
+  },
+  "postflight": "PASS",
+  "priorCheckpointPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_2_s1_operator_checkpoint_v1.json",
+  "priorCheckpointSha256": "ceedebf2a392cbede1236e0e82d3badc6ff11e9f0c08108e4290a4d5ba6848cb",
+  "priorVerifiedWrapperTracePath": "artifacts/perps_v2_replacement_deployment/c12_risk_wiring_s1_public_postflight_v1.json",
+  "priorVerifiedWrapperTraceSha256": "4992cecfe5ef8496705e960d212d1d2a43312570178f1ac29847b98773b4ee50",
+  "publicTradingAuthorized": false,
+  "publicTransactionsSentByAgent": false,
+  "receipt": {
+    "blockHash": "0xb651231c9c3280f734b20e70fa9a0ca036f915b1dac997075bbd145106fc8d09",
+    "blockNumber": 50302633,
+    "logCount": 5,
+    "status": 1,
+    "timestamp": 1792982395
+  },
+  "receiptReadbacks": {
+    "d1.market1Exists": false,
+    "d1.totalMarkets": 0,
+    "d2.feeRecipient": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "d2.perpProfile0": [
+      50,
+      300
+    ],
+    "d2.perpProfile2": [
+      -50,
+      200
+    ],
+    "d2.rebateBudget": 0,
+    "d3.musdcCfg": [
+      0,
+      false,
+      false
+    ],
+    "d3.riskModule": "0xc0f019005a25524a34f2ee8839dcdcc50715dd7b",
+    "d4.collateralOpsPaused": true,
+    "d4.fundingPaused": true,
+    "d4.liquidationPaused": true,
+    "d4.matchingEngine": "0x0000000000000000000000000000000000000000",
+    "d4.migrationState": 0,
+    "d4.riskModule": "0x90caa6d5bc628577bc76d6cc8b775f983c75e110",
+    "d4.tradingPaused": true,
+    "d5.maxOracleDelay": 600,
+    "d6.paused": true,
+    "insurance.d4Auth": false,
+    "legacyFees.rebateBudget": 999977,
+    "queue.C02": true,
+    "queue.D2_PERP_TIER_0": true,
+    "queue.D2_PERP_TIER_1": true,
+    "queue.D2_PERP_TIER_2": true,
+    "queue.D2_PERP_TIER_3": false,
+    "queue.D2_PERP_TIER_4": false,
+    "queue.D3_TOKEN": true,
+    "safe.nonce": 34,
+    "vault.balances.d2": 0,
+    "vault.balances.d3": 0,
+    "vault.balances.safe": 0,
+    "vault.balances.timelock": 8684,
+    "vault.d4Auth": false
+  },
+  "receiptStateChanges": {
+    "queue.D2_PERP_TIER_2": [
+      false,
+      true
+    ],
+    "safe.nonce": [
+      33,
+      34
+    ]
+  },
+  "s2ExecutionAuthorized": false,
+  "safe": {
+    "address": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "executionFailure": false,
+    "executionSuccess": true,
+    "fields": {
+      "baseGas": 0,
+      "data": "0x8e361cdf0000000000000000000000009947f42cc29a32992bbf2030ee49e35c839eded500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ae092400000000000000000000000000000000000000000000000000000000000000084f6524d5800000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000",
+      "gasPrice": 0,
+      "gasToken": "0x0000000000000000000000000000000000000000",
+      "operation": 0,
+      "refundReceiver": "0x0000000000000000000000000000000000000000",
+      "safeTxGas": 0,
+      "to": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "value": 0
+    },
+    "multisigEvent": true,
+    "nonceAtReceipt": 34,
+    "nonceBefore": 33,
+    "nonceFresh": 34,
+    "publicSignatureBytesOmitted": true,
+    "safeTxHash": "0xe23662c28fe27b9c920f7a4ebaacb3e554c26dc5c01d187fad8861ca4a05d90f"
+  },
+  "scheduling": "VERIFIED_SCHEDULED",
+  "schema": "deopt.d2.perp_tier_2.s1.public_postflight.v1",
+  "timelock": {
+    "address": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "eta": 1793102400,
+    "extraMarginBeyondMinDelaySeconds": 33605,
+    "innerCalldata": "0xf6524d5800000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c8",
+    "innerCalldataKeccak256": "0xfea716384948ddb08493c32fb6519f7b6a957218b2269fe79c2e7a7a573c9b2a",
+    "laterScopedD2D3EventsThroughFreshBlock": 0,
+    "operationId": "0x48b66ca38c21064a6605af4038a657a191a56f327784dc1e0d0bffdc21075a62",
+    "outerCalldataKeccak256": "0xa2ed3e0aae9a40162505fd7a9f8edacd8fde80ca415f30cbef5330ef4d59def7",
+    "queueAtReceipt": true,
+    "queueBefore": false,
+    "queueEvent": true,
+    "queueFresh": true,
+    "scheduledArgs": [
+      2,
+      1,
+      0,
+      200
+    ],
+    "scheduledInnerFunction": "setFeeProfile(uint8,uint8,int32,int32)",
+    "target": "0x9947f42cc29a32992bbf2030ee49e35c839eded5",
+    "value": 0
+  }
+}

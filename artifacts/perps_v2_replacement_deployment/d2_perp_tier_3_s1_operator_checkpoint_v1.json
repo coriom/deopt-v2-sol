@@ -1,0 +1,119 @@
+{
+  "c02ExecutionAuthorized": false,
+  "chainId": 84532,
+  "d2ExecutionAuthorized": false,
+  "dependency": {
+    "tier2Postflight": "PASS",
+    "tier2PostflightPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_2_s1_public_postflight_v1.json",
+    "tier2PostflightSha256": "e67565dba19495138968f7d936e0c511968dbd299a5e9cfacdf0977fb10f6cc8"
+  },
+  "exactTransactionReview": "PASS",
+  "milestone": "DEOPT_D2_S1_COMPLETE_REMAINING_FIVE_AND_S2_PREPARATION_V1",
+  "operationCount": 6,
+  "operationIndex": 5,
+  "prestate": {
+    "c02Queued": true,
+    "d2FeeRecipient": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "d2RebateBudgetRaw": 0,
+    "d2Tiers0To2Queued": true,
+    "d3TokenQueued": true,
+    "d4FourEmergencyFlags": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "d6Paused": true,
+    "legacyRebateBudgetRaw": 999977,
+    "market1Absent": true,
+    "tier3ApprovedAfterFutureExecutionPpm": [
+      0,
+      200
+    ],
+    "tier3CurrentFeeProfilePpm": [
+      -75,
+      175
+    ]
+  },
+  "publicTradingAuthorized": false,
+  "publicTransactionHash": null,
+  "publicTransactionsSentByAgent": false,
+  "requiredOperatorChecks": [
+    "Separate explicit approval for one tier-3 scheduling transaction only",
+    "Refresh chain ID 84532, Safe nonce 34, owners, threshold, modules, guard and pending proposals immediately before action",
+    "Confirm D3_TOKEN and D2 tiers 0-2 queued, tier 3 not queued, C02 unchanged and maintenance intact",
+    "Actual scheduling block must satisfy ETA >= block.timestamp + live minDelay + 3600; if false stop for separately reviewed replacement ETA",
+    "Verify exactly one zero-value CALL to Timelock, tier=3, PERP=1, maker=0ppm, taker=200ppm, full zero gas/refund envelope and exact SafeTx hash",
+    "Require Safe UI simulation PASS, acceptable full wallet gas and ETH balance, two genuine owner confirmations",
+    "After one operator-submitted public transaction, supply hash for independent canonical postflight before tier 4"
+  ],
+  "reviewBlock": {
+    "hash": "0xe30748c0914f62dd740222dfe984834eb12b875fc62c8b05fdd9373d4b5497a6",
+    "number": 50319494,
+    "timestamp": 1792985767,
+    "utc": "2026-10-26T03:36:07+00:00"
+  },
+  "reviewedBuilderPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_3_s1_safe_builder_v1.json",
+  "reviewedBuilderSha256": "68782a3d3875e53929a9b491e7d6ab32fe1547cd2e27471c2348c80ee3da4dc9",
+  "safe": {
+    "address": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "fullWalletGasAndBalance": "PENDING_OPERATOR",
+    "guard": "0x0000000000000000000000000000000000000000",
+    "modules": [],
+    "nonce": 34,
+    "owners": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "safeEnvelope": {
+      "baseGas": "0",
+      "data": "0x8e361cdf0000000000000000000000009947f42cc29a32992bbf2030ee49e35c839eded500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ae092400000000000000000000000000000000000000000000000000000000000000084f6524d5800000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000",
+      "gasPrice": "0",
+      "gasToken": "0x0000000000000000000000000000000000000000",
+      "nonce": 34,
+      "operation": 0,
+      "refundReceiver": "0x0000000000000000000000000000000000000000",
+      "safeTxGas": "0",
+      "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "value": "0"
+    },
+    "safeTxHash": "0xf219f8384e48cee81511808c0f93e9a934ce3786a05b9e32c41b28f3c9893090",
+    "safeUiSimulation": "PENDING_OPERATOR",
+    "threshold": 2,
+    "twoGenuineOwnerConfirmations": "PENDING_OPERATOR"
+  },
+  "safeTransactionServiceRead": {
+    "nonce34ConflictObserved": false,
+    "operatorRefreshRequired": true,
+    "unexecutedProposalNonces": [
+      11,
+      10
+    ]
+  },
+  "schema": "deopt.d2.perp_tier_3.s1.operator_checkpoint.v1",
+  "status": "AWAITING_OPERATOR_SAFE_ACTION",
+  "timelock": {
+    "address": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "bufferedSchedulingCutoff": 1793012400,
+    "eta": 1793102400,
+    "innerArgs": [
+      3,
+      1,
+      0,
+      200
+    ],
+    "innerCalldata": "0xf6524d5800000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c8",
+    "innerCalldataKeccak256": "0x43db72a9006597fb8d828c0f94f08a778f231035dab0369cd49a953ce50597e1",
+    "innerFunction": "setFeeProfile(uint8,uint8,int32,int32)",
+    "minimumDelaySeconds": 86400,
+    "operationId": "0xaaf8ae230522b4a6b08a365be6e87f2544392e729b559db44968912b3a177f76",
+    "outerCalldata": "0x8e361cdf0000000000000000000000009947f42cc29a32992bbf2030ee49e35c839eded500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ae092400000000000000000000000000000000000000000000000000000000000000084f6524d5800000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000",
+    "outerCalldataKeccak256": "0x104ce968ca710aba9fbd6ea92c87d48867edbdc920350f3c9ba9f41df44024f5",
+    "queued": false,
+    "readOnlyQueueCall": "PASS",
+    "remainingCutoffSecondsAtReview": 26633,
+    "target": "0x9947F42cC29A32992bbf2030ee49E35C839EDEd5",
+    "value": "0"
+  }
+}
