@@ -1,0 +1,119 @@
+{
+  "c02ExecutionAuthorized": false,
+  "chainId": 84532,
+  "d2ExecutionAuthorized": false,
+  "dependency": {
+    "tier0Postflight": "PASS",
+    "tier0PostflightPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_0_s1_public_postflight_v1.json",
+    "tier0PostflightSha256": "4a69f09d38f08615d4071a6bc9cb0e5fa5c37073d40ade6712b4705c308b69b4"
+  },
+  "exactTransactionReview": "PASS",
+  "milestone": "DEOPT_D2_S1_COMPLETE_REMAINING_FIVE_AND_S2_PREPARATION_V1",
+  "operationCount": 6,
+  "operationIndex": 3,
+  "prestate": {
+    "c02Queued": true,
+    "d2FeeRecipient": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "d2RebateBudgetRaw": 0,
+    "d3TokenQueued": true,
+    "d4FourEmergencyFlags": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "d6Paused": true,
+    "legacyRebateBudgetRaw": 999977,
+    "market1Absent": true,
+    "tier0Queued": true,
+    "tier1ApprovedAfterFutureExecutionPpm": [
+      0,
+      200
+    ],
+    "tier1CurrentFeeProfilePpm": [
+      0,
+      250
+    ]
+  },
+  "publicTradingAuthorized": false,
+  "publicTransactionHash": null,
+  "publicTransactionsSentByAgent": false,
+  "requiredOperatorChecks": [
+    "Separate explicit approval for one tier-1 scheduling transaction only",
+    "Refresh chain ID 84532, Safe nonce 32, owners, threshold, modules, guard and pending proposals immediately before action",
+    "Confirm D3_TOKEN and D2 tier 0 queued, tier 1 not queued, C02 unchanged and maintenance intact",
+    "Actual scheduling block must satisfy ETA >= block.timestamp + live minDelay + 3600; if false stop for separately reviewed replacement ETA",
+    "Verify exactly one zero-value CALL to Timelock, tier=1, PERP=1, maker=0ppm, taker=200ppm, full zero gas/refund envelope and exact SafeTx hash",
+    "Require Safe UI simulation PASS, acceptable full wallet gas and ETH balance, two genuine owner confirmations",
+    "After one operator-submitted public transaction, supply hash for independent canonical postflight before tier 2"
+  ],
+  "reviewBlock": {
+    "hash": "0x520cd66206d4850e99f6fe6bdc0d95b489999ece2c4d77e3e89a5fc149a62ba3",
+    "number": 50295433,
+    "timestamp": 1792980955,
+    "utc": "2026-10-26T02:15:55+00:00"
+  },
+  "reviewedBuilderPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_1_s1_safe_builder_v1.json",
+  "reviewedBuilderSha256": "c94660b2f674b412966bde08347477ad5f81be00def9554d184a366970c5c923",
+  "safe": {
+    "address": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "fullWalletGasAndBalance": "PENDING_OPERATOR",
+    "guard": "0x0000000000000000000000000000000000000000",
+    "modules": [],
+    "nonce": 32,
+    "owners": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "safeEnvelope": {
+      "baseGas": "0",
+      "data": "0x8e361cdf0000000000000000000000009947f42cc29a32992bbf2030ee49e35c839eded500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ae092400000000000000000000000000000000000000000000000000000000000000084f6524d5800000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000",
+      "gasPrice": "0",
+      "gasToken": "0x0000000000000000000000000000000000000000",
+      "nonce": 32,
+      "operation": 0,
+      "refundReceiver": "0x0000000000000000000000000000000000000000",
+      "safeTxGas": "0",
+      "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "value": "0"
+    },
+    "safeTxHash": "0xf976a20a5648c068fae109f796edaadfc32b28b8dd64f45101d2dfa4422cf5c4",
+    "safeUiSimulation": "PENDING_OPERATOR",
+    "threshold": 2,
+    "twoGenuineOwnerConfirmations": "PENDING_OPERATOR"
+  },
+  "safeTransactionServiceRead": {
+    "nonce32ConflictObserved": false,
+    "operatorRefreshRequired": true,
+    "unexecutedProposalNonces": [
+      11,
+      10
+    ]
+  },
+  "schema": "deopt.d2.perp_tier_1.s1.operator_checkpoint.v1",
+  "status": "AWAITING_OPERATOR_SAFE_ACTION",
+  "timelock": {
+    "address": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "bufferedSchedulingCutoff": 1793012400,
+    "eta": 1793102400,
+    "innerArgs": [
+      1,
+      1,
+      0,
+      200
+    ],
+    "innerCalldata": "0xf6524d5800000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c8",
+    "innerCalldataKeccak256": "0xa038494c5f3cc048f040ef76bf6afafc01c564e91127c822139102d165f19fc0",
+    "innerFunction": "setFeeProfile(uint8,uint8,int32,int32)",
+    "minimumDelaySeconds": 86400,
+    "operationId": "0xb79986810ad3e08b5495a8edeaed0654da513ef6acfa15e8ff1d496ff2ef4a11",
+    "outerCalldata": "0x8e361cdf0000000000000000000000009947f42cc29a32992bbf2030ee49e35c839eded500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ae092400000000000000000000000000000000000000000000000000000000000000084f6524d5800000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000",
+    "outerCalldataKeccak256": "0x1569a47e119eb93af51462c2a08863addc2cc7fe0d87054af22f9f3dd6437998",
+    "queued": false,
+    "readOnlyQueueCall": "PASS",
+    "remainingCutoffSecondsAtReview": 31445,
+    "target": "0x9947F42cC29A32992bbf2030ee49E35C839EDEd5",
+    "value": "0"
+  }
+}
