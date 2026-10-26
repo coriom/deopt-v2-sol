@@ -1,0 +1,190 @@
+{
+  "allSixOperationIdsRecomputedOnchain": true,
+  "allSixQueued": true,
+  "allSixReadyAtReview": false,
+  "allSixSafeTxHashesRecomputedUsingDeployedSafe": true,
+  "c02ExecutionAuthorized": false,
+  "chainId": 84532,
+  "d2AndD3OwnersAreTimelock": true,
+  "economicState": {
+    "boundedNonDrift": "PASS_BOUNDED",
+    "c02Queued": true,
+    "d2FeeProfilesBeforeExecution": [
+      [
+        50,
+        300
+      ],
+      [
+        0,
+        250
+      ],
+      [
+        -50,
+        200
+      ],
+      [
+        -75,
+        175
+      ],
+      [
+        -100,
+        150
+      ]
+    ],
+    "d2FeeRecipient": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "d2RebateBudget": 0,
+    "d3MusdcConfigBeforeExecution": [
+      0,
+      false,
+      false
+    ],
+    "d3RiskPointer": "0xc0f019005a25524a34f2ee8839dcdcc50715dd7b",
+    "d4FourFlags": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "d6Paused": true,
+    "legacyRebateBudget": 999977,
+    "marketCount": 0
+  },
+  "economicStateReadbackBlock": {
+    "hash": "0x41935ca842bc1d8c0e28e1f04258bcee0e98a1c13468f9a9922caa178594dc43",
+    "number": 50329088,
+    "timestamp": 1792987686,
+    "utc": "2026-10-26T04:08:06+00:00"
+  },
+  "eta": 1793102400,
+  "expiryInclusive": 1794312000,
+  "forkBlock": 50328234,
+  "forkRehearsal": {
+    "actualSafeSignaturesTested": false,
+    "boundedEconomicIsolation": "PASS",
+    "directSixExecution": "PASS",
+    "forkBlock": 50328234,
+    "prematureUnauthorizedWrongIdentityExpiry": "PASS",
+    "status": "PASS",
+    "syntheticSafeSequentialNonces": "PASS",
+    "testCount": 3,
+    "testFile": "test/perp/PerpsV2D2D3SixS2Fork.t.sol",
+    "timelockEventsAndReplay": "PASS"
+  },
+  "individualS2AuthorizationRequired": true,
+  "limitations": [
+    "Public chain remains before ETA; live Safe UI execution simulation and wallet gas must be rerun at the actual operator checkpoint",
+    "Builder JSON does not bind nonce, gas/refund fields, signatures or approval",
+    "Fork owner impersonation is synthetic, not genuine Safe 2/3 confirmations",
+    "Bounded getter/event/fork checks are not exhaustive storage verification",
+    "C02 execution remains blocked by separate active-market safety gates"
+  ],
+  "mandatoryPerOperationPostflight": [
+    "Canonical receipt status 1 and block hash",
+    "Safe ExecutionSuccess for exact reviewed SafeTx hash with no ExecutionFailure",
+    "Safe nonce before and after, expected one-step advance",
+    "Exact Timelock TransactionExecuted event and operation ID with target/value/data/ETA",
+    "Operation consumed and read-only replay rejected",
+    "Target getter and configuration event show only expected change",
+    "D4/D6 maintenance, market absence, C02 queue and bounded shared economic non-drift",
+    "Stop after failed or inconclusive postflight"
+  ],
+  "migrationReplayAuthorized": false,
+  "milestone": "DEOPT_D2_D3_S2_EXECUTION_PREPARATION_V1",
+  "nonceAssumption": "36 through 41 conditional on six separate successful prior public postflights and no intervening Safe action",
+  "operations": [
+    {
+      "builderPath": "artifacts/perps_v2_replacement_deployment/d3_token_s2_safe_builder_v1.json",
+      "builderSha256": "09dc4b3045b72ae5709c5db4a04478e08c882bcbd9cfb36078035af8fabf5f92",
+      "executionCalldataKeccak256": "0x37a9e17a82e9756e615201688581e1a93835878e7298e47a2dc2b5ed500b16d6",
+      "name": "D3_TOKEN",
+      "operationId": "0x6678a5eefb1b1a1b7a9ff4aa5795e1ba7d09fba63ee59917d454e07fe2208c0d",
+      "safeNonceConditional": 36,
+      "safeTxHashConditional": "0x263f797d378aba0478288588b548efff7efc3d1546fe885c232de7d1bff4e73c"
+    },
+    {
+      "builderPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_0_s2_safe_builder_v1.json",
+      "builderSha256": "141d289485027139b6288a9e824531256f71fa64c180057337c68abca80601f1",
+      "executionCalldataKeccak256": "0xc68a75c83ac3b95e2d0a286e08aedfb957f76b5c39cc99c8946ea618b9c4aa7a",
+      "name": "D2_PERP_TIER_0",
+      "operationId": "0x1976519a08a3a7e65cbe1a2f77fcf0f5fa0f783ccb6c7ef0e6c87b7481caf45b",
+      "safeNonceConditional": 37,
+      "safeTxHashConditional": "0x361020aba95982f0187725e31716183edfe3b24b428737721d0fa5caafbbdcc7"
+    },
+    {
+      "builderPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_1_s2_safe_builder_v1.json",
+      "builderSha256": "5693c9d0d9af890fc28988784822188699b261fc9d7bf590d3e4b40e9d783e6a",
+      "executionCalldataKeccak256": "0x7e040d833b0ff454de27ccaf4a0e24dea1545cfab11079de9fb67b804bb47ec1",
+      "name": "D2_PERP_TIER_1",
+      "operationId": "0xb79986810ad3e08b5495a8edeaed0654da513ef6acfa15e8ff1d496ff2ef4a11",
+      "safeNonceConditional": 38,
+      "safeTxHashConditional": "0x736f2f64d358f40e72d243024c5a5b65843eaae35cdb7a5a2a64db87ee265e49"
+    },
+    {
+      "builderPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_2_s2_safe_builder_v1.json",
+      "builderSha256": "7ca10a7eee28811c82e6ee0a9f035717e96e79ebb20f67604f9ac259c571185c",
+      "executionCalldataKeccak256": "0xb337a55890fa652f232f539e0aa88167c978dd1384b29e2e92e0110f381c2990",
+      "name": "D2_PERP_TIER_2",
+      "operationId": "0x48b66ca38c21064a6605af4038a657a191a56f327784dc1e0d0bffdc21075a62",
+      "safeNonceConditional": 39,
+      "safeTxHashConditional": "0xdfbcbbf2c808b55e3e5ba7a42ebf7e110ee4e79235e0c2b1c686570d5318949d"
+    },
+    {
+      "builderPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_3_s2_safe_builder_v1.json",
+      "builderSha256": "26fae2aea98a7039d2572e4ff8c7bd208ecadc16f09dfbc7d8d749aa882ad897",
+      "executionCalldataKeccak256": "0xe26d255355f129ab6b50d51bbace1b3a386e3ac40c57e969961c353fb500e891",
+      "name": "D2_PERP_TIER_3",
+      "operationId": "0xaaf8ae230522b4a6b08a365be6e87f2544392e729b559db44968912b3a177f76",
+      "safeNonceConditional": 40,
+      "safeTxHashConditional": "0x0cfa836f6f396bdd049908af487f40cd5da07648cee3b660e01a9303260bc7f1"
+    },
+    {
+      "builderPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_4_s2_safe_builder_v1.json",
+      "builderSha256": "31c0638be0e56d227a69e604b13e24d83982464bc44d548006c0e00ab21075a4",
+      "executionCalldataKeccak256": "0x84b458b4b69d9a189e1f168ff49b5ebb5ad5cc28cb7018aede8e684b12d6ee8d",
+      "name": "D2_PERP_TIER_4",
+      "operationId": "0x9ec2e37332d4dbb27791ae7f4de7e852147b344f58210e61adb7b2f95a8d5b49",
+      "safeNonceConditional": 41,
+      "safeTxHashConditional": "0x4f365bce909032d8b0e0d31a85c1b5af3b55b3753082bf274e8a09cd8955b81a"
+    }
+  ],
+  "pendingSafeServiceConflictsAtOrAbove36": [],
+  "publicTradingAuthorized": false,
+  "publicTransactionsSentByAgent": false,
+  "recommendedExecutionOrder": [
+    "D3_TOKEN",
+    "D2_PERP_TIER_0",
+    "D2_PERP_TIER_1",
+    "D2_PERP_TIER_2",
+    "D2_PERP_TIER_3",
+    "D2_PERP_TIER_4"
+  ],
+  "reviewBlock": {
+    "hash": "0x2ca9c189f577751410d24aae1c3d290273f4b0fec4aa57ecdccc8e2307dcdc58",
+    "number": 50329516,
+    "timestamp": 1792987772,
+    "utc": "2026-10-26T04:09:32+00:00"
+  },
+  "s1Completed": 6,
+  "s1ProgressPath": "artifacts/perps_v2_replacement_deployment/d2_d3_six_operation_s1_run_progress_v8.json",
+  "s1ProgressSha256": "40975ddfa9c2dfc05ec8cefdbf934f179334f3b02e556070d1279b464af97e5c",
+  "s2ExecutionAuthorized": false,
+  "safeGuard": "0x0000000000000000000000000000000000000000",
+  "safeIsTimelockExecutor": true,
+  "safeModules": [],
+  "safeNonceObserved": 36,
+  "safeOwners": [
+    "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+    "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+    "0xa774c46c41064524df895bd7be9f294409798dfc"
+  ],
+  "safeThreshold": 2,
+  "safeTransactionServiceCheck": "HTTP_200_NO_PENDING_NONCE_AT_OR_ABOVE_36_AT_REVIEW",
+  "safeUiSimulationAndFullWalletGas": "PENDING_OPERATOR_AFTER_ETA",
+  "schema": "deopt.d2_d3.six_operation.s2.execution_review.v1",
+  "status": "OFFLINE_PREPARATION_PASS_NOT_AUTHORIZED",
+  "tier4PublicPostflightPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_4_s1_public_postflight_v1.json",
+  "tier4PublicPostflightSha256": "22ad7a6c8f95918f1d0dde0a0d04bdfb60fa42f7917b04f01157223a357625b3",
+  "timelockMinDelay": 86400,
+  "unsignedIntentsPath": "artifacts/perps_v2_replacement_deployment/d2_d3_six_operation_s2_unsigned_intents_v1.json",
+  "unsignedIntentsSha256": "ecd48779477c814cb3e174db0ca37aa3209dd4f8a6e0c0531ca95f7c90bfc62d"
+}
