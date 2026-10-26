@@ -1,0 +1,322 @@
+{
+  "activeMarketInterval": {
+    "acceleratedDagPotentialMinimum": "After both operations ready, C02 postflight plus separate human MKT1 Safe approval and inclusion; no guaranteed numeric bound",
+    "existingDagPracticalWithOneHourMarginSeconds": 90000,
+    "existingDagProtocolMinimumSeconds": 86400,
+    "worstCase": "UNBOUNDED for either path if confirmations, RPC, Timelock or operation fail"
+  },
+  "authorization": {
+    "c02Execution": false,
+    "cloudStateChanged": false,
+    "d2d3S2Execution": false,
+    "mkt1Execution": false,
+    "mkt1Scheduling": false,
+    "publicTrading": false,
+    "publicTransactionsSentByAgent": false
+  },
+  "c02Eta": 1792929600,
+  "c02ExecutionEligibility": "NO_REMOTE_ISOLATION_UNVERIFIED",
+  "c02ExpiryInclusive": 1794139200,
+  "c02Mkt1Sequence": [
+    "Explicit policy amendment approval only after required remote evidence",
+    "Fresh MKT1 S1 exact package review with new ETA/ID/nonce",
+    "Separate manual Safe 2/3 MKT1 scheduling",
+    "Canonical MKT1 queue postflight PASS",
+    "Wait for C02 and MKT1 ready",
+    "Fresh C02 containment and remote isolation preflight, separate C02 S2 authorization",
+    "Manual C02 execution once",
+    "Canonical C02 postflight PASS, market 1 ACTIVE, maintenance/non-drift verified",
+    "Fresh MKT1 state and nonce review, separate MKT1 S2 authorization",
+    "Manual MKT1 execution once",
+    "Canonical MKT1 postflight PASS, market 1 INACTIVE"
+  ],
+  "c02OperationId": "0x9e10ee1c04280e36ba1d7144b5abd2d1a48b08fac54087bd5e7090d91030913e",
+  "c02SpecificRisk": {
+    "activeMarketFailureExposure": "UNBOUNDED if MKT1 execution stalls; D4/D6 maintenance must remain closed",
+    "genericVaultClearingFunctions": "Pre-existing independently callable surfaces; not newly created by C02",
+    "newlyMarketEligiblePrivilegedFunctions": [
+      "D4.adminSeedPosition(address,uint256,int256,int256,int256): market 1 existence check becomes satisfiable, owner-only Timelock/Safe governance required",
+      "D4.adminSeedMarketFunding(uint256,int256,uint64): market 1 existence check becomes satisfiable, owner-only Timelock/Safe governance required"
+    ],
+    "offchainOrderAndExecutionExposure": "UNKNOWN until actual remote backend/worker services and effective flags are attested",
+    "onchainContainment": "PASS_BOUNDED_REUSED_AND_LIVE_MAINTENANCE_REFRESHED"
+  },
+  "c02Status": "QUEUED_UNEXECUTED_READY",
+  "chain": {
+    "block": {
+      "hash": "0x0dc37c85c14733d680ad01c1dbaab5b1abd4fcd1b28b3452e60cb599b59972d5",
+      "number": 50386725,
+      "timestamp": 1792999213,
+      "utc": "2026-10-26T07:20:13+00:00"
+    },
+    "c02Queued": true,
+    "c02Ready": true,
+    "chainId": 84532,
+    "d2d3Queues": {
+      "D2_PERP_TIER_0": true,
+      "D2_PERP_TIER_1": true,
+      "D2_PERP_TIER_2": true,
+      "D2_PERP_TIER_3": true,
+      "D2_PERP_TIER_4": true,
+      "D3_TOKEN": true
+    },
+    "d4Flags": {
+      "collateralOpsPaused": true,
+      "fundingPaused": true,
+      "liquidationPaused": true,
+      "tradingPaused": true
+    },
+    "d4InsuranceAuthorized": false,
+    "d4MigrationState": 0,
+    "d4PmePointer": "0x0000000000000000000000000000000000000000",
+    "d4RiskPointer": "0x90caa6d5bc628577bc76d6cc8b775f983c75e110",
+    "d4VaultAuthorized": false,
+    "d5MaxOracleDelay": 600,
+    "d6Paused": true,
+    "market1Exists": false,
+    "marketCount": 0,
+    "safeNonce": 36,
+    "safeThreshold": 2,
+    "timelockGracePeriod": 1209600,
+    "timelockMinDelay": 86400
+  },
+  "concreteHostingConclusion": "Vercel is canonical for the current frontend. No separate Rust backend/relayer/keeper deployment has been proven. Historical Railway references are not treated as active hosting.",
+  "concreteInfrastructure": [
+    {
+      "classification": "VERIFIED_ACTIVE_UI_WITH_SOURCE_LEVEL_TRADING_GATE",
+      "component": "canonical Vercel frontend",
+      "deployedBackendUrl": "UNKNOWN",
+      "deployedCronInventory": "UNKNOWN_NO_CONNECTOR_METHOD",
+      "deployedFunctionInventory": "UNKNOWN_API_404_FILE_TREE_NOT_FOUND",
+      "deployedGitCommit": "e0b28fb6f30600c832ef084a3e678b60f21947e7",
+      "deployedGitRepo": "coriom/deopt-v2-frontend",
+      "effectiveBuildTimePublicEnv": "UNKNOWN_NOT_READ",
+      "exactCommitSourceApiRoutes": [
+        "src/app/api/client-errors/route.ts"
+      ],
+      "interpretation": "READY production frontend does not establish backend or worker activation; source-backed UI gating is narrower than deployed-function attestation",
+      "localRepoHeadMatched": true,
+      "productionAlias": "deoptv2-frontend.vercel.app",
+      "productionDeploymentId": "dpl_DF4Gsa4f3B9zuaRnRXQuZAr8rdXp",
+      "projectId": "prj_YADz33AWNuLnbnXYvQZOINFIhTTG",
+      "projectNameReturned": "deopt-v2-frontend",
+      "provider": "Vercel",
+      "readyState": "READY",
+      "sourceServerRouteFinding": "One bounded client-error POST collector; no server-side wallet or transaction submission in that route",
+      "sourceTradingGate": "isPublicTradingEnabled() returns false under production NODE_ENV; trading-api rejects non-GET before backend fetch; faucet claim path also returns unavailable under this gate"
+    },
+    {
+      "allRecordedStatusKinds": [
+        "failure"
+      ],
+      "classification": "HISTORICAL_ONLY_FAILED_GITHUB_DEPLOYMENTS",
+      "component": "Rust trading backend GitHub deployment records",
+      "deploymentRecordCount": 46,
+      "interpretation": "Full status history across all 46 GitHub deployment records contains only failure; no successful GitHub-recorded backend deployment found. Manual or provider-side deployment remains possible.",
+      "lastKnownTarget": "awake-ambition / production",
+      "latestRecordedAttemptUtc": "2026-07-12T21:39:53Z",
+      "latestStatusCounts": {
+        "failure": 46
+      },
+      "provider": "GitHub deployments",
+      "repository": "coriom/deopt-v2-backend",
+      "successfulGithubRecordedDeployments": 0
+    },
+    {
+      "actualHost": "UNKNOWN",
+      "classification": "UNKNOWN",
+      "component": "Rust backend and external relayer/keeper runtime",
+      "currentServiceStatus": "UNKNOWN",
+      "effectiveChainAndContractTargets": "UNKNOWN",
+      "effectiveOrderExecutionBroadcastFlags": "UNKNOWN",
+      "interpretation": "Backend source has order intake, broadcaster, funding/liquidation/keeper capabilities with safe defaults; source defaults are not effective deployment proof",
+      "provider": "not established",
+      "restartOrScheduledWorkerState": "UNKNOWN"
+    },
+    {
+      "ciExecutionFlags": "false in workflow source",
+      "classification": "VERIFIED_ACTIVE_CI_NOT_DEPLOYMENT",
+      "component": "backend GitHub Actions",
+      "currentSourceHasDeployOrScheduleJob": false,
+      "interpretation": "Current workflows are test jobs; they do not attest any separate remote runtime",
+      "provider": "GitHub Actions",
+      "workflowCount": 3,
+      "workflowNames": [
+        "Backend CI",
+        "Backend Runtime E2E",
+        ".github/workflows/backend-postgres-integrity.yml"
+      ]
+    },
+    {
+      "backendContainerObserved": false,
+      "classification": "LOCAL_SCOPE_ONLY",
+      "component": "local WSL Docker/systemd",
+      "dockerContainerCount": 14,
+      "dockerReadSucceeded": true,
+      "interpretation": "Only this WSL host; no inference about remote deployment",
+      "matchingDeoptContainers": [
+        "deopt-v2g-l0-webhook-sink",
+        "deopt-v2g-l0-grafana",
+        "deopt-v2g-l0-prometheus",
+        "deopt-v2g-l0-alertmanager"
+      ],
+      "matchingUserServices": [],
+      "userSystemdReadSucceeded": true
+    },
+    {
+      "classification": "HISTORICAL_UNVERIFIED",
+      "component": "historical Railway project",
+      "environmentId": "9fa9cad6-cb27-43ad-b4ed-c8af4e416365",
+      "githubDeploymentAttempts": "failure",
+      "interpretation": "All 46 related GitHub deployment statuses are failures. Railway is not the intended DeOpt hosting platform. There is no current evidence of an active Railway service and no current provider inventory; it is not classified verified inactive.",
+      "projectId": "5d110969-6d5a-4f78-ab01-60dc3efd55e3",
+      "providerServiceInventory": "UNKNOWN"
+    }
+  ],
+  "criticalPathRemainingBlockers": [
+    "Actual Vercel production Functions/Cron inventory and effective backend reference are not available through connector",
+    "Operator has not identified or ruled out any separately hosted Rust backend/relayer/keeper runtime",
+    "Early-queue scheduling DAG amendment has not received explicit operator policy approval"
+  ],
+  "d2d3Interaction": {
+    "conditionalSafeNonces": [
+      36,
+      37,
+      38,
+      39,
+      40,
+      41
+    ],
+    "firstS2OperatorCheckpoint": "D3_TOKEN at/after 2026-10-27 12:00 UTC; fresh Safe nonce and readiness, exact hash, UI simulation/gas, 2/3 approval and independent postflight; no S2 authorized here",
+    "interleavedS2Effect": "Any D2/D3 S2 action advances Safe nonce and invalidates a prior MKT1 package or later conditional S2 hashes; stop and rebind only through separate review",
+    "mkt1S1BeforeD3Effect": "Safe nonce would advance 36 to 37 after canonical success; all six conditional S2 SafeTx hashes become stale and require fresh envelope/hash review; their Timelock operation IDs/ETAs do not change",
+    "s1Completed": "6/6",
+    "s2Eta": 1793102400,
+    "safeNonceAtReview": 36
+  },
+  "independentReadOnlyPreparations": [
+    "GUARDIAN_POLICY",
+    "EXECUTOR_IDENTITY_REVIEW",
+    "ACL_POLICY_REVIEW"
+  ],
+  "milestone": "DEOPT_C02_CRITICAL_PATH_UNBLOCK_AND_PARALLEL_GOVERNANCE_V1",
+  "mkt1EarlyQueuePolicy": "TECHNICAL_PASS_FORMAL_APPROVAL_REQUIRED",
+  "mkt1PolicyCheckpoint": {
+    "approvedDagUnchanged": true,
+    "authorizationBoundaries": "Policy approval, exact MKT1 S1 schedule, C02 S2 execution and MKT1 S2 execution each require distinct review/authorization and Safe 2/3 actions",
+    "candidateEtaFromOldFork": 1793102400,
+    "candidateIsDiagnosticNotOperatorPackage": true,
+    "candidateOperationIdFromOldFork": "0x9084148eadef227a5d6a93c30397474c6346f4b352585a153f66b6c0d8af448f",
+    "candidateStillQueuedAtPinnedBlock": false,
+    "forkEvidence": {
+      "boundedEconomicStateUnchangedAfterC02AndInactive": true,
+      "c02ExecutedOnFork": true,
+      "c02ForkGasUsed": 363619,
+      "c02QueuePreservedAfterFailure": true,
+      "c02TargetFailureRejected": true,
+      "cancelledC02Rejected": true,
+      "earlyQueueAcceptedBeforeMarketExists": true,
+      "earlyQueueDidNotCreateMarket": true,
+      "existingDagDelaySeconds": 90000,
+      "existingDagForkPassed": true,
+      "forkOnly": true,
+      "forkStartBlock": 49541233,
+      "fundingRejectedAfterActiveC02": true,
+      "genuineSafeSignaturesTested": false,
+      "impactMidRejectedAfterActiveC02": true,
+      "inactiveAfterFailedC02Rejected": true,
+      "inactiveDiagnosticEta": 1793102400,
+      "inactiveDiagnosticOperationId": "0x9084148eadef227a5d6a93c30397474c6346f4b352585a153f66b6c0d8af448f",
+      "inactiveExecutedAfterC02": true,
+      "inactiveForkGasUsed": 46518,
+      "inactiveWithoutMarketRejected": true,
+      "liquidationRejectedAfterActiveC02": true,
+      "marketActiveAfterC02": true,
+      "marketInactiveAfterSetter": true,
+      "prematureInactiveRejected": true,
+      "publicTransactionSent": false,
+      "replayC02Rejected": true,
+      "replayInactiveRejected": true,
+      "safeAddressImpersonated": true,
+      "staleSafeNonceChangesHashOnly": true,
+      "wrongCallerRejected": true,
+      "wrongMarketIdRejected": true
+    },
+    "formalApproval": "REQUIRED_NOT_GRANTED",
+    "oldCandidateBufferedCutoff": 1793012400,
+    "oldSchedulingEdge": {
+      "from": "C02_EXECUTION_CANONICAL_POSTFLIGHT_PASS",
+      "meaning": "C02 execution before MKT1 queue",
+      "to": "MKT1_INACTIVE_SCHEDULING_ELIGIBLE"
+    },
+    "preservedExecutionEdges": [
+      {
+        "from": "C02_S2_CANONICAL_POSTFLIGHT_PASS",
+        "to": "MKT1_INACTIVE_EXECUTION_ELIGIBLE"
+      },
+      {
+        "from": "MKT1_INACTIVE_S1_CANONICAL_QUEUE_POSTFLIGHT_PASS",
+        "to": "MKT1_INACTIVE_EXECUTION_ELIGIBLE"
+      },
+      {
+        "from": "BOTH_TIMELOCK_OPERATIONS_READY",
+        "to": "C02_S2_OPERATOR_CHECKPOINT_ELIGIBLE"
+      },
+      {
+        "from": "REMOTE_OPERATIONAL_ATTESTATION_PASS",
+        "to": "C02_S2_OPERATOR_CHECKPOINT_ELIGIBLE"
+      }
+    ],
+    "proposedSchedulingEdge": {
+      "from": "C02_S1_CANONICAL_QUEUE_POSTFLIGHT_PASS",
+      "to": "MKT1_INACTIVE_SCHEDULING_ELIGIBLE"
+    },
+    "recommendedDecision": "DEFER_UNTIL_REMOTE_EVIDENCE",
+    "s1PackageReadiness": "NOT_OPERATOR_READY_POLICY_AND_REMOTE_EVIDENCE_PENDING",
+    "secondsToOldCutoffAtReviewBlock": 13187,
+    "technicalReview": "PASS_REUSED_INTEGRITY_VERIFIED"
+  },
+  "nextNonchainAction": "COLLECT_CANONICAL_VERCEL_FUNCTIONS_CRONS_AND_ONE_RUST_HOST_ATTESTATION_THEN_DECIDE_EXACT_MKT1_EDGE_AMENDMENT",
+  "nextSafeAction": "D3_TOKEN_S2_SEPARATE_OPERATOR_CHECKPOINT_AFTER_2026_10_27_12_00_UTC_ONLY",
+  "onchainEconomicContainment": "PASS_BOUNDED",
+  "operationalEvidenceRequired": [
+    {
+      "dashboard": "Vercel > project ID prj_YADz33AWNuLnbnXYvQZOINFIhTTG > production deployment dpl_DF4Gsa4f3B9zuaRnRXQuZAr8rdXp > Functions; project > Cron Jobs",
+      "id": "CANONICAL_VERCEL_FUNCTIONS_CRONS",
+      "minimum": "Timestamped Functions and Cron Jobs lists, including empty-state views if applicable. Show paths, runtimes and schedules/enabled state. If relevant, show only public environment key names for backend URL, chain and execution flags, not values.",
+      "redact": "secret values, authorization headers, cookies, request bodies, wallet data"
+    },
+    {
+      "id": "RUST_BACKEND_HOST_ATTESTATION",
+      "minimum": "One explicit current operator answer. Do not infer from historical Railway failures. A Railway screenshot is not requested unless the operator identifies Railway as an actual current host.",
+      "question": "Is any DeOpt Rust backend, order relay, keeper or broadcaster deployed outside local WSL today? If yes, name only the actual provider/service and provide one timestamped service-status view with deployed revision, chainId, public contract targets and non-secret order/broadcast/worker toggles. If no, confirm that no separate host or managed worker currently runs it.",
+      "redact": "keys, passwords, tokens, credential-bearing RPC URLs and environment values"
+    }
+  ],
+  "previousEvidence": {
+    "approvedDagPath": "artifacts/perps_v2_replacement_deployment/post_maintenance_dependency_dag_v1.json",
+    "approvedDagSha256": "f3907236b928a50151f21ea748e3572ce8fde8fe5a090c0de8d3ca4d647e5b5d",
+    "c02ContainmentResolutionPath": "artifacts/perps_v2_replacement_deployment/c02_active_market_containment_resolution_v1.json",
+    "c02ContainmentResolutionSha256": "90e840b434e265704f414bf7cbedf3244978692c9a1bfd8df02f876ee5d494c4",
+    "d2d3S2IntentsPath": "artifacts/perps_v2_replacement_deployment/d2_d3_six_operation_s2_unsigned_intents_v1.json",
+    "d2d3S2IntentsSha256": "ecd48779477c814cb3e174db0ca37aa3209dd4f8a6e0c0531ca95f7c90bfc62d",
+    "mkt1PolicyProposalPath": "artifacts/perps_v2_replacement_deployment/mkt1_early_queue_policy_amendment_proposal_v1.json",
+    "mkt1PolicyProposalSha256": "88672bcf7469371913b689b61a4e362324b69939c0aefab87a7fd0dfca534ae2"
+  },
+  "recovery": {
+    "c02FailsOrCancelled": "Do not execute queued MKT1; preserve maintenance and reconcile; any cancellation or replacement needs separate review",
+    "mkt1FailsAfterC02": "Keep D4/D6 closed, do not activate backend or ACLs, halt downstream work, reconcile actual Safe/Timelock queue and market status, then review a retry within expiry or a new governance schedule; do not blindly resend",
+    "noAutomaticContinuation": true
+  },
+  "relayerKeeperIsolation": "NOT_VERIFIED",
+  "remoteBackendIsolation": "NOT_VERIFIED",
+  "repositoryHeadBefore": "d9c64573cf93cb3c42e73507ca419dba041a0e85",
+  "reviewedAtUtc": "2026-10-26T07:25:18Z",
+  "schema": "deopt.c02.critical_path_unblock.parallel_governance.v1",
+  "tests": {
+    "focusedIntegrityTestCount": 3,
+    "focusedIntegrityTests": "PASS",
+    "newPublicTransactions": 0,
+    "priorMkt1Fork": "REUSED_PASS_NOT_RERUN"
+  }
+}
