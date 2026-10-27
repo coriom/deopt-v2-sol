@@ -1,0 +1,142 @@
+{
+  "c02ExecutionAuthorized": false,
+  "chainId": 84532,
+  "checks": {
+    "canonical_header": true,
+    "exact_envelope_or_safe_hash_binding": true,
+    "maintenance_non_drift": true,
+    "no_other_protocol_events": true,
+    "no_safe_failure": true,
+    "nonce_transition": true,
+    "operation_consumed": true,
+    "outer_zero_value": true,
+    "profile_event": true,
+    "profile_transition": true,
+    "receipt_success": true,
+    "reviewed_safe_envelope_hash": true,
+    "safe_success": true,
+    "single_profile_event": true,
+    "timelock_event": true,
+    "timelock_payload": true
+  },
+  "d2": {
+    "exactFeeProfileUpdatedEvent": true,
+    "musdcRebateBudget": 0,
+    "otherFourProfilesUnchanged": true,
+    "product": 1,
+    "profileAtReceiptAndSafeBlockPpm": [
+      0,
+      200
+    ],
+    "profileBeforePpm": [
+      -50,
+      200
+    ],
+    "recipient": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "tier": 2
+  },
+  "evidenceLimitations": [
+    "Public debug trace unavailable; authentic Safe, Timelock and D2 receipt events, deployed Safe hash binding and pinned getter transitions agree.",
+    "Bounded getters do not prove every storage slot unchanged.",
+    "Safe UI simulation and full wallet gas for the next operation remain operator-side gates."
+  ],
+  "execution": "VERIFIED_SUCCESS",
+  "maintenance": {
+    "boundedEconomicNonDrift": "PASS_BOUNDED",
+    "c02Queued": true,
+    "d3MusdcSeizeConfig": [
+      5,
+      true,
+      true
+    ],
+    "d4ClearingPointer": "0x0000000000000000000000000000000000000000",
+    "d4FourFlags": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "d4InsurancePointer": "0x0000000000000000000000000000000000000000",
+    "d4MatchingPointer": "0x0000000000000000000000000000000000000000",
+    "d4MigrationState": 0,
+    "d4RiskPointer": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110",
+    "d4SnapshotHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "d4VaultAuthorization": false,
+    "d5MaxOracleDelay": 600,
+    "d6Paused": true,
+    "legacyMusdcRebateBudget": 999977,
+    "market1Exists": false,
+    "marketCount": 0
+  },
+  "nextTier3": {
+    "builderPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_3_s2_safe_builder_v1.json",
+    "builderSha256": "26fae2aea98a7039d2572e4ff8c7bd208ecadc16f09dfbc7d8d749aa882ad897",
+    "directTimelockEthCall": "PASS",
+    "directTimelockGasEstimate": 50173,
+    "fullSafeUiSimulation": "PENDING_OPERATOR_SAFE_UI",
+    "operationId": "0xaaf8ae230522b4a6b08a365be6e87f2544392e729b559db44968912b3a177f76",
+    "queued": true,
+    "recomputedSafeTxHash": "0x0cfa836f6f396bdd049908af487f40cd5da07648cee3b660e01a9303260bc7f1",
+    "safeNonce": 40
+  },
+  "postflight": "PASS",
+  "publicTradingAuthorized": false,
+  "publicTransaction": {
+    "blockHash": "0x34857c306244de0e4b5a5ea4f92aefbc387422cb8b3901d1ab5625da4a6ad836",
+    "blockNumber": 50965557,
+    "blockTimestamp": 1793114980,
+    "blockUtc": "2026-10-27T15:29:40Z",
+    "hash": "0x4fcbade6e314e9a1c12f779cfa48ff869ba7481448dae6d168c55d2beab7807e",
+    "outerTo": "0xdb9b1e94b5b69df7e401ddbede43491141047db3",
+    "outerValueWei": 0,
+    "primaryAndSecondaryRpcReceiptAndBlockMatch": true,
+    "receiptStatus": 1
+  },
+  "publicTransactionsSentByAgent": false,
+  "s2Completed": 4,
+  "safe": {
+    "address": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "delegationManagerOuterWrapper": true,
+    "deployedGetTransactionHashMatch": true,
+    "executionFailure": false,
+    "executionSuccess": true,
+    "modulesEmpty": true,
+    "nonceAtReceipt": 40,
+    "nonceAtSafeBlock": 40,
+    "nonceBefore": 39,
+    "ownersUnchanged": true,
+    "reviewedEnvelopeBoundBySafeTxHash": true,
+    "safeTxHash": "0xdfbcbbf2c808b55e3e5ba7a42ebf7e110ee4e79235e0c2b1c686570d5318949d",
+    "threshold": 2
+  },
+  "safeBlock": {
+    "hash": "0xa61ca6440fbc84a5f599f365de26fb16265e363f8a2c60838f2914feca029ad6",
+    "number": 50966518,
+    "timestamp": 1793115172,
+    "utc": "2026-10-27T15:32:52Z"
+  },
+  "schema": "deopt.d2_d3.s2.public_postflight.v1",
+  "tests": {
+    "freshPackageTests": 3,
+    "independentRpcReceiptAndStateProviders": 2,
+    "pinnedGetterCalls": 81,
+    "readOnlyReplayRejections": 1,
+    "receiptEventTransitionChecks": 16
+  },
+  "timelock": {
+    "address": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "eta": 1793102400,
+    "event": "TransactionExecuted",
+    "exactEvent": true,
+    "executionCalldataKeccak256": "0xb337a55890fa652f232f539e0aa88167c978dd1384b29e2e92e0110f381c2990",
+    "innerCalldataKeccak256": "0xfea716384948ddb08493c32fb6519f7b6a957218b2269fe79c2e7a7a573c9b2a",
+    "operationId": "0x48b66ca38c21064a6605af4038a657a191a56f327784dc1e0d0bffdc21075a62",
+    "queuedAtReceipt": false,
+    "queuedAtSafeBlock": false,
+    "queuedBefore": true,
+    "readOnlyReplayRejected": true,
+    "replayRevertSelector": "0x0280b15e",
+    "target": "0x9947F42cC29A32992bbf2030ee49E35C839EDEd5",
+    "valueWei": 0
+  }
+}
