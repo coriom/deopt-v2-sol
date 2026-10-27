@@ -1,0 +1,98 @@
+{
+  "backendReaderIndependentVerification": "REQUIRED",
+  "backendTradingEligible": false,
+  "chainId": 84532,
+  "d2Address": "0x9947F42cC29A32992bbf2030ee49E35C839EDEd5",
+  "d2ExecutionEvidence": [
+    {
+      "operationId": "0x1976519a08a3a7e65cbe1a2f77fcf0f5fa0f783ccb6c7ef0e6c87b7481caf45b",
+      "postflight": "PASS",
+      "publicTxHash": "0xb8bcb5359598046cd5ea9110e32cb303674b7ba5825e215e823e1941602c3c87",
+      "receiptBlock": 50954332,
+      "receiptBlockHash": "0xd22af61863375e539c21d55e0fd56f783838699b1a544995a1696b443d04be53",
+      "safeTxHash": "0x361020aba95982f0187725e31716183edfe3b24b428737721d0fa5caafbbdcc7",
+      "tier": 0
+    },
+    {
+      "operationId": "0xb79986810ad3e08b5495a8edeaed0654da513ef6acfa15e8ff1d496ff2ef4a11",
+      "postflight": "PASS",
+      "publicTxHash": "0xc5c7ae3f6cd81253da5090aec01eb235952bf204ed2ec322d8e78c948616c955",
+      "receiptBlock": 50960011,
+      "receiptBlockHash": "0x2154e61c62dda3da971b108b50586d7dfed9e0d099696cce5f880e45a79a3d35",
+      "safeTxHash": "0x736f2f64d358f40e72d243024c5a5b65843eaae35cdb7a5a2a64db87ee265e49",
+      "tier": 1
+    },
+    {
+      "operationId": "0x48b66ca38c21064a6605af4038a657a191a56f327784dc1e0d0bffdc21075a62",
+      "postflight": "PASS",
+      "publicTxHash": "0x4fcbade6e314e9a1c12f779cfa48ff869ba7481448dae6d168c55d2beab7807e",
+      "receiptBlock": 50965557,
+      "receiptBlockHash": "0x34857c306244de0e4b5a5ea4f92aefbc387422cb8b3901d1ab5625da4a6ad836",
+      "safeTxHash": "0xdfbcbbf2c808b55e3e5ba7a42ebf7e110ee4e79235e0c2b1c686570d5318949d",
+      "tier": 2
+    },
+    {
+      "operationId": "0xaaf8ae230522b4a6b08a365be6e87f2544392e729b559db44968912b3a177f76",
+      "postflight": "PASS",
+      "publicTxHash": "0xecd3ba1221fa073937ec366a584f5e9006bc725e877e237415c52128d1da32b0",
+      "receiptBlock": 50970367,
+      "receiptBlockHash": "0xd2cf508938474ea59419b085bc38262b89a5016d7000377156c14dbff6056c62",
+      "safeTxHash": "0x0cfa836f6f396bdd049908af487f40cd5da07648cee3b660e01a9303260bc7f1",
+      "tier": 3
+    },
+    {
+      "operationId": "0x9ec2e37332d4dbb27791ae7f4de7e852147b344f58210e61adb7b2f95a8d5b49",
+      "postflight": "PASS",
+      "publicTxHash": "0xc6ef082b121947377426437087da5bec0172173aa65240a14d4d7a0f1cf34940",
+      "receiptBlock": 50976587,
+      "receiptBlockHash": "0xf12cd3a2a91b026d1d61e2a701426ecae6437482ade0920143367faca4846d2c",
+      "safeTxHash": "0x4f365bce909032d8b0e0d31a85c1b5af3b55b3753082bf274e8a09cd8955b81a",
+      "tier": 4
+    }
+  ],
+  "d2OnchainReadbackVerifiedForGovernance": true,
+  "d2ProfilesPpm": {
+    "0": {
+      "maker": 0,
+      "taker": 200
+    },
+    "1": {
+      "maker": 0,
+      "taker": 200
+    },
+    "2": {
+      "maker": 0,
+      "taker": 200
+    },
+    "3": {
+      "maker": 0,
+      "taker": 200
+    },
+    "4": {
+      "maker": 0,
+      "taker": 200
+    }
+  },
+  "d3ExecutionEvidence": {
+    "operationId": "0x6678a5eefb1b1a1b7a9ff4aa5795e1ba7d09fba63ee59917d454e07fe2208c0d",
+    "postflight": "PASS",
+    "publicTxHash": "0x80735123b23b5d20773c8c79f8b70385edbda8113959d706ced2a0747199ec51"
+  },
+  "feeRecipient": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+  "publicTradingAuthorized": false,
+  "publicTransactionsSentByAgent": false,
+  "rebateBudget": 0,
+  "requiredBackendChecks": [
+    "Authenticate five exact D2 execution receipts and operation identities on chain 84532.",
+    "Read five deployed profiles and recipient/rebate settings at a fresh canonical block.",
+    "Reject stale, reorganized, mismatched or partial configuration.",
+    "Keep market, migration, authorization and broadcaster gates independent."
+  ],
+  "schema": "deopt.d2_d3.s2.backend_fee_readiness_handoff.v1",
+  "snapshotBlock": {
+    "hash": "0xb939b22a2492ac78b8a2518f586e55bed14437d02a60520935a8dadbd459dfba",
+    "number": 50977266,
+    "timestamp": 1793117322,
+    "utc": "2026-10-27T16:08:42+00:00"
+  }
+}

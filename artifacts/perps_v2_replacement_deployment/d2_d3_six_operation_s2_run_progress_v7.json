@@ -1,0 +1,423 @@
+{
+  "c02ExecutionAuthorized": false,
+  "chainId": 84532,
+  "completedOperations": 6,
+  "economics": {
+    "boundedNonDrift": "PASS_BOUNDED",
+    "d2FeeRecipient": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "d2MusdcRebateBudget": 0,
+    "d2ProfilesBeforePpm": [
+      [
+        50,
+        300
+      ],
+      [
+        0,
+        250
+      ],
+      [
+        -50,
+        200
+      ],
+      [
+        -75,
+        175
+      ],
+      [
+        -100,
+        150
+      ]
+    ],
+    "d2Tier0AfterPpm": [
+      0,
+      200
+    ],
+    "d2Tier1AfterPpm": [
+      0,
+      200
+    ],
+    "d2Tier2AfterPpm": [
+      0,
+      200
+    ],
+    "d2Tier3AfterPpm": [
+      0,
+      200
+    ],
+    "d2Tier4AfterPpm": [
+      0,
+      200
+    ],
+    "legacyFeesMusdcRebateBudget": 999977
+  },
+  "eta": 1793102400,
+  "expiryInclusive": 1794312000,
+  "fifthCheckpoint": {
+    "builderSha256": "31c0638be0e56d227a69e604b13e24d83982464bc44d548006c0e00ab21075a4",
+    "directTimelockEthCall": "PASS",
+    "directTimelockGasEstimate": 50173,
+    "fullSafeUiSimulation": "PENDING_OPERATOR_SAFE_UI",
+    "operation": "D2_PERP_TIER_4",
+    "recomputedSafeTxHash": "0x4f365bce909032d8b0e0d31a85c1b5af3b55b3753082bf274e8a09cd8955b81a",
+    "safeNonce": 41
+  },
+  "fifthFocusedChecks": {
+    "deployedSafeHashRecomputed": true,
+    "pinnedGetterCallsSucceeded": 81,
+    "readOnlyReplayRejected": 1,
+    "receiptEventTransitionChecksPassed": 16,
+    "secondaryRpcReceiptAndStateMatched": true
+  },
+  "fifthPostflight": "PASS",
+  "fifthPublicPostflightPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_3_s2_public_postflight_v1.json",
+  "fifthPublicPostflightSha256": "4ccc5121a01cd56beb5547a3756882ebbef357ecb96aeecf1c7ef5b4d8b95a6a",
+  "finalConfigurationPath": "artifacts/perps_v2_replacement_deployment/d2_d3_six_operation_s2_final_configuration_v1.json",
+  "finalConfigurationSha256": "cb962354eda6adb6bc37af92af987137163b232b70b90345809d1b6ab0fec7e0",
+  "firstCheckpoint": {
+    "arguments": [
+      "0x6eAe407f5640B006faC9965182e238582A3B412E",
+      5,
+      true
+    ],
+    "builderSha256": "09dc4b3045b72ae5709c5db4a04478e08c882bcbd9cfb36078035af8fabf5f92",
+    "directTimelockGasEstimate": 66462,
+    "executionCalldataKeccak256": "0x37a9e17a82e9756e615201688581e1a93835878e7298e47a2dc2b5ed500b16d6",
+    "expectedPostExecutionSeizeConfig": [
+      5,
+      true,
+      true
+    ],
+    "fullSafeWalletGas": "PENDING_OPERATOR_SAFE_UI",
+    "function": "setTokenSeizeConfig(address,uint16,bool)",
+    "operation": "D3_TOKEN",
+    "operationId": "0x6678a5eefb1b1a1b7a9ff4aa5795e1ba7d09fba63ee59917d454e07fe2208c0d",
+    "readOnlyTimelockEthCall": "PASS",
+    "recomputedSafeTxHash": "0x263f797d378aba0478288588b548efff7efc3d1546fe885c232de7d1bff4e73c",
+    "safeEnvelope": {
+      "baseGas": "0",
+      "data": "0x06a41d0900000000000000000000000043ac3782e75018981a8f8d210049f2a185b0733100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ae092400000000000000000000000000000000000000000000000000000000000000064203666170000000000000000000000006eae407f5640b006fac9965182e238582a3b412e0000000000000000000000000000000000000000000000000000000000000005000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000",
+      "gasPrice": "0",
+      "gasToken": "0x0000000000000000000000000000000000000000",
+      "nonce": 36,
+      "operation": 0,
+      "refundReceiver": "0x0000000000000000000000000000000000000000",
+      "safeTxGas": "0",
+      "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "value": "0"
+    },
+    "safeNonce": 36,
+    "safeUiSimulation": "PENDING_OPERATOR_SAFE_UI",
+    "target": "0x43Ac3782e75018981a8F8d210049f2A185b07331"
+  },
+  "firstPostflight": "PASS",
+  "firstPublicPostflightPath": "artifacts/perps_v2_replacement_deployment/d3_token_s2_public_postflight_v1.json",
+  "firstPublicPostflightSha256": "be6da80554c53ded1ae4e44ba5dd67b814075f3a58bedaabee27defc7bcb0638",
+  "fourthCheckpoint": {
+    "builderSha256": "26fae2aea98a7039d2572e4ff8c7bd208ecadc16f09dfbc7d8d749aa882ad897",
+    "directTimelockEthCall": "PASS",
+    "directTimelockGasEstimate": 50173,
+    "fullSafeUiSimulation": "PENDING_OPERATOR_SAFE_UI",
+    "operation": "D2_PERP_TIER_3",
+    "recomputedSafeTxHash": "0x0cfa836f6f396bdd049908af487f40cd5da07648cee3b660e01a9303260bc7f1",
+    "safeNonce": 40
+  },
+  "fourthFocusedChecks": {
+    "deployedSafeHashRecomputed": true,
+    "pinnedGetterCallsSucceeded": 81,
+    "readOnlyReplayRejected": 1,
+    "receiptEventTransitionChecksPassed": 16,
+    "secondaryRpcReceiptAndStateMatched": true
+  },
+  "fourthPostflight": "PASS",
+  "fourthPublicPostflightPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_2_s2_public_postflight_v1.json",
+  "fourthPublicPostflightSha256": "56acb7c0251bd00ce1df1b4b3f2fb2908f18b276da9cf6f3f18ea94079522add",
+  "freshFocusedChecks": {
+    "builderIntegritySha256": 6,
+    "directTimelockExecutionSimulation": 1,
+    "latestCheckpointEthCallsSucceeded": 6,
+    "operationHashMatches": 6,
+    "operationReady": 6,
+    "pinnedEthCalls": 56,
+    "pinnedEthCallsSucceeded": 55,
+    "safeGuardStorageSlotRead": 1,
+    "safeTransactionHashRecomputed": 1,
+    "unavailableGetGuardSelector": 1
+  },
+  "historicalForkTestsReused": 3,
+  "latestCheckpointBlock": {
+    "c02Queued": true,
+    "d2FiveProfilesPpm": [
+      [
+        0,
+        200
+      ],
+      [
+        0,
+        200
+      ],
+      [
+        0,
+        200
+      ],
+      [
+        0,
+        200
+      ],
+      [
+        0,
+        200
+      ]
+    ],
+    "d4FourFlags": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "d6Paused": true,
+    "hash": "0xb939b22a2492ac78b8a2518f586e55bed14437d02a60520935a8dadbd459dfba",
+    "marketCount": 0,
+    "number": 50977266,
+    "safeNonce": 42,
+    "timestamp": 1793117322,
+    "utc": "2026-10-27T16:08:42+00:00"
+  },
+  "maintenance": {
+    "c02Queued": true,
+    "d3MusdcSeizeConfigBefore": [
+      0,
+      false,
+      false
+    ],
+    "d3RiskPointer": "0xc0f019005a25524a34f2ee8839dcdcc50715dd7b",
+    "d4ClearingPointer": "0x0000000000000000000000000000000000000000",
+    "d4FourFlags": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "d4InsurancePointer": "0x0000000000000000000000000000000000000000",
+    "d4MatchingPointer": "0x0000000000000000000000000000000000000000",
+    "d4MigrationState": 0,
+    "d4RiskPointer": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110",
+    "d4VaultAuthorized": false,
+    "d5MaxOracleDelay": 600,
+    "d6Paused": true,
+    "market1Exists": false,
+    "marketCount": 0
+  },
+  "migrationAuthorized": false,
+  "milestone": "DEOPT_D2_D3_SIX_OPERATION_S2_EXECUTION_RUN_V1",
+  "mkt1ActionsAuthorized": false,
+  "nextBuilderPath": null,
+  "nextExpectedSafeNonce": null,
+  "nextExpectedSafeTxHash": null,
+  "nextOperatorAction": "No further D2/D3 S2 Safe action. Backend must independently verify canonical D2 execution evidence and pinned readbacks; trading remains disabled. C02 requires separate governance review.",
+  "operations": [
+    {
+      "builderPath": "artifacts/perps_v2_replacement_deployment/d3_token_s2_safe_builder_v1.json",
+      "builderSha256": "09dc4b3045b72ae5709c5db4a04478e08c882bcbd9cfb36078035af8fabf5f92",
+      "canonicalPostflight": "PASS",
+      "expectedSafeNonceConditional": 36,
+      "index": 1,
+      "name": "D3_TOKEN",
+      "observedSafeNonceAfter": 37,
+      "observedSafeNonceBefore": 36,
+      "operationId": "0x6678a5eefb1b1a1b7a9ff4aa5795e1ba7d09fba63ee59917d454e07fe2208c0d",
+      "publicTxHash": "0x80735123b23b5d20773c8c79f8b70385edbda8113959d706ced2a0747199ec51",
+      "queuedAtReview": true,
+      "readyAtReview": true,
+      "receiptBlock": 50914805,
+      "receiptBlockHash": "0x56699c1519a388ce73a60bb5c3682e6be6994cf3ec363a24d3e527233e40b27b",
+      "reviewedExecutionCalldataKeccak256": "0x37a9e17a82e9756e615201688581e1a93835878e7298e47a2dc2b5ed500b16d6",
+      "safeTxHashConditional": "0x263f797d378aba0478288588b548efff7efc3d1546fe885c232de7d1bff4e73c",
+      "status": "EXECUTED_PASS"
+    },
+    {
+      "builderPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_0_s2_safe_builder_v1.json",
+      "builderSha256": "141d289485027139b6288a9e824531256f71fa64c180057337c68abca80601f1",
+      "canonicalPostflight": "PASS",
+      "expectedSafeNonceConditional": 37,
+      "index": 2,
+      "name": "D2_PERP_TIER_0",
+      "observedSafeNonceAfter": 38,
+      "observedSafeNonceBefore": 37,
+      "operationId": "0x1976519a08a3a7e65cbe1a2f77fcf0f5fa0f783ccb6c7ef0e6c87b7481caf45b",
+      "publicTxHash": "0xb8bcb5359598046cd5ea9110e32cb303674b7ba5825e215e823e1941602c3c87",
+      "queuedAtReview": true,
+      "readyAtReview": true,
+      "receiptBlock": 50954332,
+      "receiptBlockHash": "0xd22af61863375e539c21d55e0fd56f783838699b1a544995a1696b443d04be53",
+      "reviewedExecutionCalldataKeccak256": "0xc68a75c83ac3b95e2d0a286e08aedfb957f76b5c39cc99c8946ea618b9c4aa7a",
+      "safeTxHashConditional": "0x361020aba95982f0187725e31716183edfe3b24b428737721d0fa5caafbbdcc7",
+      "status": "EXECUTED_PASS"
+    },
+    {
+      "builderPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_1_s2_safe_builder_v1.json",
+      "builderSha256": "5693c9d0d9af890fc28988784822188699b261fc9d7bf590d3e4b40e9d783e6a",
+      "canonicalPostflight": "PASS",
+      "expectedSafeNonceConditional": 38,
+      "index": 3,
+      "name": "D2_PERP_TIER_1",
+      "observedSafeNonceAfter": 39,
+      "observedSafeNonceBefore": 38,
+      "operationId": "0xb79986810ad3e08b5495a8edeaed0654da513ef6acfa15e8ff1d496ff2ef4a11",
+      "publicTxHash": "0xc5c7ae3f6cd81253da5090aec01eb235952bf204ed2ec322d8e78c948616c955",
+      "queuedAtReview": true,
+      "readyAtReview": true,
+      "receiptBlock": 50960011,
+      "receiptBlockHash": "0x2154e61c62dda3da971b108b50586d7dfed9e0d099696cce5f880e45a79a3d35",
+      "reviewedExecutionCalldataKeccak256": "0x7e040d833b0ff454de27ccaf4a0e24dea1545cfab11079de9fb67b804bb47ec1",
+      "safeTxHashConditional": "0x736f2f64d358f40e72d243024c5a5b65843eaae35cdb7a5a2a64db87ee265e49",
+      "status": "EXECUTED_PASS"
+    },
+    {
+      "builderPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_2_s2_safe_builder_v1.json",
+      "builderSha256": "7ca10a7eee28811c82e6ee0a9f035717e96e79ebb20f67604f9ac259c571185c",
+      "canonicalPostflight": "PASS",
+      "expectedSafeNonceConditional": 39,
+      "index": 4,
+      "name": "D2_PERP_TIER_2",
+      "observedSafeNonceAfter": 40,
+      "observedSafeNonceBefore": 39,
+      "operationId": "0x48b66ca38c21064a6605af4038a657a191a56f327784dc1e0d0bffdc21075a62",
+      "publicTxHash": "0x4fcbade6e314e9a1c12f779cfa48ff869ba7481448dae6d168c55d2beab7807e",
+      "queuedAtReview": true,
+      "readyAtReview": true,
+      "receiptBlock": 50965557,
+      "receiptBlockHash": "0x34857c306244de0e4b5a5ea4f92aefbc387422cb8b3901d1ab5625da4a6ad836",
+      "reviewedExecutionCalldataKeccak256": "0xb337a55890fa652f232f539e0aa88167c978dd1384b29e2e92e0110f381c2990",
+      "safeTxHashConditional": "0xdfbcbbf2c808b55e3e5ba7a42ebf7e110ee4e79235e0c2b1c686570d5318949d",
+      "status": "EXECUTED_PASS"
+    },
+    {
+      "builderPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_3_s2_safe_builder_v1.json",
+      "builderSha256": "26fae2aea98a7039d2572e4ff8c7bd208ecadc16f09dfbc7d8d749aa882ad897",
+      "canonicalPostflight": "PASS",
+      "expectedSafeNonceConditional": 40,
+      "index": 5,
+      "name": "D2_PERP_TIER_3",
+      "observedSafeNonceAfter": 41,
+      "observedSafeNonceBefore": 40,
+      "operationId": "0xaaf8ae230522b4a6b08a365be6e87f2544392e729b559db44968912b3a177f76",
+      "publicTxHash": "0xecd3ba1221fa073937ec366a584f5e9006bc725e877e237415c52128d1da32b0",
+      "queuedAtReview": true,
+      "readyAtReview": true,
+      "receiptBlock": 50970367,
+      "receiptBlockHash": "0xd2cf508938474ea59419b085bc38262b89a5016d7000377156c14dbff6056c62",
+      "reviewedExecutionCalldataKeccak256": "0xe26d255355f129ab6b50d51bbace1b3a386e3ac40c57e969961c353fb500e891",
+      "safeTxHashConditional": "0x0cfa836f6f396bdd049908af487f40cd5da07648cee3b660e01a9303260bc7f1",
+      "status": "EXECUTED_PASS"
+    },
+    {
+      "builderPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_4_s2_safe_builder_v1.json",
+      "builderSha256": "31c0638be0e56d227a69e604b13e24d83982464bc44d548006c0e00ab21075a4",
+      "canonicalPostflight": "PASS",
+      "expectedSafeNonceConditional": 41,
+      "index": 6,
+      "name": "D2_PERP_TIER_4",
+      "observedSafeNonceAfter": 42,
+      "observedSafeNonceBefore": 41,
+      "operationId": "0x9ec2e37332d4dbb27791ae7f4de7e852147b344f58210e61adb7b2f95a8d5b49",
+      "publicTxHash": "0xc6ef082b121947377426437087da5bec0172173aa65240a14d4d7a0f1cf34940",
+      "queuedAtReview": true,
+      "readyAtReview": true,
+      "receiptBlock": 50976587,
+      "receiptBlockHash": "0xf12cd3a2a91b026d1d61e2a701426ecae6437482ade0920143367faca4846d2c",
+      "reviewedExecutionCalldataKeccak256": "0x84b458b4b69d9a189e1f168ff49b5ebb5ad5cc28cb7018aede8e684b12d6ee8d",
+      "safeTxHashConditional": "0x4f365bce909032d8b0e0d31a85c1b5af3b55b3753082bf274e8a09cd8955b81a",
+      "status": "EXECUTED_PASS"
+    }
+  ],
+  "priorProgressPath": "artifacts/perps_v2_replacement_deployment/d2_d3_six_operation_s2_run_progress_v6.json",
+  "priorProgressSha256": "67a64c53baa4e7d6b305087f4c6254cec50e051ac17b4b92a3ac856e78adff25",
+  "priorS2ReviewPath": "artifacts/perps_v2_replacement_deployment/d2_d3_six_operation_s2_execution_review_v1.json",
+  "publicTradingAuthorized": false,
+  "publicTransactionsSentByAgent": false,
+  "repositoryHeadBeforeEvidence": "a7ec6e072d0fc1361ec9a6f9ce946bd01dab6d7e",
+  "reviewBlock": {
+    "hash": "0x051616896c17feecad9070c95fc54df6d660301d9e5d3148c6f0f43bbe658e61",
+    "number": 50904462,
+    "secondaryRpcHashMatch": true,
+    "timestamp": 1793102761,
+    "utc": "2026-10-27T12:06:01Z"
+  },
+  "safe": {
+    "address": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "guard": "0x0000000000000000000000000000000000000000",
+    "modules": [],
+    "nonce": 42,
+    "owners": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "pendingServiceEntriesAtOrAboveNonce41": 0,
+    "pendingServiceOldNonces": [
+      10,
+      11
+    ],
+    "threshold": 2
+  },
+  "schema": "deopt.d2_d3.six_operation.s2.run_progress.v7",
+  "secondCheckpoint": {
+    "builderSha256": "5693c9d0d9af890fc28988784822188699b261fc9d7bf590d3e4b40e9d783e6a",
+    "directTimelockEthCall": "PASS",
+    "directTimelockGasEstimate": 50173,
+    "fullSafeUiSimulation": "PENDING_OPERATOR_SAFE_UI",
+    "operation": "D2_PERP_TIER_1",
+    "recomputedSafeTxHash": "0x736f2f64d358f40e72d243024c5a5b65843eaae35cdb7a5a2a64db87ee265e49",
+    "safeNonce": 38
+  },
+  "secondFocusedChecks": {
+    "deployedSafeHashRecomputed": true,
+    "pinnedGetterCallsSucceeded": 81,
+    "readOnlyReplayRejected": 1,
+    "receiptEventTransitionChecksPassed": 16,
+    "secondaryRpcReceiptAndStateMatched": true
+  },
+  "secondPostflight": "PASS",
+  "secondPublicPostflightPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_0_s2_public_postflight_v1.json",
+  "secondPublicPostflightSha256": "5f38eaa8fe8e0815b9eda84c1b7d7597288bf22ee5897a02b12814341a70e8d0",
+  "sixthFocusedChecks": {
+    "finalConfigurationGetterCalls": 47,
+    "pinnedGetterCallsSucceeded": 81,
+    "readOnlyReplayRejected": 1,
+    "receiptEventTransitionChecksPassed": 16,
+    "secondaryRpcReceiptAndStateMatched": true
+  },
+  "sixthPostflight": "PASS",
+  "sixthPublicPostflightPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_4_s2_public_postflight_v1.json",
+  "sixthPublicPostflightSha256": "e71137bf1cac978163724dc66ec3f9c8741aca441c2c7436278cf958f13d1f5b",
+  "sourceFrozenRevision": "25c36670883604c1ef5229642ee6548aea6796c3",
+  "thirdCheckpoint": {
+    "builderSha256": "7ca10a7eee28811c82e6ee0a9f035717e96e79ebb20f67604f9ac259c571185c",
+    "directTimelockEthCall": "PASS",
+    "directTimelockGasEstimate": 50173,
+    "fullSafeUiSimulation": "PENDING_OPERATOR_SAFE_UI",
+    "operation": "D2_PERP_TIER_2",
+    "recomputedSafeTxHash": "0xdfbcbbf2c808b55e3e5ba7a42ebf7e110ee4e79235e0c2b1c686570d5318949d",
+    "safeNonce": 39
+  },
+  "thirdFocusedChecks": {
+    "deployedSafeHashRecomputed": true,
+    "pinnedGetterCallsSucceeded": 81,
+    "readOnlyReplayRejected": 1,
+    "receiptEventTransitionChecksPassed": 16,
+    "secondaryRpcReceiptAndStateMatched": true
+  },
+  "thirdPostflight": "PASS",
+  "thirdPublicPostflightPath": "artifacts/perps_v2_replacement_deployment/d2_perp_tier_1_s2_public_postflight_v1.json",
+  "thirdPublicPostflightSha256": "e1cab1e49e2a930d67b3a3aea4a26322a114c4a63f13e96c971a4601959b5537",
+  "timelock": {
+    "address": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "allSixConsumed": true,
+    "allSixQueued": false,
+    "allSixReady": true,
+    "minDelaySeconds": 86400,
+    "operationIdsMatchDeployedHashOperation": true,
+    "safeExecutor": true
+  },
+  "unsignedIntentsPath": "artifacts/perps_v2_replacement_deployment/d2_d3_six_operation_s2_unsigned_intents_v1.json"
+}

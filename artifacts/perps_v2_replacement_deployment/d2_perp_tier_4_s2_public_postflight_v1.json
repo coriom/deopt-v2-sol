@@ -1,0 +1,133 @@
+{
+  "c02ExecutionAuthorized": false,
+  "chainId": 84532,
+  "checks": {
+    "canonical_header": true,
+    "exact_envelope_or_safe_hash_binding": true,
+    "maintenance_non_drift": true,
+    "no_other_protocol_events": true,
+    "no_safe_failure": true,
+    "nonce_transition": true,
+    "operation_consumed": true,
+    "outer_zero_value": true,
+    "profile_event": true,
+    "profile_transition": true,
+    "receipt_success": true,
+    "reviewed_safe_envelope_hash": true,
+    "safe_success": true,
+    "single_profile_event": true,
+    "timelock_event": true,
+    "timelock_payload": true
+  },
+  "d2": {
+    "exactFeeProfileUpdatedEvent": true,
+    "musdcRebateBudget": 0,
+    "otherFourProfilesUnchanged": true,
+    "product": 1,
+    "profileAtReceiptAndSafeBlockPpm": [
+      0,
+      200
+    ],
+    "profileBeforePpm": [
+      -100,
+      150
+    ],
+    "recipient": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "tier": 4
+  },
+  "evidenceLimitations": [
+    "Public debug trace unavailable; direct Safe input, authentic Safe/Timelock/D2 receipt events and pinned getter transitions agree.",
+    "Bounded getters do not prove every storage slot unchanged.",
+    "This verifies governance configuration; the backend must independently ingest canonical evidence and cannot auto-enable trading."
+  ],
+  "execution": "VERIFIED_SUCCESS",
+  "maintenance": {
+    "boundedEconomicNonDrift": "PASS_BOUNDED",
+    "c02Queued": true,
+    "d3MusdcSeizeConfig": [
+      5,
+      true,
+      true
+    ],
+    "d3RiskPointer": "0xc0f019005a25524a34F2Ee8839DCDCC50715DD7B",
+    "d4ClearingPointer": "0x0000000000000000000000000000000000000000",
+    "d4FourFlags": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "d4InsuranceAuthorization": false,
+    "d4InsurancePointer": "0x0000000000000000000000000000000000000000",
+    "d4MatchingPointer": "0x0000000000000000000000000000000000000000",
+    "d4MigrationState": 0,
+    "d4RiskPointer": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110",
+    "d4VaultAuthorization": false,
+    "d5MaxOracleDelay": 600,
+    "d6Paused": true,
+    "legacyMusdcRebateBudget": 999977,
+    "market1Exists": false,
+    "marketCount": 0
+  },
+  "postflight": "PASS",
+  "publicTradingAuthorized": false,
+  "publicTransaction": {
+    "blockHash": "0xf12cd3a2a91b026d1d61e2a701426ecae6437482ade0920143367faca4846d2c",
+    "blockNumber": 50976587,
+    "blockTimestamp": 1793117186,
+    "blockUtc": "2026-10-27T16:06:26Z",
+    "hash": "0xc6ef082b121947377426437087da5bec0172173aa65240a14d4d7a0f1cf34940",
+    "outerTo": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+    "outerValueWei": 0,
+    "primaryAndSecondaryRpcReceiptAndBlockMatch": true,
+    "receiptStatus": 1
+  },
+  "publicTransactionsSentByAgent": false,
+  "s2Completed": 6,
+  "safe": {
+    "address": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "deployedGetTransactionHashMatch": true,
+    "executionFailure": false,
+    "executionSuccess": true,
+    "modulesEmpty": true,
+    "nonceAtReceipt": 42,
+    "nonceAtSafeBlock": 42,
+    "nonceBefore": 41,
+    "ownersUnchanged": true,
+    "reviewedDirectExecTransactionEnvelopeMatch": true,
+    "safeTxHash": "0x4f365bce909032d8b0e0d31a85c1b5af3b55b3753082bf274e8a09cd8955b81a",
+    "signatureMaterialPersisted": false,
+    "threshold": 2
+  },
+  "safeBlock": {
+    "hash": "0xb939b22a2492ac78b8a2518f586e55bed14437d02a60520935a8dadbd459dfba",
+    "number": 50977266,
+    "timestamp": 1793117322,
+    "utc": "2026-10-27T16:08:42+00:00"
+  },
+  "schema": "deopt.d2_d3.s2.public_postflight.v1",
+  "tests": {
+    "finalConfigurationPinnedGetterCalls": 47,
+    "freshPackageTests": 3,
+    "pinnedGetterCallsDuringPostflight": 81,
+    "readOnlyReplayRejections": 1,
+    "receiptEventTransitionChecks": 16,
+    "secondaryRpcReceiptAndStateProviders": 2
+  },
+  "timelock": {
+    "address": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "eta": 1793102400,
+    "event": "TransactionExecuted",
+    "exactEvent": true,
+    "executionCalldataKeccak256": "0x84b458b4b69d9a189e1f168ff49b5ebb5ad5cc28cb7018aede8e684b12d6ee8d",
+    "innerCalldataKeccak256": "0x09899192645b1fa76114c5eaf34523ac0e512a29369f5ce6aaa5c4bfcf8c2876",
+    "operationId": "0x9ec2e37332d4dbb27791ae7f4de7e852147b344f58210e61adb7b2f95a8d5b49",
+    "queuedAtReceipt": false,
+    "queuedAtSafeBlock": false,
+    "queuedBefore": true,
+    "readOnlyReplayRejected": true,
+    "replayRevertSelector": "0x0280b15e",
+    "target": "0x9947F42cC29A32992bbf2030ee49E35C839EDEd5",
+    "valueWei": 0
+  }
+}

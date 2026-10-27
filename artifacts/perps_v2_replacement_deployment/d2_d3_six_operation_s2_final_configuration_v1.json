@@ -1,0 +1,101 @@
+{
+  "allSixOperationsConsumed": true,
+  "c02ExecutionAuthorized": false,
+  "chainId": 84532,
+  "d2": {
+    "d4Consumer": false,
+    "feeRecipient": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "musdcRebateBudget": 0,
+    "perpProfilesPpm": {
+      "0": {
+        "maker": 0,
+        "taker": 200
+      },
+      "1": {
+        "maker": 0,
+        "taker": 200
+      },
+      "2": {
+        "maker": 0,
+        "taker": 200
+      },
+      "3": {
+        "maker": 0,
+        "taker": 200
+      },
+      "4": {
+        "maker": 0,
+        "taker": 200
+      }
+    },
+    "protocolFeeVault": "0x0000000000000000000000000000000000000000",
+    "rebateFundingAccount": "0x0000000000000000000000000000000000000000"
+  },
+  "d3": {
+    "musdcSeizeConfig": {
+      "enabled": true,
+      "explicitlyConfigured": true,
+      "spreadBps": 5
+    },
+    "riskModule": "0xc0f019005a25524a34F2Ee8839DCDCC50715DD7B"
+  },
+  "economicNonDrift": "PASS_BOUNDED",
+  "evidenceLimitations": [
+    "Legacy rebate budget non-drift is a bounded getter check, not an audit of every historical liability or storage slot.",
+    "C02 and market activation are separate governance operations."
+  ],
+  "legacyFeesMusdcRebateBudget": 999977,
+  "maintenance": {
+    "c02QueuedUnexecuted": true,
+    "d1MarketCount": 0,
+    "d4ClearingPointer": "0x0000000000000000000000000000000000000000",
+    "d4FeesManagerPointer": "0x0000000000000000000000000000000000000000",
+    "d4FourEmergencyFlags": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "d4InsuranceAuthorization": false,
+    "d4InsurancePointer": "0x0000000000000000000000000000000000000000",
+    "d4MatchingPointer": "0x0000000000000000000000000000000000000000",
+    "d4MigrationState": 0,
+    "d4RiskModule": "0x90CAA6D5bC628577bc76d6Cc8b775f983c75e110",
+    "d4SnapshotHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "d4UsesFeesManagerV2": false,
+    "d4VaultAuthorization": false,
+    "d5MaxOracleDelay": 600,
+    "d6Paused": true,
+    "market1Exists": false,
+    "musdcSettlementAllowed": true
+  },
+  "operationIds": [
+    "0x6678a5eefb1b1a1b7a9ff4aa5795e1ba7d09fba63ee59917d454e07fe2208c0d",
+    "0x1976519a08a3a7e65cbe1a2f77fcf0f5fa0f783ccb6c7ef0e6c87b7481caf45b",
+    "0xb79986810ad3e08b5495a8edeaed0654da513ef6acfa15e8ff1d496ff2ef4a11",
+    "0x48b66ca38c21064a6605af4038a657a191a56f327784dc1e0d0bffdc21075a62",
+    "0xaaf8ae230522b4a6b08a365be6e87f2544392e729b559db44968912b3a177f76",
+    "0x9ec2e37332d4dbb27791ae7f4de7e852147b344f58210e61adb7b2f95a8d5b49"
+  ],
+  "publicTradingAuthorized": false,
+  "publicTransactionsSentByAgent": false,
+  "safe": {
+    "address": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "modules": [],
+    "nonce": 42,
+    "owners": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "threshold": 2
+  },
+  "schema": "deopt.d2_d3.s2.final_configuration.v1",
+  "snapshotBlock": {
+    "hash": "0xb939b22a2492ac78b8a2518f586e55bed14437d02a60520935a8dadbd459dfba",
+    "number": 50977266,
+    "timestamp": 1793117322,
+    "utc": "2026-10-27T16:08:42+00:00"
+  },
+  "snapshotReadCount": 47
+}
