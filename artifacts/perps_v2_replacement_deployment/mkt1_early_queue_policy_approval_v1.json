@@ -1,0 +1,51 @@
+{
+  "approvedDagPath": "artifacts/perps_v2_replacement_deployment/post_maintenance_dependency_dag_v3.json",
+  "approvedDagSha256": "ecc85db09b6f04bb50fc3645d601b3ad00fd9b4d2def0ee8ff555cc6ff8bacdd",
+  "authorization": {
+    "c02S2Execution": false,
+    "migration": false,
+    "mkt1S1PublicSubmission": false,
+    "mkt1S2Execution": false,
+    "trading": false
+  },
+  "chainId": 84532,
+  "conditionsBeforeC02S2": [
+    "MKT1 S1 canonical queue postflight PASS",
+    "both operations ready and unexpired",
+    "remote isolation evidence PASS",
+    "fresh D4/D6 maintenance and shared ACL preflight",
+    "separate C02 S2 authorization"
+  ],
+  "newSchedulingEdge": {
+    "from": "C02_S1_CANONICAL_QUEUE_POSTFLIGHT_PASS",
+    "hard": true,
+    "to": "MKT1_INACTIVE_S1_SCHEDULING_ELIGIBLE"
+  },
+  "oldSchedulingEdge": {
+    "from": "C02_S2_CANONICAL_POSTFLIGHT_PASS",
+    "to": "MKT1_INACTIVE_S1_SCHEDULING_ELIGIBLE"
+  },
+  "preservedExecutionEdges": [
+    {
+      "from": "C02_S2_CANONICAL_POSTFLIGHT_PASS",
+      "hard": true,
+      "to": "MKT1_INACTIVE_S2_EXECUTION_ELIGIBLE"
+    },
+    {
+      "from": "MKT1_INACTIVE_S1_CANONICAL_QUEUE_POSTFLIGHT_PASS",
+      "hard": true,
+      "to": "MKT1_INACTIVE_S2_EXECUTION_ELIGIBLE"
+    }
+  ],
+  "priorDagPath": "artifacts/perps_v2_replacement_deployment/post_maintenance_dependency_dag_v2.json",
+  "priorDagSha256": "ac69c9a4996fca597284339eb3f70f3650661a61d3f918bc86b8483a35c90fbf",
+  "recovery": {
+    "c02FailureOrExpiry": "Do not execute MKT1; preserve maintenance; review cancellation/expiry of MKT1 separately. Never execute MKT1 before canonical C02 S2 postflight PASS.",
+    "mkt1FailureAfterC02": "Keep D4/D6 closed, halt downstream operations, reconcile queued/market state and seek separate retry or new governance review."
+  },
+  "schema": "deopt.mkt1.early_queue_policy_approval.v1",
+  "sourceOperatorDecision": "explicit operator message DEOPT_MKT1_EARLY_QUEUE_POLICY_APPROVAL_AND_FINAL_S1_REVIEW_V1",
+  "status": "APPROVED_POLICY_ONLY_NO_PUBLIC_ACTION",
+  "unchangedOtherHardEdges": true,
+  "unchangedOtherNodes": true
+}
