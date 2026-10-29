@@ -1,0 +1,274 @@
+{
+  "authorization": {
+    "c02Execution": false,
+    "migration": false,
+    "mkt1Execution": false,
+    "mkt1Scheduling": false,
+    "publicTrading": false,
+    "publicTxByAgent": false
+  },
+  "c02": {
+    "additionalC02SpecificRisk": "Owner-only migration seeding becomes market-eligible once market 1 exists; requires independent Safe/Timelock authority and remains unauthorized. ACTIVE market interval is unbounded if MKT1 fails.",
+    "eta": 1792929600,
+    "executionEligibility": "NO_REMOTE_ISOLATION_UNKNOWN",
+    "expiryInclusive": 1794139200,
+    "onchainContainment": "PASS_BOUNDED_REUSED_WITH_FRESH_MAINTENANCE_READS",
+    "operationId": "0x9e10ee1c04280e36ba1d7144b5abd2d1a48b08fac54087bd5e7090d91030913e",
+    "status": "QUEUED_READY_UNEXECUTED_UNEXPIRED"
+  },
+  "chain": {
+    "chainId": 84532,
+    "pinnedBlock": {
+      "hash": "0x3bffa7f541f895e377beb1cea5d907c5f2d64d4e1dd0f08f1be7dc3130a5dbfd",
+      "number": 51570848,
+      "timestamp": 1793236038,
+      "utc": "2026-10-29T01:07:18+00:00"
+    },
+    "readCount": 40,
+    "reads": {
+      "c02_queued": true,
+      "d1_config_paused": false,
+      "d1_creation_paused": false,
+      "d1_market1_exists": false,
+      "d1_musdc_allowed": true,
+      "d1_total_markets": 0,
+      "d2_d4_consumer": false,
+      "d2_fee_recipient": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "d2_perp_tier_0": [
+        0,
+        200
+      ],
+      "d2_perp_tier_1": [
+        0,
+        200
+      ],
+      "d2_perp_tier_2": [
+        0,
+        200
+      ],
+      "d2_perp_tier_3": [
+        0,
+        200
+      ],
+      "d2_perp_tier_4": [
+        0,
+        200
+      ],
+      "d2_rebate_budget": 0,
+      "d3_musdc_config": [
+        5,
+        true,
+        true
+      ],
+      "d3_risk_module": "0xc0f019005a25524a34f2ee8839dcdcc50715dd7b",
+      "d4_collateral_paused": true,
+      "d4_fees_manager": "0x0000000000000000000000000000000000000000",
+      "d4_funding_paused": true,
+      "d4_insurance_pointer": "0x0000000000000000000000000000000000000000",
+      "d4_liquidation_paused": true,
+      "d4_matching_engine": "0x0000000000000000000000000000000000000000",
+      "d4_migration_snapshot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "d4_migration_state": 0,
+      "d4_risk_module": "0x90caa6d5bc628577bc76d6cc8b775f983c75e110",
+      "d4_trading_paused": true,
+      "d5_max_oracle_delay": 600,
+      "d6_paused": true,
+      "insurance_d4_backstop": false,
+      "safe_modules": [
+        [],
+        "0x0000000000000000000000000000000000000001"
+      ],
+      "safe_nonce": 42,
+      "safe_owners": [
+        "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+        "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+        "0xa774c46c41064524df895bd7be9f294409798dfc"
+      ],
+      "safe_threshold": 2,
+      "timelock_grace": 1209600,
+      "timelock_min_delay": 86400,
+      "timelock_owner": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+      "timelock_queue_paused": false,
+      "timelock_safe_executor": true,
+      "timelock_safe_proposer": true,
+      "vault_d4_authorized": false
+    },
+    "rpc": "https://sepolia.base.org (public read-only endpoint; no credential)"
+  },
+  "downstreamPreparation": {
+    "blockedOnConfiguration": [
+      "MIGRATION_PREFLIGHT",
+      "eight independent migration seeds",
+      "ECONOMIC_EQUALITY",
+      "MIGRATION_SEAL",
+      "FIRST_TRADE_GUARD",
+      "D4_SELECTIVE_RELEASE",
+      "D6_SELECTIVE_RELEASE",
+      "RESTRICTED_FIRST_TRADE"
+    ],
+    "blockedOnMkt1": [
+      "C03 market 2 creation",
+      "MKT2_INACTIVE",
+      "subsequent market wiring"
+    ],
+    "immediateReadOnly": [
+      "GUARDIAN_POLICY capability review",
+      "ACL_POLICY_REVIEW without grants",
+      "EXECUTOR_IDENTITY_REVIEW once actual runtime identity is attested",
+      "ORACLE_AND_RISK_POLICY parameter review subject to C20 prerequisite",
+      "market 2 parameter and oracle source review without scheduling"
+    ]
+  },
+  "fork": {
+    "c02ExecutionLocalTx": {
+      "block": 51570851,
+      "blockHash": "0x08d985b40a4b835ffaa804344eaf43e84aabd5536143c96934af9e1b8ea25229",
+      "gasUsed": 363619,
+      "hash": "0xa7f7f69e010feb38241062c0f192a7f7207244b9fed5d9b5b8852ae954c05e26"
+    },
+    "cancelC02LocalTx": {
+      "block": 51570851,
+      "blockHash": "0xef668b8262caadd0a37d7b28d54022fd789e0a1cdb3bb8e4d871087f166c712a",
+      "gasUsed": 38572,
+      "hash": "0x738ca8c8b91ca9e3a9142476842953a4f50068f71ffe026385c5682bbda4527b"
+    },
+    "cancelledC02ExecutionRejected": true,
+    "chainId": 84532,
+    "d4FourFlags": {
+      "collateralOpsPaused": true,
+      "fundingPaused": true,
+      "liquidationPaused": true,
+      "tradingPaused": true
+    },
+    "d6Paused": true,
+    "executionWithoutMarketRejectedAtEta": true,
+    "forkBlock": 51570848,
+    "forkRevertedAfterTest": true,
+    "marketActiveAfterC02": true,
+    "marketInactiveAfterMkt1": true,
+    "mkt1ExecutionLocalTx": {
+      "block": 51570852,
+      "blockHash": "0x07f8a888b8360289aa2e2dca863a5aed112b11c49b8ed0039a3b29ff845b7a63",
+      "gasUsed": 46518,
+      "hash": "0x621a0a84dd1a15c1f50ccad02d29bd56b8a598fea8083d352aa96341e2cc21cb"
+    },
+    "mkt1ReplayRejected": true,
+    "noPublicTransactions": true,
+    "prematureExecutionRejected": true,
+    "queueTransaction": {
+      "block": 51570849,
+      "blockHash": "0x94ee883cd02f5d075056f214fb5767f85c9aa3ca77a9fb994599ae0ee3f0c285",
+      "gasUsed": 56922,
+      "hash": "0x6abad8cea51fb0646bee67460f0f94446b718dc262b5411db3e0d299a0c67f6b"
+    },
+    "scope": "ISOLATED_ANVIL_FORK_ONLY",
+    "wrongMarketIdRejected": true
+  },
+  "infrastructure": {
+    "backendRemoteStatus": "UNKNOWN",
+    "cronInventory": "UNKNOWN_NO_CONNECTOR_METHOD",
+    "effectiveProductionEnvAndRuntimeCapabilities": "UNKNOWN_NOT_ATTESTED",
+    "functionInventory": "UNKNOWN",
+    "functionTreeAttempt": "404_FILE_TREE_NOT_FOUND_WITH_AND_WITHOUT_EXPLICIT_TEAM_ID",
+    "historicalRailway": "HISTORICAL_UNVERIFIED_NOT_ASSUMED_ACTIVE",
+    "localBackend": "locally tested default-off broadcaster only; does not prove remote inactivity",
+    "productionAlias": "deoptv2-frontend.vercel.app",
+    "productionCommit": "a32c5cc1b6dee30a0676b4adc156718687a0a727",
+    "productionDeployment": "dpl_4Ah6VNmKyFVzVdAUH1mbeptz93XS",
+    "productionState": "READY",
+    "relayerKeeperRemoteStatus": "UNKNOWN",
+    "remoteIsolationVerdict": "NOT_VERIFIED",
+    "sourceAtDeployedCommit": {
+      "apiRoutes": [
+        "src/app/api/client-errors/route.ts"
+      ],
+      "faucetPath": "wallet sendTransaction exists in client source but resolver returns null under production trading gate; no server-side signing established",
+      "serverRouteFinding": "bounded client diagnostics collector; no server-side wallet or broadcaster in inspected route",
+      "sourceTradingGate": "isPublicTradingEnabled false when NODE_ENV=production; non-GET trading API requests rejected before backend fetch"
+    },
+    "vercelProjectId": "prj_YADz33AWNuLnbnXYvQZOINFIhTTG",
+    "vercelProjectNameReturned": "deopt-v2-frontend"
+  },
+  "mkt1Candidate": {
+    "bufferedSchedulingCutoff": 1793444400,
+    "builderPath": "artifacts/perps_v2_replacement_deployment/mkt1_inactive_early_s1_unapproved_policy_safe_builder_v1.json",
+    "builderSha256": "663c2ca2738d4657648506b59a0b12f180c9da50be09b22fdb57cc79df48f845",
+    "eta": 1793534400,
+    "expiryInclusive": 1794744000,
+    "manifestPath": "artifacts/perps_v2_replacement_deployment/mkt1_inactive_early_s1_conditional_candidate_v1.json",
+    "needsFreshReview": true,
+    "operationId": "0x9d2bd83ac8d34252fa2418e5b403a716e0131121fd14dad25a112220f7eef268",
+    "operatorReady": false,
+    "safeNonceConditional": 42,
+    "safeTxHashConditional": "0xc80e676251c36b9323620d3d520b317e622dadcd3174a9bf769398c43074ebb5",
+    "status": "UNAPPROVED_POLICY_NOT_OPERATOR_READY"
+  },
+  "operatorEvidenceRequest": {
+    "dashboard": "Vercel > team corioms-projects > project ID prj_YADz33AWNuLnbnXYvQZOINFIhTTG > production deployment dpl_4Ah6VNmKyFVzVdAUH1mbeptz93XS > Functions; project > Settings > Cron Jobs",
+    "decisionRule": "A deployed write-capable function or active remote executor requires source/config review and on-chain containment; an unavailable inventory stays UNKNOWN.",
+    "screenshots": "Two timestamped captures, showing all function paths/runtimes and all cron schedules/enabled state, including explicit empty-state views. Redact cookies, tokens, environment values and request bodies.",
+    "singleHostAttestationQuestion": "Does any DeOpt Rust backend, order relay, keeper, or broadcaster run outside local WSL today? If yes, give the actual provider/service, current running state, revision, chain/contract targets and non-secret order/broadcast/worker flags; if no, explicitly attest no such remote service or managed worker is running."
+  },
+  "policy": {
+    "activeIntervalAcceleratedProtocolMinSecondsAfterC02": 0,
+    "activeIntervalActualMinimum": "C02 postflight, separate human approval and public MKT1 inclusion; no guaranteed numeric bound",
+    "activeIntervalExistingPolicyMinSeconds": 86400,
+    "activeIntervalWorstCase": "UNBOUNDED on either policy if RPC, approvals, transaction or MKT1 execution fails",
+    "approvedDagChanged": false,
+    "failureC02": "Do not execute MKT1; keep maintenance, reconcile C02 and seek separately reviewed cancellation or expiry treatment",
+    "failureMKT1AfterC02": "Keep D4/D6 closed and shared ACL absent; halt migration/trading/downstream work; verify market and Timelock state; separately review retry within grace period or new schedule, never automatic continuation",
+    "mustWaitBothReadyBeforeC02": true,
+    "oldSchedulingEdge": {
+      "from": "C02_EXECUTION_CANONICAL_POSTFLIGHT_PASS",
+      "to": "MKT1_INACTIVE_SCHEDULING_ELIGIBLE"
+    },
+    "operatorApproval": "REQUIRED_NOT_GRANTED",
+    "preservedExecutionEdges": [
+      {
+        "from": "C02_S2_CANONICAL_POSTFLIGHT_PASS",
+        "to": "MKT1_INACTIVE_EXECUTION_ELIGIBLE"
+      },
+      {
+        "from": "MKT1_INACTIVE_S1_CANONICAL_QUEUE_POSTFLIGHT_PASS",
+        "to": "MKT1_INACTIVE_EXECUTION_ELIGIBLE"
+      }
+    ],
+    "proposedSchedulingEdge": {
+      "from": "C02_S1_CANONICAL_QUEUE_POSTFLIGHT_PASS",
+      "to": "MKT1_INACTIVE_SCHEDULING_ELIGIBLE"
+    },
+    "queueHasNoD1Mutation": true,
+    "remoteIsolationRequiredBeforeC02": true,
+    "technicalReview": "PASS_REUSED_AND_FORK_REFRESHED"
+  },
+  "schema": "deopt.c02.mkt1.critical_path.final_decision.v1",
+  "sequence": [
+    "Explicit operator policy decision; approved DAG stays unchanged until then",
+    "Independent exact MKT1 S1 review, fresh nonce/ETA/Safe UI simulation and separate 2-of-3 authorization",
+    "MKT1 S1 canonical public queue postflight PASS",
+    "Wait until both operations ready, with C02 before its expiry",
+    "Fresh remote isolation and economic-containment preflight; separate C02 S2 authorization",
+    "Manual C02 execution once and canonical postflight PASS showing market 1 ACTIVE, D4/D6 intact",
+    "Fresh MKT1 nonce/state review; separate MKT1 S2 authorization and execution once",
+    "Canonical market 1 INACTIVE postflight and economic non-drift"
+  ],
+  "source": {
+    "approvedDagSha256": "f3907236b928a50151f21ea748e3572ce8fde8fe5a090c0de8d3ca4d647e5b5d",
+    "backendHead": "ff47aec74fe53695a06513b6b0649f6f43426bc8",
+    "frontendHead": "a32c5cc1b6dee30a0676b4adc156718687a0a727",
+    "priorContainmentSha256": "90e840b434e265704f414bf7cbedf3244978692c9a1bfd8df02f876ee5d494c4",
+    "priorPolicyProposalSha256": "88672bcf7469371913b689b61a4e362324b69939c0aefab87a7fd0dfca534ae2",
+    "protocolHeadBefore": "f225bceb53dc8c6bcb51e0f71131c8f25e90a7f4"
+  },
+  "status": "PARTIAL_REMOTE_ISOLATION_AND_POLICY_APPROVAL_PENDING",
+  "tests": {
+    "freshFocusedUnittestPassed": 13,
+    "freshLocalForkTransactionCount": 4,
+    "freshPinnedRpcReads": 40,
+    "historicalFork": "REUSED_INTEGRITY_VERIFIED",
+    "localFork": "PASS_QUEUE_PREMATURE_CANCEL_C02_THEN_INACTIVE_REPLAY",
+    "newCandidateIntegrityTests": 3,
+    "priorArtifactTestsRerun": 10,
+    "publicTransactionsSent": 0
+  }
+}

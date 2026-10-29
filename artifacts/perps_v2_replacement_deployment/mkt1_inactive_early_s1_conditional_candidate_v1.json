@@ -1,0 +1,134 @@
+{
+  "approvedDagSha256": "f3907236b928a50151f21ea748e3572ce8fde8fe5a090c0de8d3ca4d647e5b5d",
+  "authorization": {
+    "executionApproved": false,
+    "policyApproved": false,
+    "publicTxByAgent": false,
+    "schedulingApproved": false
+  },
+  "bufferedSchedulingCutoff": 1793444400,
+  "bufferedSchedulingCutoffUtc": "2026-10-31T11:00:00Z",
+  "builderPath": "artifacts/perps_v2_replacement_deployment/mkt1_inactive_early_s1_unapproved_policy_safe_builder_v1.json",
+  "builderSha256": "663c2ca2738d4657648506b59a0b12f180c9da50be09b22fdb57cc79df48f845",
+  "eta": 1793534400,
+  "etaUtc": "2026-11-01T12:00:00Z",
+  "expiryInclusive": 1794744000,
+  "expiryUtc": "2026-11-15T12:00:00Z",
+  "innerArgs": [
+    1,
+    false,
+    false
+  ],
+  "innerCalldata": "0x85477fb3000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "innerCalldataKeccak256": "0xd2c425cabaea425fd78ddf833de798c6548718078ade79a8c28f0c220ccb017e",
+  "innerFunction": "setMarketStatus(uint256,bool,bool)",
+  "operationId": "0x9d2bd83ac8d34252fa2418e5b403a716e0131121fd14dad25a112220f7eef268",
+  "outerCalldata": "0x8e361cdf0000000000000000000000006b3d846536116082dc4e7227861c341bb85ee96300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ae729c0000000000000000000000000000000000000000000000000000000000000006485477fb300000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "outerCalldataKeccak256": "0x0f573655055576ff23ed79da8a4d163faa635cf19c642a87a1664bf218dbb486",
+  "outerFunction": "queueTransaction(address,uint256,bytes,uint256)",
+  "readOnlyChecks": {
+    "directSetterBeforeC02Rejected": true,
+    "localSafeEip712HashMatchesOnchain": true,
+    "onchainOperationIdMatches": true,
+    "operationAbsent": true,
+    "queueEthCallFromSafeMatches": true,
+    "unscheduledExecuteEthCallRejected": true
+  },
+  "safeEnvelope": {
+    "baseGas": 0,
+    "data": "0x8e361cdf0000000000000000000000006b3d846536116082dc4e7227861c341bb85ee96300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006ae729c0000000000000000000000000000000000000000000000000000000000000006485477fb300000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "gasPrice": 0,
+    "gasToken": "0x0000000000000000000000000000000000000000",
+    "nonceObserved": 42,
+    "operation": 0,
+    "refundReceiver": "0x0000000000000000000000000000000000000000",
+    "safeTxGas": 0,
+    "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "value": "0"
+  },
+  "safeTxHashConditionalAtObservedNonce": "0xc80e676251c36b9323620d3d520b317e622dadcd3174a9bf769398c43074ebb5",
+  "schema": "deopt.mkt1.early_s1.unapproved_policy.v1",
+  "snapshot": {
+    "block": {
+      "hash": "0x3bffa7f541f895e377beb1cea5d907c5f2d64d4e1dd0f08f1be7dc3130a5dbfd",
+      "number": 51570848,
+      "timestamp": 1793236038,
+      "utc": "2026-10-29T01:07:18+00:00"
+    },
+    "chainId": 84532,
+    "errors": {},
+    "readCount": 40,
+    "reads": {
+      "c02_queued": true,
+      "d1_config_paused": false,
+      "d1_creation_paused": false,
+      "d1_market1_exists": false,
+      "d1_musdc_allowed": true,
+      "d1_total_markets": 0,
+      "d2_d4_consumer": false,
+      "d2_fee_recipient": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+      "d2_perp_tier_0": [
+        0,
+        200
+      ],
+      "d2_perp_tier_1": [
+        0,
+        200
+      ],
+      "d2_perp_tier_2": [
+        0,
+        200
+      ],
+      "d2_perp_tier_3": [
+        0,
+        200
+      ],
+      "d2_perp_tier_4": [
+        0,
+        200
+      ],
+      "d2_rebate_budget": 0,
+      "d3_musdc_config": [
+        5,
+        true,
+        true
+      ],
+      "d3_risk_module": "0xc0f019005a25524a34f2ee8839dcdcc50715dd7b",
+      "d4_collateral_paused": true,
+      "d4_fees_manager": "0x0000000000000000000000000000000000000000",
+      "d4_funding_paused": true,
+      "d4_insurance_pointer": "0x0000000000000000000000000000000000000000",
+      "d4_liquidation_paused": true,
+      "d4_matching_engine": "0x0000000000000000000000000000000000000000",
+      "d4_migration_snapshot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "d4_migration_state": 0,
+      "d4_risk_module": "0x90caa6d5bc628577bc76d6cc8b775f983c75e110",
+      "d4_trading_paused": true,
+      "d5_max_oracle_delay": 600,
+      "d6_paused": true,
+      "insurance_d4_backstop": false,
+      "safe_modules": [
+        [],
+        "0x0000000000000000000000000000000000000001"
+      ],
+      "safe_nonce": 42,
+      "safe_owners": [
+        "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+        "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+        "0xa774c46c41064524df895bd7be9f294409798dfc"
+      ],
+      "safe_threshold": 2,
+      "timelock_grace": 1209600,
+      "timelock_min_delay": 86400,
+      "timelock_owner": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+      "timelock_queue_paused": false,
+      "timelock_safe_executor": true,
+      "timelock_safe_proposer": true,
+      "vault_d4_authorized": false
+    }
+  },
+  "stalenessWarning": "ETA and conditional SafeTx hash require fresh review after policy approval; no Safe UI simulation, gas or owner confirmations were performed.",
+  "status": "UNAPPROVED_POLICY_NOT_OPERATOR_READY",
+  "target": "0x6B3D846536116082dC4E7227861C341Bb85Ee963",
+  "timelock": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588"
+}
