@@ -1,0 +1,209 @@
+{
+  "artifactIntegrity": {
+    "approvedDagSha256": "ecc85db09b6f04bb50fc3645d601b3ad00fd9b4d2def0ee8ff555cc6ff8bacdd",
+    "builderSha256": "822d3fe1a3a29943c83ae013b5291c6d1975da5f33f7bad18f75370db2fee3da",
+    "s1ReviewFile": "mkt1_inactive_early_s1_final_review_v1.json",
+    "s1ReviewSha256": "4f7eb1f081438193ff78e4125d21d9e44fc6840ffb28d531d98608621416e984"
+  },
+  "boundedEconomicNonDrift": {
+    "atReceipt": {
+      "d2_rebate_budget_musdc": 0,
+      "insurance_local_balance_musdc": 0,
+      "insurance_vault_balance_musdc": 2100010,
+      "vault_erc20_balance_musdc": 224066000000,
+      "vault_total_deposited_musdc": 224066000000
+    },
+    "atReview": {
+      "d2_rebate_budget_musdc": 0,
+      "insurance_local_balance_musdc": 0,
+      "insurance_vault_balance_musdc": 2100010,
+      "vault_erc20_balance_musdc": 224066000000,
+      "vault_total_deposited_musdc": 224066000000
+    },
+    "before": {
+      "d2_rebate_budget_musdc": 0,
+      "insurance_local_balance_musdc": 0,
+      "insurance_vault_balance_musdc": 2100010,
+      "vault_erc20_balance_musdc": 224066000000,
+      "vault_total_deposited_musdc": 224066000000
+    },
+    "scope": "mUSDC legacy Vault totalDepositedByToken and ERC20 physical balance, Insurance vault/local balance, D2 rebate budget; D4 shared economic permissions"
+  },
+  "canonicalBlock": {
+    "hash": "0xfd647d284de08072f5217be95f963da623d42aad7e8beffe0d40b2438f1934f0",
+    "number": 51585986,
+    "timestamp": 1793239066,
+    "utc": "2026-10-29T01:57:46+00:00"
+  },
+  "chainId": 84532,
+  "conditionalFutureExecutionIntents": [
+    {
+      "authorization": "NOT_AUTHORIZED_CONDITIONAL_INTENT_ONLY",
+      "eta": 1792929600,
+      "expiryInclusive": 1794139200,
+      "innerCalldataKeccak256": "0x976f360139a3069605b3baa59c1d4bb8c2dc0591c676e6deaf3a5d142089067f",
+      "innerTarget": "0x6B3D846536116082dC4E7227861C341Bb85Ee963",
+      "innerValueWei": 0,
+      "name": "C02_S2",
+      "operationId": "0x9e10ee1c04280e36ba1d7144b5abd2d1a48b08fac54087bd5e7090d91030913e",
+      "outerCalldataKeccak256": "0x2215eaea7a4b85fcfe894ab1e8e7236f3daa8e286c3a2e01be6f305990b63b24",
+      "outerFunction": "executeTransaction(address,uint256,bytes,uint256)",
+      "timelock": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588"
+    },
+    {
+      "authorization": "NOT_AUTHORIZED_CONDITIONAL_INTENT_ONLY",
+      "eta": 1793534400,
+      "expiryInclusive": 1794744000,
+      "innerCalldataKeccak256": "0xd2c425cabaea425fd78ddf833de798c6548718078ade79a8c28f0c220ccb017e",
+      "innerTarget": "0x6B3D846536116082dC4E7227861C341Bb85Ee963",
+      "innerValueWei": 0,
+      "name": "MKT1_INACTIVE_S2",
+      "operationId": "0x9d2bd83ac8d34252fa2418e5b403a716e0131121fd14dad25a112220f7eef268",
+      "outerCalldataKeccak256": "0x4a1fcad5111456d5a60960114403bcbdbedab85b023ff5536b4d2dddfadd4c0e",
+      "outerFunction": "executeTransaction(address,uint256,bytes,uint256)",
+      "timelock": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588"
+    }
+  ],
+  "currentD2D3Policy": {
+    "d2FeeRecipient": "0xa67f8e8e673ce4bb2fb563b0e6e9fa8f70e3b588",
+    "d2PerpProfilesPpm": {
+      "0": [
+        0,
+        200
+      ],
+      "1": [
+        0,
+        200
+      ],
+      "2": [
+        0,
+        200
+      ],
+      "3": [
+        0,
+        200
+      ],
+      "4": [
+        0,
+        200
+      ]
+    },
+    "d3MusdcSeizeConfig": [
+      5,
+      true,
+      true
+    ],
+    "d3RiskModule": "0xc0f019005a25524a34f2ee8839dcdcc50715dd7b"
+  },
+  "evidenceLimits": [
+    "Public RPC receipt and pinned eth_call results prove this bounded postflight, not exhaustive external-service isolation or all economic accounts.",
+    "No Safe UI simulation or private owner-signature capture was performed; Safe ExecutionSuccess and threshold readback establish onchain execution.",
+    "Future Safe nonce, gas, proposal state and operation readiness require fresh checks."
+  ],
+  "maintenance": {
+    "atReceipt": {
+      "c02_queued": true,
+      "d1_market1_exists": false,
+      "d1_total_markets": 0,
+      "d4_collateral_paused": true,
+      "d4_funding_paused": true,
+      "d4_liquidation_paused": true,
+      "d4_trading_paused": true,
+      "d6_paused": true,
+      "insurance_d4_backstop": false,
+      "vault_d4_authorized": false
+    },
+    "atReview": {
+      "c02_queued": true,
+      "d1_market1_exists": false,
+      "d1_total_markets": 0,
+      "d4_collateral_paused": true,
+      "d4_funding_paused": true,
+      "d4_liquidation_paused": true,
+      "d4_matching_engine": "0x0000000000000000000000000000000000000000",
+      "d4_migration_state": 0,
+      "d4_risk_module": "0x90caa6d5bc628577bc76d6cc8b775f983c75e110",
+      "d4_trading_paused": true,
+      "d6_paused": true,
+      "insurance_d4_backstop": false,
+      "vault_d4_authorized": false
+    },
+    "before": {
+      "c02_queued": true,
+      "d1_market1_exists": false,
+      "d1_total_markets": 0,
+      "d4_collateral_paused": true,
+      "d4_funding_paused": true,
+      "d4_liquidation_paused": true,
+      "d4_trading_paused": true,
+      "d6_paused": true,
+      "insurance_d4_backstop": false,
+      "vault_d4_authorized": false
+    }
+  },
+  "nextGate": {
+    "c02S2": "BLOCKED_REMOTE_OPERATIONAL_ISOLATION_NOT_VERIFIED",
+    "mkt1S2": "BLOCKED_C02_S2_CANONICAL_POSTFLIGHT_REQUIRED; MKT1_ETA_NOT_REACHED",
+    "publicActionAuthorized": false
+  },
+  "publicTransactionHash": "0x460b599367ed67fc6d6f7b01541c15e4f03fc6068563efc18c2ec66b71e838de",
+  "publicTransactionsByAgent": "NONE",
+  "receipt": {
+    "blockHash": "0xfd647d284de08072f5217be95f963da623d42aad7e8beffe0d40b2438f1934f0",
+    "blockNumber": 51585986,
+    "gasUsed": 102341,
+    "logCount": 3,
+    "status": 1,
+    "transactionIndex": 6
+  },
+  "reviewBlock": {
+    "hash": "0xcde18da9ef4c68e946a79d855caded11175f2947c58c116781f0ba980a099133",
+    "number": 51587102,
+    "timestamp": 1793239289,
+    "utc": "2026-10-29T02:01:29+00:00"
+  },
+  "rpcUrl": "https://sepolia.base.org",
+  "safe": {
+    "address": "0xa6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+    "executionFailureCount": 0,
+    "executionSuccessPaymentWei": 0,
+    "executionSuccessSafeTxHash": "0xc80e676251c36b9323620d3d520b317e622dadcd3174a9bf769398c43074ebb5",
+    "oneCallToTimelock": true,
+    "owners": [
+      "0xb9f8de807ff98d5730035a8bfed4bda33e886d06",
+      "0x0e7dcb5b9fd969e4fdc6f3a7b7993819ddc5a35d",
+      "0xa774c46c41064524df895bd7be9f294409798dfc"
+    ],
+    "postNonce": 43,
+    "preNonce": 42,
+    "reviewNonce": 43,
+    "safeEventOuterCalldataKeccak256": "0x0f573655055576ff23ed79da8a4d163faa635cf19c642a87a1664bf218dbb486",
+    "signatureBytesObserved": 130,
+    "threshold": 2
+  },
+  "schema": "deopt.mkt1_inactive.early_s1.public_postflight.v1",
+  "source": "BASE_SEPOLIA_PUBLIC_RPC_READ_ONLY",
+  "timelock": {
+    "address": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+    "eta": 1793534400,
+    "expiryInclusive": 1794744000,
+    "innerArgs": [
+      1,
+      false,
+      false
+    ],
+    "innerCalldataKeccak256": "0xd2c425cabaea425fd78ddf833de798c6548718078ade79a8c28f0c220ccb017e",
+    "innerFunction": "setMarketStatus(uint256,bool,bool)",
+    "minDelaySeconds": 86400,
+    "operationId": "0x9d2bd83ac8d34252fa2418e5b403a716e0131121fd14dad25a112220f7eef268",
+    "queueEventLogIndex": 11,
+    "recomputedOperationId": "0x9d2bd83ac8d34252fa2418e5b403a716e0131121fd14dad25a112220f7eef268",
+    "schedulingMarginBeyondMinDelaySeconds": 208934,
+    "stateAtReceipt": "QUEUED",
+    "stateAtReview": "QUEUED_NOT_READY_NOT_EXECUTED",
+    "stateBefore": "ABSENT",
+    "target": "0x6b3d846536116082dc4e7227861c341bb85ee963",
+    "valueWei": 0
+  },
+  "verdict": "PASS"
+}
