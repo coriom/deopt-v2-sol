@@ -1,0 +1,37 @@
+{
+  "schema": "deopt.c02.atomic_replacement_dag_proposal.v9",
+  "status": "UNAPPROVED_POLICY_NO_PUBLIC_ACTION",
+  "chainId": 84532,
+  "sourceDag": "artifacts/perps_v2_replacement_deployment/post_maintenance_dependency_dag_v3.json",
+  "sourceDagSha256": "ecc85db09b6f04bb50fc3645d601b3ad00fd9b4d2def0ee8ff555cc6ff8bacdd",
+  "scope": "Only replacement market-1 C02/MKT1 operations with exact reviewed calldata and a common fresh ETA; no change to unrelated DAG edges",
+  "oldExecutionDependency": {
+    "from": "C02_S2_CANONICAL_POSTFLIGHT_PASS",
+    "to": "MKT1_INACTIVE_S2_EXECUTION_ELIGIBLE",
+    "disposition": "Retain for old operations; replacement path requires explicit new approval before this edge can be substituted"
+  },
+  "proposedReplacementDependencies": [
+    "OLD_C02_AND_OLD_MKT_CANCELLED_WITH_SEPARATE_CANONICAL_POSTFLIGHTS",
+    "NEW_C02_S1_CANONICAL_QUEUE_POSTFLIGHT_PASS",
+    "NEW_MKT1_S1_CANONICAL_QUEUE_POSTFLIGHT_PASS",
+    "BOTH_NEW_OPERATIONS_READY_AND_UNEXPIRED",
+    "D1_MARKET1_ABSENT_AND_NEXT_ID_1",
+    "D4_D6_MAINTENANCE_AND_ECONOMIC_NONDRIFT_PASS",
+    "SAFE_2_OF_3_ATOMIC_BATCH_SEPARATELY_AUTHORIZED_WITH_FRESH_NONCE_AND_UI_SIMULATION",
+    "ONE_SAFE_TRANSACTION_DELEGATECALLS_CANONICAL_MULTISEND_CALL_ONLY",
+    "MULTISEND_CALLS_NEW_C02_EXECUTE_THEN_NEW_MKT1_EXECUTE_WITH_ZERO_VALUE",
+    "ONE_CANONICAL_RECEIPT_HAS_SAFE_EXECUTION_SUCCESS_BOTH_TIMELOCK_EXECUTION_EVENTS_AND_MARKET1_INACTIVE",
+    "POSTFLIGHT_VERIFIES_BOTH_NEW_QUEUE_ENTRIES_CONSUMED_D4_D6_UNCHANGED_AND_NO_OTHER_MARKET_CREATED"
+  ],
+  "newDownstreamGate": "ATOMIC_MARKET1_INACTIVE_CANONICAL_POSTFLIGHT_PASS",
+  "forbidden": [
+    "Execute either new operation alone",
+    "Execute old C02 merely to avoid expiry",
+    "Reuse old Safe signatures, old SafeTx hashes or old operator authorizations",
+    "Treat the local fork approvals as genuine Safe confirmations",
+    "Release D4/D6 maintenance or activate trading by this amendment"
+  ],
+  "failureRecovery": "If scheduling, simulation, signature review or either subcall fails, stop. A reverted atomic Safe batch leaves both new operations queued and market absent; reconcile Safe nonce and public state before a separately authorized retry. Do not execute either operation alone.",
+  "policyApproval": "REQUIRED",
+  "publicSubmissionAuthorization": false
+}
