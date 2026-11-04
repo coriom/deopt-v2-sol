@@ -48,12 +48,15 @@ contract PerpsV2AtomicReplacementForkTest is Test {
     address constant OWNER_A = 0x0E7DcB5b9fd969E4fDc6F3A7b7993819dDC5a35d;
     address constant OWNER_B = 0xa774C46C41064524dF895BD7bE9F294409798dFC;
     address constant OLD_DEPLOYER = 0xc35F7A8A103A9A4464adfaa76B9B514093D23C27;
-    uint256 constant FORK_BLOCK = 54389568;
+    uint256 constant FORK_BLOCK = 54397286;
     uint256 constant OLD_C02_ETA = 1792929600;
     uint256 constant OLD_MKT_ETA = 1793534400;
     uint256 constant NEW_ETA = 1794312000; // Conditional 2026-11-10 12:00 UTC, not approved.
+    uint256 constant V10_ETA = 1794484800; // Conditional 2026-11-12 12:00 UTC, not approved.
     bytes32 constant OLD_C02 = 0x9e10ee1c04280e36ba1d7144b5abd2d1a48b08fac54087bd5e7090d91030913e;
     bytes32 constant OLD_MKT = 0x9d2bd83ac8d34252fa2418e5b403a716e0131121fd14dad25a112220f7eef268;
+    bytes32 constant V10_C02 = 0xfa6cafb57e8bf8e19d1af04e22f2d9044510f24e70032f4b3b3a6ac705bff401;
+    bytes32 constant V10_MKT = 0x1e0e7c2093a019133fa0c903005f866d34be6444a6c65d170b140ebf136dda51;
 
     ProtocolTimelock tl = ProtocolTimelock(payable(TL));
     PerpMarketRegistry d1 = PerpMarketRegistry(D1);
@@ -167,6 +170,106 @@ contract PerpsV2AtomicReplacementForkTest is Test {
         assertTrue(tl.queuedTransactions(OLD_MKT));
         assertEq(d1.totalMarkets(), 0);
         assertEq(safe.nonce(), 43);
+    }
+
+    function testOldC02CanStillBeExecutedAloneBySafe() public {
+        _exec(TL, abi.encodeCall(tl.executeTransaction, (D1, 0, c02, OLD_C02_ETA)), 0, true);
+        assertEq(d1.totalMarkets(), 1);
+        assertTrue(d1.getMarket(1).isActive);
+        assertFalse(tl.queuedTransactions(OLD_C02));
+        assertTrue(tl.queuedTransactions(OLD_MKT));
+    }
+
+    function testReplacementC02CanStillBeExecutedAloneBySafe() public {
+        _stageReplacement();
+        vm.warp(NEW_ETA);
+        _exec(TL, abi.encodeCall(tl.executeTransaction, (D1, 0, c02, NEW_ETA)), 0, true);
+        assertEq(d1.totalMarkets(), 1);
+        assertTrue(d1.getMarket(1).isActive);
+        assertFalse(tl.queuedTransactions(newC02));
+        assertTrue(tl.queuedTransactions(newMkt));
+    }
+
+    function testTimelockTargetingMultisendCannotCallRegistryAsOwner() public {
+        bytes memory direct = abi.encodeWithSignature(
+            "multiSend(bytes)",
+            bytes.concat(
+                abi.encodePacked(uint8(0), D1, uint256(0), uint256(c02.length), c02),
+                abi.encodePacked(uint8(0), D1, uint256(0), uint256(mkt.length), mkt)
+            )
+        );
+        _exec(TL, abi.encodeCall(tl.queueTransaction, (MULTISEND, 0, direct, V10_ETA)), 0, true);
+        bytes32 id = tl.hashOperation(MULTISEND, 0, direct, V10_ETA);
+        vm.warp(V10_ETA);
+        _exec(TL, abi.encodeCall(tl.executeTransaction, (MULTISEND, 0, direct, V10_ETA)), 0, false);
+        assertEq(d1.totalMarkets(), 0);
+        assertTrue(tl.queuedTransactions(id));
+    }
+
+    function testOneTimelockCallWithAppendedSetterLeavesMarketActive() public {
+        bytes memory appended = bytes.concat(c02, mkt);
+        _exec(TL, abi.encodeCall(tl.queueTransaction, (D1, 0, appended, V10_ETA)), 0, true);
+        vm.warp(V10_ETA);
+        _exec(TL, abi.encodeCall(tl.executeTransaction, (D1, 0, appended, V10_ETA)), 0, true);
+        assertEq(d1.totalMarkets(), 1);
+        assertTrue(d1.getMarket(1).isActive);
+    }
+
+    function testV10NaturalExpiryThenAtomicReplacement() public {
+        vm.warp(OLD_C02_ETA + tl.GRACE_PERIOD() + 1);
+        assertFalse(tl.isOperationReady(D1, 0, c02, OLD_C02_ETA));
+        _exec(TL, abi.encodeCall(tl.executeTransaction, (D1, 0, c02, OLD_C02_ETA)), 0, false);
+        assertEq(d1.totalMarkets(), 0);
+        assertTrue(tl.queuedTransactions(OLD_C02)); // Stale entries are not automatically deleted.
+        assertGt(V10_ETA, block.timestamp + tl.minDelay());
+        _exec(TL, abi.encodeCall(tl.queueTransaction, (D1, 0, c02, V10_ETA)), 0, true);
+        _exec(TL, abi.encodeCall(tl.queueTransaction, (D1, 0, mkt, V10_ETA)), 0, true);
+        bytes32 c02Id = tl.hashOperation(D1, 0, c02, V10_ETA);
+        bytes32 mktId = tl.hashOperation(D1, 0, mkt, V10_ETA);
+        assertEq(c02Id, V10_C02);
+        assertEq(mktId, V10_MKT);
+        bytes memory first = abi.encodeCall(tl.executeTransaction, (D1, 0, c02, V10_ETA));
+        bytes memory second = abi.encodeCall(tl.executeTransaction, (D1, 0, mkt, V10_ETA));
+        bytes memory atomicBatch = abi.encodeWithSignature(
+            "multiSend(bytes)",
+            bytes.concat(
+                abi.encodePacked(uint8(0), TL, uint256(0), uint256(first.length), first),
+                abi.encodePacked(uint8(0), TL, uint256(0), uint256(second.length), second)
+            )
+        );
+        vm.warp(V10_ETA);
+        _exec(MULTISEND, atomicBatch, 1, true);
+        assertEq(safe.nonce(), 46);
+        assertEq(d1.totalMarkets(), 1);
+        assertTrue(d1.getMarket(1).exists);
+        assertFalse(d1.getMarket(1).isActive);
+        assertFalse(tl.queuedTransactions(c02Id));
+        assertFalse(tl.queuedTransactions(mktId));
+        assertTrue(abi.decode(_read(D4, abi.encodeWithSignature("tradingPaused()")), (bool)));
+        assertTrue(abi.decode(_read(D6, abi.encodeWithSignature("paused()")), (bool)));
+    }
+
+    function testV10SecondStepFailureRevertsEntireSafeTransaction() public {
+        vm.warp(OLD_C02_ETA + tl.GRACE_PERIOD() + 1);
+        _exec(TL, abi.encodeCall(tl.queueTransaction, (D1, 0, c02, V10_ETA)), 0, true);
+        _exec(TL, abi.encodeCall(tl.queueTransaction, (D1, 0, mkt, V10_ETA)), 0, true);
+        bytes memory first = abi.encodeCall(tl.executeTransaction, (D1, 0, c02, V10_ETA));
+        bytes memory second = abi.encodeCall(tl.executeTransaction, (D1, 0, mkt, V10_ETA));
+        bytes memory atomicBatch = abi.encodeWithSignature(
+            "multiSend(bytes)",
+            bytes.concat(
+                abi.encodePacked(uint8(0), TL, uint256(0), uint256(first.length), first),
+                abi.encodePacked(uint8(0), TL, uint256(0), uint256(second.length), second)
+            )
+        );
+        vm.prank(TL); // Fork-only fault injection; no public D1 pause.
+        d1.pauseConfig();
+        vm.warp(V10_ETA);
+        _exec(MULTISEND, atomicBatch, 1, false);
+        assertEq(safe.nonce(), 45);
+        assertEq(d1.totalMarkets(), 0);
+        assertTrue(tl.queuedTransactions(V10_C02));
+        assertTrue(tl.queuedTransactions(V10_MKT));
     }
 
     function testReplacementQueueDelayAndAtomicFinalState() public {

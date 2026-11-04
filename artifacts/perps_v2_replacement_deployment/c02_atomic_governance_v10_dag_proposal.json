@@ -1,0 +1,50 @@
+{
+  "schema": "deopt.c02.atomic_governance_dag_proposal.v10",
+  "status": "UNAPPROVED_POLICY_NO_PUBLIC_ACTION",
+  "chainId": 84532,
+  "sourceDag": "artifacts/perps_v2_replacement_deployment/post_maintenance_dependency_dag_v3.json",
+  "sourceDagSha256": "ecc85db09b6f04bb50fc3645d601b3ad00fd9b4d2def0ee8ff555cc6ff8bacdd",
+  "supersedesProposalOnly": "artifacts/perps_v2_replacement_deployment/c02_atomic_replacement_v9_dag_proposal.json",
+  "scope": "Replacement C02 and MKT1 market-1 pair only; approved v3 DAG stays unchanged until separate operator policy approval",
+  "originalEdges": [
+    "C02_S1_CANONICAL_QUEUE_POSTFLIGHT_PASS -> MKT1_INACTIVE_S1_SCHEDULING_ELIGIBLE",
+    "C02_S2_CANONICAL_POSTFLIGHT_PASS -> MKT1_INACTIVE_S2_EXECUTION_ELIGIBLE",
+    "MKT1_INACTIVE_S1_CANONICAL_QUEUE_POSTFLIGHT_PASS -> MKT1_INACTIVE_S2_EXECUTION_ELIGIBLE"
+  ],
+  "proposedReplacementEdges": [
+    "OLD_C02_EXPIRED_WITHOUT_EXECUTION_AND_D1_MARKET1_ABSENT -> NEW_C02_S1_SCHEDULING_ELIGIBLE",
+    "NEW_C02_S1_CANONICAL_QUEUE_POSTFLIGHT_PASS -> NEW_MKT1_S1_SCHEDULING_ELIGIBLE",
+    "NEW_C02_S1_CANONICAL_QUEUE_POSTFLIGHT_PASS_AND_NEW_MKT1_S1_CANONICAL_QUEUE_POSTFLIGHT_PASS -> ATOMIC_EXECUTION_REVIEW_ELIGIBLE",
+    "BOTH_NEW_OPERATIONS_READY_UNEXPIRED_AND_EXACT_SAFE_MULTISEND_PAYLOAD_REVIEWED -> ATOMIC_EXECUTION_ELIGIBLE",
+    "ATOMIC_MARKET1_INACTIVE_CANONICAL_POSTFLIGHT_PASS -> EXISTING_DOWNSTREAM_MARKET1_INACTIVE_GATES"
+  ],
+  "executionGateStillRequires": [
+    "Base Sepolia chainId 84532 and fresh pinned reads",
+    "Safe 2/3 with current nonce and separate exact execution authorization",
+    "Old C02 stale and unexecuted; no market 1 exists; next market ID is 1",
+    "Both new operation IDs, ETAs, queue events, readiness and absence of cancellation verified",
+    "D4 four emergency flags and D6 pause remain in force",
+    "Risk, fee, oracle and economic non-drift checks from approved v3 DAG",
+    "Remote executor isolation prerequisite from approved v3 C02-S2 gate",
+    "One Safe DELEGATECALL to canonical MultiSendCallOnly with exactly two zero-value CALLs to Timelock",
+    "Independent Safe UI simulation and calldata/gas review before signatures"
+  ],
+  "canonicalPostflightRequires": [
+    "One successful Safe receipt with two ordered Timelock TransactionExecuted events",
+    "MarketCreated(1) before MarketStatusUpdated(1,false,false) in the same receipt",
+    "Market 1 exists and is INACTIVE; no other market created",
+    "Both new queue entries consumed; D4/D6 unchanged; economic state non-drift",
+    "No automatic downstream operation"
+  ],
+  "forbidden": [
+    "Execute old or new C02 alone",
+    "Execute old or new MKT1 alone",
+    "Reuse prior C02/MKT1 authorizations or Safe signatures",
+    "Treat this off-chain DAG as an on-chain predecessor or batch constraint",
+    "Release maintenance or enable economic workers by this amendment"
+  ],
+  "failureRecovery": "If either scheduling postflight or the atomic execution fails, stop. A reverted Safe batch keeps market absent and both new operations queued. Reconcile nonce, queue and market state before a separately approved retry; never execute one subcall alone.",
+  "residualRisk": "A valid Safe 2/3 can still call either Timelock executeTransaction separately. The deployed Timelock has no batch/predecessor enforcement. Policy approval must explicitly accept this governance trust boundary.",
+  "policyApproval": "REQUIRED",
+  "publicSubmissionAuthorization": false
+}
