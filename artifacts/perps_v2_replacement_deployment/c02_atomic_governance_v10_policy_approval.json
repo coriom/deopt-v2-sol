@@ -1,0 +1,64 @@
+{
+  "schema": "deopt.c02.atomic_governance_policy_approval.v10",
+  "status": "APPROVED_POLICY_ONLY_NO_PUBLIC_ACTION",
+  "chainId": 84532,
+  "network": "Base Sepolia beta only",
+  "sourceOperatorDecision": "DEOPT_ATOMIC_GOVERNANCE_V10_POLICY_APPROVAL, explicit operator message in this session",
+  "readOnlyObservationAtApproval": {
+    "blockNumber": 54403895,
+    "blockHash": "0x7ee724affcb7ce65230375a3b230b40691ea339589694ab81b652cd2b0035882",
+    "blockTimestamp": 1793802647,
+    "oldC02Queued": true,
+    "oldMkt1Queued": true,
+    "safeNonce": 43,
+    "marketCount": 0,
+    "d4FourEmergencyFlags": true,
+    "d6Paused": true,
+    "notReusableAsTransactionPreflight": true
+  },
+  "reviewCommit": "52d33c91bef21cbc7e030e00502be4da6f99b7df",
+  "approvedReview": {
+    "path": "DEOPT_ATOMIC_GOVERNANCE_FINAL_REVIEW_V10.md",
+    "sha256": "3244715ea1a8913495dffb83680644f782df4596b13154e91b43c2e8bad6fc04"
+  },
+  "approvedDagAmendment": {
+    "path": "artifacts/perps_v2_replacement_deployment/c02_atomic_governance_v10_dag_proposal.json",
+    "sha256": "394d3cb729740942bbb4b053726d24151440008ba8ba8976e53e3e25edfb5a9c",
+    "scope": "replacement C02 and MKT1 market-1 pair only; other approved v3 edges remain mandatory"
+  },
+  "conditionalPackage": {
+    "path": "artifacts/perps_v2_replacement_deployment/c02_atomic_governance_v10_conditional.json",
+    "sha256": "40bf7c13bfe839e23bd8a257a045969ad8de56f58c53a0be56c9049eca79937f",
+    "status": "CONDITIONAL_NOT_TRANSACTION_AUTHORIZATION"
+  },
+  "acceptedResidualRisk": "A valid Safe 2/3 can technically execute either Timelock operation alone; the prohibition is an off-chain governance rule, not on-chain batch enforcement.",
+  "mandatorySequence": [
+    "Wait until old C02 is stale after its inclusive 2026-11-08T12:00:00Z expiry; confirm on a fresh pinned Base Sepolia read and verify market 1 absent.",
+    "Separately review and authorize new C02 queue action; verify exact canonical queue postflight.",
+    "Separately review and authorize new MKT1 queue action; verify exact canonical queue postflight.",
+    "Wait for both new operations to be ready and unexpired; independently verify remote executor isolation and every retained v3 economic and maintenance predicate.",
+    "Separately review and authorize one Safe MultiSendCallOnly DELEGATECALL with exactly two zero-value Timelock CALLs, creation then deactivation.",
+    "Verify one canonical receipt, ordered events, market 1 final INACTIVE, both queue entries consumed, and no economic or maintenance drift."
+  ],
+  "forbidden": [
+    "Execute or cancel old C02 merely to preserve its validity",
+    "Execute old MKT1 or either replacement operation alone",
+    "Reuse old SafeTx hashes, nonces, signatures or prior operator approvals",
+    "Treat local fork approvals as genuine Safe confirmations",
+    "Apply this policy to Base mainnet or to another market",
+    "Unpause D4/D6, enable broadcasters or activate trading"
+  ],
+  "authorization": {
+    "oldC02Execution": false,
+    "oldC02Cancellation": false,
+    "oldMkt1Execution": false,
+    "replacementQueueSubmission": false,
+    "replacementAtomicExecution": false,
+    "safeSigningOrProposal": false,
+    "trading": false,
+    "blockchainTransactionByCodex": false
+  },
+  "freshPreflightRequiredBeforeEachSafeAction": true,
+  "independentOperatorAuthorizationRequiredPerSafeAction": true,
+  "publicSubmissionAuthorization": false
+}

@@ -68,7 +68,12 @@ contract PerpsV2AtomicReplacementForkTest is Test {
     bytes32 newMkt;
 
     function setUp() public {
-        vm.createSelectFork(vm.envString("RPC_URL"), FORK_BLOCK);
+        string memory rpcUrl = vm.envOr("RPC_URL", string(""));
+        if (bytes(rpcUrl).length == 0) {
+            vm.skip(true); // CI has no fork RPC; explicit fork runs still execute all tests.
+            return;
+        }
+        vm.createSelectFork(rpcUrl, FORK_BLOCK);
         assertEq(block.chainid, 84532);
         assertEq(safe.nonce(), 43);
         assertEq(d1.totalMarkets(), 0);
