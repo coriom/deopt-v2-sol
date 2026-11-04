@@ -10,6 +10,7 @@ import {IOracle} from "../../../src/oracle/IOracle.sol";
 import {IRiskModule} from "../../../src/risk/IRiskModule.sol";
 import {IMarginEngineState} from "../../../src/risk/IMarginEngineState.sol";
 import {IMarginEngineTrade} from "../../../src/matching/IMarginEngineTrade.sol";
+import {OptionMatchingEngine} from "../../../src/matching/OptionMatchingEngine.sol";
 import {MarginEngine} from "../../../src/margin/MarginEngine.sol";
 import {MarginEngineTypes} from "../../../src/margin/MarginEngineTypes.sol";
 
@@ -302,6 +303,110 @@ contract OptionSettlementFlowTest is Test {
         assertEq(vault.balances(SELLER, address(usdc)), sellerBeforeSettlement);
         assertEq(engine.positions(BUYER, callOptionId).quantity, 0);
         assertEq(engine.positions(SELLER, callOptionId).quantity, 0);
+    }
+
+    function testEuropeanPutSettlesIntrinsicForLongAndShortWithoutChangingTotalCollateral() external {
+        vm.prank(OWNER);
+        uint256 putOptionId = registry.createSeries(
+            address(weth), address(usdc), uint64(block.timestamp + 7 days), uint64(STRIKE), false, true
+        );
+        _deposit(BUYER, 10_000 * BASE_UNIT);
+        _deposit(SELLER, 10_000 * BASE_UNIT);
+
+        vm.prank(MATCHING_ENGINE);
+        engine.applyTrade(
+            IMarginEngineTrade.Trade({
+                buyer: BUYER,
+                seller: SELLER,
+                optionId: putOptionId,
+                quantity: 1,
+                price: PREMIUM_PER_CONTRACT,
+                buyerIsMaker: true
+            })
+        );
+
+        uint256 buyerBefore = vault.balances(BUYER, address(usdc));
+        uint256 sellerBefore = vault.balances(SELLER, address(usdc));
+        vm.expectRevert(MarginEngineTypes.NotExpired.selector);
+        engine.settleAccount(putOptionId, BUYER);
+
+        vm.warp(block.timestamp + 8 days);
+        vm.prank(OWNER);
+        registry.setSettlementPrice(putOptionId, 1_500 * PRICE_SCALE);
+        engine.settleAccount(putOptionId, SELLER);
+        engine.settleAccount(putOptionId, BUYER);
+
+        assertEq(vault.balances(BUYER, address(usdc)), buyerBefore + ITM_PAYOFF);
+        assertEq(vault.balances(SELLER, address(usdc)), sellerBefore - ITM_PAYOFF);
+        assertEq(engine.positions(BUYER, putOptionId).quantity, 0);
+        assertEq(engine.positions(SELLER, putOptionId).quantity, 0);
+        assertEq(engine.seriesCollected(putOptionId), ITM_PAYOFF);
+        assertEq(engine.seriesPaid(putOptionId), ITM_PAYOFF);
+        assertEq(engine.seriesBadDebt(putOptionId), 0);
+        assertEq(
+            vault.balances(BUYER, address(usdc)) + vault.balances(SELLER, address(usdc)), buyerBefore + sellerBefore
+        );
+    }
+
+    function testSignedCallTradeThroughMatchingEngineThenExpirySettlement() external {
+        uint256 buyerPk = 0xB0B;
+        uint256 sellerPk = 0xCA11;
+        address signedBuyer = vm.addr(buyerPk);
+        address signedSeller = vm.addr(sellerPk);
+        OptionMatchingEngine signedEngine = new OptionMatchingEngine(OWNER, address(engine), address(registry));
+
+        vm.prank(OWNER);
+        engine.setMatchingEngine(address(signedEngine));
+        riskModule.setEquityBase(signedBuyer, HEALTHY_EQUITY);
+        riskModule.setEquityBase(signedSeller, HEALTHY_EQUITY);
+        _deposit(signedBuyer, 10_000 * BASE_UNIT);
+        _deposit(signedSeller, 10_000 * BASE_UNIT);
+        uint256 buyerStart = vault.balances(signedBuyer, address(usdc));
+        uint256 sellerStart = vault.balances(signedSeller, address(usdc));
+
+        OptionMatchingEngine.OptionTrade memory trade = OptionMatchingEngine.OptionTrade({
+            intentId: keccak256("options-beta-signed-call"),
+            buyer: signedBuyer,
+            seller: signedSeller,
+            optionId: callOptionId,
+            underlying: address(weth),
+            settlementAsset: address(usdc),
+            expiry: uint64(block.timestamp + 7 days),
+            strike1e8: uint64(STRIKE),
+            isCall: true,
+            contractSize1e8: uint128(PRICE_SCALE),
+            quantity: 1,
+            premiumPerContract: PREMIUM_PER_CONTRACT,
+            buyerIsMaker: true,
+            buyerNonce: 0,
+            sellerNonce: 0,
+            deadline: block.timestamp + 1 hours
+        });
+        bytes32 digest = signedEngine.hashTrade(trade);
+        (uint8 buyerV, bytes32 buyerR, bytes32 buyerS) = vm.sign(buyerPk, digest);
+        (uint8 sellerV, bytes32 sellerR, bytes32 sellerS) = vm.sign(sellerPk, digest);
+        bytes memory buyerSig = abi.encodePacked(buyerR, buyerS, buyerV);
+        bytes memory sellerSig = abi.encodePacked(sellerR, sellerS, sellerV);
+
+        vm.prank(OWNER);
+        signedEngine.executeTrade(trade, buyerSig, sellerSig);
+        assertEq(signedEngine.nonces(signedBuyer), 1);
+        assertEq(signedEngine.nonces(signedSeller), 1);
+        assertEq(engine.positions(signedBuyer, callOptionId).quantity, 1);
+        assertEq(engine.positions(signedSeller, callOptionId).quantity, -1);
+
+        vm.prank(OWNER);
+        vm.expectRevert(OptionMatchingEngine.BadNonce.selector);
+        signedEngine.executeTrade(trade, buyerSig, sellerSig);
+
+        _expireAndSettlePrice(ITM_SETTLEMENT_PRICE);
+        engine.settleAccount(callOptionId, signedSeller);
+        engine.settleAccount(callOptionId, signedBuyer);
+        assertEq(vault.balances(signedBuyer, address(usdc)), buyerStart - PREMIUM_PER_CONTRACT + ITM_PAYOFF);
+        assertEq(vault.balances(signedSeller, address(usdc)), sellerStart + PREMIUM_PER_CONTRACT - ITM_PAYOFF);
+        assertEq(engine.positions(signedBuyer, callOptionId).quantity, 0);
+        assertEq(engine.positions(signedSeller, callOptionId).quantity, 0);
+        assertEq(engine.seriesBadDebt(callOptionId), 0);
     }
 
     function testSettledAccountCannotSettleSameExpiredOptionTwice() external {
