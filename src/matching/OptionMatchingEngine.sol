@@ -6,8 +6,14 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 import {OptionProductRegistry} from "../OptionProductRegistry.sol";
+import {IOracle} from "../oracle/IOracle.sol";
 import {IMarginEngineTrade} from "./IMarginEngineTrade.sol";
 import {IMarginEngineRfqTrade} from "./IMarginEngineRfqTrade.sol";
+
+interface IOptionTradeOraclePolicy {
+    function oracle() external view returns (address);
+    function liquidationOracleMaxDelay() external view returns (uint32);
+}
 
 /// @title OptionMatchingEngine
 /// @notice Dedicated option execution ingress for signed on-chain option intents.
@@ -81,6 +87,8 @@ contract OptionMatchingEngine is ReentrancyGuard, EIP712 {
     error UnknownOptionId();
     error SeriesInactive();
     error SeriesMetadataMismatch();
+    error TradeOracleUnavailable();
+    error TradeOracleStale();
 
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
@@ -556,6 +564,23 @@ contract OptionMatchingEngine is ReentrancyGuard, EIP712 {
         if (address(marginEngine) == address(0)) revert EngineNotSet();
     }
 
+    /// @dev RiskModule's oracle-down fallback protects existing positions;
+    /// it must not authorize a fresh signed trade with an unknown spot price.
+    /// Reuse MarginEngine's configured oracle and freshness limit so RFQ and
+    /// orderbook execution obey the same policy.
+    function _requireFreshTradeOracle(address underlying, address settlementAsset) internal view {
+        IOptionTradeOraclePolicy policy = IOptionTradeOraclePolicy(address(marginEngine));
+        uint32 maxDelay = policy.liquidationOracleMaxDelay();
+        if (maxDelay == 0) revert TradeOracleStale();
+        address oracleAddress = policy.oracle();
+        if (oracleAddress == address(0)) revert TradeOracleUnavailable();
+        (uint256 price, uint256 updatedAt) = IOracle(oracleAddress).getPrice(underlying, settlementAsset);
+        if (price == 0) revert TradeOracleUnavailable();
+        if (updatedAt == 0 || updatedAt > block.timestamp || block.timestamp - updatedAt > maxDelay) {
+            revert TradeOracleStale();
+        }
+    }
+
     /*//////////////////////////////////////////////////////////////
                                 EXECUTION
     //////////////////////////////////////////////////////////////*/
@@ -568,6 +593,7 @@ contract OptionMatchingEngine is ReentrancyGuard, EIP712 {
     {
         _requireEngineSet();
         _validate(t);
+        _requireFreshTradeOracle(t.underlying, t.settlementAsset);
 
         bytes32 digest = hashTrade(t);
 
@@ -610,6 +636,7 @@ contract OptionMatchingEngine is ReentrancyGuard, EIP712 {
     {
         _requireEngineSet();
         _validateRfq(t);
+        _requireFreshTradeOracle(t.underlying, t.settlementAsset);
 
         bytes32 digest = hashRfqTrade(t);
 
