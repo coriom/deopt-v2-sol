@@ -7,6 +7,7 @@ import {OptionProductRegistry} from "../src/OptionProductRegistry.sol";
 import {RiskModule} from "../src/risk/RiskModule.sol";
 import {MarginEngine} from "../src/margin/MarginEngine.sol";
 import {OptionMatchingEngine} from "../src/matching/OptionMatchingEngine.sol";
+import {FeesManagerV2} from "../src/fees/FeesManagerV2.sol";
 import {
     ScenarioOptionERC20,
     ScenarioOptionOracle,
@@ -40,6 +41,7 @@ contract OptionsLocalAnvilE2E is Script {
         ScenarioOptionERC20 weth = new ScenarioOptionERC20("Mock WETH", "mWETH", 18);
         RiskModule risk = new RiskModule(owner, address(vault), address(registry), address(engine), address(oracle));
         OptionMatchingEngine matching = new OptionMatchingEngine(owner, address(engine), address(registry));
+        FeesManagerV2 feesManagerV2 = new FeesManagerV2(owner, owner);
 
         vault.setCollateralToken(address(usdc), true, 6, 10_000);
         vault.setMarginEngine(address(engine));
@@ -72,6 +74,10 @@ contract OptionsLocalAnvilE2E is Script {
         engine.setMatchingEngine(address(matching));
         engine.setInsuranceFund(address(insurance));
         matching.setExecutor(owner, true);
+        feesManagerV2.setRebateFundingAccount(owner);
+        feesManagerV2.setFeeConsumer(address(engine), true);
+        engine.setFeesManagerV2(address(feesManagerV2));
+        engine.setUseFeesManagerV2(true);
         uint64 expiry = uint64(block.timestamp + 7 days);
         uint256 optionId = registry.createSeries(address(weth), address(usdc), expiry, uint64(STRIKE), true, true);
         oracle.setPrice(address(weth), address(usdc), STRIKE, block.timestamp, true);
@@ -98,6 +104,7 @@ contract OptionsLocalAnvilE2E is Script {
         console2.log("SELLER", seller);
         console2.log("REGISTRY", address(registry));
         console2.log("VAULT", address(vault));
+        console2.log("FEES_MANAGER_V2", address(feesManagerV2));
         if (vm.envOr("OPTIONS_V4_DEPLOY_ONLY", false)) return;
 
         OptionMatchingEngine.OptionTrade memory trade = OptionMatchingEngine.OptionTrade({

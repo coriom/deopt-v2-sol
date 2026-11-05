@@ -6,6 +6,36 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import {CollateralVault} from "../../../src/collateral/CollateralVault.sol";
 import {CollateralVaultStorage} from "../../../src/collateral/CollateralVaultStorage.sol";
+import {IRiskModule} from "../../../src/risk/IRiskModule.sol";
+
+contract VaultWithdrawalRiskMock {
+    function previewWithdrawImpact(address, address, uint256 amount)
+        external
+        pure
+        returns (IRiskModule.WithdrawPreview memory preview)
+    {
+        preview.requestedAmount = amount;
+        preview.maxWithdrawable = type(uint256).max;
+        preview.marginRatioBeforeBps = type(uint256).max;
+        preview.marginRatioAfterBps = type(uint256).max;
+    }
+}
+
+contract VaultWithdrawalEngineMock {
+    address public immutable riskModule;
+
+    constructor(address riskModule_) {
+        riskModule = riskModule_;
+    }
+
+    function liquidationThresholdBps() external pure returns (uint256) {
+        return 10_050;
+    }
+
+    function getTraderSeries(address) external pure returns (uint256[] memory) {
+        return new uint256[](0);
+    }
+}
 
 contract MockERC20Decimals is ERC20 {
     uint8 private immutable _DECIMALS;
@@ -36,18 +66,23 @@ contract CollateralVaultTest is Test {
     CollateralVault internal vault;
     MockERC20Decimals internal usdc;
     MockERC20Decimals internal unsupported;
+    VaultWithdrawalEngineMock internal withdrawalEngine;
 
     function setUp() external {
         vault = new CollateralVault(OWNER);
 
         usdc = new MockERC20Decimals("Mock USDC", "mUSDC", 6);
         unsupported = new MockERC20Decimals("Mock Unsupported", "mUNSUP", 18);
+        withdrawalEngine = new VaultWithdrawalEngineMock(address(new VaultWithdrawalRiskMock()));
 
         vm.prank(OWNER);
         vault.setCollateralToken(address(usdc), true, 6, 10_000);
 
         vm.prank(OWNER);
-        vault.setMarginEngine(ENGINE);
+        vault.setMarginEngine(address(withdrawalEngine));
+
+        vm.prank(OWNER);
+        vault.setAuthorizedEngine(ENGINE, true);
 
         usdc.mint(ALICE, 1_000e6);
         usdc.mint(BOB, 1_000e6);

@@ -493,6 +493,45 @@ contract OptionSettlementFlowTest is Test {
         engine.settleAccount(callOptionId, BUYER);
     }
 
+    function testOracleOutageBlocksWithdrawalUntilGovernedSettlement() external {
+        _deposit(BUYER, 10_000 * BASE_UNIT);
+        _deposit(SELLER, 10_000 * BASE_UNIT);
+        _trade(BUYER, SELLER, 1);
+        uint256 beforeBalance = vault.balances(SELLER, address(usdc));
+
+        oracle.setPrice(address(weth), address(usdc), 0, block.timestamp, false);
+        OptionMatchingEngine cancellationGateway = new OptionMatchingEngine(OWNER, address(engine), address(registry));
+        vm.prank(SELLER);
+        cancellationGateway.cancelNextNonce();
+        assertEq(cancellationGateway.nonces(SELLER), 1);
+        vm.prank(SELLER);
+        vm.expectRevert(MarginEngineTypes.VaultWithdrawForNotSupported.selector);
+        engine.withdrawCollateral(address(usdc), BASE_UNIT);
+        assertEq(vault.balances(SELLER, address(usdc)), beforeBalance);
+
+        vm.prank(SELLER);
+        vm.expectRevert(abi.encodeWithSignature("WithdrawRiskCheckFailed()"));
+        vault.withdraw(address(usdc), BASE_UNIT);
+        assertEq(vault.balances(SELLER, address(usdc)), beforeBalance);
+
+        oracle.setPrice(address(weth), address(usdc), STRIKE, block.timestamp, true);
+        vm.prank(SELLER);
+        vault.withdraw(address(usdc), BASE_UNIT);
+        assertEq(vault.balances(SELLER, address(usdc)), beforeBalance - BASE_UNIT);
+        oracle.setPrice(address(weth), address(usdc), 0, block.timestamp, false);
+
+        vm.warp(uint256(registry.getSeries(callOptionId).expiry) + 1);
+        vm.expectRevert(MarginEngineTypes.SettlementNotSet.selector);
+        engine.settleAccount(callOptionId, SELLER);
+
+        vm.prank(OWNER);
+        registry.setSettlementPrice(callOptionId, ITM_SETTLEMENT_PRICE);
+        engine.settleAccount(callOptionId, SELLER);
+        engine.settleAccount(callOptionId, BUYER);
+        assertEq(engine.positions(SELLER, callOptionId).quantity, 0);
+        assertEq(engine.positions(BUYER, callOptionId).quantity, 0);
+    }
+
     function testPremiumAndPayoffAccountingRemainCoherentThroughFullFlow() external {
         _deposit(BUYER, 10_000 * BASE_UNIT);
         _deposit(SELLER, 10_000 * BASE_UNIT);

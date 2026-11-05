@@ -5,9 +5,48 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./CollateralVaultAdmin.sol";
+import {OptionProductRegistry} from "../OptionProductRegistry.sol";
+import {IOracle} from "../oracle/IOracle.sol";
+
+interface IOptionMarginWithdrawalView {
+    function getTraderSeries(address trader) external view returns (uint256[] memory);
+    function optionRegistry() external view returns (address);
+    function oracle() external view returns (address);
+    function riskModule() external view returns (address);
+    function liquidationOracleMaxDelay() external view returns (uint32);
+    function liquidationThresholdBps() external view returns (uint256);
+}
 
 abstract contract CollateralVaultYield is CollateralVaultAdmin {
     using SafeERC20 for IERC20;
+
+    function _requireOptionWithdrawalSafe(address user, address token, uint256 amount) internal view {
+        if (marginEngine == address(0)) return;
+        IOptionMarginWithdrawalView engine = IOptionMarginWithdrawalView(marginEngine);
+        address riskAddress = engine.riskModule();
+        if (riskAddress == address(0)) revert WithdrawRiskCheckFailed();
+        IRiskModule.WithdrawPreview memory preview = IRiskModule(riskAddress).previewWithdrawImpact(user, token, amount);
+        if (amount > preview.maxWithdrawable || preview.marginRatioAfterBps < engine.liquidationThresholdBps()) {
+            revert WithdrawRiskCheckFailed();
+        }
+
+        uint256[] memory seriesIds = engine.getTraderSeries(user);
+        if (seriesIds.length == 0) return;
+        uint32 maxDelay = engine.liquidationOracleMaxDelay();
+        if (maxDelay == 0) revert WithdrawRiskCheckFailed();
+        address oracleAddress = engine.oracle();
+        if (oracleAddress == address(0)) revert WithdrawRiskCheckFailed();
+        OptionProductRegistry registry = OptionProductRegistry(engine.optionRegistry());
+        for (uint256 i = 0; i < seriesIds.length; i++) {
+            OptionProductRegistry.OptionSeries memory series = registry.getSeries(seriesIds[i]);
+            (uint256 price, uint256 updatedAt, bool ok) =
+                IOracle(oracleAddress).getPriceSafe(series.underlying, series.settlementAsset);
+            if (
+                !ok || price == 0 || updatedAt == 0 || updatedAt > block.timestamp
+                    || block.timestamp - updatedAt > maxDelay
+            ) revert WithdrawRiskCheckFailed();
+        }
+    }
 
     /*//////////////////////////////////////////////////////////////
                         INTERNAL PREVIEW HELPERS
@@ -135,6 +174,10 @@ abstract contract CollateralVaultYield is CollateralVaultAdmin {
 
         uint256 bal = balances[user][token];
         if (bal < amount) revert InsufficientBalance();
+
+        // Direct vault.withdraw and engine-mediated withdrawFor obey the
+        // same margin and oracle gate, even if vault.riskModule is unset.
+        _requireOptionWithdrawalSafe(user, token, amount);
 
         {
             (uint256 maxAllowed, bool ok) = _getWithdrawableAmountBestEffort(user, token);
