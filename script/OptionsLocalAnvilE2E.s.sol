@@ -22,7 +22,10 @@ contract OptionsLocalAnvilE2E is Script {
     uint128 internal constant PREMIUM = 100 * 1e6;
 
     function run() external {
-        require(block.chainid == 31337, "local Anvil only");
+        require(block.chainid == 31337 || block.chainid == 84532, "local Anvil chain only");
+        // Base Sepolia's chain ID is allowed only when the RPC proves it is
+        // Anvil. A public Base Sepolia endpoint cannot answer this method.
+        require(vm.rpc("anvil_nodeInfo", "[]").length != 0, "Anvil RPC required");
         address owner = vm.addr(OWNER_PK);
         address buyer = vm.addr(BUYER_PK);
         address seller = vm.addr(SELLER_PK);
@@ -88,6 +91,15 @@ contract OptionsLocalAnvilE2E is Script {
         vault.deposit(address(usdc), 10_000 * 1e6);
         vm.stopBroadcast();
 
+        console2.log("MATCHING_ENGINE", address(matching));
+        console2.log("MARGIN_ENGINE", address(engine));
+        console2.log("OPTION_ID", optionId);
+        console2.log("BUYER", buyer);
+        console2.log("SELLER", seller);
+        console2.log("REGISTRY", address(registry));
+        console2.log("VAULT", address(vault));
+        if (vm.envOr("OPTIONS_V4_DEPLOY_ONLY", false)) return;
+
         OptionMatchingEngine.OptionTrade memory trade = OptionMatchingEngine.OptionTrade({
             intentId: keccak256("deopt-local-anvil-e2e-v4"),
             buyer: buyer,
@@ -115,12 +127,5 @@ contract OptionsLocalAnvilE2E is Script {
 
         require(engine.positions(buyer, optionId).quantity == 1, "buyer position");
         require(engine.positions(seller, optionId).quantity == -1, "seller position");
-        console2.log("MATCHING_ENGINE", address(matching));
-        console2.log("MARGIN_ENGINE", address(engine));
-        console2.log("OPTION_ID", optionId);
-        console2.log("BUYER", buyer);
-        console2.log("SELLER", seller);
-        console2.log("REGISTRY", address(registry));
-        console2.log("VAULT", address(vault));
     }
 }
