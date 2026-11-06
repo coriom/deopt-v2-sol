@@ -31,9 +31,9 @@ interface IHistoricalPyth {
     ) external payable returns (PriceFeed[] memory);
 }
 
-/// @notice Prototype owner for a Registry with no pre-existing series. No
-///         general-purpose call or ownership escape is exposed: once accepted,
-///         only a bounded oracle proof can set a settlement price.
+/// @notice Prototype Registry owner. Pre-existing series retain a narrowly
+///         scoped Timelock settlement path; prospective series require an
+///         oracle proof. No general-purpose ownership escape is exposed.
 /// @dev Its policy parameters are immutable and require separate approval.
 contract VerifiedOptionSettlementOwner {
     error NotTimelock();
@@ -42,7 +42,8 @@ contract VerifiedOptionSettlementOwner {
     error UnsafeRegistryState();
     error UnsupportedSeries();
     error LegacySeriesRestricted();
-    error LegacySeriesPresent();
+    error TooManyLegacySeries();
+    error UnresolvedDivergence();
     error InvalidRoundProof();
     error InvalidPriceProof();
     error ProposalExists();
@@ -88,6 +89,7 @@ contract VerifiedOptionSettlementOwner {
     mapping(address => bytes32) public pythPriceId;
     mapping(uint256 => Proposal) public proposals;
     mapping(uint256 => bool) public settlementEligible;
+    mapping(uint256 => bool) public legacySeries;
 
     event PriceProposed(uint256 indexed optionId, uint256 price1e8, uint80 beforeRound, uint80 afterRound);
     event PriceDisputed(uint256 indexed optionId, uint256 pythPrice1e8);
@@ -95,6 +97,7 @@ contract VerifiedOptionSettlementOwner {
     event PriceResolved(uint256 indexed optionId, uint256 price1e8, bool pythSelected);
     event PriceFinalized(uint256 indexed optionId, uint256 price1e8);
     event ControlledSeriesCreated(uint256 indexed optionId, address indexed underlying);
+    event LegacyPriceFinalized(uint256 indexed optionId, uint256 price1e8);
 
     constructor(
         address registry_,
@@ -162,9 +165,15 @@ contract VerifiedOptionSettlementOwner {
                 || registry.settlementOperator() != address(0) || registry.settlementFinalityDelay() != 0
                 || !registry.settlementPaused() || !registry.creationPaused()
         ) revert UnsafeRegistryState();
-        // The legacy Registry still has open positions. Taking ownership
-        // without a separately approved settlement path would strand them.
-        if (registry.getAllOptionIds().length != 0) revert LegacySeriesPresent();
+        // Snapshot historical IDs while creation is paused. Only those IDs
+        // retain their previous Timelock-governed price-setting path.
+        uint256[] memory existing = registry.getAllOptionIds();
+        if (existing.length > 32) revert TooManyLegacySeries();
+        for (uint256 i; i < existing.length; ++i) {
+            (,, bool pending) = registry.getSettlementProposal(existing[i]);
+            if (pending) revert UnsafeRegistryState();
+            legacySeries[existing[i]] = true;
+        }
         registry.acceptOwnership();
         if (registry.owner() != address(this)) revert UnsafeRegistryState();
         // The historical guardian can clear pauses via setEmergencyModes.
@@ -180,6 +189,19 @@ contract VerifiedOptionSettlementOwner {
 
     function emergencyPauseAll() external onlyEmergencyGuardian sameChain {
         registry.pause();
+    }
+
+    /// @notice Preserve the historical Timelock price power for the exact
+    ///         series that existed before ownership transfer. This path is
+    ///         deliberately unavailable to every prospective series.
+    function finalizeLegacyPrice(uint256 optionId, uint256 price1e8) external onlyTimelock sameChain {
+        if (!legacySeries[optionId] || settlementEligible[optionId]) revert LegacySeriesRestricted();
+        if (
+            registry.owner() != address(this) || registry.settlementOperator() != address(0)
+                || registry.settlementFinalityDelay() != 0
+        ) revert UnsafeRegistryState();
+        registry.setSettlementPrice(optionId, price1e8);
+        emit LegacyPriceFinalized(optionId, price1e8);
     }
 
     /// @notice Create only a prospective, inactive European Call. Existing
@@ -345,9 +367,8 @@ contract VerifiedOptionSettlementOwner {
         Proposal storage proposal = proposals[optionId];
         if (proposal.state == SettlementState.PRICE_UNAVAILABLE) revert NoProposal();
         if (block.timestamp < uint256(proposal.proposedAt) + challengePeriod) revert ChallengeOpen();
-        if (proposal.state != SettlementState.PRICE_PROPOSED && proposal.state != SettlementState.CHALLENGED) {
-            revert InvalidState();
-        }
+        if (proposal.state == SettlementState.CHALLENGED) revert UnresolvedDivergence();
+        if (proposal.state != SettlementState.PRICE_PROPOSED) revert InvalidState();
         bool pythSelected = proposal.chainlinkPrice1e8 == 0;
         proposal.selectedPrice1e8 = pythSelected ? proposal.pythPrice1e8 : proposal.chainlinkPrice1e8;
         proposal.state = SettlementState.RESOLVED;

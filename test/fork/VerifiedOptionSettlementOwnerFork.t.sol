@@ -46,7 +46,7 @@ contract VerifiedOptionSettlementOwnerForkTest is Test {
     bytes32 internal constant BTC_ID = 0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43;
     uint256 internal constant ETH_CALL = 24145907678156652148089862289363692212069910767044828147380657249455352740183;
 
-    function testLegacyRegistryOwnershipIsBlockedAndCollateralUnchanged() public {
+    function testLegacyPricePathIsIsolatedAndCollateralUnchanged() public {
         vm.createSelectFork(vm.envString("RPC_URL"), 55_041_332);
         OptionProductRegistry registry = OptionProductRegistry(REGISTRY);
         CollateralVault vault = CollateralVault(VAULT);
@@ -84,10 +84,50 @@ contract VerifiedOptionSettlementOwnerForkTest is Test {
         vm.prank(TIMELOCK); // fork-only impersonation, not a Safe signature
         registry.transferOwnership(address(verifier));
         vm.prank(TIMELOCK);
-        vm.expectRevert(VerifiedOptionSettlementOwner.LegacySeriesPresent.selector);
         verifier.acceptRegistryOwnership();
-        assertEq(registry.owner(), TIMELOCK);
-        assertEq(registry.pendingOwner(), address(verifier));
+        assertEq(registry.owner(), address(verifier));
+        uint256[] memory historicalIds = registry.getAllOptionIds();
+        assertEq(historicalIds.length, 2);
+        for (uint256 i; i < historicalIds.length; ++i) {
+            assertTrue(verifier.legacySeries(historicalIds[i]));
+            assertFalse(verifier.settlementEligible(historicalIds[i]));
+        }
+        assertTrue(verifier.legacySeries(ETH_CALL));
+        assertFalse(verifier.settlementEligible(ETH_CALL));
+        vm.prank(TIMELOCK);
+        uint256 newSeries = verifier.createInactiveCallSeries(ETH, uint64(block.timestamp + 30 days), 3_000e8);
+        assertTrue(verifier.settlementEligible(newSeries));
+        assertFalse(verifier.legacySeries(newSeries));
+        assertFalse(registry.getSeries(newSeries).isActive);
+        (ok, data) = ENGINE.staticcall(abi.encodeWithSignature("optionRegistry()"));
+        require(ok, "engine registry unreadable");
+        assertEq(abi.decode(data, (address)), REGISTRY);
+        (ok, data) = ENGINE.staticcall(abi.encodeWithSignature("matchingEngine()"));
+        require(ok, "matching engine unreadable");
+        address matching = abi.decode(data, (address));
+        (ok, data) = matching.staticcall(abi.encodeWithSignature("optionRegistry()"));
+        require(ok, "matching registry unreadable");
+        assertEq(abi.decode(data, (address)), REGISTRY);
+        vm.prank(TIMELOCK);
+        vm.expectRevert(VerifiedOptionSettlementOwner.LegacySeriesRestricted.selector);
+        verifier.finalizeLegacyPrice(newSeries, 1e8);
+        vm.prank(TIMELOCK);
+        verifier.executeRegistryAdmin(abi.encodeCall(registry.unpauseSettlement, ()));
+        vm.warp(registry.getSeries(ETH_CALL).expiry);
+        vm.prank(TIMELOCK);
+        vm.expectRevert(OptionProductRegistry.NotAuthorized.selector);
+        registry.setSettlementPrice(ETH_CALL, 1e8);
+        vm.prank(address(0xBAD));
+        vm.expectRevert(VerifiedOptionSettlementOwner.NotTimelock.selector);
+        verifier.finalizeLegacyPrice(ETH_CALL, 1e8);
+        vm.prank(TIMELOCK);
+        verifier.finalizeLegacyPrice(ETH_CALL, 1e8);
+        (uint256 historicalPrice, bool historicalFinalized) = registry.getSettlementInfo(ETH_CALL);
+        assertTrue(historicalFinalized);
+        assertEq(historicalPrice, 1e8);
+        vm.prank(TIMELOCK);
+        vm.expectRevert(OptionProductRegistry.SettlementAlreadySet.selector);
+        verifier.finalizeLegacyPrice(ETH_CALL, 2e8);
         assertEq(vault.totalDepositedByToken(TOKEN), accountingBefore);
         assertEq(IERC20(TOKEN).balanceOf(VAULT), assetsBefore);
         (ok, data) = ENGINE.staticcall(abi.encodeWithSignature("seriesShortOpenInterest(uint256)", ETH_CALL));
@@ -241,7 +281,7 @@ contract VerifiedOptionSettlementOwnerForkTest is Test {
         assertEq(price, 223_785_865_763);
     }
 
-    function testAuthenticPythCoreDisputeResolvesSeriesOnFork() public {
+    function testAuthenticPythCoreDisputeBlocksFinalizationOnFork() public {
         vm.createSelectFork(vm.envString("RPC_URL"), 55_064_571);
         uint64 expiry = 1_793_934_781;
         bytes memory signedUpdate = vm.parseBytes(vm.readFile("test/fixtures/options_v9_pyth_core_eth_payload.hex"));
@@ -290,13 +330,13 @@ contract VerifiedOptionSettlementOwnerForkTest is Test {
         (,,,,,, VerifiedOptionSettlementOwner.SettlementState disputed) = verifier.proposals(series);
         assertEq(uint256(disputed), uint256(VerifiedOptionSettlementOwner.SettlementState.CHALLENGED));
         vm.warp(block.timestamp + 2 days);
-        uint256 settleGasStart = gasleft();
+        vm.expectRevert(VerifiedOptionSettlementOwner.UnresolvedDivergence.selector);
         verifier.resolve(series);
-        verifier.finalize(series);
-        emit log_named_uint("RESOLVE_AND_FINALIZE_GAS", settleGasStart - gasleft());
         (uint256 price, bool finalized) = localRegistry.getSettlementInfo(series);
-        assertTrue(finalized);
-        assertEq(price, 2000e8);
+        assertFalse(finalized);
+        assertEq(price, 0);
+        vm.expectRevert(VerifiedOptionSettlementOwner.UnresolvedDivergence.selector);
+        verifier.resolve(series);
         vm.expectRevert(VerifiedOptionSettlementOwner.InvalidState.selector);
         verifier.finalize(series);
     }

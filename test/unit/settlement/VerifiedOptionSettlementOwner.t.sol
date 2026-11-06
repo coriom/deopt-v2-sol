@@ -202,7 +202,7 @@ contract VerifiedOptionSettlementOwnerTest is Test {
         verifier.propose(optionId, 101, 102);
     }
 
-    function testPythStubDivergenceDoesNotOverridePrimaryOrResetDeadline() public {
+    function testPythStubDivergenceBlocksFinalizationWithoutDeadlineReset() public {
         verifier.propose(optionId, 101, 102);
         bytes[] memory updateData = new bytes[](1);
         updateData[0] = hex"aa";
@@ -218,17 +218,19 @@ contract VerifiedOptionSettlementOwnerTest is Test {
         vm.expectRevert(VerifiedOptionSettlementOwner.ProposalExists.selector);
         verifier.propose(optionId, 101, 102);
         vm.warp(block.timestamp + 2 days);
+        vm.expectRevert(VerifiedOptionSettlementOwner.UnresolvedDivergence.selector);
         verifier.resolve(optionId);
-        vm.expectRevert(VerifiedOptionSettlementOwner.InvalidState.selector);
+        vm.warp(block.timestamp + 365 days);
+        vm.expectRevert(VerifiedOptionSettlementOwner.UnresolvedDivergence.selector);
         verifier.resolve(optionId);
         vm.expectRevert(VerifiedOptionSettlementOwner.InvalidState.selector);
         verifier.challengeWithPyth(optionId, updateData);
-        verifier.finalize(optionId);
-        (uint256 price, bool finalized) = registry.getSettlementInfo(optionId);
-        assertTrue(finalized);
-        assertEq(price, 3000e8);
         vm.expectRevert(VerifiedOptionSettlementOwner.InvalidState.selector);
         verifier.finalize(optionId);
+        (, bool finalized) = registry.getSettlementInfo(optionId);
+        assertFalse(finalized);
+        vm.expectRevert(VerifiedOptionSettlementOwner.LegacySeriesRestricted.selector);
+        verifier.finalizeLegacyPrice(optionId, 1);
     }
 
     function testUnavailableHistoryAndAdministrativeCompatibility() public {
