@@ -1,5 +1,7 @@
 # DEOPT_OPTIONS_DEPLOYMENT_FINAL_PACKAGE_V15
 
+Mise à jour multi-Registry : voir `DEOPT_OPTIONS_DUAL_REGISTRY_E2E_V16.md` pour le banc simultané et ses limites. Les constats V15 ci-dessous restent l'état du paquet initial.
+
 État : paquet local de préparation, **aucune transaction Base Sepolia émise**. Les valeurs économiques de la première ETH Call ci-dessous sont des propositions. La politique de règlement n'est approuvée que pour la bêta fermée testnet.
 
 ## Déploiement

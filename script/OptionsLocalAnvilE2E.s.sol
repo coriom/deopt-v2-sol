@@ -74,6 +74,8 @@ contract OptionsLocalAnvilE2E is Script {
         address seller = vm.addr(SELLER_PK);
         bool verifiedSettlement = vm.envOr("OPTIONS_V13_VERIFIED_SETTLEMENT", false);
         bool v14Router = vm.envOr("OPTIONS_V14_ROUTER", false);
+        bool dualRegistry = vm.envOr("OPTIONS_V16_DUAL_REGISTRY", false);
+        require(!dualRegistry || verifiedSettlement, "dual Registry requires dedicated verified stack");
         require(!v14Router || verifiedSettlement, "V14 router requires verified settlement");
 
         vm.startBroadcast(OWNER_PK);
@@ -100,6 +102,11 @@ contract OptionsLocalAnvilE2E is Script {
         RiskModule risk = new RiskModule(owner, address(vault), address(registry), address(engine), riskOracle);
         OptionMatchingEngine matching = new OptionMatchingEngine(owner, address(engine), address(registry));
         FeesManagerV2 feesManagerV2 = new FeesManagerV2(owner, owner);
+        CollateralVault legacyVault;
+        OptionProductRegistry legacyRegistry;
+        MarginEngine legacyEngine;
+        OptionMatchingEngine legacyMatching;
+        FeesManagerV2 legacyFees;
 
         vault.setCollateralToken(address(usdc), true, 6, 10_000);
         vault.setMarginEngine(address(engine));
@@ -182,21 +189,89 @@ contract OptionsLocalAnvilE2E is Script {
         } else {
             oracle.setPrice(address(weth), address(usdc), STRIKE, block.timestamp, true);
         }
-        usdc.mint(buyer, 10_000 * 1e6);
-        usdc.mint(seller, 10_000 * 1e6);
+        if (dualRegistry) {
+            // Candidate closed-beta limits; effective only in this local run.
+            vault.setTokenDepositCap(address(usdc), 2_000 * 1e6);
+            engine.setSeriesShortOpenInterestCap(optionId, 1);
+            // Separate local legacy stack with the same assets, expiry and
+            // raw optionId. Its vault and economic obligations remain distinct.
+            legacyVault = new CollateralVault(owner);
+            legacyRegistry = new OptionProductRegistry(owner);
+            ScenarioOptionOracle legacyOracle = new ScenarioOptionOracle();
+            legacyEngine = new MarginEngine(owner, address(legacyRegistry), address(legacyVault), address(legacyOracle));
+            RiskModule legacyRisk = new RiskModule(owner, address(legacyVault), address(legacyRegistry), address(legacyEngine), address(legacyOracle));
+            legacyMatching = new OptionMatchingEngine(owner, address(legacyEngine), address(legacyRegistry));
+            legacyFees = new FeesManagerV2(owner, owner);
+            legacyVault.setCollateralToken(address(usdc), true, 6, 10_000);
+            legacyVault.setMarginEngine(address(legacyEngine));
+            legacyVault.setRiskModule(address(legacyRisk));
+            legacyRegistry.setSettlementAssetAllowed(address(usdc), true);
+            legacyRegistry.setUnderlyingConfig(address(weth), OptionProductRegistry.UnderlyingConfig({
+                oracle: address(legacyOracle), spotShockDownBps: 3_000, spotShockUpBps: 3_000,
+                volShockDownBps: 0, volShockUpBps: 2_000, isEnabled: true
+            }));
+            legacyRegistry.setOptionRiskConfig(address(weth), OptionProductRegistry.OptionRiskConfig({
+                baseMaintenanceMarginPerContract: 10 * 1e6, imFactorBps: 12_000,
+                oracleDownMmMultiplierBps: 20_000, isConfigured: true
+            }));
+            legacyRisk.setRiskParams(address(usdc), 10 * 1e6, 12_000);
+            legacyRisk.syncCollateralTokensFromVault();
+            legacyEngine.setRiskModule(address(legacyRisk));
+            legacyEngine.syncRiskParamsFromRiskModule();
+            legacyEngine.setMatchingEngine(address(legacyMatching));
+            legacyMatching.setExecutor(owner, true);
+            legacyFees.setFeeConsumer(address(legacyEngine), true);
+            legacyEngine.setFeesManagerV2(address(legacyFees));
+            legacyEngine.setUseFeesManagerV2(true);
+            legacyOracle.setPrice(address(weth), address(usdc), STRIKE, block.timestamp, true);
+            uint256 legacyOptionId = legacyRegistry.createSeries(address(weth), address(usdc), expiry, uint64(STRIKE), true, true);
+            require(legacyOptionId == optionId, "raw optionId collision required");
+            require(address(legacyVault) != address(vault), "Vault isolation required");
+            require(address(legacyRegistry) != address(registry), "Registry isolation required");
+        }
+        usdc.mint(buyer, uint256(dualRegistry ? 3_000 : 10_000) * 1e6);
+        usdc.mint(seller, uint256(dualRegistry ? 3_000 : 10_000) * 1e6);
         payable(buyer).transfer(1 ether);
         payable(seller).transfer(1 ether);
         vm.stopBroadcast();
 
         vm.startBroadcast(BUYER_PK);
-        usdc.approve(address(vault), 10_000 * 1e6);
-        vault.deposit(address(usdc), 10_000 * 1e6);
+        usdc.approve(address(vault), dualRegistry ? 1_001 * 1e6 : 10_000 * 1e6);
+        vault.deposit(address(usdc), dualRegistry ? 1_000 * 1e6 : 10_000 * 1e6);
+        if (dualRegistry) {
+            usdc.approve(address(legacyVault), 2_000 * 1e6);
+            legacyVault.deposit(address(usdc), 2_000 * 1e6);
+        }
         vm.stopBroadcast();
 
         vm.startBroadcast(SELLER_PK);
-        usdc.approve(address(vault), 10_000 * 1e6);
-        vault.deposit(address(usdc), 10_000 * 1e6);
+        usdc.approve(address(vault), dualRegistry ? 1_001 * 1e6 : 10_000 * 1e6);
+        vault.deposit(address(usdc), dualRegistry ? 1_000 * 1e6 : 10_000 * 1e6);
+        if (dualRegistry) {
+            usdc.approve(address(legacyVault), 2_000 * 1e6);
+            legacyVault.deposit(address(usdc), 2_000 * 1e6);
+        }
         vm.stopBroadcast();
+
+        if (dualRegistry) {
+            OptionMatchingEngine.OptionTrade memory legacyTrade = OptionMatchingEngine.OptionTrade({
+                intentId: keccak256("deopt-v16-legacy-position"), buyer: buyer, seller: seller,
+                optionId: optionId, underlying: address(weth), settlementAsset: address(usdc),
+                expiry: expiry, strike1e8: uint64(STRIKE), isCall: true,
+                contractSize1e8: uint128(1e8), quantity: 1,
+                premiumPerContract: PREMIUM, buyerIsMaker: true,
+                buyerNonce: 0, sellerNonce: 0, deadline: block.timestamp + 1 hours
+            });
+            bytes32 legacyDigest = legacyMatching.hashTrade(legacyTrade);
+            (uint8 lbv, bytes32 lbr, bytes32 lbs) = vm.sign(BUYER_PK, legacyDigest);
+            (uint8 lsv, bytes32 lsr, bytes32 lss) = vm.sign(SELLER_PK, legacyDigest);
+            vm.startBroadcast(OWNER_PK);
+            legacyMatching.executeTrade(legacyTrade, abi.encodePacked(lbr, lbs, lbv), abi.encodePacked(lsr, lss, lsv));
+            vm.stopBroadcast();
+            require(legacyEngine.positions(buyer, optionId).quantity == 1, "legacy buyer position");
+            require(legacyEngine.positions(seller, optionId).quantity == -1, "legacy seller position");
+            require(engine.positions(buyer, optionId).quantity == 0, "dedicated buyer must start empty");
+        }
 
         console2.log("MATCHING_ENGINE", address(matching));
         console2.log("MARGIN_ENGINE", address(engine));
@@ -206,6 +281,13 @@ contract OptionsLocalAnvilE2E is Script {
         console2.log("REGISTRY", address(registry));
         console2.log("VAULT", address(vault));
         console2.log("FEES_MANAGER_V2", address(feesManagerV2));
+        if (dualRegistry) {
+            console2.log("LEGACY_REGISTRY", address(legacyRegistry));
+            console2.log("LEGACY_VAULT", address(legacyVault));
+            console2.log("LEGACY_MARGIN_ENGINE", address(legacyEngine));
+            console2.log("LEGACY_MATCHING_ENGINE", address(legacyMatching));
+            console2.log("LEGACY_FEES_MANAGER_V2", address(legacyFees));
+        }
         if (v14Router) {
             console2.log("V14_ROUTER", address(router));
             console2.log("V14_PRIMARY", address(primary));
