@@ -8,16 +8,15 @@ import {RiskModule} from "../src/risk/RiskModule.sol";
 import {MarginEngine} from "../src/margin/MarginEngine.sol";
 import {OptionMatchingEngine} from "../src/matching/OptionMatchingEngine.sol";
 import {FeesManagerV2} from "../src/fees/FeesManagerV2.sol";
+import {InsuranceFund} from "../src/core/InsuranceFund.sol";
+import {OracleRouter} from "../src/oracle/OracleRouter.sol";
+import {V14LocalPriceSource} from "./LocalOptionsPriceSourceV14.sol";
 import {
     VerifiedOptionSettlementOwner,
     IHistoricalChainlinkFeed,
     IHistoricalPyth
 } from "../src/settlement/VerifiedOptionSettlementOwner.sol";
-import {
-    ScenarioOptionERC20,
-    ScenarioOptionOracle,
-    ScenarioOptionInsuranceFund
-} from "../test/scenario/options/OptionSettlementFlow.t.sol";
+import {ScenarioOptionERC20, ScenarioOptionOracle} from "../test/scenario/options/OptionSettlementFlow.t.sol";
 
 /// @dev Deterministic local-only feed. Production settlement uses real historical feeds.
 contract LocalHistoricalChainlinkFeed is IHistoricalChainlinkFeed {
@@ -74,27 +73,44 @@ contract OptionsLocalAnvilE2E is Script {
         address buyer = vm.addr(BUYER_PK);
         address seller = vm.addr(SELLER_PK);
         bool verifiedSettlement = vm.envOr("OPTIONS_V13_VERIFIED_SETTLEMENT", false);
+        bool v14Router = vm.envOr("OPTIONS_V14_ROUTER", false);
+        require(!v14Router || verifiedSettlement, "V14 router requires verified settlement");
 
         vm.startBroadcast(OWNER_PK);
         CollateralVault vault = new CollateralVault(owner);
         OptionProductRegistry registry = new OptionProductRegistry(owner);
-        ScenarioOptionOracle oracle = new ScenarioOptionOracle();
-        MarginEngine engine = new MarginEngine(owner, address(registry), address(vault), address(oracle));
-        ScenarioOptionInsuranceFund insurance = new ScenarioOptionInsuranceFund(address(vault));
+        ScenarioOptionOracle oracle;
+        OracleRouter router;
+        V14LocalPriceSource primary;
+        V14LocalPriceSource secondary;
+        address riskOracle;
+        if (v14Router) {
+            primary = new V14LocalPriceSource();
+            secondary = new V14LocalPriceSource();
+            router = new OracleRouter(owner);
+            riskOracle = address(router);
+        } else {
+            oracle = new ScenarioOptionOracle();
+            riskOracle = address(oracle);
+        }
+        MarginEngine engine = new MarginEngine(owner, address(registry), address(vault), riskOracle);
+        InsuranceFund insurance = new InsuranceFund(owner, address(vault));
         ScenarioOptionERC20 usdc = new ScenarioOptionERC20("Mock USDC", "mUSDC", 6);
         ScenarioOptionERC20 weth = new ScenarioOptionERC20("Mock WETH", "mWETH", 18);
-        RiskModule risk = new RiskModule(owner, address(vault), address(registry), address(engine), address(oracle));
+        RiskModule risk = new RiskModule(owner, address(vault), address(registry), address(engine), riskOracle);
         OptionMatchingEngine matching = new OptionMatchingEngine(owner, address(engine), address(registry));
         FeesManagerV2 feesManagerV2 = new FeesManagerV2(owner, owner);
 
         vault.setCollateralToken(address(usdc), true, 6, 10_000);
         vault.setMarginEngine(address(engine));
         vault.setAuthorizedEngine(address(insurance), true);
+        insurance.setTokenAllowed(address(usdc), true);
+        insurance.setBackstopCaller(address(engine), true);
         registry.setSettlementAssetAllowed(address(usdc), true);
         registry.setUnderlyingConfig(
             address(weth),
             OptionProductRegistry.UnderlyingConfig({
-                oracle: address(oracle),
+                oracle: riskOracle,
                 spotShockDownBps: 3_000,
                 spotShockUpBps: 3_000,
                 volShockDownBps: 0,
@@ -158,7 +174,14 @@ contract OptionsLocalAnvilE2E is Script {
         } else {
             optionId = registry.createSeries(address(weth), address(usdc), expiry, uint64(STRIKE), true, true);
         }
-        oracle.setPrice(address(weth), address(usdc), STRIKE, block.timestamp, true);
+        if (v14Router) {
+            primary.set(STRIKE, block.timestamp, true);
+            secondary.set(STRIKE, block.timestamp, true);
+            router.setMaxOracleDelay(1_500);
+            router.setFeed(address(weth), address(usdc), primary, secondary, 1_500, 100, true);
+        } else {
+            oracle.setPrice(address(weth), address(usdc), STRIKE, block.timestamp, true);
+        }
         usdc.mint(buyer, 10_000 * 1e6);
         usdc.mint(seller, 10_000 * 1e6);
         payable(buyer).transfer(1 ether);
@@ -183,6 +206,13 @@ contract OptionsLocalAnvilE2E is Script {
         console2.log("REGISTRY", address(registry));
         console2.log("VAULT", address(vault));
         console2.log("FEES_MANAGER_V2", address(feesManagerV2));
+        if (v14Router) {
+            console2.log("V14_ROUTER", address(router));
+            console2.log("V14_PRIMARY", address(primary));
+            console2.log("V14_SECONDARY", address(secondary));
+            require(address(engine.oracle()) == address(router), "engine router wiring");
+            require(address(risk.oracle()) == address(router), "risk router wiring");
+        }
         if (verifiedSettlement) {
             console2.log("VERIFIED_SETTLEMENT_OWNER", address(verifier));
             console2.log("LOCAL_HISTORICAL_FEED", address(historicalFeed));

@@ -21,3 +21,8 @@ fs_permissions = [
 ]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+
+# V14 fork simulation reads the operator's local RPC_URL without placing it
+# in the forge command line or recording it in this repository.
+[rpc_endpoints]
+options_v14 = "${RPC_URL}"
