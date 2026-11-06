@@ -40,7 +40,7 @@ python3 script/options_v15_offline_package.py \
   > /tmp/deopt-v15-unsigned-package.json
 ```
 
-Le générateur ne signe et n'envoie rien. Il refuse les ordres CREATE et bytecodes inattendus, un script de déploiement modifié depuis la simulation, un mauvais déployeur/chainId, une transaction dépassant la limite individuelle, une adresse calculée incohérente, ou un ETA antérieur au délai Timelock observé de 86 400 secondes. Il encode les appels `queueTransaction` et `executeTransaction` pour le Timelock réel ; chaque hash doit être revérifié au préflight. Les 36 actions sont classées `inert`, `guardian`, `candidate_risk_unapproved`, `ownership_unapproved`, `series_unapproved`. **Toutes les actions nécessitent une autorisation distincte ; les six actions inert visent uniquement à maintenir la pile fermée.** Un test fork impersonne le Safe uniquement localement et vérifie six opérations inert, avec 178 710 gas de queue et 191 256 gas d'exécution en appels directs. Les autres coûts de configuration et les surcoûts Safe/transaction ne sont pas encore mesurés : **budget gas total incomplet**.
+Le générateur ne signe et n'envoie rien. Il refuse les ordres CREATE et bytecodes inattendus, un script de déploiement modifié depuis la simulation, un mauvais déployeur/chainId, une transaction dépassant la limite individuelle, une adresse calculée incohérente, ou un ETA antérieur au délai Timelock observé de 86 400 secondes. Il encode les appels `queueTransaction` et `executeTransaction` pour le Timelock réel ; chaque hash doit être revérifié au préflight. Les 36 actions sont classées `inert`, `guardian`, `candidate_risk_unapproved`, `ownership_unapproved`, `series_unapproved`. **Toutes les actions nécessitent une autorisation distincte ; les six actions inert visent uniquement à maintenir la pile fermée.** Un test fork impersonne le Safe uniquement localement et vérifie six opérations inert, avec 178 710 gas de queue et 191 256 gas d'exécution en appels directs. Les 36 coûts directs Timelock sont maintenant mesurés sur fork local (table ci-dessous) ; les surcoûts Safe/transaction et les frais réseau restent non mesurés : **budget gas public total incomplet**.
 
 La séquence de gouvernance est : déployer les neuf contrats initialement inertes ; vérifier bytecodes et pointeurs ; soumettre séparément les actions inert au Safe/Timelock après autorisation ; attendre le délai effectif ; les exécuter et constater les pauses ; préparer ensuite les permissions guardian, le risque, le transfert du nouveau Registry au vérificateur et la création de série, avec **autorisations distinctes**. Ne pas financer le nouveau Vault ni activer le feed, le matching, la création ou le règlement au stade du déploiement. L'ancien Registry, le Vault historique et leurs sept shorts restent hors du paquet.
 
@@ -82,3 +82,68 @@ Arrêter avant toute diffusion si le chainId, le nonce pending, les bibliothèqu
 Les prochaines étapes sont séparées : (1) approbation de publication Git, (2) approbation de déploiement des contrats, (3) approbation de configuration économique et d'activation, (4) approbation de la première transaction ETH Call contrôlée. Le présent paquet n'accorde aucune de ces autorisations.
 
 Le premier trade testnet, **après** toutes ces approbations, demanderait : une nouvelle lecture de prix et d'état oracle, une quote RiskModule de la marge d'un short, l'approvisionnement de deux wallets jetables en actifs de test, des dépôts limités dans le **nouveau** Vault, la vérification de la série active et du plafond OI, deux intentions EIP-712 avec nonces/échéances distincts, une transaction du vrai MatchingEngine, puis la vérification receipt → événements → indexeur → PostgreSQL → API authentifiée → navigateur. Sur discordance de position ou de flux, mettre la nouvelle pile en pause avant un autre ordre. Le règlement à l'échéance exige une preuve historique admissible et la fin de la fenêtre de contestation ; il ne doit pas être simulé par un prix forcé sur le réseau public.
+
+
+## Qualification locale des 36 opérations V15
+
+Status: **PASS for the pinned local fork execution order**. No public transaction was sent. All 36 actions, including the unapproved candidates, were executed only inside a disposable Foundry fork. This result grants no deployment or activation approval.
+
+- Solidity HEAD at test: `7a64a93a195c489b2e510c377141372c6def10d1` plus the uncommitted qualification test.
+- Base Sepolia fork block: `55,204,686`; Timelock ETA in the offline proposal: `1,794,052,806`.
+- Deployer/nonce assumption: the V15 package's public deployer and nonce `812`. The nine CREATE addresses matched its predicted addresses in order.
+- Manifest SHA-256: `70f171c1e8144d11262729ba8a809df8f3f479dc626638cdaf3b207fde145001`.
+- Test: `forge test --match-path test/fork/OptionsV15FullPackageFork.t.sol -vv` returned **1 passed, 0 failed**. Safe and deployer were simulated locally; no authentic Safe signature was exercised.
+- The test checked each Timelock operation hash, queued all 36 at the same ETA, advanced fork time to ETA, and executed all 36 in manifest order. **No missing prerequisite surfaced in this local sequence.**
+
+## Measured Timelock call gas
+
+The values below are `gasleft()` differences around each direct `queueTransaction` or `executeTransaction` call. They are useful for ranking and checking the candidate order. They exclude transaction intrinsic gas, calldata pricing, Safe execution overhead, provider estimation margin, and OP Stack L1 data fees. They are therefore **not final transaction gas limits or fee quotes**.
+
+| # | Phase | Operation | Queue gas | Execute gas |
+| ---: | --- | --- | ---: | ---: |
+| 1 | `inert` | `pause_new_registry_creation` | 30,201 | 33,429 |
+| 2 | `inert` | `pause_new_registry_settlement` | 28,201 | 11,815 |
+| 3 | `inert` | `pause_new_matching` | 28,201 | 33,210 |
+| 4 | `inert` | `pause_new_vault` | 29,334 | 39,670 |
+| 5 | `inert` | `set_router_max_age` | 28,484 | 9,793 |
+| 6 | `inert` | `register_eth_feed_inactive` | 30,185 | 58,971 |
+| 7 | `guardian` | `guardian_OptionProductRegistry` | 28,484 | 10,154 |
+| 8 | `guardian` | `guardian_CollateralVault` | 28,484 | 32,225 |
+| 9 | `guardian` | `guardian_OptionMatchingEngine` | 28,484 | 29,852 |
+| 10 | `guardian` | `guardian_OracleRouter` | 28,484 | 9,914 |
+| 11 | `guardian` | `guardian_MarginEngine` | 28,484 | 10,650 |
+| 12 | `guardian` | `guardian_RiskModule` | 28,484 | 32,232 |
+| 13 | `guardian` | `guardian_InsuranceFund` | 28,484 | 32,046 |
+| 14 | `candidate_risk_unapproved` | `allow_test_usdc` | 29,334 | 101,622 |
+| 15 | `candidate_risk_unapproved` | `vault_deposit_cap_2000_musdc` | 28,768 | 33,699 |
+| 16 | `candidate_risk_unapproved` | `vault_margin_engine` | 28,484 | 123,015 |
+| 17 | `candidate_risk_unapproved` | `vault_risk_module` | 28,484 | 31,034 |
+| 18 | `candidate_risk_unapproved` | `vault_insurance` | 28,768 | 77,194 |
+| 19 | `candidate_risk_unapproved` | `insurance_token` | 28,768 | 34,912 |
+| 20 | `candidate_risk_unapproved` | `insurance_backstop` | 28,768 | 31,751 |
+| 21 | `candidate_risk_unapproved` | `registry_settlement_asset` | 28,768 | 33,341 |
+| 22 | `candidate_risk_unapproved` | `registry_eth_risk` | 30,185 | 60,552 |
+| 23 | `candidate_risk_unapproved` | `registry_option_margin` | 29,618 | 36,261 |
+| 24 | `candidate_risk_unapproved` | `risk_base_params` | 29,051 | 171,564 |
+| 25 | `candidate_risk_unapproved` | `risk_sync_tokens` | 28,201 | 12,306 |
+| 26 | `candidate_risk_unapproved` | `margin_risk_module` | 28,484 | 31,092 |
+| 27 | `candidate_risk_unapproved` | `margin_sync_risk` | 28,201 | 81,906 |
+| 28 | `candidate_risk_unapproved` | `margin_matching` | 28,484 | 32,560 |
+| 29 | `candidate_risk_unapproved` | `margin_insurance` | 28,484 | 11,047 |
+| 30 | `candidate_risk_unapproved` | `fees_consumer` | 28,768 | 31,982 |
+| 31 | `candidate_risk_unapproved` | `margin_fees_v2` | 28,484 | 32,054 |
+| 32 | `candidate_risk_unapproved` | `margin_use_fees_v2` | 28,484 | 9,989 |
+| 33 | `ownership_unapproved` | `registry_transfer_to_verifier` | 28,484 | 32,940 |
+| 34 | `ownership_unapproved` | `verifier_accept_registry` | 28,201 | 34,897 |
+| 35 | `series_unapproved` | `create_inactive_eth_call` | 29,051 | 247,059 |
+| 36 | `series_unapproved` | `cap_short_oi_one_contract` | 28,768 | 36,267 |
+
+- Queue call sum: **1,035,084 gas**; largest call: **30,201 gas**.
+- Execute call sum: **1,673,005 gas**; largest call: **247,059 gas**.
+- Combined direct call sum: **2,708,089 gas** across 72 separate queue/execute calls. The nine CREATE gas limits remain the V15 dry-run figures, not new receipt measurements.
+
+## Remaining gates
+
+- Re-read the deployer's **pending nonce**, Timelock role/delay, library runtime hashes, oracle state, and contract code at a fresh block before considering any public operation. The pinned addresses and ETA are conditional.
+- Obtain separate authorization for every proposed action. The 19 risk actions, two ownership actions, and two series actions remain unapproved; the six inert actions and seven guardian actions also require their own authorization.
+- Measure full Safe transaction gas and fees separately if a public package is later considered. This fork test does not prove public receipts, funded Vault behavior, trading, or dual-Registry backend reconciliation.
