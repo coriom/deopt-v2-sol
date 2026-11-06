@@ -49,6 +49,29 @@ contract VerifiedOptionSettlementOwnerForkTest is Test {
     bytes32 internal constant BTC_ID = 0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43;
     uint256 internal constant ETH_CALL = 24145907678156652148089862289363692212069910767044828147380657249455352740183;
 
+    function testV15SameOptionIdAcrossHistoricalAndDedicatedRegistry() public {
+        vm.createSelectFork(vm.envString("RPC_URL"), 55_041_332);
+        OptionProductRegistry.OptionSeries memory original = OptionProductRegistry(REGISTRY).getSeries(ETH_CALL);
+        OptionProductRegistry dedicated = new OptionProductRegistry(TIMELOCK);
+        vm.startPrank(TIMELOCK); // fork-only impersonation; no Safe signature
+        dedicated.setSettlementAssetAllowed(original.settlementAsset, true);
+        dedicated.setUnderlyingConfig(
+            original.underlying, OptionProductRegistry.UnderlyingConfig(address(0x1), 0, 0, 0, 0, true)
+        );
+        uint256 duplicate = dedicated.createSeries(
+            original.underlying,
+            original.settlementAsset,
+            original.expiry,
+            original.strike,
+            original.isCall,
+            original.isEuropean
+        );
+        vm.stopPrank();
+        assertEq(duplicate, ETH_CALL, "raw optionId must collide across registries");
+        assertTrue(address(dedicated) != REGISTRY);
+        assertEq(OptionProductRegistry(REGISTRY).getSeries(ETH_CALL).expiry, original.expiry);
+    }
+
     function testDedicatedOptionsStackDoesNotTakeLegacyOwnershipOrCollateral() public {
         vm.createSelectFork(vm.envString("RPC_URL"), 55_041_332);
         OptionProductRegistry historicalRegistry = OptionProductRegistry(REGISTRY);
