@@ -150,6 +150,75 @@ contract OptionWithdrawalRiskGateForkTest is Test {
         assertEq(IERC20(TOKEN).balanceOf(INSURANCE_FUND), recipientBefore + 1);
     }
 
+    function testInternalAccountExitCannotBypassInvalidOracle() public {
+        uint256 sellerBefore = vault.balances(SELLER, TOKEN);
+        uint256 assetBefore = IERC20(TOKEN).balanceOf(VAULT);
+        _install();
+        vm.mockCall(
+            ORACLE,
+            abi.encodeWithSelector(IOracle.getPriceSafe.selector, WETH, TOKEN),
+            abi.encode(uint256(0), block.timestamp, false)
+        );
+        vm.prank(SELLER);
+        vm.expectRevert();
+        vault.transferFromInternalAccount(TOKEN, SELLER, 1);
+        assertEq(vault.balances(SELLER, TOKEN), sellerBefore);
+        assertEq(IERC20(TOKEN).balanceOf(VAULT), assetBefore);
+    }
+
+    function testInternalTransferTrustBoundaryRemainsAfterGateInstallation() public {
+        uint256 sellerBefore = vault.balances(SELLER, TOKEN);
+        uint256 buyerBefore = vault.balances(BUYER, TOKEN);
+        uint256 totalBefore = vault.totalDepositedByToken(TOKEN);
+        uint256 assetBefore = IERC20(TOKEN).balanceOf(VAULT);
+        assertGt(vault.idleBalances(SELLER, TOKEN), 0);
+        _install();
+        vm.mockCall(
+            ORACLE,
+            abi.encodeWithSelector(IOracle.getPriceSafe.selector, WETH, TOKEN),
+            abi.encode(uint256(0), block.timestamp, false)
+        );
+
+        vm.prank(SELLER);
+        vm.expectRevert();
+        vault.transferBetweenAccounts(TOKEN, SELLER, BUYER, 1);
+
+        // An authorized engine is an independent trust boundary. The
+        // withdrawal-only adapter cannot validate this internal movement.
+        vm.prank(ENGINE); // fork-only impersonation, not an externally reachable call path
+        vault.transferBetweenAccounts(TOKEN, SELLER, BUYER, 1);
+        assertEq(vault.balances(SELLER, TOKEN), sellerBefore - 1);
+        assertEq(vault.balances(BUYER, TOKEN), buyerBefore + 1);
+        assertEq(vault.totalDepositedByToken(TOKEN), totalBefore);
+        assertEq(IERC20(TOKEN).balanceOf(VAULT), assetBefore);
+    }
+
+    function testGuardianPausesBothExitAndInternalMovementWithoutMovingAssets() public {
+        uint256 sellerBefore = vault.balances(SELLER, TOKEN);
+        uint256 buyerBefore = vault.balances(BUYER, TOKEN);
+        uint256 totalBefore = vault.totalDepositedByToken(TOKEN);
+        uint256 assetBefore = IERC20(TOKEN).balanceOf(VAULT);
+        _install();
+        vm.startPrank(vault.guardian()); // fork-only impersonation
+        vault.pauseWithdrawals();
+        vault.pauseInternalTransfers();
+        vm.stopPrank();
+
+        vm.prank(ENGINE);
+        vm.expectRevert();
+        vault.transferBetweenAccounts(TOKEN, SELLER, BUYER, 1);
+        vm.prank(ENGINE);
+        vm.expectRevert();
+        vault.withdrawFor(SELLER, TOKEN, 1);
+        vm.prank(SELLER);
+        vm.expectRevert();
+        vault.transferFromInternalAccount(TOKEN, SELLER, 1);
+        assertEq(vault.balances(SELLER, TOKEN), sellerBefore);
+        assertEq(vault.balances(BUYER, TOKEN), buyerBefore);
+        assertEq(vault.totalDepositedByToken(TOKEN), totalBefore);
+        assertEq(IERC20(TOKEN).balanceOf(VAULT), assetBefore);
+    }
+
     function testExistingPerpAccountsRemainBoundedAndPositionsUnchanged() public {
         int256 buyerPositionBefore = _perpPosition(PERP_BUYER);
         int256 sellerPositionBefore = _perpPosition(PERP_SELLER);

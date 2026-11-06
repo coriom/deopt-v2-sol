@@ -9,6 +9,9 @@ import {
     IHistoricalPyth
 } from "../../src/settlement/VerifiedOptionSettlementOwner.sol";
 import {CollateralVault} from "../../src/collateral/CollateralVault.sol";
+import {MarginEngine} from "../../src/margin/MarginEngine.sol";
+import {RiskModule} from "../../src/risk/RiskModule.sol";
+import {OptionMatchingEngine} from "../../src/matching/OptionMatchingEngine.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract ForkChainlinkBoundaryStub is IHistoricalChainlinkFeed {
@@ -45,6 +48,42 @@ contract VerifiedOptionSettlementOwnerForkTest is Test {
     bytes32 internal constant ETH_ID = 0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace;
     bytes32 internal constant BTC_ID = 0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43;
     uint256 internal constant ETH_CALL = 24145907678156652148089862289363692212069910767044828147380657249455352740183;
+
+    function testDedicatedOptionsStackDoesNotTakeLegacyOwnershipOrCollateral() public {
+        vm.createSelectFork(vm.envString("RPC_URL"), 55_041_332);
+        OptionProductRegistry historicalRegistry = OptionProductRegistry(REGISTRY);
+        CollateralVault historicalVault = CollateralVault(VAULT);
+        uint256 historicalTotal = historicalVault.totalDepositedByToken(TOKEN);
+        uint256 historicalAssets = IERC20(TOKEN).balanceOf(VAULT);
+        uint256 historicalSeller = historicalVault.balances(0x290bD12C93E467Bf51c51f5273D35bdDb19e9274, TOKEN);
+        (bool ok, bytes memory data) =
+            ENGINE.staticcall(abi.encodeWithSignature("seriesShortOpenInterest(uint256)", ETH_CALL));
+        require(ok, "historical OI unavailable");
+        uint256 historicalShorts = abi.decode(data, (uint256));
+        assertEq(historicalShorts, 7);
+
+        // A fresh stack is a topology proof, not a configured or trade-ready
+        // deployment. It deliberately grants no capability over old funds.
+        OptionProductRegistry newRegistry = new OptionProductRegistry(TIMELOCK);
+        CollateralVault newVault = new CollateralVault(TIMELOCK);
+        MarginEngine newEngine = new MarginEngine(TIMELOCK, address(newRegistry), address(newVault), address(0x1));
+        RiskModule newRisk =
+            new RiskModule(TIMELOCK, address(newVault), address(newRegistry), address(newEngine), address(0x1));
+        OptionMatchingEngine newMatching = new OptionMatchingEngine(TIMELOCK, address(newEngine), address(newRegistry));
+        assertEq(address(newEngine.optionRegistry()), address(newRegistry));
+        assertEq(address(newEngine.collateralVault()), address(newVault));
+        assertEq(address(newMatching.optionRegistry()), address(newRegistry));
+        assertEq(address(newMatching.marginEngine()), address(newEngine));
+        assertEq(address(newRisk.collateralVault()), address(newVault));
+        assertEq(historicalRegistry.owner(), TIMELOCK);
+        assertEq(historicalVault.marginEngine(), ENGINE);
+        assertEq(historicalVault.totalDepositedByToken(TOKEN), historicalTotal);
+        assertEq(IERC20(TOKEN).balanceOf(VAULT), historicalAssets);
+        assertEq(historicalVault.balances(0x290bD12C93E467Bf51c51f5273D35bdDb19e9274, TOKEN), historicalSeller);
+        (ok, data) = ENGINE.staticcall(abi.encodeWithSignature("seriesShortOpenInterest(uint256)", ETH_CALL));
+        require(ok, "historical OI unavailable after local deployment");
+        assertEq(abi.decode(data, (uint256)), historicalShorts);
+    }
 
     function testLegacyPricePathIsIsolatedAndCollateralUnchanged() public {
         vm.createSelectFork(vm.envString("RPC_URL"), 55_041_332);
