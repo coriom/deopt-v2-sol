@@ -50,6 +50,10 @@ contract HistoricalPythStub is IHistoricalPyth {
         reject = value;
     }
 
+    function setConfidence(uint64 value) external {
+        conf = value;
+    }
+
     function getUpdateFee(bytes[] calldata) external pure returns (uint256) {
         return 0;
     }
@@ -78,7 +82,6 @@ contract VerifiedOptionSettlementOwnerTest is Test {
     HistoricalPythStub internal pyth;
     VerifiedOptionSettlementOwner internal verifier;
     uint256 internal optionId;
-    uint256 internal legacyOptionId;
     uint64 internal expiry;
 
     function setUp() public {
@@ -91,7 +94,6 @@ contract VerifiedOptionSettlementOwnerTest is Test {
             OptionProductRegistry.UnderlyingConfig(address(0), 0, 0, 0, 0, true);
         registry.setUnderlyingConfig(UNDERLYING, config);
         expiry = uint64(block.timestamp + 1_000);
-        legacyOptionId = registry.createSeries(UNDERLYING, TOKEN, expiry, 3000e8, 1e8, true, true);
         chainlink.setRound(101, 3000e8, expiry - 10);
         chainlink.setRound(102, 3001e8, expiry + 10);
         pyth.configure(PRICE_ID, expiry + 11, 3300_00000000);
@@ -123,7 +125,6 @@ contract VerifiedOptionSettlementOwnerTest is Test {
     }
 
     function testSyntheticChainlinkBoundaryAndDirectBypassRejection() public {
-        assertFalse(verifier.settlementEligible(legacyOptionId));
         assertTrue(verifier.settlementEligible(optionId));
         assertFalse(registry.getSeries(optionId).isActive);
         assertFalse(registry.isSeriesCreator(address(verifier)));
@@ -131,8 +132,6 @@ contract VerifiedOptionSettlementOwnerTest is Test {
         verifier.createInactiveCallSeries(UNDERLYING, uint64(block.timestamp + 1 days), 0);
         assertTrue(registry.creationPaused());
         assertFalse(registry.isSeriesCreator(address(verifier)));
-        vm.expectRevert(VerifiedOptionSettlementOwner.LegacySeriesRestricted.selector);
-        verifier.propose(legacyOptionId, 101, 102);
         assertTrue(registry.creationPaused());
         assertEq(registry.guardian(), address(verifier));
         vm.prank(GUARDIAN);
@@ -157,8 +156,6 @@ contract VerifiedOptionSettlementOwnerTest is Test {
         verifier.executeRegistryAdmin(abi.encodeCall(registry.setSettlementFinalityDelay, (0)));
         vm.expectRevert(VerifiedOptionSettlementOwner.ForbiddenAdminCall.selector);
         verifier.executeRegistryAdmin(abi.encodeWithSelector(OptionProductRegistry.setOptionRiskConfig.selector));
-        vm.expectRevert(VerifiedOptionSettlementOwner.ForbiddenAdminCall.selector);
-        verifier.executeRegistryAdmin(abi.encodeCall(registry.setSeriesActive, (legacyOptionId, true)));
         verifier.executeRegistryAdmin(abi.encodeCall(registry.setSeriesActive, (optionId, true)));
         assertTrue(registry.getSeries(optionId).isActive);
 
@@ -205,7 +202,7 @@ contract VerifiedOptionSettlementOwnerTest is Test {
         verifier.propose(optionId, 101, 102);
     }
 
-    function testPythStubDivergenceSelectsFixedAlternativeWithoutDeadlineReset() public {
+    function testPythStubDivergenceDoesNotOverridePrimaryOrResetDeadline() public {
         verifier.propose(optionId, 101, 102);
         bytes[] memory updateData = new bytes[](1);
         updateData[0] = hex"aa";
@@ -229,7 +226,7 @@ contract VerifiedOptionSettlementOwnerTest is Test {
         verifier.finalize(optionId);
         (uint256 price, bool finalized) = registry.getSettlementInfo(optionId);
         assertTrue(finalized);
-        assertEq(price, 3300e8);
+        assertEq(price, 3000e8);
         vm.expectRevert(VerifiedOptionSettlementOwner.InvalidState.selector);
         verifier.finalize(optionId);
     }
@@ -265,6 +262,39 @@ contract VerifiedOptionSettlementOwnerTest is Test {
         vm.expectRevert(VerifiedOptionSettlementOwner.ChallengeClosed.selector);
         verifier.challengeWithPyth(optionId, updateData);
         verifier.resolve(optionId);
+        verifier.finalize(optionId);
+    }
+
+    function testPythFallbackRequiresObjectiveStaleChainlinkBoundary() public {
+        bytes[] memory updateData = new bytes[](1);
+        updateData[0] = hex"aa";
+        vm.expectRevert(VerifiedOptionSettlementOwner.InvalidRoundProof.selector);
+        verifier.proposePythFallback(optionId, 101, 102, updateData);
+
+        chainlink.setRound(101, 3000e8, expiry - 1_501);
+        vm.expectRevert(VerifiedOptionSettlementOwner.InvalidRoundProof.selector);
+        verifier.propose(optionId, 101, 102);
+        pyth.configure(PRICE_ID, expiry + 1_501, 3300_00000000);
+        vm.expectRevert(bytes("bad signed update"));
+        verifier.proposePythFallback(optionId, 101, 102, updateData);
+        pyth.configure(PRICE_ID, expiry + 100, 3300_00000000);
+        vm.expectRevert(VerifiedOptionSettlementOwner.InvalidPriceProof.selector);
+        verifier.proposePythFallback(optionId, 101, 102, updateData);
+        pyth.configure(PRICE_ID, expiry + 11, 3300_00000000);
+        pyth.setConfidence(33_00000000 + 1);
+        vm.expectRevert(VerifiedOptionSettlementOwner.InvalidPriceProof.selector);
+        verifier.proposePythFallback(optionId, 101, 102, updateData);
+        pyth.setConfidence(1_00000000);
+        verifier.proposePythFallback(optionId, 101, 102, updateData);
+        vm.expectRevert(VerifiedOptionSettlementOwner.InvalidState.selector);
+        verifier.challengeWithPyth(optionId, updateData);
+        vm.warp(block.timestamp + 2 days);
+        verifier.resolve(optionId);
+        verifier.finalize(optionId);
+        (uint256 price, bool finalized) = registry.getSettlementInfo(optionId);
+        assertTrue(finalized);
+        assertEq(price, 3300e8);
+        vm.expectRevert(VerifiedOptionSettlementOwner.InvalidState.selector);
         verifier.finalize(optionId);
     }
 }

@@ -31,9 +31,9 @@ interface IHistoricalPyth {
     ) external payable returns (PriceFeed[] memory);
 }
 
-/// @notice Prototype owner of the legacy Registry. No general-purpose call or
-///         ownership escape is exposed: once accepted, only a bounded oracle
-///         proof can cause this contract to call setSettlementPrice.
+/// @notice Prototype owner for a Registry with no pre-existing series. No
+///         general-purpose call or ownership escape is exposed: once accepted,
+///         only a bounded oracle proof can set a settlement price.
 /// @dev Its policy parameters are immutable and require separate approval.
 contract VerifiedOptionSettlementOwner {
     error NotTimelock();
@@ -42,6 +42,7 @@ contract VerifiedOptionSettlementOwner {
     error UnsafeRegistryState();
     error UnsupportedSeries();
     error LegacySeriesRestricted();
+    error LegacySeriesPresent();
     error InvalidRoundProof();
     error InvalidPriceProof();
     error ProposalExists();
@@ -90,6 +91,7 @@ contract VerifiedOptionSettlementOwner {
 
     event PriceProposed(uint256 indexed optionId, uint256 price1e8, uint80 beforeRound, uint80 afterRound);
     event PriceDisputed(uint256 indexed optionId, uint256 pythPrice1e8);
+    event PythFallbackProposed(uint256 indexed optionId, uint256 price1e8, uint80 beforeRound, uint80 afterRound);
     event PriceResolved(uint256 indexed optionId, uint256 price1e8, bool pythSelected);
     event PriceFinalized(uint256 indexed optionId, uint256 price1e8);
     event ControlledSeriesCreated(uint256 indexed optionId, address indexed underlying);
@@ -160,11 +162,9 @@ contract VerifiedOptionSettlementOwner {
                 || registry.settlementOperator() != address(0) || registry.settlementFinalityDelay() != 0
                 || !registry.settlementPaused() || !registry.creationPaused()
         ) revert UnsafeRegistryState();
-        uint256[] memory series = registry.getAllOptionIds();
-        for (uint256 i; i < series.length; i++) {
-            (,, bool pending) = registry.getSettlementProposal(series[i]);
-            if (pending || registry.isSettled(series[i])) revert UnsafeRegistryState();
-        }
+        // The legacy Registry still has open positions. Taking ownership
+        // without a separately approved settlement path would strand them.
+        if (registry.getAllOptionIds().length != 0) revert LegacySeriesPresent();
         registry.acceptOwnership();
         if (registry.owner() != address(this)) revert UnsafeRegistryState();
         // The historical guardian can clear pauses via setEmergencyModes.
@@ -226,22 +226,32 @@ contract VerifiedOptionSettlementOwner {
         return normalized;
     }
 
-    function _historicalPrice(IHistoricalChainlinkFeed feed, uint64 expiry, uint80 beforeId, uint80 afterId)
+    function _chainlinkBoundary(IHistoricalChainlinkFeed feed, uint64 expiry, uint80 beforeId, uint80 afterId)
         internal
         view
-        returns (uint256)
+        returns (uint256 price, uint256 beforeAt, uint256 afterAt)
     {
         if (beforeId == 0 || afterId != beforeId + 1 || (beforeId >> 64) != (afterId >> 64)) {
             revert InvalidRoundProof(); // phase transitions fail closed
         }
-        (uint80 actualBefore, int256 answer,, uint256 beforeAt, uint80 answeredBefore) = feed.getRoundData(beforeId);
-        (uint80 actualAfter, int256 afterAnswer,, uint256 afterAt, uint80 answeredAfter) = feed.getRoundData(afterId);
+        uint256 beforeTimestamp;
+        uint256 afterTimestamp;
+        uint80 actualBefore;
+        uint80 actualAfter;
+        uint80 answeredBefore;
+        uint80 answeredAfter;
+        int256 answer;
+        int256 afterAnswer;
+        (actualBefore, answer,, beforeTimestamp, answeredBefore) = feed.getRoundData(beforeId);
+        (actualAfter, afterAnswer,, afterTimestamp, answeredAfter) = feed.getRoundData(afterId);
         if (
-            actualBefore != beforeId || actualAfter != afterId || answeredBefore < beforeId || answeredAfter < afterId
-                || answer <= 0 || afterAnswer <= 0 || beforeAt == 0 || beforeAt > expiry || afterAt <= expiry
-                || afterAt > block.timestamp || expiry - beforeAt > maxBeforeAge || afterAt - expiry > maxAfterLag
+            actualBefore != beforeId || actualAfter != afterId || answeredBefore != beforeId || answeredAfter != afterId
+                || answer <= 0 || afterAnswer <= 0 || beforeTimestamp == 0 || beforeTimestamp > expiry
+                || afterTimestamp <= expiry || afterTimestamp > block.timestamp
         ) revert InvalidRoundProof();
-        return _normalize(uint256(answer), feed.decimals());
+        beforeAt = beforeTimestamp;
+        afterAt = afterTimestamp;
+        price = _normalize(uint256(answer), feed.decimals());
     }
 
     function propose(uint256 optionId, uint80 beforeId, uint80 afterId) external sameChain {
@@ -252,10 +262,40 @@ contract VerifiedOptionSettlementOwner {
         (OptionProductRegistry.OptionSeries memory series, IHistoricalChainlinkFeed feed) = _series(optionId);
         if (block.timestamp < series.expiry || registry.isSettled(optionId)) revert InvalidPriceProof();
         if (proposals[optionId].state != SettlementState.PRICE_UNAVAILABLE) revert ProposalExists();
-        uint256 price = _historicalPrice(feed, series.expiry, beforeId, afterId);
+        (uint256 price, uint256 beforeAt, uint256 afterAt) = _chainlinkBoundary(feed, series.expiry, beforeId, afterId);
+        if (series.expiry - beforeAt > maxBeforeAge || afterAt - series.expiry > maxAfterLag) {
+            revert InvalidRoundProof();
+        }
         proposals[optionId] =
             Proposal(price, 0, 0, beforeId, afterId, uint64(block.timestamp), SettlementState.PRICE_PROPOSED);
         emit PriceProposed(optionId, price, beforeId, afterId);
+    }
+
+    /// @notice Pyth is admissible only when the authenticated adjacent
+    ///         Chainlink boundary proves that the primary is too stale.
+    ///         Missing rounds and phase transitions deliberately fail closed.
+    function proposePythFallback(uint256 optionId, uint80 beforeId, uint80 afterId, bytes[] calldata updateData)
+        external
+        payable
+        sameChain
+    {
+        if (
+            registry.owner() != address(this) || registry.settlementOperator() != address(0)
+                || registry.settlementFinalityDelay() != 0
+        ) revert UnsafeRegistryState();
+        (OptionProductRegistry.OptionSeries memory series, IHistoricalChainlinkFeed feed) = _series(optionId);
+        if (block.timestamp < series.expiry || registry.isSettled(optionId)) revert InvalidPriceProof();
+        if (proposals[optionId].state != SettlementState.PRICE_UNAVAILABLE) revert ProposalExists();
+        (, uint256 beforeAt, uint256 afterAt) = _chainlinkBoundary(feed, series.expiry, beforeId, afterId);
+        if (series.expiry - beforeAt <= maxBeforeAge && afterAt - series.expiry <= maxAfterLag) {
+            revert InvalidRoundProof();
+        }
+        uint256 fee = pyth.getUpdateFee(updateData);
+        if (msg.value != fee) revert InvalidFee();
+        uint256 price = _pythPrice(optionId, updateData, fee);
+        proposals[optionId] =
+            Proposal(0, price, 0, beforeId, afterId, uint64(block.timestamp), SettlementState.PRICE_PROPOSED);
+        emit PythFallbackProposed(optionId, price, beforeId, afterId);
     }
 
     function _pythPrice(uint256 optionId, bytes[] calldata updateData, uint256 fee) internal returns (uint256) {
@@ -268,7 +308,7 @@ contract VerifiedOptionSettlementOwner {
         IHistoricalPyth.Price memory value = updates[0].price;
         if (
             value.price <= 0 || value.publishTime < series.expiry || value.publishTime > series.expiry + maxAfterLag
-                || value.expo < -18 || value.expo > 10
+                || value.publishTime > block.timestamp || value.expo < -18 || value.expo > 10
         ) revert InvalidPriceProof();
         int256 exp = int256(value.expo) + 8;
         uint256 multiplier = 10 ** uint256(exp >= 0 ? exp : -exp);
@@ -279,13 +319,13 @@ contract VerifiedOptionSettlementOwner {
         return price;
     }
 
-    /// @notice A verified, materially divergent Pyth Core update overrides
-    ///         Chainlink after the fixed challenge deadline. This economic
-    ///         precedence is a proposal requiring separate approval.
+    /// @notice Material divergence is recorded, but never overrides an
+    ///         admissible pre-expiry Chainlink price.
     function challengeWithPyth(uint256 optionId, bytes[] calldata updateData) external payable sameChain {
         Proposal storage proposal = proposals[optionId];
         if (proposal.state == SettlementState.PRICE_UNAVAILABLE) revert NoProposal();
         if (proposal.state != SettlementState.PRICE_PROPOSED) revert InvalidState();
+        if (proposal.chainlinkPrice1e8 == 0) revert InvalidState();
         if (block.timestamp >= uint256(proposal.proposedAt) + challengePeriod) revert ChallengeClosed();
         uint256 fee = pyth.getUpdateFee(updateData);
         if (msg.value != fee) revert InvalidFee();
@@ -305,8 +345,10 @@ contract VerifiedOptionSettlementOwner {
         Proposal storage proposal = proposals[optionId];
         if (proposal.state == SettlementState.PRICE_UNAVAILABLE) revert NoProposal();
         if (block.timestamp < uint256(proposal.proposedAt) + challengePeriod) revert ChallengeOpen();
-        bool pythSelected = proposal.state == SettlementState.CHALLENGED;
-        if (!pythSelected && proposal.state != SettlementState.PRICE_PROPOSED) revert InvalidState();
+        if (proposal.state != SettlementState.PRICE_PROPOSED && proposal.state != SettlementState.CHALLENGED) {
+            revert InvalidState();
+        }
+        bool pythSelected = proposal.chainlinkPrice1e8 == 0;
         proposal.selectedPrice1e8 = pythSelected ? proposal.pythPrice1e8 : proposal.chainlinkPrice1e8;
         proposal.state = SettlementState.RESOLVED;
         emit PriceResolved(optionId, proposal.selectedPrice1e8, pythSelected);

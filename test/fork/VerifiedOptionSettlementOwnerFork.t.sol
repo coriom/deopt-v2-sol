@@ -13,9 +13,11 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract ForkChainlinkBoundaryStub is IHistoricalChainlinkFeed {
     uint64 public immutable expiry;
+    bool public immutable stale;
 
-    constructor(uint64 expiry_) {
+    constructor(uint64 expiry_, bool stale_) {
         expiry = expiry_;
+        stale = stale_;
     }
 
     function decimals() external pure returns (uint8) {
@@ -24,7 +26,7 @@ contract ForkChainlinkBoundaryStub is IHistoricalChainlinkFeed {
 
     function getRoundData(uint80 id) external view returns (uint80, int256, uint256, uint256, uint80) {
         require(id == 101 || id == 102, "unknown round");
-        uint256 updatedAt = id == 101 ? expiry - 10 : expiry + 1;
+        uint256 updatedAt = id == 101 ? expiry - (stale ? 1_501 : 10) : expiry + 1;
         return (id, 2000e8, updatedAt, updatedAt, id);
     }
 }
@@ -44,21 +46,18 @@ contract VerifiedOptionSettlementOwnerForkTest is Test {
     bytes32 internal constant BTC_ID = 0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43;
     uint256 internal constant ETH_CALL = 24145907678156652148089862289363692212069910767044828147380657249455352740183;
 
-    function testExclusiveProofOwnerCanTakeHistoricalRegistryWithoutMovingCollateral() public {
+    function testLegacyRegistryOwnershipIsBlockedAndCollateralUnchanged() public {
         vm.createSelectFork(vm.envString("RPC_URL"), 55_041_332);
         OptionProductRegistry registry = OptionProductRegistry(REGISTRY);
         CollateralVault vault = CollateralVault(VAULT);
         assertEq(registry.owner(), TIMELOCK);
-        assertEq(registry.settlementOperator(), address(0));
-        (bool linked, bytes memory linkedData) = ENGINE.staticcall(abi.encodeWithSignature("optionRegistry()"));
-        assertTrue(linked);
-        assertEq(abi.decode(linkedData, (address)), REGISTRY);
         uint256 accountingBefore = vault.totalDepositedByToken(TOKEN);
         uint256 assetsBefore = IERC20(TOKEN).balanceOf(VAULT);
         (bool ok, bytes memory data) =
             ENGINE.staticcall(abi.encodeWithSignature("seriesShortOpenInterest(uint256)", ETH_CALL));
         require(ok, "missing OI");
         uint256 shortOiBefore = abi.decode(data, (uint256));
+        assertEq(shortOiBefore, 7);
 
         address[2] memory underlyings = [ETH, BTC];
         address[2] memory feeds = [ETH_FEED, BTC_FEED];
@@ -82,39 +81,18 @@ contract VerifiedOptionSettlementOwnerForkTest is Test {
         registry.pauseSettlement();
         vm.prank(registry.guardian());
         registry.pauseCreation();
-        vm.prank(TIMELOCK); // fork-only impersonation, not a real Safe signature
+        vm.prank(TIMELOCK); // fork-only impersonation, not a Safe signature
         registry.transferOwnership(address(verifier));
         vm.prank(TIMELOCK);
+        vm.expectRevert(VerifiedOptionSettlementOwner.LegacySeriesPresent.selector);
         verifier.acceptRegistryOwnership();
-        assertEq(registry.owner(), address(verifier));
-        assertEq(registry.guardian(), address(verifier));
-        assertTrue(registry.creationPaused());
-        assertFalse(verifier.settlementEligible(ETH_CALL));
-        assertEq(registry.settlementOperator(), address(0));
-        vm.prank(TIMELOCK);
-        verifier.executeRegistryAdmin(abi.encodeCall(registry.unpauseSettlement, ()));
-        vm.prank(TIMELOCK);
-        vm.expectRevert(OptionProductRegistry.NotAuthorized.selector);
-        registry.setSettlementPrice(ETH_CALL, 1);
-        vm.prank(TIMELOCK);
-        vm.expectRevert(VerifiedOptionSettlementOwner.ForbiddenAdminCall.selector);
-        verifier.executeRegistryAdmin(abi.encodeCall(registry.setSettlementOperator, (TIMELOCK)));
-        vm.prank(TIMELOCK);
-        verifier.executeRegistryAdmin(abi.encodeCall(registry.setSeriesActive, (ETH_CALL, false)));
-        assertFalse(registry.getSeries(ETH_CALL).isActive);
-        vm.prank(TIMELOCK);
-        vm.expectRevert(VerifiedOptionSettlementOwner.ForbiddenAdminCall.selector);
-        verifier.executeRegistryAdmin(abi.encodeCall(registry.setSeriesActive, (ETH_CALL, true)));
-        assertFalse(registry.getSeries(ETH_CALL).isActive);
-
+        assertEq(registry.owner(), TIMELOCK);
+        assertEq(registry.pendingOwner(), address(verifier));
         assertEq(vault.totalDepositedByToken(TOKEN), accountingBefore);
         assertEq(IERC20(TOKEN).balanceOf(VAULT), assetsBefore);
-        (linked, linkedData) = ENGINE.staticcall(abi.encodeWithSignature("optionRegistry()"));
-        assertTrue(linked);
-        assertEq(abi.decode(linkedData, (address)), REGISTRY);
         (ok, data) = ENGINE.staticcall(abi.encodeWithSignature("seriesShortOpenInterest(uint256)", ETH_CALL));
-        require(ok && abi.decode(data, (uint256)) == shortOiBefore, "positions changed");
-        assertEq(shortOiBefore, 7);
+        require(ok, "missing OI after attempted transfer");
+        assertEq(abi.decode(data, (uint256)), shortOiBefore);
     }
 
     function testRealChainlinkRoundsVerifySyntheticExpiredSeries() public {
@@ -206,6 +184,61 @@ contract VerifiedOptionSettlementOwnerForkTest is Test {
         IHistoricalPyth(PYTH).parsePriceFeedUpdatesUnique{value: fee}(
             updates, ids, publishTime + 1, publishTime + 1_500
         );
+        // A signed update from later in the allowed window is not the
+        // unique first update after this earlier expiry.
+        vm.expectRevert();
+        IHistoricalPyth(PYTH).parsePriceFeedUpdatesUnique{value: fee}(updates, ids, publishTime - 1_500, publishTime);
+    }
+
+    function testAuthenticPythFallbackRequiresStalePrimaryBoundary() public {
+        vm.createSelectFork(vm.envString("RPC_URL"), 55_064_571);
+        uint64 expiry = 1_793_934_781;
+        bytes[] memory updates = new bytes[](1);
+        updates[0] = vm.parseBytes(vm.readFile("test/fixtures/options_v9_pyth_core_eth_payload.hex"));
+        uint256 fee = IHistoricalPyth(PYTH).getUpdateFee(updates);
+
+        vm.warp(expiry - 100);
+        OptionProductRegistry localRegistry = new OptionProductRegistry(address(this));
+        localRegistry.setSettlementAssetAllowed(TOKEN, true);
+        localRegistry.setUnderlyingConfig(ETH, OptionProductRegistry.UnderlyingConfig(address(0), 0, 0, 0, 0, true));
+        ForkChainlinkBoundaryStub staleBoundary = new ForkChainlinkBoundaryStub(expiry, true);
+        address[2] memory underlyings = [ETH, BTC];
+        address[2] memory feeds = [address(staleBoundary), BTC_FEED];
+        bytes32[2] memory ids = [ETH_ID, BTC_ID];
+        VerifiedOptionSettlementOwner verifier = new VerifiedOptionSettlementOwner(
+            address(localRegistry),
+            address(this),
+            address(this),
+            TOKEN,
+            PYTH,
+            underlyings,
+            feeds,
+            ids,
+            1_500,
+            1_500,
+            2 days,
+            100,
+            100
+        );
+        localRegistry.pauseSettlement();
+        localRegistry.pauseCreation();
+        localRegistry.transferOwnership(address(verifier));
+        verifier.acceptRegistryOwnership();
+        uint256 series = verifier.createInactiveCallSeries(ETH, expiry, 2000e8);
+        verifier.executeRegistryAdmin(abi.encodeCall(localRegistry.unpauseSettlement, ()));
+
+        vm.warp(expiry + 2);
+        vm.expectRevert(VerifiedOptionSettlementOwner.InvalidRoundProof.selector);
+        verifier.propose(series, 101, 102);
+        uint256 fallbackGasStart = gasleft();
+        verifier.proposePythFallback{value: fee}(series, 101, 102, updates);
+        emit log_named_uint("AUTHENTIC_PYTH_FALLBACK_GAS", fallbackGasStart - gasleft());
+        vm.warp(block.timestamp + 2 days);
+        verifier.resolve(series);
+        verifier.finalize(series);
+        (uint256 price, bool finalized) = localRegistry.getSettlementInfo(series);
+        assertTrue(finalized);
+        assertEq(price, 223_785_865_763);
     }
 
     function testAuthenticPythCoreDisputeResolvesSeriesOnFork() public {
@@ -222,7 +255,7 @@ contract VerifiedOptionSettlementOwnerForkTest is Test {
         OptionProductRegistry localRegistry = new OptionProductRegistry(address(this));
         localRegistry.setSettlementAssetAllowed(TOKEN, true);
         localRegistry.setUnderlyingConfig(ETH, OptionProductRegistry.UnderlyingConfig(address(0), 0, 0, 0, 0, true));
-        ForkChainlinkBoundaryStub boundary = new ForkChainlinkBoundaryStub(expiry);
+        ForkChainlinkBoundaryStub boundary = new ForkChainlinkBoundaryStub(expiry, false);
         address[2] memory underlyings = [ETH, BTC];
         address[2] memory feeds = [address(boundary), BTC_FEED];
         bytes32[2] memory pythIds = [ETH_ID, BTC_ID];
@@ -263,7 +296,7 @@ contract VerifiedOptionSettlementOwnerForkTest is Test {
         emit log_named_uint("RESOLVE_AND_FINALIZE_GAS", settleGasStart - gasleft());
         (uint256 price, bool finalized) = localRegistry.getSettlementInfo(series);
         assertTrue(finalized);
-        assertTrue(price > 0 && price != 2000e8);
+        assertEq(price, 2000e8);
         vm.expectRevert(VerifiedOptionSettlementOwner.InvalidState.selector);
         verifier.finalize(series);
     }
