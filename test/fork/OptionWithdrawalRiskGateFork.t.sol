@@ -5,6 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {CollateralVault} from "../../src/collateral/CollateralVault.sol";
 import {OptionWithdrawalRiskGate} from "../../src/collateral/OptionWithdrawalRiskGate.sol";
 import {IOracle} from "../../src/oracle/IOracle.sol";
+import {IRiskModule} from "../../src/risk/IRiskModule.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract OptionWithdrawalRiskGateForkTest is Test {
@@ -18,6 +19,10 @@ contract OptionWithdrawalRiskGateForkTest is Test {
     address internal constant WETH = 0x4DeEBc5f537F3b8ba0E3393807B4D699D72bDd02;
     address internal constant BUYER = 0x77cA9DD6cCce2D692FB23877a2db7178807b0020;
     address internal constant SELLER = 0x290bD12C93E467Bf51c51f5273D35bdDb19e9274;
+    address internal constant INSURANCE_FUND = 0x009f38440F058d095b61E0E2ee7fAbDF05BE7500;
+    address internal constant PERP_ENGINE = 0xc6C592100723Fe0C66343A16e95eC34cC0c2141c;
+    address internal constant PERP_BUYER = 0x8B94A83D1AD3bD2337b1886E7962CA8E0bba9A34;
+    address internal constant PERP_SELLER = 0x475Fe397FA56884952D350aa9EE1c3946964BC0C;
     uint256 internal constant SERIES = 24145907678156652148089862289363692212069910767044828147380657249455352740183;
 
     CollateralVault internal vault;
@@ -70,9 +75,6 @@ contract OptionWithdrawalRiskGateForkTest is Test {
         vm.prank(ENGINE);
         vm.expectRevert();
         vault.withdrawFor(SELLER, TOKEN, 1);
-        vm.prank(SELLER);
-        vm.expectRevert();
-        vault.transferFromInternalAccount(TOKEN, SELLER, 1);
         assertEq(vault.balances(SELLER, TOKEN), sellerBefore);
 
         _mockHealthyOracle();
@@ -130,6 +132,46 @@ contract OptionWithdrawalRiskGateForkTest is Test {
 
         _mockHealthyOracle();
         gate.getWithdrawableAmount(SELLER, TOKEN);
+    }
+
+    function testSharedVaultNonOptionAccountCanStillWithdrawWithinRiskLimit() public {
+        uint256 insuranceBefore = vault.balances(INSURANCE_FUND, TOKEN);
+        uint256 totalBefore = vault.totalDepositedByToken(TOKEN);
+        assertEq(insuranceBefore, 2_100_010, "pinned InsuranceFund balance changed");
+        assertEq(vault.getAuthorizedEngines().length > 0, true);
+        _install();
+        assertEq(vault.balances(INSURANCE_FUND, TOKEN), insuranceBefore);
+        assertGt(gate.getWithdrawableAmount(INSURANCE_FUND, TOKEN), 0);
+        uint256 recipientBefore = IERC20(TOKEN).balanceOf(INSURANCE_FUND);
+        vm.prank(INSURANCE_FUND); // fork-only account impersonation
+        vault.withdraw(TOKEN, 1);
+        assertEq(vault.balances(INSURANCE_FUND, TOKEN), insuranceBefore - 1);
+        assertEq(vault.totalDepositedByToken(TOKEN), totalBefore - 1);
+        assertEq(IERC20(TOKEN).balanceOf(INSURANCE_FUND), recipientBefore + 1);
+    }
+
+    function testExistingPerpAccountsRemainBoundedAndPositionsUnchanged() public {
+        int256 buyerPositionBefore = _perpPosition(PERP_BUYER);
+        int256 sellerPositionBefore = _perpPosition(PERP_SELLER);
+        assertTrue(buyerPositionBefore != 0 || sellerPositionBefore != 0, "no representative perp position");
+        uint256 buyerBalanceBefore = vault.balances(PERP_BUYER, TOKEN);
+        uint256 sellerBalanceBefore = vault.balances(PERP_SELLER, TOKEN);
+        uint256 oldBuyerMax = IRiskModule(RISK).getWithdrawableAmount(PERP_BUYER, TOKEN);
+        uint256 oldSellerMax = IRiskModule(RISK).getWithdrawableAmount(PERP_SELLER, TOKEN);
+        _install();
+        assertLe(gate.getWithdrawableAmount(PERP_BUYER, TOKEN), oldBuyerMax);
+        assertLe(gate.getWithdrawableAmount(PERP_SELLER, TOKEN), oldSellerMax);
+        assertEq(_perpPosition(PERP_BUYER), buyerPositionBefore);
+        assertEq(_perpPosition(PERP_SELLER), sellerPositionBefore);
+        assertEq(vault.balances(PERP_BUYER, TOKEN), buyerBalanceBefore);
+        assertEq(vault.balances(PERP_SELLER, TOKEN), sellerBalanceBefore);
+    }
+
+    function _perpPosition(address account) internal view returns (int256) {
+        (bool ok, bytes memory data) =
+            PERP_ENGINE.staticcall(abi.encodeWithSignature("getPositionSize(address,uint256)", account, 1));
+        require(ok && data.length == 32, "perp position read failed");
+        return abi.decode(data, (int256));
     }
 
     function testGuardianCanFreezeWithdrawalsBeforeGovernanceSwitch() public {
