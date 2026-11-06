@@ -38,28 +38,41 @@ interface IHistoricalPyth {
 contract VerifiedOptionSettlementOwner {
     error NotTimelock();
     error NotEmergencyGuardian();
+    error WrongChain();
     error UnsafeRegistryState();
     error UnsupportedSeries();
+    error LegacySeriesRestricted();
     error InvalidRoundProof();
     error InvalidPriceProof();
     error ProposalExists();
     error NoProposal();
     error ChallengeClosed();
     error NoMaterialDisagreement();
-    error Disputed();
+    error InvalidState();
     error ChallengeOpen();
     error ForbiddenAdminCall();
     error InvalidFee();
 
+    enum SettlementState {
+        PRICE_UNAVAILABLE,
+        PRICE_PROPOSED,
+        CHALLENGED,
+        RESOLVED,
+        FINALIZED
+    }
+
     struct Proposal {
-        uint256 price1e8;
+        uint256 chainlinkPrice1e8;
+        uint256 pythPrice1e8;
+        uint256 selectedPrice1e8;
         uint80 beforeRound;
         uint80 afterRound;
         uint64 proposedAt;
-        bool disputed;
+        SettlementState state;
     }
 
     OptionProductRegistry public immutable registry;
+    uint256 public immutable deploymentChainId;
     address public immutable timelock;
     address public immutable emergencyGuardian;
     address public immutable settlementAsset;
@@ -73,11 +86,13 @@ contract VerifiedOptionSettlementOwner {
     mapping(address => IHistoricalChainlinkFeed) public chainlinkFeed;
     mapping(address => bytes32) public pythPriceId;
     mapping(uint256 => Proposal) public proposals;
+    mapping(uint256 => bool) public settlementEligible;
 
     event PriceProposed(uint256 indexed optionId, uint256 price1e8, uint80 beforeRound, uint80 afterRound);
     event PriceDisputed(uint256 indexed optionId, uint256 pythPrice1e8);
+    event PriceResolved(uint256 indexed optionId, uint256 price1e8, bool pythSelected);
     event PriceFinalized(uint256 indexed optionId, uint256 price1e8);
-    event PriceProposalCancelled(uint256 indexed optionId);
+    event ControlledSeriesCreated(uint256 indexed optionId, address indexed underlying);
 
     constructor(
         address registry_,
@@ -102,6 +117,7 @@ contract VerifiedOptionSettlementOwner {
                 || maxPythConfidenceBps_ > 100
         ) revert InvalidPriceProof();
         registry = OptionProductRegistry(registry_);
+        deploymentChainId = block.chainid;
         timelock = timelock_;
         emergencyGuardian = emergencyGuardian_;
         settlementAsset = settlementAsset_;
@@ -131,9 +147,14 @@ contract VerifiedOptionSettlementOwner {
         _;
     }
 
+    modifier sameChain() {
+        if (block.chainid != deploymentChainId) revert WrongChain();
+        _;
+    }
+
     /// @dev Requires no legacy operator or pending arbitrary proposal. Existing
     ///      finalized prices cannot be undone, so a fresh preflight is needed.
-    function acceptRegistryOwnership() external onlyTimelock {
+    function acceptRegistryOwnership() external onlyTimelock sameChain {
         if (
             registry.pendingOwner() != address(this) || registry.owner() != timelock
                 || registry.settlementOperator() != address(0) || registry.settlementFinalityDelay() != 0
@@ -153,12 +174,38 @@ contract VerifiedOptionSettlementOwner {
         if (registry.guardian() != address(this)) revert UnsafeRegistryState();
     }
 
-    function emergencyPauseSettlement() external onlyEmergencyGuardian {
+    function emergencyPauseSettlement() external onlyEmergencyGuardian sameChain {
         registry.pauseSettlement();
     }
 
-    function emergencyPauseAll() external onlyEmergencyGuardian {
+    function emergencyPauseAll() external onlyEmergencyGuardian sameChain {
         registry.pause();
+    }
+
+    /// @notice Create only a prospective, inactive European Call. Existing
+    ///         series are deliberately ineligible for this new price policy.
+    /// @dev The temporary creator/creation permission and the deactivation
+    ///      occur in one transaction. Registry.createSeries makes no external
+    ///      calls; any revert rolls back the entire sequence.
+    function createInactiveCallSeries(address underlying, uint64 expiry, uint64 strike)
+        external
+        onlyTimelock
+        sameChain
+        returns (uint256 optionId)
+    {
+        if (address(chainlinkFeed[underlying]) == address(0)) revert UnsupportedSeries();
+        if (
+            registry.owner() != address(this) || !registry.creationPaused() || registry.paused()
+                || registry.configPaused()
+        ) revert UnsafeRegistryState();
+        registry.setSeriesCreator(address(this), true);
+        registry.unpauseCreation();
+        optionId = registry.createSeries(underlying, settlementAsset, expiry, strike, true, true);
+        registry.pauseCreation();
+        registry.setSeriesCreator(address(this), false);
+        registry.setSeriesActive(optionId, false);
+        settlementEligible[optionId] = true;
+        emit ControlledSeriesCreated(optionId, underlying);
     }
 
     function _series(uint256 optionId)
@@ -169,6 +216,7 @@ contract VerifiedOptionSettlementOwner {
         series = registry.getSeries(optionId);
         feed = chainlinkFeed[series.underlying];
         if (series.settlementAsset != settlementAsset || address(feed) == address(0)) revert UnsupportedSeries();
+        if (!settlementEligible[optionId]) revert LegacySeriesRestricted();
     }
 
     function _normalize(uint256 raw, uint8 decimals) internal pure returns (uint256) {
@@ -196,16 +244,17 @@ contract VerifiedOptionSettlementOwner {
         return _normalize(uint256(answer), feed.decimals());
     }
 
-    function propose(uint256 optionId, uint80 beforeId, uint80 afterId) external {
+    function propose(uint256 optionId, uint80 beforeId, uint80 afterId) external sameChain {
         if (
             registry.owner() != address(this) || registry.settlementOperator() != address(0)
                 || registry.settlementFinalityDelay() != 0
         ) revert UnsafeRegistryState();
         (OptionProductRegistry.OptionSeries memory series, IHistoricalChainlinkFeed feed) = _series(optionId);
         if (block.timestamp < series.expiry || registry.isSettled(optionId)) revert InvalidPriceProof();
-        if (proposals[optionId].proposedAt != 0) revert ProposalExists();
+        if (proposals[optionId].state != SettlementState.PRICE_UNAVAILABLE) revert ProposalExists();
         uint256 price = _historicalPrice(feed, series.expiry, beforeId, afterId);
-        proposals[optionId] = Proposal(price, beforeId, afterId, uint64(block.timestamp), false);
+        proposals[optionId] =
+            Proposal(price, 0, 0, beforeId, afterId, uint64(block.timestamp), SettlementState.PRICE_PROPOSED);
         emit PriceProposed(optionId, price, beforeId, afterId);
     }
 
@@ -230,49 +279,55 @@ contract VerifiedOptionSettlementOwner {
         return price;
     }
 
-    /// @notice Anyone can submit a signed, unique Pyth historical update. A
-    ///         material divergence freezes this series; it never selects a
-    ///         new settlement price or grants an administrator that power.
-    function challengeWithPyth(uint256 optionId, bytes[] calldata updateData) external payable {
+    /// @notice A verified, materially divergent Pyth Core update overrides
+    ///         Chainlink after the fixed challenge deadline. This economic
+    ///         precedence is a proposal requiring separate approval.
+    function challengeWithPyth(uint256 optionId, bytes[] calldata updateData) external payable sameChain {
         Proposal storage proposal = proposals[optionId];
-        if (proposal.proposedAt == 0) revert NoProposal();
+        if (proposal.state == SettlementState.PRICE_UNAVAILABLE) revert NoProposal();
+        if (proposal.state != SettlementState.PRICE_PROPOSED) revert InvalidState();
         if (block.timestamp >= uint256(proposal.proposedAt) + challengePeriod) revert ChallengeClosed();
-        if (proposal.disputed) revert Disputed();
         uint256 fee = pyth.getUpdateFee(updateData);
         if (msg.value != fee) revert InvalidFee();
         uint256 alternative = _pythPrice(optionId, updateData, fee);
-        uint256 difference =
-            alternative > proposal.price1e8 ? alternative - proposal.price1e8 : proposal.price1e8 - alternative;
-        if (difference * 10_000 <= proposal.price1e8 * maxDivergenceBps) revert NoMaterialDisagreement();
-        proposal.disputed = true;
+        uint256 difference = alternative > proposal.chainlinkPrice1e8
+            ? alternative - proposal.chainlinkPrice1e8
+            : proposal.chainlinkPrice1e8 - alternative;
+        if (difference * 10_000 <= proposal.chainlinkPrice1e8 * maxDivergenceBps) revert NoMaterialDisagreement();
+        proposal.pythPrice1e8 = alternative;
+        proposal.state = SettlementState.CHALLENGED;
         emit PriceDisputed(optionId, alternative);
     }
 
-    function cancelProposal(uint256 optionId) external onlyTimelock {
-        if (proposals[optionId].proposedAt == 0) revert NoProposal();
-        if (proposals[optionId].disputed) revert Disputed();
-        delete proposals[optionId];
-        emit PriceProposalCancelled(optionId);
+    /// @notice Resolve once, at a deadline fixed by the first proof. There is
+    ///         no reset or administrative price-selection path.
+    function resolve(uint256 optionId) external sameChain {
+        Proposal storage proposal = proposals[optionId];
+        if (proposal.state == SettlementState.PRICE_UNAVAILABLE) revert NoProposal();
+        if (block.timestamp < uint256(proposal.proposedAt) + challengePeriod) revert ChallengeOpen();
+        bool pythSelected = proposal.state == SettlementState.CHALLENGED;
+        if (!pythSelected && proposal.state != SettlementState.PRICE_PROPOSED) revert InvalidState();
+        proposal.selectedPrice1e8 = pythSelected ? proposal.pythPrice1e8 : proposal.chainlinkPrice1e8;
+        proposal.state = SettlementState.RESOLVED;
+        emit PriceResolved(optionId, proposal.selectedPrice1e8, pythSelected);
     }
 
-    function finalize(uint256 optionId) external {
-        Proposal memory proposal = proposals[optionId];
-        if (proposal.proposedAt == 0) revert NoProposal();
-        if (proposal.disputed) revert Disputed();
-        if (block.timestamp < uint256(proposal.proposedAt) + challengePeriod) revert ChallengeOpen();
+    function finalize(uint256 optionId) external sameChain {
+        Proposal storage proposal = proposals[optionId];
+        if (proposal.state != SettlementState.RESOLVED) revert InvalidState();
         if (
             registry.owner() != address(this) || registry.settlementOperator() != address(0)
                 || registry.settlementFinalityDelay() != 0
         ) revert UnsafeRegistryState();
-        delete proposals[optionId];
-        registry.setSettlementPrice(optionId, proposal.price1e8);
-        emit PriceFinalized(optionId, proposal.price1e8);
+        proposal.state = SettlementState.FINALIZED;
+        registry.setSettlementPrice(optionId, proposal.selectedPrice1e8);
+        emit PriceFinalized(optionId, proposal.selectedPrice1e8);
     }
 
     /// @dev Narrow governance compatibility: Registry owns configuration,
     ///      but no selector that alters ownership, settlement roles, delay,
     ///      proposal, final price, or execution is forwarded.
-    function executeRegistryAdmin(bytes calldata data) external onlyTimelock returns (bytes memory) {
+    function executeRegistryAdmin(bytes calldata data) external onlyTimelock sameChain returns (bytes memory) {
         if (data.length < 4) revert ForbiddenAdminCall();
         bytes4 selector = bytes4(data[:4]);
         if (
@@ -280,12 +335,12 @@ contract VerifiedOptionSettlementOwner {
                 && selector != OptionProductRegistry.unpause.selector
                 && selector != OptionProductRegistry.unpauseSettlement.selector
                 && selector != OptionProductRegistry.unpauseConfig.selector
-                && selector != OptionProductRegistry.setOptionRiskConfig.selector
                 && selector != OptionProductRegistry.setSeriesMetadata.selector
         ) revert ForbiddenAdminCall();
         if (selector == OptionProductRegistry.setSeriesActive.selector) {
-            (uint256 optionId,) = abi.decode(data[4:], (uint256, bool));
-            _series(optionId);
+            (uint256 optionId, bool isActive) = abi.decode(data[4:], (uint256, bool));
+            if (isActive && !settlementEligible[optionId]) revert ForbiddenAdminCall();
+            registry.getSeries(optionId);
         }
         (bool ok, bytes memory result) = address(registry).call(data);
         if (!ok) assembly { revert(add(result, 32), mload(result)) }

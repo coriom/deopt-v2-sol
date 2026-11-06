@@ -13,9 +13,11 @@ cbor_metadata = false
 # PERPS-CLOSED-TEST-E2E-V1 Part A — allow `DeployPerpsE2E.s.sol` to write
 # its ephemeral address manifest under the operator-provided
 # `PERPS_E2E_MANIFEST_PATH` (defaults to `/tmp/*_perps_e2e_manifest.json`).
-# Scoped read-write to /tmp only; no impact on production deploy scripts.
+# Scoped read-write to /tmp only; V9 adds read-only access to one public
+# signed Pyth fixture for fork tests. No production deploy-script access.
 fs_permissions = [
     { access = "read-write", path = "/tmp" },
+    { access = "read", path = "./test/fixtures/options_v9_pyth_core_eth_payload.hex" },
 ]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

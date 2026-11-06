@@ -78,6 +78,7 @@ contract VerifiedOptionSettlementOwnerTest is Test {
     HistoricalPythStub internal pyth;
     VerifiedOptionSettlementOwner internal verifier;
     uint256 internal optionId;
+    uint256 internal legacyOptionId;
     uint64 internal expiry;
 
     function setUp() public {
@@ -90,7 +91,7 @@ contract VerifiedOptionSettlementOwnerTest is Test {
             OptionProductRegistry.UnderlyingConfig(address(0), 0, 0, 0, 0, true);
         registry.setUnderlyingConfig(UNDERLYING, config);
         expiry = uint64(block.timestamp + 1_000);
-        optionId = registry.createSeries(UNDERLYING, TOKEN, expiry, 3000e8, 1e8, true, true);
+        legacyOptionId = registry.createSeries(UNDERLYING, TOKEN, expiry, 3000e8, 1e8, true, true);
         chainlink.setRound(101, 3000e8, expiry - 10);
         chainlink.setRound(102, 3001e8, expiry + 10);
         pyth.configure(PRICE_ID, expiry + 11, 3300_00000000);
@@ -116,11 +117,22 @@ contract VerifiedOptionSettlementOwnerTest is Test {
         registry.pauseCreation();
         registry.transferOwnership(address(verifier));
         verifier.acceptRegistryOwnership();
+        optionId = verifier.createInactiveCallSeries(UNDERLYING, expiry, 3001e8);
         verifier.executeRegistryAdmin(abi.encodeCall(registry.unpauseSettlement, ()));
         vm.warp(expiry + 20);
     }
 
     function testSyntheticChainlinkBoundaryAndDirectBypassRejection() public {
+        assertFalse(verifier.settlementEligible(legacyOptionId));
+        assertTrue(verifier.settlementEligible(optionId));
+        assertFalse(registry.getSeries(optionId).isActive);
+        assertFalse(registry.isSeriesCreator(address(verifier)));
+        vm.expectRevert(OptionProductRegistry.StrikeZero.selector);
+        verifier.createInactiveCallSeries(UNDERLYING, uint64(block.timestamp + 1 days), 0);
+        assertTrue(registry.creationPaused());
+        assertFalse(registry.isSeriesCreator(address(verifier)));
+        vm.expectRevert(VerifiedOptionSettlementOwner.LegacySeriesRestricted.selector);
+        verifier.propose(legacyOptionId, 101, 102);
         assertTrue(registry.creationPaused());
         assertEq(registry.guardian(), address(verifier));
         vm.prank(GUARDIAN);
@@ -143,18 +155,27 @@ contract VerifiedOptionSettlementOwnerTest is Test {
         verifier.executeRegistryAdmin(abi.encodeCall(registry.transferOwnership, (ATTACKER)));
         vm.expectRevert(VerifiedOptionSettlementOwner.ForbiddenAdminCall.selector);
         verifier.executeRegistryAdmin(abi.encodeCall(registry.setSettlementFinalityDelay, (0)));
+        vm.expectRevert(VerifiedOptionSettlementOwner.ForbiddenAdminCall.selector);
+        verifier.executeRegistryAdmin(abi.encodeWithSelector(OptionProductRegistry.setOptionRiskConfig.selector));
+        vm.expectRevert(VerifiedOptionSettlementOwner.ForbiddenAdminCall.selector);
+        verifier.executeRegistryAdmin(abi.encodeCall(registry.setSeriesActive, (legacyOptionId, true)));
+        verifier.executeRegistryAdmin(abi.encodeCall(registry.setSeriesActive, (optionId, true)));
+        assertTrue(registry.getSeries(optionId).isActive);
 
         verifier.propose(optionId, 101, 102);
         vm.expectRevert(VerifiedOptionSettlementOwner.ProposalExists.selector);
         verifier.propose(optionId, 101, 102);
         vm.expectRevert(VerifiedOptionSettlementOwner.ChallengeOpen.selector);
-        verifier.finalize(optionId);
+        verifier.resolve(optionId);
         vm.warp(block.timestamp + 2 days);
+        verifier.resolve(optionId);
         verifier.finalize(optionId);
         (uint256 price, bool finalized) = registry.getSettlementInfo(optionId);
         assertTrue(finalized);
         assertEq(price, 3000e8);
-        vm.expectRevert(VerifiedOptionSettlementOwner.NoProposal.selector);
+        (,,,,,, VerifiedOptionSettlementOwner.SettlementState state) = verifier.proposals(optionId);
+        assertEq(uint256(state), uint256(VerifiedOptionSettlementOwner.SettlementState.FINALIZED));
+        vm.expectRevert(VerifiedOptionSettlementOwner.InvalidState.selector);
         verifier.finalize(optionId);
         vm.expectRevert(VerifiedOptionSettlementOwner.InvalidPriceProof.selector);
         verifier.propose(optionId, 101, 102);
@@ -178,7 +199,13 @@ contract VerifiedOptionSettlementOwnerTest is Test {
         verifier.executeRegistryAdmin(abi.encodeCall(registry.setSeriesActive, (optionId, false)));
     }
 
-    function testPythStubDivergenceFreezesAndInvalidProofDoesNot() public {
+    function testSettlementProofCannotBeReplayedAfterChainIdChange() public {
+        vm.chainId(block.chainid + 1);
+        vm.expectRevert(VerifiedOptionSettlementOwner.WrongChain.selector);
+        verifier.propose(optionId, 101, 102);
+    }
+
+    function testPythStubDivergenceSelectsFixedAlternativeWithoutDeadlineReset() public {
         verifier.propose(optionId, 101, 102);
         bytes[] memory updateData = new bytes[](1);
         updateData[0] = hex"aa";
@@ -187,23 +214,44 @@ contract VerifiedOptionSettlementOwnerTest is Test {
         verifier.challengeWithPyth(optionId, updateData);
         pyth.setReject(false);
         verifier.challengeWithPyth(optionId, updateData);
-        vm.expectRevert(VerifiedOptionSettlementOwner.Disputed.selector);
-        verifier.cancelProposal(optionId);
+        vm.expectRevert(VerifiedOptionSettlementOwner.ChallengeOpen.selector);
+        verifier.resolve(optionId);
+        vm.expectRevert(VerifiedOptionSettlementOwner.InvalidState.selector);
+        verifier.challengeWithPyth(optionId, updateData);
+        vm.expectRevert(VerifiedOptionSettlementOwner.ProposalExists.selector);
+        verifier.propose(optionId, 101, 102);
         vm.warp(block.timestamp + 2 days);
-        vm.expectRevert(VerifiedOptionSettlementOwner.Disputed.selector);
+        verifier.resolve(optionId);
+        vm.expectRevert(VerifiedOptionSettlementOwner.InvalidState.selector);
+        verifier.resolve(optionId);
+        vm.expectRevert(VerifiedOptionSettlementOwner.InvalidState.selector);
+        verifier.challengeWithPyth(optionId, updateData);
         verifier.finalize(optionId);
-        (, bool finalized) = registry.getSettlementInfo(optionId);
-        assertFalse(finalized);
+        (uint256 price, bool finalized) = registry.getSettlementInfo(optionId);
+        assertTrue(finalized);
+        assertEq(price, 3300e8);
+        vm.expectRevert(VerifiedOptionSettlementOwner.InvalidState.selector);
+        verifier.finalize(optionId);
     }
 
     function testUnavailableHistoryAndAdministrativeCompatibility() public {
         chainlink.setRound(101, 3000e8, expiry - 1_501);
         vm.expectRevert(VerifiedOptionSettlementOwner.InvalidRoundProof.selector);
         verifier.propose(optionId, 101, 102);
+        (,,,,,, VerifiedOptionSettlementOwner.SettlementState state) = verifier.proposals(optionId);
+        assertEq(uint256(state), uint256(VerifiedOptionSettlementOwner.SettlementState.PRICE_UNAVAILABLE));
         (, bool finalized) = registry.getSettlementInfo(optionId);
         assertFalse(finalized);
         verifier.executeRegistryAdmin(abi.encodeCall(registry.setSeriesActive, (optionId, false)));
         assertFalse(registry.getSeries(optionId).isActive);
+        chainlink.setRound(101, 3000e8, expiry - 10);
+        verifier.propose(optionId, 101, 102);
+        vm.warp(block.timestamp + 2 days);
+        verifier.resolve(optionId);
+        verifier.finalize(optionId);
+        (uint256 price, bool nowFinal) = registry.getSettlementInfo(optionId);
+        assertTrue(nowFinal);
+        assertEq(price, 3000e8);
     }
 
     function testMatchingPythPriceCannotGriefAndLateChallengeIsClosed() public {
@@ -216,6 +264,7 @@ contract VerifiedOptionSettlementOwnerTest is Test {
         vm.warp(block.timestamp + 2 days);
         vm.expectRevert(VerifiedOptionSettlementOwner.ChallengeClosed.selector);
         verifier.challengeWithPyth(optionId, updateData);
+        verifier.resolve(optionId);
         verifier.finalize(optionId);
     }
 }

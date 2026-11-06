@@ -3,9 +3,31 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {OptionProductRegistry} from "../../src/OptionProductRegistry.sol";
-import {VerifiedOptionSettlementOwner} from "../../src/settlement/VerifiedOptionSettlementOwner.sol";
+import {
+    VerifiedOptionSettlementOwner,
+    IHistoricalChainlinkFeed,
+    IHistoricalPyth
+} from "../../src/settlement/VerifiedOptionSettlementOwner.sol";
 import {CollateralVault} from "../../src/collateral/CollateralVault.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+contract ForkChainlinkBoundaryStub is IHistoricalChainlinkFeed {
+    uint64 public immutable expiry;
+
+    constructor(uint64 expiry_) {
+        expiry = expiry_;
+    }
+
+    function decimals() external pure returns (uint8) {
+        return 8;
+    }
+
+    function getRoundData(uint80 id) external view returns (uint80, int256, uint256, uint256, uint80) {
+        require(id == 101 || id == 102, "unknown round");
+        uint256 updatedAt = id == 101 ? expiry - 10 : expiry + 1;
+        return (id, 2000e8, updatedAt, updatedAt, id);
+    }
+}
 
 contract VerifiedOptionSettlementOwnerForkTest is Test {
     address internal constant REGISTRY = 0x3d52b033Fab00ed6104DD3bc0a715F8648344ecA;
@@ -28,6 +50,9 @@ contract VerifiedOptionSettlementOwnerForkTest is Test {
         CollateralVault vault = CollateralVault(VAULT);
         assertEq(registry.owner(), TIMELOCK);
         assertEq(registry.settlementOperator(), address(0));
+        (bool linked, bytes memory linkedData) = ENGINE.staticcall(abi.encodeWithSignature("optionRegistry()"));
+        assertTrue(linked);
+        assertEq(abi.decode(linkedData, (address)), REGISTRY);
         uint256 accountingBefore = vault.totalDepositedByToken(TOKEN);
         uint256 assetsBefore = IERC20(TOKEN).balanceOf(VAULT);
         (bool ok, bytes memory data) =
@@ -64,6 +89,7 @@ contract VerifiedOptionSettlementOwnerForkTest is Test {
         assertEq(registry.owner(), address(verifier));
         assertEq(registry.guardian(), address(verifier));
         assertTrue(registry.creationPaused());
+        assertFalse(verifier.settlementEligible(ETH_CALL));
         assertEq(registry.settlementOperator(), address(0));
         vm.prank(TIMELOCK);
         verifier.executeRegistryAdmin(abi.encodeCall(registry.unpauseSettlement, ()));
@@ -77,11 +103,15 @@ contract VerifiedOptionSettlementOwnerForkTest is Test {
         verifier.executeRegistryAdmin(abi.encodeCall(registry.setSeriesActive, (ETH_CALL, false)));
         assertFalse(registry.getSeries(ETH_CALL).isActive);
         vm.prank(TIMELOCK);
+        vm.expectRevert(VerifiedOptionSettlementOwner.ForbiddenAdminCall.selector);
         verifier.executeRegistryAdmin(abi.encodeCall(registry.setSeriesActive, (ETH_CALL, true)));
-        assertTrue(registry.getSeries(ETH_CALL).isActive);
+        assertFalse(registry.getSeries(ETH_CALL).isActive);
 
         assertEq(vault.totalDepositedByToken(TOKEN), accountingBefore);
         assertEq(IERC20(TOKEN).balanceOf(VAULT), assetsBefore);
+        (linked, linkedData) = ENGINE.staticcall(abi.encodeWithSignature("optionRegistry()"));
+        assertTrue(linked);
+        assertEq(abi.decode(linkedData, (address)), REGISTRY);
         (ok, data) = ENGINE.staticcall(abi.encodeWithSignature("seriesShortOpenInterest(uint256)", ETH_CALL));
         require(ok && abi.decode(data, (uint256)) == shortOiBefore, "positions changed");
         assertEq(shortOiBefore, 7);
@@ -110,7 +140,6 @@ contract VerifiedOptionSettlementOwnerForkTest is Test {
         OptionProductRegistry localRegistry = new OptionProductRegistry(address(this));
         localRegistry.setSettlementAssetAllowed(TOKEN, true);
         localRegistry.setUnderlyingConfig(ETH, OptionProductRegistry.UnderlyingConfig(address(0), 0, 0, 0, 0, true));
-        uint256 localSeries = localRegistry.createSeries(ETH, TOKEN, syntheticExpiry, 3000e8, 1e8, true, true);
         address[2] memory underlyings = [ETH, BTC];
         address[2] memory feeds = [ETH_FEED, BTC_FEED];
         bytes32[2] memory ids = [ETH_ID, BTC_ID];
@@ -133,13 +162,162 @@ contract VerifiedOptionSettlementOwnerForkTest is Test {
         localRegistry.pauseCreation();
         localRegistry.transferOwnership(address(verifier));
         verifier.acceptRegistryOwnership();
+        uint256 localSeries = verifier.createInactiveCallSeries(ETH, syntheticExpiry, 3000e8);
         verifier.executeRegistryAdmin(abi.encodeCall(localRegistry.unpauseSettlement, ()));
         vm.warp(latestAt + 1);
         verifier.propose(localSeries, earlierId, latestId);
         vm.warp(block.timestamp + 2 days);
+        verifier.resolve(localSeries);
         verifier.finalize(localSeries);
         (uint256 settledPrice, bool finalized) = localRegistry.getSettlementInfo(localSeries);
         assertTrue(finalized);
         assertEq(settledPrice, uint256(earlierPrice));
+    }
+
+    function testAuthenticPythCorePayloadAcceptedByDeployedVerifier() public {
+        vm.createSelectFork(vm.envString("RPC_URL"), 55_064_571);
+        bytes memory signedUpdate = vm.parseBytes(vm.readFile("test/fixtures/options_v9_pyth_core_eth_payload.hex"));
+        bytes[] memory updates = new bytes[](1);
+        updates[0] = signedUpdate;
+        bytes32[] memory ids = new bytes32[](1);
+        ids[0] = ETH_ID;
+        uint64 publishTime = 1_793_934_781;
+        uint256 fee = IHistoricalPyth(PYTH).getUpdateFee(updates);
+        vm.deal(address(this), fee);
+        IHistoricalPyth.PriceFeed[] memory prices = IHistoricalPyth(PYTH).parsePriceFeedUpdatesUnique{value: fee}(
+            updates, ids, publishTime, publishTime + 1_500
+        );
+        assertEq(prices.length, 1);
+        assertEq(prices[0].id, ETH_ID);
+        assertEq(prices[0].price.publishTime, publishTime);
+        assertGt(prices[0].price.price, 0);
+        assertLe(uint256(prices[0].price.conf) * 10_000, uint256(uint64(prices[0].price.price)) * 100);
+        // The deployed Base Sepolia contract currently quotes zero native fee;
+        // execution gas remains nonzero and must be budgeted separately.
+        assertEq(fee, 0);
+
+        // The exact same signed update cannot authenticate a different feed
+        // or a window beginning after its publication timestamp.
+        ids[0] = BTC_ID;
+        vm.expectRevert();
+        IHistoricalPyth(PYTH).parsePriceFeedUpdatesUnique{value: fee}(updates, ids, publishTime, publishTime + 1_500);
+        ids[0] = ETH_ID;
+        vm.expectRevert();
+        IHistoricalPyth(PYTH).parsePriceFeedUpdatesUnique{value: fee}(
+            updates, ids, publishTime + 1, publishTime + 1_500
+        );
+    }
+
+    function testAuthenticPythCoreDisputeResolvesSeriesOnFork() public {
+        vm.createSelectFork(vm.envString("RPC_URL"), 55_064_571);
+        uint64 expiry = 1_793_934_781;
+        bytes memory signedUpdate = vm.parseBytes(vm.readFile("test/fixtures/options_v9_pyth_core_eth_payload.hex"));
+        bytes[] memory updates = new bytes[](1);
+        updates[0] = signedUpdate;
+        bytes32[] memory ids = new bytes32[](1);
+        ids[0] = ETH_ID;
+        uint256 fee = IHistoricalPyth(PYTH).getUpdateFee(updates);
+
+        vm.warp(expiry - 100);
+        OptionProductRegistry localRegistry = new OptionProductRegistry(address(this));
+        localRegistry.setSettlementAssetAllowed(TOKEN, true);
+        localRegistry.setUnderlyingConfig(ETH, OptionProductRegistry.UnderlyingConfig(address(0), 0, 0, 0, 0, true));
+        ForkChainlinkBoundaryStub boundary = new ForkChainlinkBoundaryStub(expiry);
+        address[2] memory underlyings = [ETH, BTC];
+        address[2] memory feeds = [address(boundary), BTC_FEED];
+        bytes32[2] memory pythIds = [ETH_ID, BTC_ID];
+        VerifiedOptionSettlementOwner verifier = new VerifiedOptionSettlementOwner(
+            address(localRegistry),
+            address(this),
+            address(this),
+            TOKEN,
+            PYTH,
+            underlyings,
+            feeds,
+            pythIds,
+            1_500,
+            1_500,
+            2 days,
+            100,
+            100
+        );
+        localRegistry.pauseSettlement();
+        localRegistry.pauseCreation();
+        localRegistry.transferOwnership(address(verifier));
+        verifier.acceptRegistryOwnership();
+        uint256 series = verifier.createInactiveCallSeries(ETH, expiry, 2000e8);
+        verifier.executeRegistryAdmin(abi.encodeCall(localRegistry.unpauseSettlement, ()));
+
+        vm.warp(expiry + 2);
+        verifier.propose(series, 101, 102);
+        vm.deal(address(this), fee);
+        uint256 challengeGasStart = gasleft();
+        verifier.challengeWithPyth{value: fee}(series, updates);
+        emit log_named_uint("AUTHENTIC_PYTH_CHALLENGE_GAS", challengeGasStart - gasleft());
+        (,,,,,, VerifiedOptionSettlementOwner.SettlementState disputed) = verifier.proposals(series);
+        assertEq(uint256(disputed), uint256(VerifiedOptionSettlementOwner.SettlementState.CHALLENGED));
+        vm.warp(block.timestamp + 2 days);
+        uint256 settleGasStart = gasleft();
+        verifier.resolve(series);
+        verifier.finalize(series);
+        emit log_named_uint("RESOLVE_AND_FINALIZE_GAS", settleGasStart - gasleft());
+        (uint256 price, bool finalized) = localRegistry.getSettlementInfo(series);
+        assertTrue(finalized);
+        assertTrue(price > 0 && price != 2000e8);
+        vm.expectRevert(VerifiedOptionSettlementOwner.InvalidState.selector);
+        verifier.finalize(series);
+    }
+
+    function testAuthenticChainlinkAndPythAgreeOnPinnedHistoricalExpiry() public {
+        vm.createSelectFork(vm.envString("RPC_URL"), 55_073_290);
+        uint64 expiry = 1_793_934_781;
+        uint80 beforeId = 18_446_744_073_709_842_478;
+        uint80 afterId = beforeId + 1;
+        bytes memory signedUpdate = vm.parseBytes(vm.readFile("test/fixtures/options_v9_pyth_core_eth_payload.hex"));
+        bytes[] memory updates = new bytes[](1);
+        updates[0] = signedUpdate;
+        vm.warp(expiry - 100);
+        OptionProductRegistry localRegistry = new OptionProductRegistry(address(this));
+        localRegistry.setSettlementAssetAllowed(TOKEN, true);
+        localRegistry.setUnderlyingConfig(ETH, OptionProductRegistry.UnderlyingConfig(address(0), 0, 0, 0, 0, true));
+        address[2] memory underlyings = [ETH, BTC];
+        address[2] memory feeds = [ETH_FEED, BTC_FEED];
+        bytes32[2] memory pythIds = [ETH_ID, BTC_ID];
+        VerifiedOptionSettlementOwner verifier = new VerifiedOptionSettlementOwner(
+            address(localRegistry),
+            address(this),
+            address(this),
+            TOKEN,
+            PYTH,
+            underlyings,
+            feeds,
+            pythIds,
+            1_500,
+            1_500,
+            2 days,
+            100,
+            100
+        );
+        localRegistry.pauseSettlement();
+        localRegistry.pauseCreation();
+        localRegistry.transferOwnership(address(verifier));
+        verifier.acceptRegistryOwnership();
+        uint256 series = verifier.createInactiveCallSeries(ETH, expiry, 2000e8);
+        verifier.executeRegistryAdmin(abi.encodeCall(localRegistry.unpauseSettlement, ()));
+
+        vm.warp(expiry + 32);
+        uint256 proposeGasStart = gasleft();
+        verifier.propose(series, beforeId, afterId);
+        emit log_named_uint("AUTHENTIC_CHAINLINK_PROPOSE_GAS", proposeGasStart - gasleft());
+        uint256 fee = IHistoricalPyth(PYTH).getUpdateFee(updates);
+        vm.deal(address(this), fee);
+        vm.expectRevert(VerifiedOptionSettlementOwner.NoMaterialDisagreement.selector);
+        verifier.challengeWithPyth{value: fee}(series, updates);
+        vm.warp(block.timestamp + 2 days);
+        verifier.resolve(series);
+        verifier.finalize(series);
+        (uint256 settled, bool finalized) = localRegistry.getSettlementInfo(series);
+        assertTrue(finalized);
+        assertEq(settled, 224_042_789_828);
     }
 }
