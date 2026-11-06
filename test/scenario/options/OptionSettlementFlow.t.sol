@@ -532,6 +532,60 @@ contract OptionSettlementFlowTest is Test {
         assertEq(engine.positions(BUYER, callOptionId).quantity, 0);
     }
 
+    function testEmergencySettlementDelayAndCancellationDuringOutage() external {
+        vm.prank(OWNER);
+        registry.setSettlementFinalityDelay(1 days); // test-only delay; no live parameter selected
+        _deposit(BUYER, 10_000 * BASE_UNIT);
+        _deposit(SELLER, 10_000 * BASE_UNIT);
+        _trade(BUYER, SELLER, 1);
+        oracle.setPrice(address(weth), address(usdc), 0, block.timestamp, false);
+        vm.warp(uint256(registry.getSeries(callOptionId).expiry) + 1);
+
+        vm.prank(SELLER);
+        vm.expectRevert(OptionProductRegistry.NotAuthorized.selector);
+        registry.setSettlementPrice(callOptionId, ITM_SETTLEMENT_PRICE);
+
+        vm.prank(OWNER);
+        registry.setSettlementPrice(callOptionId, ITM_SETTLEMENT_PRICE);
+        vm.expectRevert(OptionProductRegistry.SettlementFinalityDelayNotElapsed.selector);
+        vm.prank(OWNER);
+        registry.finalizeSettlementPrice(callOptionId);
+        vm.expectRevert(MarginEngineTypes.SettlementNotSet.selector);
+        engine.settleAccount(callOptionId, SELLER);
+
+        vm.prank(OWNER);
+        registry.cancelSettlementProposal(callOptionId);
+        vm.expectRevert(OptionProductRegistry.NoSettlementProposal.selector);
+        vm.prank(OWNER);
+        registry.finalizeSettlementPrice(callOptionId);
+
+        vm.prank(OWNER);
+        registry.setSettlementPrice(callOptionId, ITM_SETTLEMENT_PRICE);
+        vm.warp(block.timestamp + 1 days);
+        vm.prank(OWNER);
+        registry.finalizeSettlementPrice(callOptionId);
+        engine.settleAccount(callOptionId, SELLER);
+        engine.settleAccount(callOptionId, BUYER);
+        vm.expectRevert(MarginEngineTypes.SettlementAlreadyProcessed.selector);
+        engine.settleAccount(callOptionId, SELLER);
+    }
+
+    function testRegistryDelayDoesNotValidateEmergencyPriceSource() external {
+        vm.prank(OWNER);
+        registry.setSettlementFinalityDelay(1 days);
+        vm.warp(uint256(registry.getSeries(callOptionId).expiry) + 1);
+        // This arbitrary positive value is deliberately not an approved price.
+        // The test documents a governance gap, not a safe settlement procedure.
+        vm.prank(OWNER);
+        registry.setSettlementPrice(callOptionId, 1);
+        vm.warp(block.timestamp + 1 days);
+        vm.prank(OWNER);
+        registry.finalizeSettlementPrice(callOptionId);
+        (uint256 accepted, bool isSet) = registry.getSettlementInfo(callOptionId);
+        assertTrue(isSet);
+        assertEq(accepted, 1);
+    }
+
     function testPremiumAndPayoffAccountingRemainCoherentThroughFullFlow() external {
         _deposit(BUYER, 10_000 * BASE_UNIT);
         _deposit(SELLER, 10_000 * BASE_UNIT);
