@@ -9,10 +9,53 @@ import {MarginEngine} from "../src/margin/MarginEngine.sol";
 import {OptionMatchingEngine} from "../src/matching/OptionMatchingEngine.sol";
 import {FeesManagerV2} from "../src/fees/FeesManagerV2.sol";
 import {
+    VerifiedOptionSettlementOwner,
+    IHistoricalChainlinkFeed,
+    IHistoricalPyth
+} from "../src/settlement/VerifiedOptionSettlementOwner.sol";
+import {
     ScenarioOptionERC20,
     ScenarioOptionOracle,
     ScenarioOptionInsuranceFund
 } from "../test/scenario/options/OptionSettlementFlow.t.sol";
+
+/// @dev Deterministic local-only feed. Production settlement uses real historical feeds.
+contract LocalHistoricalChainlinkFeed is IHistoricalChainlinkFeed {
+    struct Round {
+        int256 answer;
+        uint256 updatedAt;
+    }
+    mapping(uint80 => Round) public rounds;
+
+    function setRound(uint80 id, int256 answer, uint256 updatedAt) external {
+        rounds[id] = Round({answer: answer, updatedAt: updatedAt});
+    }
+
+    function decimals() external pure returns (uint8) {
+        return 8;
+    }
+
+    function getRoundData(uint80 id) external view returns (uint80, int256, uint256, uint256, uint80) {
+        Round memory round = rounds[id];
+        require(round.updatedAt != 0, "missing local round");
+        return (id, round.answer, round.updatedAt, round.updatedAt, id);
+    }
+}
+
+/// @dev Fail-closed local placeholder. Authentic Pyth Core is covered by fork tests.
+contract LocalPythUnavailable is IHistoricalPyth {
+    function getUpdateFee(bytes[] calldata) external pure returns (uint256) {
+        return 0;
+    }
+
+    function parsePriceFeedUpdatesUnique(bytes[] calldata, bytes32[] calldata, uint64, uint64)
+        external
+        payable
+        returns (PriceFeed[] memory)
+    {
+        revert("Pyth unavailable in local E2E");
+    }
+}
 
 /// @notice Local Anvil only. Never use this script with a public RPC.
 contract OptionsLocalAnvilE2E is Script {
@@ -30,6 +73,7 @@ contract OptionsLocalAnvilE2E is Script {
         address owner = vm.addr(OWNER_PK);
         address buyer = vm.addr(BUYER_PK);
         address seller = vm.addr(SELLER_PK);
+        bool verifiedSettlement = vm.envOr("OPTIONS_V13_VERIFIED_SETTLEMENT", false);
 
         vm.startBroadcast(OWNER_PK);
         CollateralVault vault = new CollateralVault(owner);
@@ -69,6 +113,7 @@ contract OptionsLocalAnvilE2E is Script {
         );
         risk.setRiskParams(address(usdc), 10 * 1e6, 12_000);
         risk.syncCollateralTokensFromVault();
+        if (verifiedSettlement) vault.setRiskModule(address(risk));
         engine.setRiskModule(address(risk));
         engine.syncRiskParamsFromRiskModule();
         engine.setMatchingEngine(address(matching));
@@ -79,7 +124,40 @@ contract OptionsLocalAnvilE2E is Script {
         engine.setFeesManagerV2(address(feesManagerV2));
         engine.setUseFeesManagerV2(true);
         uint64 expiry = uint64(block.timestamp + 7 days);
-        uint256 optionId = registry.createSeries(address(weth), address(usdc), expiry, uint64(STRIKE), true, true);
+        uint256 optionId;
+        VerifiedOptionSettlementOwner verifier;
+        LocalHistoricalChainlinkFeed historicalFeed;
+        if (verifiedSettlement) {
+            historicalFeed = new LocalHistoricalChainlinkFeed();
+            LocalPythUnavailable unavailablePyth = new LocalPythUnavailable();
+            address[2] memory underlyings = [address(weth), address(0x1234)];
+            address[2] memory feeds = [address(historicalFeed), address(historicalFeed)];
+            bytes32[2] memory pythIds = [bytes32(uint256(1)), bytes32(uint256(2))];
+            verifier = new VerifiedOptionSettlementOwner(
+                address(registry),
+                owner,
+                owner,
+                address(usdc),
+                address(unavailablePyth),
+                underlyings,
+                feeds,
+                pythIds,
+                1_500,
+                1_500,
+                2 days,
+                100,
+                100
+            );
+            registry.pauseCreation();
+            registry.pauseSettlement();
+            registry.transferOwnership(address(verifier));
+            verifier.acceptRegistryOwnership();
+            optionId = verifier.createInactiveCallSeries(address(weth), expiry, uint64(STRIKE));
+            verifier.executeRegistryAdmin(abi.encodeCall(registry.setSeriesActive, (optionId, true)));
+            verifier.executeRegistryAdmin(abi.encodeCall(registry.unpauseSettlement, ()));
+        } else {
+            optionId = registry.createSeries(address(weth), address(usdc), expiry, uint64(STRIKE), true, true);
+        }
         oracle.setPrice(address(weth), address(usdc), STRIKE, block.timestamp, true);
         usdc.mint(buyer, 10_000 * 1e6);
         usdc.mint(seller, 10_000 * 1e6);
@@ -105,6 +183,18 @@ contract OptionsLocalAnvilE2E is Script {
         console2.log("REGISTRY", address(registry));
         console2.log("VAULT", address(vault));
         console2.log("FEES_MANAGER_V2", address(feesManagerV2));
+        if (verifiedSettlement) {
+            console2.log("VERIFIED_SETTLEMENT_OWNER", address(verifier));
+            console2.log("LOCAL_HISTORICAL_FEED", address(historicalFeed));
+            require(registry.owner() == address(verifier), "verifier does not own dedicated registry");
+            require(vault.marginEngine() == address(engine), "dedicated vault engine wiring");
+            require(address(vault.riskModule()) == address(risk), "dedicated vault risk wiring");
+            require(address(engine.optionRegistry()) == address(registry), "dedicated registry wiring");
+            require(address(engine.collateralVault()) == address(vault), "dedicated vault wiring");
+            require(address(matching.optionRegistry()) == address(registry), "matching registry wiring");
+            require(address(matching.marginEngine()) == address(engine), "matching engine wiring");
+            require(vault.isAuthorizedEngine(address(insurance)), "insurance authorization");
+        }
         if (vm.envOr("OPTIONS_V4_DEPLOY_ONLY", false)) return;
 
         OptionMatchingEngine.OptionTrade memory trade = OptionMatchingEngine.OptionTrade({

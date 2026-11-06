@@ -54,6 +54,8 @@ contract VerifiedOptionSettlementOwner {
     error ChallengeOpen();
     error ForbiddenAdminCall();
     error InvalidFee();
+    error RecoveryNotReady();
+    error IncompatibleSuccessor();
 
     enum SettlementState {
         PRICE_UNAVAILABLE,
@@ -90,6 +92,12 @@ contract VerifiedOptionSettlementOwner {
     mapping(uint256 => Proposal) public proposals;
     mapping(uint256 => bool) public settlementEligible;
     mapping(uint256 => bool) public legacySeries;
+    address[2] private _underlyings;
+    VerifiedOptionSettlementOwner public predecessor;
+    uint256 public legacySeriesCount;
+    uint8 public recoveryDepth;
+
+    uint8 public constant MAX_RECOVERY_DEPTH = 4;
 
     event PriceProposed(uint256 indexed optionId, uint256 price1e8, uint80 beforeRound, uint80 afterRound);
     event PriceDisputed(uint256 indexed optionId, uint256 pythPrice1e8);
@@ -98,6 +106,9 @@ contract VerifiedOptionSettlementOwner {
     event PriceFinalized(uint256 indexed optionId, uint256 price1e8);
     event ControlledSeriesCreated(uint256 indexed optionId, address indexed underlying);
     event LegacyPriceFinalized(uint256 indexed optionId, uint256 price1e8);
+    event RecoveryPrepared(address indexed predecessor);
+    event RecoveryStarted(address indexed successor);
+    event RecoveryAccepted(address indexed predecessor);
 
     constructor(
         address registry_,
@@ -139,7 +150,107 @@ contract VerifiedOptionSettlementOwner {
             ) revert InvalidPriceProof();
             chainlinkFeed[underlyings[i]] = IHistoricalChainlinkFeed(chainlinkFeeds[i]);
             pythPriceId[underlyings[i]] = pythIds[i];
+            _underlyings[i] = underlyings[i];
         }
+    }
+
+    function configuredUnderlying(uint256 index) external view returns (address) {
+        return _underlyings[index];
+    }
+
+    function isSettlementEligible(uint256 optionId) public view returns (bool) {
+        return settlementEligible[optionId]
+            || (address(predecessor) != address(0) && predecessor.isSettlementEligible(optionId));
+    }
+
+    function getProposal(uint256 optionId) external view returns (Proposal memory) {
+        return proposals[optionId];
+    }
+
+    /// @notice A successor keeps the prior verifier's series eligibility.
+    ///         The Timelock must still schedule its ownership handoff.
+    function prepareRecovery(address previous) external onlyTimelock sameChain {
+        if (address(predecessor) != address(0) || previous == address(0) || previous == address(this)) {
+            revert RecoveryNotReady();
+        }
+        if (registry.owner() != previous) revert RecoveryNotReady();
+        VerifiedOptionSettlementOwner prior = VerifiedOptionSettlementOwner(previous);
+        _requireCompatible(prior);
+        if (prior.recoveryDepth() >= MAX_RECOVERY_DEPTH) revert RecoveryNotReady();
+        recoveryDepth = prior.recoveryDepth() + 1;
+        predecessor = prior;
+        emit RecoveryPrepared(previous);
+    }
+
+    /// @dev Matching getters prevent accidental policy drift. A malicious
+    ///      Timelock-approved successor could fake these getters: governance
+    ///      remains a technical trust boundary and must verify bytecode.
+    function _requireCompatible(VerifiedOptionSettlementOwner other) internal view {
+        if (
+            address(other.registry()) != address(registry) || other.deploymentChainId() != deploymentChainId
+                || other.timelock() != timelock || other.emergencyGuardian() != emergencyGuardian
+                || other.settlementAsset() != settlementAsset || address(other.pyth()) != address(pyth)
+                || other.maxBeforeAge() != maxBeforeAge || other.maxAfterLag() != maxAfterLag
+                || other.challengePeriod() != challengePeriod || other.maxDivergenceBps() != maxDivergenceBps
+                || other.maxPythConfidenceBps() != maxPythConfidenceBps
+        ) revert IncompatibleSuccessor();
+        for (uint256 i; i < 2; ++i) {
+            address underlying = _underlyings[i];
+            if (
+                other.configuredUnderlying(i) != underlying
+                    || address(other.chainlinkFeed(underlying)) != address(chainlinkFeed[underlying])
+                    || other.pythPriceId(underlying) != pythPriceId[underlying]
+            ) revert IncompatibleSuccessor();
+        }
+    }
+
+    /// @notice Guardian can freeze the Registry while a replacement is reviewed.
+    function emergencyPauseForRecovery() external onlyEmergencyGuardian sameChain {
+        registry.pause();
+        registry.pauseCreation();
+        registry.pauseSettlement();
+    }
+
+    /// @notice Timelock-governed first leg of a two-step ownership handoff.
+    ///         Only dedicated Registries without historical series may use it.
+    function handoffTo(VerifiedOptionSettlementOwner successor) external onlyTimelock sameChain {
+        if (
+            registry.owner() != address(this) || !registry.paused() || !registry.creationPaused()
+                || !registry.settlementPaused() || registry.settlementOperator() != address(0)
+                || registry.settlementFinalityDelay() != 0 || legacySeriesCount != 0
+                || address(successor).code.length == 0 || address(successor.predecessor()) != address(this)
+        ) revert RecoveryNotReady();
+        _requireCompatible(successor);
+        uint256[] memory ids = registry.getAllOptionIds();
+        if (ids.length > 64) revert RecoveryNotReady();
+        registry.transferOwnership(address(successor));
+        emit RecoveryStarted(address(successor));
+    }
+
+    /// @notice Abort a failed handoff while this verifier still owns Registry.
+    function cancelRecovery() external onlyTimelock sameChain {
+        if (registry.owner() != address(this) || registry.pendingOwner() == address(0)) revert RecoveryNotReady();
+        registry.cancelOwnershipTransfer();
+    }
+
+    function acceptRecoveredOwnership() external onlyTimelock sameChain {
+        VerifiedOptionSettlementOwner previous = predecessor;
+        if (
+            address(previous) == address(0) || registry.owner() != address(previous)
+                || registry.pendingOwner() != address(this) || !registry.paused() || !registry.creationPaused()
+                || !registry.settlementPaused() || registry.settlementOperator() != address(0)
+                || registry.settlementFinalityDelay() != 0
+        ) revert RecoveryNotReady();
+        _requireCompatible(previous);
+        uint256[] memory ids = registry.getAllOptionIds();
+        if (ids.length > 64) revert RecoveryNotReady();
+        for (uint256 i; i < ids.length; ++i) {
+            if (proposals[ids[i]].state != SettlementState.PRICE_UNAVAILABLE) revert RecoveryNotReady();
+            proposals[ids[i]] = previous.getProposal(ids[i]);
+        }
+        registry.acceptOwnership();
+        registry.setGuardian(address(this));
+        emit RecoveryAccepted(address(previous));
     }
 
     modifier onlyTimelock() {
@@ -161,9 +272,9 @@ contract VerifiedOptionSettlementOwner {
     ///      finalized prices cannot be undone, so a fresh preflight is needed.
     function acceptRegistryOwnership() external onlyTimelock sameChain {
         if (
-            registry.pendingOwner() != address(this) || registry.owner() != timelock
-                || registry.settlementOperator() != address(0) || registry.settlementFinalityDelay() != 0
-                || !registry.settlementPaused() || !registry.creationPaused()
+            address(predecessor) != address(0) || registry.pendingOwner() != address(this)
+                || registry.owner() != timelock || registry.settlementOperator() != address(0)
+                || registry.settlementFinalityDelay() != 0 || !registry.settlementPaused() || !registry.creationPaused()
         ) revert UnsafeRegistryState();
         // Snapshot historical IDs while creation is paused. Only those IDs
         // retain their previous Timelock-governed price-setting path.
@@ -173,6 +284,7 @@ contract VerifiedOptionSettlementOwner {
             (,, bool pending) = registry.getSettlementProposal(existing[i]);
             if (pending) revert UnsafeRegistryState();
             legacySeries[existing[i]] = true;
+            legacySeriesCount++;
         }
         registry.acceptOwnership();
         if (registry.owner() != address(this)) revert UnsafeRegistryState();
@@ -238,7 +350,7 @@ contract VerifiedOptionSettlementOwner {
         series = registry.getSeries(optionId);
         feed = chainlinkFeed[series.underlying];
         if (series.settlementAsset != settlementAsset || address(feed) == address(0)) revert UnsupportedSeries();
-        if (!settlementEligible[optionId]) revert LegacySeriesRestricted();
+        if (!isSettlementEligible(optionId)) revert LegacySeriesRestricted();
     }
 
     function _normalize(uint256 raw, uint8 decimals) internal pure returns (uint256) {
@@ -344,6 +456,7 @@ contract VerifiedOptionSettlementOwner {
     /// @notice Material divergence is recorded, but never overrides an
     ///         admissible pre-expiry Chainlink price.
     function challengeWithPyth(uint256 optionId, bytes[] calldata updateData) external payable sameChain {
+        if (registry.owner() != address(this)) revert UnsafeRegistryState();
         Proposal storage proposal = proposals[optionId];
         if (proposal.state == SettlementState.PRICE_UNAVAILABLE) revert NoProposal();
         if (proposal.state != SettlementState.PRICE_PROPOSED) revert InvalidState();
@@ -364,6 +477,7 @@ contract VerifiedOptionSettlementOwner {
     /// @notice Resolve once, at a deadline fixed by the first proof. There is
     ///         no reset or administrative price-selection path.
     function resolve(uint256 optionId) external sameChain {
+        if (registry.owner() != address(this)) revert UnsafeRegistryState();
         Proposal storage proposal = proposals[optionId];
         if (proposal.state == SettlementState.PRICE_UNAVAILABLE) revert NoProposal();
         if (block.timestamp < uint256(proposal.proposedAt) + challengePeriod) revert ChallengeOpen();
@@ -402,7 +516,7 @@ contract VerifiedOptionSettlementOwner {
         ) revert ForbiddenAdminCall();
         if (selector == OptionProductRegistry.setSeriesActive.selector) {
             (uint256 optionId, bool isActive) = abi.decode(data[4:], (uint256, bool));
-            if (isActive && !settlementEligible[optionId]) revert ForbiddenAdminCall();
+            if (isActive && !isSettlementEligible(optionId)) revert ForbiddenAdminCall();
             registry.getSeries(optionId);
         }
         (bool ok, bytes memory result) = address(registry).call(data);

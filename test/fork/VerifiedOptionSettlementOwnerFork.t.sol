@@ -77,12 +77,62 @@ contract VerifiedOptionSettlementOwnerForkTest is Test {
         assertEq(address(newRisk.collateralVault()), address(newVault));
         assertEq(historicalRegistry.owner(), TIMELOCK);
         assertEq(historicalVault.marginEngine(), ENGINE);
+        assertFalse(historicalVault.isAuthorizedEngine(address(newEngine)));
+        assertFalse(historicalVault.isAuthorizedEngine(address(newMatching)));
         assertEq(historicalVault.totalDepositedByToken(TOKEN), historicalTotal);
         assertEq(IERC20(TOKEN).balanceOf(VAULT), historicalAssets);
         assertEq(historicalVault.balances(0x290bD12C93E467Bf51c51f5273D35bdDb19e9274, TOKEN), historicalSeller);
         (ok, data) = ENGINE.staticcall(abi.encodeWithSignature("seriesShortOpenInterest(uint256)", ETH_CALL));
         require(ok, "historical OI unavailable after local deployment");
         assertEq(abi.decode(data, (uint256)), historicalShorts);
+    }
+
+    function testDedicatedRegistryRecoveryPreservesHistoricalStackOnFork() public {
+        vm.createSelectFork(vm.envString("RPC_URL"), 55_041_332);
+        OptionProductRegistry historicalRegistry = OptionProductRegistry(REGISTRY);
+        CollateralVault historicalVault = CollateralVault(VAULT);
+        uint256 historicalAssets = IERC20(TOKEN).balanceOf(VAULT);
+        uint256 historicalTotal = historicalVault.totalDepositedByToken(TOKEN);
+
+        OptionProductRegistry dedicated = new OptionProductRegistry(TIMELOCK);
+        vm.startPrank(TIMELOCK); // fork-only impersonation, not a Safe signature
+        dedicated.setSettlementAssetAllowed(TOKEN, true);
+        dedicated.setUnderlyingConfig(ETH, OptionProductRegistry.UnderlyingConfig(address(0), 0, 0, 0, 0, true));
+        vm.stopPrank();
+        address[2] memory underlyings = [ETH, BTC];
+        address[2] memory feeds = [ETH_FEED, BTC_FEED];
+        bytes32[2] memory ids = [ETH_ID, BTC_ID];
+        VerifiedOptionSettlementOwner first = new VerifiedOptionSettlementOwner(
+            address(dedicated), TIMELOCK, TIMELOCK, TOKEN, PYTH, underlyings, feeds, ids, 1_500, 1_500, 2 days, 100, 100
+        );
+        vm.startPrank(TIMELOCK);
+        dedicated.pauseCreation();
+        dedicated.pauseSettlement();
+        dedicated.transferOwnership(address(first));
+        first.acceptRegistryOwnership();
+        uint256 newSeries = first.createInactiveCallSeries(ETH, uint64(block.timestamp + 30 days), 3000e8);
+        vm.stopPrank();
+
+        VerifiedOptionSettlementOwner successor = new VerifiedOptionSettlementOwner(
+            address(dedicated), TIMELOCK, TIMELOCK, TOKEN, PYTH, underlyings, feeds, ids, 1_500, 1_500, 2 days, 100, 100
+        );
+        vm.startPrank(TIMELOCK);
+        successor.prepareRecovery(address(first));
+        first.emergencyPauseForRecovery();
+        first.handoffTo(successor);
+        successor.acceptRecoveredOwnership();
+        vm.stopPrank();
+        assertEq(dedicated.owner(), address(successor));
+        assertTrue(successor.isSettlementEligible(newSeries));
+        assertFalse(dedicated.getSeries(newSeries).isActive);
+        assertEq(historicalRegistry.owner(), TIMELOCK);
+        assertEq(historicalVault.marginEngine(), ENGINE);
+        assertEq(IERC20(TOKEN).balanceOf(VAULT), historicalAssets);
+        assertEq(historicalVault.totalDepositedByToken(TOKEN), historicalTotal);
+        (bool ok, bytes memory data) =
+            ENGINE.staticcall(abi.encodeWithSignature("seriesShortOpenInterest(uint256)", ETH_CALL));
+        require(ok, "historical OI unavailable");
+        assertEq(abi.decode(data, (uint256)), 7);
     }
 
     function testLegacyPricePathIsIsolatedAndCollateralUnchanged() public {
