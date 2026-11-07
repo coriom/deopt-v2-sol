@@ -41,6 +41,22 @@ contract CoveredLocalOracleV18 is IOracle {
     }
 }
 
+/// @dev Two matcher calls in one local Anvil transaction.
+contract CoveredLocalTradeBatchV18 {
+    function executeTwo(
+        OptionMatchingEngine matcher,
+        OptionMatchingEngine.OptionTrade calldata first,
+        bytes calldata firstBuyerSignature,
+        bytes calldata firstSellerSignature,
+        OptionMatchingEngine.OptionTrade calldata second,
+        bytes calldata secondBuyerSignature,
+        bytes calldata secondSellerSignature
+    ) external {
+        matcher.executeTrade(first, firstBuyerSignature, firstSellerSignature);
+        matcher.executeTrade(second, secondBuyerSignature, secondSellerSignature);
+    }
+}
+
 /// @notice Local Anvil receipt fixture for the V18 covered engine only.
 contract OptionsCoveredLocalAnvilV18 is Script {
     uint256 private constant OWNER_PK = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
@@ -68,6 +84,8 @@ contract OptionsCoveredLocalAnvilV18 is Script {
         CoveredCallMarginEngine engine =
             new CoveredCallMarginEngine(owner, address(registry), optionId, address(oracle), 1_500, 48 hours);
         OptionMatchingEngine matcher = new OptionMatchingEngine(owner, address(engine), address(registry));
+        CoveredLocalTradeBatchV18 batch = new CoveredLocalTradeBatchV18();
+        matcher.setExecutor(address(batch), true);
         matcher.freezeConfiguration();
         engine.bindMatchingEngine(address(matcher));
         engine.setPaused(false);
@@ -95,7 +113,7 @@ contract OptionsCoveredLocalAnvilV18 is Script {
             strike1e8: 2_250e8,
             isCall: true,
             contractSize1e8: 1e8,
-            quantity: 2,
+            quantity: 1,
             premiumPerContract: 100e6,
             buyerIsMaker: true,
             buyerNonce: 0,
@@ -105,8 +123,24 @@ contract OptionsCoveredLocalAnvilV18 is Script {
         bytes32 digest = matcher.hashTrade(trade);
         (uint8 bv, bytes32 br, bytes32 bs) = vm.sign(BUYER_PK, digest);
         (uint8 sv, bytes32 sr, bytes32 ss) = vm.sign(SELLER_PK, digest);
+        OptionMatchingEngine.OptionTrade memory second =
+            abi.decode(abi.encode(trade), (OptionMatchingEngine.OptionTrade));
+        second.intentId = keccak256("v18-covered-local-anvil-second");
+        second.buyerNonce = 1;
+        second.sellerNonce = 1;
+        bytes32 secondDigest = matcher.hashTrade(second);
+        (uint8 b2v, bytes32 b2r, bytes32 b2s) = vm.sign(BUYER_PK, secondDigest);
+        (uint8 s2v, bytes32 s2r, bytes32 s2s) = vm.sign(SELLER_PK, secondDigest);
         vm.startBroadcast(OWNER_PK);
-        matcher.executeTrade(trade, abi.encodePacked(br, bs, bv), abi.encodePacked(sr, ss, sv));
+        batch.executeTwo(
+            matcher,
+            trade,
+            abi.encodePacked(br, bs, bv),
+            abi.encodePacked(sr, ss, sv),
+            second,
+            abi.encodePacked(b2r, b2s, b2v),
+            abi.encodePacked(s2r, s2s, s2v)
+        );
         vm.stopBroadcast();
 
         console2.log("V18_ENGINE", address(engine));
