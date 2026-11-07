@@ -625,6 +625,27 @@ contract MockMarginRiskModule is IRiskModule {
             engine.settleAccount(callOptionId, BOB);
         }
 
+        function testV17ShortOiCapDoesNotCoverExtremeCallPayoff() external {
+            vm.prank(OWNER);
+            engine.setSeriesShortOpenInterestCap(callOptionId, 1);
+
+            // Leave the seller with 1,000 mUSDC before the premium. Other
+            // accounts may hold funds, but they are not this short's reserve.
+            vm.prank(address(engine));
+            vault.transferBetweenAccounts(address(usdc), BOB, CAROL, 9_000 * BASE_UNIT);
+            _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
+            assertEq(engine.seriesShortOpenInterest(callOptionId), 1);
+
+            vm.warp(block.timestamp + 8 days);
+            vm.prank(OWNER);
+            registry.setSettlementPrice(callOptionId, 4_500 * PRICE_SCALE);
+            engine.settleAccount(callOptionId, BOB);
+
+            // The call owes 2,500 mUSDC. The 1,100 mUSDC seller balance
+            // (initial 1,000 plus premium 100) leaves 1,400 bad debt.
+            assertEq(engine.seriesBadDebt(callOptionId), 1_400 * BASE_UNIT);
+        }
+
         function testPreviewDetailedSettlementShowsInsuranceCoverageForWinningLong() external {
             _trade(ALICE, BOB, callOptionId, 1, PREMIUM_PER_CONTRACT);
 

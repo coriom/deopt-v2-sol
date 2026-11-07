@@ -36,6 +36,7 @@ contract OptionMatchingEngine is ReentrancyGuard, EIP712 {
     event ExecutorSet(address indexed executor, bool allowed);
     event EngineSet(address indexed oldEngine, address indexed newEngine);
     event RegistrySet(address indexed oldRegistry, address indexed newRegistry);
+    event ConfigurationFrozen();
     event Paused(address indexed account);
     event Unpaused(address indexed account);
 
@@ -89,6 +90,7 @@ contract OptionMatchingEngine is ReentrancyGuard, EIP712 {
     error SeriesMetadataMismatch();
     error TradeOracleUnavailable();
     error TradeOracleStale();
+    error ConfigurationAlreadyFrozen();
 
     /*//////////////////////////////////////////////////////////////
                                 STORAGE
@@ -103,6 +105,7 @@ contract OptionMatchingEngine is ReentrancyGuard, EIP712 {
 
     mapping(address => bool) public isExecutor;
     bool public paused;
+    bool public configurationFrozen;
     mapping(address => uint256) public nonces;
 
     bytes32 public constant TRADE_TYPEHASH = keccak256(
@@ -274,6 +277,7 @@ contract OptionMatchingEngine is ReentrancyGuard, EIP712 {
     }
 
     function setEngine(address _marginEngine) external onlyOwner {
+        if (configurationFrozen) revert ConfigurationAlreadyFrozen();
         if (_marginEngine == address(0)) revert ZeroAddress();
         address old = address(marginEngine);
         marginEngine = IMarginEngineTrade(_marginEngine);
@@ -281,10 +285,19 @@ contract OptionMatchingEngine is ReentrancyGuard, EIP712 {
     }
 
     function setRegistry(address _optionRegistry) external onlyOwner {
+        if (configurationFrozen) revert ConfigurationAlreadyFrozen();
         if (_optionRegistry == address(0)) revert ZeroAddress();
         address old = address(optionRegistry);
         optionRegistry = OptionProductRegistry(_optionRegistry);
         emit RegistrySet(old, _optionRegistry);
+    }
+
+    /// @notice Irreversibly bind this matcher to its selected registry and margin engine.
+    /// @dev Intended only for a new dedicated stack after configuration is checked.
+    function freezeConfiguration() external onlyOwner {
+        if (configurationFrozen) revert ConfigurationAlreadyFrozen();
+        configurationFrozen = true;
+        emit ConfigurationFrozen();
     }
 
     function pause() external onlyGuardianOrOwner {

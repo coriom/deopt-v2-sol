@@ -44,6 +44,19 @@ contract MockOptionMarginEngineTrade is IMarginEngineTrade {
     function paused() external pure returns (bool) {
         return false;
     }
+
+    // The matcher requires a fresh spot before accepting any new risk.
+    function oracle() external view returns (address) {
+        return address(this);
+    }
+
+    function liquidationOracleMaxDelay() external pure returns (uint32) {
+        return 1_500;
+    }
+
+    function getPrice(address, address) external view returns (uint256, uint256) {
+        return (2_000e8, block.timestamp);
+    }
 }
 
 contract OptionMatchingEngineTest is Test {

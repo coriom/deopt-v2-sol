@@ -267,9 +267,16 @@ contract OptionsLocalAnvilE2E is Script {
             (uint8 lsv, bytes32 lsr, bytes32 lss) = vm.sign(SELLER_PK, legacyDigest);
             vm.startBroadcast(OWNER_PK);
             legacyMatching.executeTrade(legacyTrade, abi.encodePacked(lbr, lbs, lbv), abi.encodePacked(lsr, lss, lsv));
+            legacyTrade.intentId = keccak256("deopt-v17-legacy-second-fill");
+            legacyTrade.buyerNonce = 1;
+            legacyTrade.sellerNonce = 1;
+            legacyDigest = legacyMatching.hashTrade(legacyTrade);
+            (lbv, lbr, lbs) = vm.sign(BUYER_PK, legacyDigest);
+            (lsv, lsr, lss) = vm.sign(SELLER_PK, legacyDigest);
+            legacyMatching.executeTrade(legacyTrade, abi.encodePacked(lbr, lbs, lbv), abi.encodePacked(lsr, lss, lsv));
             vm.stopBroadcast();
-            require(legacyEngine.positions(buyer, optionId).quantity == 1, "legacy buyer position");
-            require(legacyEngine.positions(seller, optionId).quantity == -1, "legacy seller position");
+            require(legacyEngine.positions(buyer, optionId).quantity == 2, "legacy buyer position");
+            require(legacyEngine.positions(seller, optionId).quantity == -2, "legacy seller position");
             require(engine.positions(buyer, optionId).quantity == 0, "dedicated buyer must start empty");
         }
 
