@@ -12,7 +12,7 @@ import {OptionMatchingEngine} from "../matching/OptionMatchingEngine.sol";
 
 /// @notice Local-only experiment. Physical delivery needs separate product/API/indexer approval.
 /// @dev No cash-settlement or legacy-vault path exists in this contract. A lot is
-///      bound to its buyer and writer; transferability and lapse are not supported.
+///      bound to its buyer and writer; transferability is not supported.
 contract CoveredCallMarginEngine is IMarginEngineTrade, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -20,6 +20,8 @@ contract CoveredCallMarginEngine is IMarginEngineTrade, ReentrancyGuard {
     error InvalidConfiguration();
     error InvalidTrade();
     error NotExpired();
+    error ExerciseWindowClosed();
+    error ExerciseWindowOpen();
     error InsufficientPosition();
     error Insolvent();
 
@@ -46,6 +48,13 @@ contract CoveredCallMarginEngine is IMarginEngineTrade, ReentrancyGuard {
         uint256 quantity,
         uint256 underlyingReturned
     );
+    event LongExpired(
+        uint256 indexed optionId,
+        address indexed buyer,
+        address indexed seller,
+        uint256 quantity,
+        uint256 underlyingReturned
+    );
 
     address public immutable owner;
     OptionProductRegistry public immutable registry;
@@ -53,6 +62,7 @@ contract CoveredCallMarginEngine is IMarginEngineTrade, ReentrancyGuard {
     IERC20 public immutable quote;
     address public immutable oracle;
     uint32 public immutable liquidationOracleMaxDelay;
+    uint32 public immutable exerciseWindow;
     uint256 public immutable optionId;
     uint256 public immutable underlyingPerContract;
     uint256 public immutable strikePerContract;
@@ -62,8 +72,18 @@ contract CoveredCallMarginEngine is IMarginEngineTrade, ReentrancyGuard {
     uint256 public totalLockedUnderlying;
     mapping(address => mapping(address => uint256)) public openLots;
 
-    constructor(address owner_, address registry_, uint256 optionId_, address oracle_, uint32 maxDelay_) {
-        if (owner_ == address(0) || registry_ == address(0) || oracle_ == address(0) || maxDelay_ == 0) {
+    constructor(
+        address owner_,
+        address registry_,
+        uint256 optionId_,
+        address oracle_,
+        uint32 maxDelay_,
+        uint32 exerciseWindow_
+    ) {
+        if (
+            owner_ == address(0) || registry_ == address(0) || oracle_ == address(0) || maxDelay_ == 0
+                || exerciseWindow_ == 0 || exerciseWindow_ > 30 days
+        ) {
             revert InvalidConfiguration();
         }
         OptionProductRegistry.OptionSeries memory s = OptionProductRegistry(registry_).getSeries(optionId_);
@@ -83,6 +103,7 @@ contract CoveredCallMarginEngine is IMarginEngineTrade, ReentrancyGuard {
         quote = IERC20(s.settlementAsset);
         oracle = oracle_;
         liquidationOracleMaxDelay = maxDelay_;
+        exerciseWindow = exerciseWindow_;
         underlyingPerContract = 1e18;
         strikePerContract = uint256(s.strike) / 100;
     }
@@ -115,11 +136,15 @@ contract CoveredCallMarginEngine is IMarginEngineTrade, ReentrancyGuard {
         uint256 amount = uint256(t.quantity) * underlyingPerContract;
         uint256 premium = uint256(t.quantity) * uint256(t.price);
         uint256 beforeBalance = underlying.balanceOf(address(this));
+        uint256 sellerUnderlyingBefore = underlying.balanceOf(t.seller);
         underlying.safeTransferFrom(t.seller, address(this), amount);
         if (underlying.balanceOf(address(this)) - beforeBalance != amount) revert Insolvent();
+        if (sellerUnderlyingBefore - underlying.balanceOf(t.seller) != amount) revert Insolvent();
         uint256 sellerQuoteBefore = quote.balanceOf(t.seller);
+        uint256 buyerQuoteBefore = quote.balanceOf(t.buyer);
         quote.safeTransferFrom(t.buyer, t.seller, premium);
         if (quote.balanceOf(t.seller) - sellerQuoteBefore != premium) revert Insolvent();
+        if (buyerQuoteBefore - quote.balanceOf(t.buyer) != premium) revert Insolvent();
         openLots[t.buyer][t.seller] += t.quantity;
         totalLockedUnderlying += amount;
         if (underlying.balanceOf(address(this)) < totalLockedUnderlying) revert Insolvent();
@@ -129,16 +154,22 @@ contract CoveredCallMarginEngine is IMarginEngineTrade, ReentrancyGuard {
     /// @notice European physical exercise; no oracle is needed for delivery.
     /// @dev Buyer pays strike in quote units; writer's pre-locked underlying is delivered.
     function exercise(address seller, uint256 quantity) external nonReentrant {
-        if (block.timestamp < registry.getSeries(optionId).expiry) revert NotExpired();
+        uint256 expiry = registry.getSeries(optionId).expiry;
+        if (block.timestamp < expiry) revert NotExpired();
+        if (block.timestamp >= expiry + exerciseWindow) revert ExerciseWindowClosed();
         _consumeLot(msg.sender, seller, quantity);
         uint256 strikePaid = quantity * strikePerContract;
         uint256 delivered = quantity * underlyingPerContract;
         uint256 sellerQuoteBefore = quote.balanceOf(seller);
+        uint256 buyerQuoteBefore = quote.balanceOf(msg.sender);
         quote.safeTransferFrom(msg.sender, seller, strikePaid);
         if (quote.balanceOf(seller) - sellerQuoteBefore != strikePaid) revert Insolvent();
+        if (buyerQuoteBefore - quote.balanceOf(msg.sender) != strikePaid) revert Insolvent();
         uint256 buyerUnderlyingBefore = underlying.balanceOf(msg.sender);
+        uint256 engineUnderlyingBefore = underlying.balanceOf(address(this));
         underlying.safeTransfer(msg.sender, delivered);
         if (underlying.balanceOf(msg.sender) - buyerUnderlyingBefore != delivered) revert Insolvent();
+        if (engineUnderlyingBefore - underlying.balanceOf(address(this)) != delivered) revert Insolvent();
         if (underlying.balanceOf(address(this)) < totalLockedUnderlying) revert Insolvent();
         emit PhysicalExercise(optionId, msg.sender, seller, quantity, strikePaid, delivered);
     }
@@ -150,10 +181,29 @@ contract CoveredCallMarginEngine is IMarginEngineTrade, ReentrancyGuard {
         _consumeLot(msg.sender, seller, quantity);
         uint256 released = quantity * underlyingPerContract;
         uint256 sellerUnderlyingBefore = underlying.balanceOf(seller);
+        uint256 engineUnderlyingBefore = underlying.balanceOf(address(this));
         underlying.safeTransfer(seller, released);
         if (underlying.balanceOf(seller) - sellerUnderlyingBefore != released) revert Insolvent();
+        if (engineUnderlyingBefore - underlying.balanceOf(address(this)) != released) revert Insolvent();
         if (underlying.balanceOf(address(this)) < totalLockedUnderlying) revert Insolvent();
         emit LongWaived(optionId, msg.sender, seller, quantity, released);
+    }
+
+    /// @notice Anyone can release a lapsed lot to its writer after the fixed window.
+    /// @dev The immutable window cannot be shortened after a position is opened.
+    function releaseExpired(address buyer, address seller, uint256 quantity) external nonReentrant {
+        if (block.timestamp < uint256(registry.getSeries(optionId).expiry) + exerciseWindow) {
+            revert ExerciseWindowOpen();
+        }
+        _consumeLot(buyer, seller, quantity);
+        uint256 released = quantity * underlyingPerContract;
+        uint256 beforeBalance = underlying.balanceOf(seller);
+        uint256 engineUnderlyingBefore = underlying.balanceOf(address(this));
+        underlying.safeTransfer(seller, released);
+        if (underlying.balanceOf(seller) - beforeBalance != released) revert Insolvent();
+        if (engineUnderlyingBefore - underlying.balanceOf(address(this)) != released) revert Insolvent();
+        if (underlying.balanceOf(address(this)) < totalLockedUnderlying) revert Insolvent();
+        emit LongExpired(optionId, buyer, seller, quantity, released);
     }
 
     function _consumeLot(address buyer, address seller, uint256 quantity) private {

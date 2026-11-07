@@ -1,0 +1,122 @@
+// SPDX-License-Identifier: BSL-1.1
+pragma solidity ^0.8.20;
+
+import {Script, console2} from "forge-std/Script.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IOracle} from "../src/oracle/IOracle.sol";
+import {OptionProductRegistry} from "../src/OptionProductRegistry.sol";
+import {OptionMatchingEngine} from "../src/matching/OptionMatchingEngine.sol";
+import {CoveredCallMarginEngine} from "../src/experimental/CoveredCallMarginEngine.sol";
+
+contract CoveredLocalTokenV18 is ERC20 {
+    uint8 private immutable digits;
+
+    constructor(string memory name_, uint8 digits_) ERC20(name_, name_) {
+        digits = digits_;
+    }
+
+    function decimals() public view override returns (uint8) {
+        return digits;
+    }
+
+    function mint(address to, uint256 amount) external {
+        _mint(to, amount);
+    }
+}
+
+/// @dev Deterministic local price; this does not qualify a live oracle.
+contract CoveredLocalOracleV18 is IOracle {
+    uint256 public immutable updatedAt;
+
+    constructor() {
+        updatedAt = block.timestamp;
+    }
+
+    function getPrice(address, address) external view returns (uint256, uint256) {
+        return (2_250e8, updatedAt);
+    }
+
+    function getPriceSafe(address, address) external view returns (uint256, uint256, bool) {
+        return (2_250e8, updatedAt, true);
+    }
+}
+
+/// @notice Local Anvil receipt fixture for the V18 covered engine only.
+contract OptionsCoveredLocalAnvilV18 is Script {
+    uint256 private constant OWNER_PK = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
+    uint256 private constant BUYER_PK = 0xB0B;
+    uint256 private constant SELLER_PK = 0xCA11;
+
+    function run() external {
+        require(block.chainid == 84532, "local chain ID required");
+        require(vm.rpc("anvil_nodeInfo", "[]").length != 0, "Anvil RPC required");
+        address buyer = vm.addr(BUYER_PK);
+        address seller = vm.addr(SELLER_PK);
+        address owner = vm.addr(OWNER_PK);
+
+        vm.startBroadcast(OWNER_PK);
+        CoveredLocalTokenV18 weth = new CoveredLocalTokenV18("mWETH", 18);
+        CoveredLocalTokenV18 usdc = new CoveredLocalTokenV18("mUSDC", 6);
+        CoveredLocalOracleV18 oracle = new CoveredLocalOracleV18();
+        OptionProductRegistry registry = new OptionProductRegistry(owner);
+        registry.setSettlementAssetAllowed(address(usdc), true);
+        registry.setUnderlyingConfig(
+            address(weth), OptionProductRegistry.UnderlyingConfig(address(oracle), 3_000, 3_000, 0, 2_000, true)
+        );
+        uint64 expiry = uint64(block.timestamp + 7 days);
+        uint256 optionId = registry.createSeries(address(weth), address(usdc), expiry, 2_250e8, true, true);
+        CoveredCallMarginEngine engine =
+            new CoveredCallMarginEngine(owner, address(registry), optionId, address(oracle), 1_500, 48 hours);
+        OptionMatchingEngine matcher = new OptionMatchingEngine(owner, address(engine), address(registry));
+        matcher.freezeConfiguration();
+        engine.bindMatchingEngine(address(matcher));
+        engine.setPaused(false);
+        weth.mint(seller, 2e18);
+        usdc.mint(buyer, 5_000e6);
+        payable(buyer).transfer(1 ether);
+        payable(seller).transfer(1 ether);
+        vm.stopBroadcast();
+
+        vm.startBroadcast(SELLER_PK);
+        weth.approve(address(engine), 2e18);
+        vm.stopBroadcast();
+        vm.startBroadcast(BUYER_PK);
+        usdc.approve(address(engine), 5_000e6);
+        vm.stopBroadcast();
+
+        OptionMatchingEngine.OptionTrade memory trade = OptionMatchingEngine.OptionTrade({
+            intentId: keccak256("v18-covered-local-anvil"),
+            buyer: buyer,
+            seller: seller,
+            optionId: optionId,
+            underlying: address(weth),
+            settlementAsset: address(usdc),
+            expiry: expiry,
+            strike1e8: 2_250e8,
+            isCall: true,
+            contractSize1e8: 1e8,
+            quantity: 2,
+            premiumPerContract: 100e6,
+            buyerIsMaker: true,
+            buyerNonce: 0,
+            sellerNonce: 0,
+            deadline: block.timestamp + 1 hours
+        });
+        bytes32 digest = matcher.hashTrade(trade);
+        (uint8 bv, bytes32 br, bytes32 bs) = vm.sign(BUYER_PK, digest);
+        (uint8 sv, bytes32 sr, bytes32 ss) = vm.sign(SELLER_PK, digest);
+        vm.startBroadcast(OWNER_PK);
+        matcher.executeTrade(trade, abi.encodePacked(br, bs, bv), abi.encodePacked(sr, ss, sv));
+        vm.stopBroadcast();
+
+        console2.log("V18_ENGINE", address(engine));
+        console2.log("V18_MATCHER", address(matcher));
+        console2.log("V18_REGISTRY", address(registry));
+        console2.log("V18_WETH", address(weth));
+        console2.log("V18_USDC", address(usdc));
+        console2.log("V18_OPTION_ID", optionId);
+        console2.log("V18_EXPIRY", expiry);
+        console2.log("V18_BUYER", buyer);
+        console2.log("V18_SELLER", seller);
+    }
+}

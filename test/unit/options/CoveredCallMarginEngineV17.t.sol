@@ -24,6 +24,19 @@ contract V17Token is ERC20 {
     }
 }
 
+contract V18TaxedToken is V17Token {
+    constructor() V17Token("taxed mWETH", 18) {}
+
+    function _update(address from, address to, uint256 amount) internal override {
+        if (from != address(0) && to != address(0) && amount > 1) {
+            super._update(from, to, amount - 1);
+            super._update(from, address(0), 1);
+        } else {
+            super._update(from, to, amount);
+        }
+    }
+}
+
 contract V17Oracle is IOracle {
     uint256 public price = 2_250e8;
     uint256 public updatedAt;
@@ -73,7 +86,8 @@ contract CoveredCallMarginEngineV17Test is Test {
         );
         expiry = uint64(block.timestamp + 7 days);
         optionId = registry.createSeries(address(weth), address(usdc), expiry, 2_250e8, true, true);
-        engine = new CoveredCallMarginEngine(address(this), address(registry), optionId, address(oracle), 1_500);
+        engine =
+            new CoveredCallMarginEngine(address(this), address(registry), optionId, address(oracle), 1_500, 48 hours);
         matching = new OptionMatchingEngine(address(this), address(engine), address(registry));
         matching.freezeConfiguration();
         engine.bindMatchingEngine(address(matching));
@@ -184,7 +198,7 @@ contract CoveredCallMarginEngineV17Test is Test {
 
     function testV17CannotBindUnfrozenMatcher() public {
         CoveredCallMarginEngine fresh =
-            new CoveredCallMarginEngine(address(this), address(registry), optionId, address(oracle), 1_500);
+            new CoveredCallMarginEngine(address(this), address(registry), optionId, address(oracle), 1_500, 48 hours);
         OptionMatchingEngine unfrozen = new OptionMatchingEngine(address(this), address(fresh), address(registry));
         vm.expectRevert(CoveredCallMarginEngine.InvalidConfiguration.selector);
         fresh.bindMatchingEngine(address(unfrozen));
@@ -217,5 +231,93 @@ contract CoveredCallMarginEngineV17Test is Test {
         vm.prank(buyer);
         engine.exercise(seller, 1);
         assertEq(engine.totalLockedUnderlying(), 0);
+    }
+
+    function testV18UnexercisedLotReleasedAtDeadline() public {
+        _fill(0);
+        vm.warp(uint256(expiry) + 48 hours - 1);
+        vm.expectRevert(CoveredCallMarginEngine.ExerciseWindowOpen.selector);
+        engine.releaseExpired(buyer, seller, 1);
+        vm.warp(uint256(expiry) + 48 hours);
+        vm.prank(seller);
+        engine.releaseExpired(buyer, seller, 1);
+        assertEq(weth.balanceOf(seller), 3e18);
+        assertEq(engine.totalLockedUnderlying(), 0);
+        vm.prank(buyer);
+        vm.expectRevert(CoveredCallMarginEngine.ExerciseWindowClosed.selector);
+        engine.exercise(seller, 1);
+    }
+
+    function testV18OneExercisedOneLapsedConservesCover() public {
+        _fill(0);
+        _fill(1);
+        vm.warp(expiry);
+        vm.prank(buyer);
+        engine.exercise(seller, 1);
+        assertEq(engine.openLots(buyer, seller), 1);
+        assertEq(weth.balanceOf(address(engine)), 1e18);
+        vm.warp(uint256(expiry) + 48 hours);
+        engine.releaseExpired(buyer, seller, 1);
+        assertEq(weth.balanceOf(buyer), 1e18);
+        assertEq(weth.balanceOf(seller), 2e18);
+        assertEq(weth.balanceOf(address(engine)), 0);
+    }
+
+    function testV18OtherWalletCannotExerciseOrReleaseBeforeDeadline() public {
+        _fill(0);
+        vm.warp(expiry);
+        vm.prank(address(0xA11CE));
+        vm.expectRevert(CoveredCallMarginEngine.InsufficientPosition.selector);
+        engine.exercise(seller, 1);
+        vm.prank(address(0xA11CE));
+        vm.expectRevert(CoveredCallMarginEngine.ExerciseWindowOpen.selector);
+        engine.releaseExpired(buyer, seller, 1);
+        assertEq(engine.openLots(buyer, seller), 1);
+        assertEq(weth.balanceOf(address(engine)), 1e18);
+    }
+
+    function testV18FeeOnTransferCoverRevertsWithoutLockingAnyLot() public {
+        V18TaxedToken taxed = new V18TaxedToken();
+        OptionProductRegistry isolated = new OptionProductRegistry(address(this));
+        isolated.setSettlementAssetAllowed(address(usdc), true);
+        isolated.setUnderlyingConfig(
+            address(taxed), OptionProductRegistry.UnderlyingConfig(address(oracle), 3_000, 3_000, 0, 2_000, true)
+        );
+        uint256 id = isolated.createSeries(address(taxed), address(usdc), expiry, 2_250e8, true, true);
+        CoveredCallMarginEngine covered =
+            new CoveredCallMarginEngine(address(this), address(isolated), id, address(oracle), 1_500, 48 hours);
+        OptionMatchingEngine matcher = new OptionMatchingEngine(address(this), address(covered), address(isolated));
+        matcher.freezeConfiguration();
+        covered.bindMatchingEngine(address(matcher));
+        covered.setPaused(false);
+        taxed.mint(seller, 1e18);
+        vm.prank(seller);
+        taxed.approve(address(covered), 1e18);
+        OptionMatchingEngine.OptionTrade memory trade = OptionMatchingEngine.OptionTrade({
+            intentId: keccak256("taxed-cover"),
+            buyer: buyer,
+            seller: seller,
+            optionId: id,
+            underlying: address(taxed),
+            settlementAsset: address(usdc),
+            expiry: expiry,
+            strike1e8: 2_250e8,
+            isCall: true,
+            contractSize1e8: 1e8,
+            quantity: 1,
+            premiumPerContract: 100e6,
+            buyerIsMaker: true,
+            buyerNonce: 0,
+            sellerNonce: 0,
+            deadline: block.timestamp + 1 hours
+        });
+        bytes32 digest = matcher.hashTrade(trade);
+        (uint8 bv, bytes32 br, bytes32 bs) = vm.sign(BUYER_KEY, digest);
+        (uint8 sv, bytes32 sr, bytes32 ss) = vm.sign(SELLER_KEY, digest);
+        vm.expectRevert(CoveredCallMarginEngine.Insolvent.selector);
+        matcher.executeTrade(trade, abi.encodePacked(br, bs, bv), abi.encodePacked(sr, ss, sv));
+        assertEq(covered.totalLockedUnderlying(), 0);
+        assertEq(covered.openLots(buyer, seller), 0);
+        assertEq(taxed.balanceOf(seller), 1e18);
     }
 }

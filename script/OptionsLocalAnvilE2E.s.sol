@@ -18,6 +18,22 @@ import {
 } from "../src/settlement/VerifiedOptionSettlementOwner.sol";
 import {ScenarioOptionERC20, ScenarioOptionOracle} from "../test/scenario/options/OptionSettlementFlow.t.sol";
 
+/// @dev Disposable local helper: two genuine matcher calls in one Anvil receipt.
+contract LocalOptionTradeBatch {
+    function executeTwo(
+        OptionMatchingEngine matcher,
+        OptionMatchingEngine.OptionTrade calldata first,
+        bytes calldata firstBuyerSignature,
+        bytes calldata firstSellerSignature,
+        OptionMatchingEngine.OptionTrade calldata second,
+        bytes calldata secondBuyerSignature,
+        bytes calldata secondSellerSignature
+    ) external {
+        matcher.executeTrade(first, firstBuyerSignature, firstSellerSignature);
+        matcher.executeTrade(second, secondBuyerSignature, secondSellerSignature);
+    }
+}
+
 /// @dev Deterministic local-only feed. Production settlement uses real historical feeds.
 contract LocalHistoricalChainlinkFeed is IHistoricalChainlinkFeed {
     struct Round {
@@ -106,6 +122,7 @@ contract OptionsLocalAnvilE2E is Script {
         OptionProductRegistry legacyRegistry;
         MarginEngine legacyEngine;
         OptionMatchingEngine legacyMatching;
+        LocalOptionTradeBatch legacyBatch;
         FeesManagerV2 legacyFees;
 
         vault.setCollateralToken(address(usdc), true, 6, 10_000);
@@ -201,6 +218,7 @@ contract OptionsLocalAnvilE2E is Script {
             legacyEngine = new MarginEngine(owner, address(legacyRegistry), address(legacyVault), address(legacyOracle));
             RiskModule legacyRisk = new RiskModule(owner, address(legacyVault), address(legacyRegistry), address(legacyEngine), address(legacyOracle));
             legacyMatching = new OptionMatchingEngine(owner, address(legacyEngine), address(legacyRegistry));
+            legacyBatch = new LocalOptionTradeBatch();
             legacyFees = new FeesManagerV2(owner, owner);
             legacyVault.setCollateralToken(address(usdc), true, 6, 10_000);
             legacyVault.setMarginEngine(address(legacyEngine));
@@ -220,6 +238,7 @@ contract OptionsLocalAnvilE2E is Script {
             legacyEngine.syncRiskParamsFromRiskModule();
             legacyEngine.setMatchingEngine(address(legacyMatching));
             legacyMatching.setExecutor(owner, true);
+            legacyMatching.setExecutor(address(legacyBatch), true);
             legacyFees.setFeeConsumer(address(legacyEngine), true);
             legacyEngine.setFeesManagerV2(address(legacyFees));
             legacyEngine.setUseFeesManagerV2(true);
@@ -266,17 +285,45 @@ contract OptionsLocalAnvilE2E is Script {
             (uint8 lbv, bytes32 lbr, bytes32 lbs) = vm.sign(BUYER_PK, legacyDigest);
             (uint8 lsv, bytes32 lsr, bytes32 lss) = vm.sign(SELLER_PK, legacyDigest);
             vm.startBroadcast(OWNER_PK);
-            legacyMatching.executeTrade(legacyTrade, abi.encodePacked(lbr, lbs, lbv), abi.encodePacked(lsr, lss, lsv));
-            legacyTrade.intentId = keccak256("deopt-v17-legacy-second-fill");
-            legacyTrade.buyerNonce = 1;
-            legacyTrade.sellerNonce = 1;
-            legacyDigest = legacyMatching.hashTrade(legacyTrade);
+            legacyMatching.executeTrade(
+                legacyTrade, abi.encodePacked(lbr, lbs, lbv), abi.encodePacked(lsr, lss, lsv)
+            );
+            vm.stopBroadcast();
+            // Memory struct assignment aliases the first trade; use a deep copy
+            // so the first signature remains bound to nonce zero.
+            OptionMatchingEngine.OptionTrade memory legacyTrade2 = abi.decode(
+                abi.encode(legacyTrade), (OptionMatchingEngine.OptionTrade)
+            );
+            legacyTrade2.intentId = keccak256("deopt-v18-legacy-second-fill-same-receipt");
+            legacyTrade2.buyerNonce = 1;
+            legacyTrade2.sellerNonce = 1;
+            legacyDigest = legacyMatching.hashTrade(legacyTrade2);
             (lbv, lbr, lbs) = vm.sign(BUYER_PK, legacyDigest);
             (lsv, lsr, lss) = vm.sign(SELLER_PK, legacyDigest);
-            legacyMatching.executeTrade(legacyTrade, abi.encodePacked(lbr, lbs, lbv), abi.encodePacked(lsr, lss, lsv));
+            bytes memory secondBuyerSig = abi.encodePacked(lbr, lbs, lbv);
+            bytes memory secondSellerSig = abi.encodePacked(lsr, lss, lsv);
+            OptionMatchingEngine.OptionTrade memory legacyTrade3 = abi.decode(
+                abi.encode(legacyTrade2), (OptionMatchingEngine.OptionTrade)
+            );
+            legacyTrade3.intentId = keccak256("deopt-v18-legacy-third-fill-same-receipt");
+            legacyTrade3.buyerNonce = 2;
+            legacyTrade3.sellerNonce = 2;
+            legacyDigest = legacyMatching.hashTrade(legacyTrade3);
+            (lbv, lbr, lbs) = vm.sign(BUYER_PK, legacyDigest);
+            (lsv, lsr, lss) = vm.sign(SELLER_PK, legacyDigest);
+            vm.startBroadcast(OWNER_PK);
+            legacyBatch.executeTwo(
+                legacyMatching,
+                legacyTrade2,
+                secondBuyerSig,
+                secondSellerSig,
+                legacyTrade3,
+                abi.encodePacked(lbr, lbs, lbv),
+                abi.encodePacked(lsr, lss, lsv)
+            );
             vm.stopBroadcast();
-            require(legacyEngine.positions(buyer, optionId).quantity == 2, "legacy buyer position");
-            require(legacyEngine.positions(seller, optionId).quantity == -2, "legacy seller position");
+            require(legacyEngine.positions(buyer, optionId).quantity == 3, "legacy buyer position");
+            require(legacyEngine.positions(seller, optionId).quantity == -3, "legacy seller position");
             require(engine.positions(buyer, optionId).quantity == 0, "dedicated buyer must start empty");
         }
 
