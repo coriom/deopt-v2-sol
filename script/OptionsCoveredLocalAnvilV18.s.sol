@@ -99,8 +99,21 @@ contract OptionsCoveredLocalAnvilV18 is Script {
         weth.approve(address(engine), 2e18);
         vm.stopBroadcast();
         vm.startBroadcast(BUYER_PK);
-        usdc.approve(address(engine), 5_000e6);
+        usdc.approve(address(engine), vm.envOr("OPTIONS_V19_DEPLOY_ONLY", false) ? 200e6 : 5_000e6);
         vm.stopBroadcast();
+
+        if (vm.envOr("OPTIONS_V19_DEPLOY_ONLY", false)) {
+            console2.log("V18_ENGINE", address(engine));
+            console2.log("V18_MATCHER", address(matcher));
+            console2.log("V18_REGISTRY", address(registry));
+            console2.log("V18_WETH", address(weth));
+            console2.log("V18_USDC", address(usdc));
+            console2.log("V18_OPTION_ID", optionId);
+            console2.log("V18_EXPIRY", expiry);
+            console2.log("V18_BUYER", buyer);
+            console2.log("V18_SELLER", seller);
+            return;
+        }
 
         OptionMatchingEngine.OptionTrade memory trade = OptionMatchingEngine.OptionTrade({
             intentId: keccak256("v18-covered-local-anvil"),
