@@ -11,7 +11,7 @@ import {OptionProductRegistry} from "../OptionProductRegistry.sol";
 import {IMarginEngineTrade} from "../matching/IMarginEngineTrade.sol";
 import {OptionMatchingEngine} from "../matching/OptionMatchingEngine.sol";
 
-/// @notice Local-only experiment. Physical delivery needs separate product/API/indexer approval.
+/// @notice Closed-beta candidate. Deployment and economic activation require separate approvals.
 /// @dev No cash-settlement or legacy-vault path exists in this contract. A lot is
 ///      bound to its buyer and writer; transferability is not supported.
 contract CoveredCallMarginEngine is IMarginEngineTrade, ReentrancyGuard {
@@ -25,6 +25,7 @@ contract CoveredCallMarginEngine is IMarginEngineTrade, ReentrancyGuard {
     error ExerciseWindowOpen();
     error InsufficientPosition();
     error Insolvent();
+    error ExposureLimit();
 
     event CoveredFill(
         uint256 indexed optionId,
@@ -79,6 +80,10 @@ contract CoveredCallMarginEngine is IMarginEngineTrade, ReentrancyGuard {
     uint256 public immutable strikePerContract;
 
     address public matchingEngine;
+    uint256 public maxOpenContracts;
+    uint256 public maxWalletOpenContracts;
+    uint256 public totalOpenContracts;
+    mapping(address => uint256) public walletOpenContracts;
     address public feeRecipient;
     uint32 public makerFeePpm;
     uint32 public takerFeePpm;
@@ -125,12 +130,22 @@ contract CoveredCallMarginEngine is IMarginEngineTrade, ReentrancyGuard {
     /// @dev One-time binding avoids silently routing this reserve to a second matcher.
     function bindMatchingEngine(address engine) external {
         if (msg.sender != owner || engine == address(0) || matchingEngine != address(0)) revert NotAuthorized();
+        if (maxOpenContracts == 0 || maxWalletOpenContracts == 0) revert InvalidConfiguration();
         OptionMatchingEngine configured = OptionMatchingEngine(engine);
         if (
             !configured.configurationFrozen() || address(configured.marginEngine()) != address(this)
                 || address(configured.optionRegistry()) != address(registry)
         ) revert InvalidConfiguration();
         matchingEngine = engine;
+    }
+
+    /// @notice Freeze exposure limits when the matching engine is bound.
+    /// @dev The first closed testnet series must be configured with (1, 1).
+    function configureExposureCaps(uint256 globalCap, uint256 walletCap) external {
+        if (msg.sender != owner || matchingEngine != address(0)) revert NotAuthorized();
+        if (globalCap == 0 || walletCap == 0 || walletCap > globalCap) revert InvalidConfiguration();
+        maxOpenContracts = globalCap;
+        maxWalletOpenContracts = walletCap;
     }
 
     /// @notice Local experimental fee schedule, frozen when the matcher is bound.
@@ -163,6 +178,11 @@ contract CoveredCallMarginEngine is IMarginEngineTrade, ReentrancyGuard {
         ) {
             revert InvalidTrade();
         }
+        if (
+            uint256(t.quantity) > maxOpenContracts - totalOpenContracts
+                || uint256(t.quantity) > maxWalletOpenContracts - walletOpenContracts[t.buyer]
+                || uint256(t.quantity) > maxWalletOpenContracts - walletOpenContracts[t.seller]
+        ) revert ExposureLimit();
         uint256 amount = uint256(t.quantity) * underlyingPerContract;
         uint256 premium = uint256(t.quantity) * uint256(t.price);
         uint256 buyerFee = Math.mulDiv(premium, t.buyerIsMaker ? makerFeePpm : takerFeePpm, 1_000_000);
@@ -183,6 +203,9 @@ contract CoveredCallMarginEngine is IMarginEngineTrade, ReentrancyGuard {
         if (buyerQuoteBefore - quote.balanceOf(t.buyer) != premium + buyerFee) revert Insolvent();
         if (fees != 0 && quote.balanceOf(feeRecipient) - recipientQuoteBefore != fees) revert Insolvent();
         openLots[t.buyer][t.seller] += t.quantity;
+        totalOpenContracts += t.quantity;
+        walletOpenContracts[t.buyer] += t.quantity;
+        walletOpenContracts[t.seller] += t.quantity;
         totalLockedUnderlying += amount;
         if (underlying.balanceOf(address(this)) < totalLockedUnderlying) revert Insolvent();
         emit PhysicalFeePaid(optionId, t.buyer, t.seller, t.quantity, buyerFee, sellerFee, feeRecipient);
@@ -248,6 +271,9 @@ contract CoveredCallMarginEngine is IMarginEngineTrade, ReentrancyGuard {
         uint256 current = openLots[buyer][seller];
         if (quantity == 0 || quantity > current) revert InsufficientPosition();
         openLots[buyer][seller] = current - quantity;
+        totalOpenContracts -= quantity;
+        walletOpenContracts[buyer] -= quantity;
+        walletOpenContracts[seller] -= quantity;
         totalLockedUnderlying -= quantity * underlyingPerContract;
     }
 }

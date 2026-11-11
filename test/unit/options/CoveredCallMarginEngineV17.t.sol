@@ -88,6 +88,7 @@ contract CoveredCallMarginEngineV17Test is Test {
         optionId = registry.createSeries(address(weth), address(usdc), expiry, 2_250e8, true, true);
         engine =
             new CoveredCallMarginEngine(address(this), address(registry), optionId, address(oracle), 1_500, 48 hours);
+        engine.configureExposureCaps(3, 3);
         matching = new OptionMatchingEngine(address(this), address(engine), address(registry));
         matching.freezeConfiguration();
         engine.bindMatchingEngine(address(matching));
@@ -130,10 +131,64 @@ contract CoveredCallMarginEngineV17Test is Test {
         _fill(nonce);
     }
 
+    function _replaceEngineWithCaps(uint256 globalCap, uint256 walletCap) private {
+        engine =
+            new CoveredCallMarginEngine(address(this), address(registry), optionId, address(oracle), 1_500, 48 hours);
+        engine.configureExposureCaps(globalCap, walletCap);
+        engine.configureFees(address(0), 0, 0);
+        matching = new OptionMatchingEngine(address(this), address(engine), address(registry));
+        matching.freezeConfiguration();
+        engine.bindMatchingEngine(address(matching));
+        engine.setPaused(false);
+        vm.prank(seller);
+        weth.approve(address(engine), type(uint256).max);
+        vm.prank(buyer);
+        usdc.approve(address(engine), type(uint256).max);
+    }
+
+    function testV21GlobalOneContractCapAndRelease() public {
+        _replaceEngineWithCaps(1, 1);
+        _fill(0);
+        assertEq(engine.totalOpenContracts(), 1);
+        assertEq(engine.walletOpenContracts(buyer), 1);
+        assertEq(engine.walletOpenContracts(seller), 1);
+        assertEq(engine.totalLockedUnderlying(), 1e18);
+        vm.expectRevert(CoveredCallMarginEngine.ExposureLimit.selector);
+        this.fillExternal(1);
+        assertEq(engine.totalLockedUnderlying(), 1e18);
+        vm.warp(expiry);
+        vm.prank(buyer);
+        engine.exercise(seller, 1);
+        assertEq(engine.totalOpenContracts(), 0);
+        assertEq(engine.walletOpenContracts(buyer), 0);
+        assertEq(engine.walletOpenContracts(seller), 0);
+    }
+
+    function testV21WalletCapBlocksSecondFillEvenWithGlobalCapacity() public {
+        _replaceEngineWithCaps(2, 1);
+        _fill(0);
+        vm.expectRevert(CoveredCallMarginEngine.ExposureLimit.selector);
+        this.fillExternal(1);
+        assertEq(engine.totalOpenContracts(), 1);
+        assertEq(engine.totalLockedUnderlying(), 1e18);
+        vm.expectRevert(CoveredCallMarginEngine.NotAuthorized.selector);
+        engine.configureExposureCaps(2, 2);
+    }
+
+    function testV21UnconfiguredExposureCannotBind() public {
+        CoveredCallMarginEngine fresh =
+            new CoveredCallMarginEngine(address(this), address(registry), optionId, address(oracle), 1_500, 48 hours);
+        OptionMatchingEngine ready = new OptionMatchingEngine(address(this), address(fresh), address(registry));
+        ready.freezeConfiguration();
+        vm.expectRevert(CoveredCallMarginEngine.InvalidConfiguration.selector);
+        fresh.bindMatchingEngine(address(ready));
+    }
+
     function testV20PhysicalPremiumFeesAreTransferredAndFrozen() public {
         address recipient = address(0xFEE);
         engine =
             new CoveredCallMarginEngine(address(this), address(registry), optionId, address(oracle), 1_500, 48 hours);
+        engine.configureExposureCaps(3, 3);
         engine.configureFees(recipient, 50, 250);
         matching = new OptionMatchingEngine(address(this), address(engine), address(registry));
         matching.freezeConfiguration();
@@ -237,6 +292,7 @@ contract CoveredCallMarginEngineV17Test is Test {
     function testV17CannotBindUnfrozenMatcher() public {
         CoveredCallMarginEngine fresh =
             new CoveredCallMarginEngine(address(this), address(registry), optionId, address(oracle), 1_500, 48 hours);
+        fresh.configureExposureCaps(1, 1);
         OptionMatchingEngine unfrozen = new OptionMatchingEngine(address(this), address(fresh), address(registry));
         vm.expectRevert(CoveredCallMarginEngine.InvalidConfiguration.selector);
         fresh.bindMatchingEngine(address(unfrozen));
@@ -324,6 +380,7 @@ contract CoveredCallMarginEngineV17Test is Test {
         uint256 id = isolated.createSeries(address(taxed), address(usdc), expiry, 2_250e8, true, true);
         CoveredCallMarginEngine covered =
             new CoveredCallMarginEngine(address(this), address(isolated), id, address(oracle), 1_500, 48 hours);
+        covered.configureExposureCaps(1, 1);
         OptionMatchingEngine matcher = new OptionMatchingEngine(address(this), address(covered), address(isolated));
         matcher.freezeConfiguration();
         covered.bindMatchingEngine(address(matcher));
