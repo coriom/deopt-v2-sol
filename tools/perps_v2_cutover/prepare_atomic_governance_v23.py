@@ -99,15 +99,25 @@ def check_remote_evidence(path: Path, snapshot_time: int, strict: bool) -> dict:
     required = ("vercel", "railway", "netcup")
     states = evidence.get("providers", {})
     if strict:
+        if evidence.get("chainId") != 84532:
+            raise SystemExit("STOP: remote executor evidence chain ID mismatch")
         checked = evidence.get("checkedAtUnix")
         if not isinstance(checked, int) or checked > snapshot_time or snapshot_time - checked > 6 * 3600:
             raise SystemExit("STOP: remote executor evidence missing or stale")
         for name in required:
             row = states.get(name, {})
+            provider_checked = row.get("providerCheckedAtUnix")
+            if not isinstance(provider_checked, int) or provider_checked > snapshot_time or snapshot_time - provider_checked > 6 * 3600:
+                raise SystemExit("STOP: remote executor provider check missing or stale for " + name)
             if row.get("status") not in ("VERIFIED_INACTIVE", "NOT_DEPLOYED"):
                 raise SystemExit("STOP: remote executor isolation not proved for " + name)
             if not row.get("providerProof"):
                 raise SystemExit("STOP: provider proof missing for " + name)
+        railway = states["railway"]
+        if railway.get("status") == "VERIFIED_INACTIVE" and (
+            railway.get("serviceState") != "offline" or railway.get("activeDeploymentCount") != 0
+        ):
+            raise SystemExit("STOP: Railway offline state or active deployment count unproved")
     return {
         "status": "VERIFIED" if strict else "PREVIEW_ONLY",
         "checkedAtUnix": evidence.get("checkedAtUnix"),

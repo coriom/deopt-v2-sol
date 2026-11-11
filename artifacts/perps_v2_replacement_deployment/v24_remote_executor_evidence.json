@@ -1,0 +1,31 @@
+{
+  "schema": "deopt.perps.v24.remote_executor_inventory",
+  "checkedAtUnix": 1794382111,
+  "railwayEvidenceReceivedAtUnix": 1794382111,
+  "chainId": 84532,
+  "scope": "Known DeOpt infrastructure and Base Sepolia economic executor capability; no secret values collected",
+  "providers": {
+    "netcup": {
+      "status": "VERIFIED_INACTIVE",
+      "providerProof": "2026-11-11 UTC: operator sudo docker ps -a listed only dxco90jwpdxyennmquv2elyj-backend-1 (image bdccd619f876, healthy) and dxco90jwpdxyennmquv2elyj-postgres-1 for DeOpt, no separate worker, relayer, keeper or broadcaster. sudo systemctl and cron filename inventory showed only backup/watchdog/alert services. SSH ps -eo comm found one deopt-v2-backen process. Operator ran a root Docker inspect check that evaluated EXECUTOR_REAL_BROADCAST_ENABLED, EXECUTION_ENABLED, HV2_BROADCAST_ENABLED, PERPS_PUBLIC_TRADING_ENABLED, OPTIONS_ENABLED, PERPS_CLOSED_TEST_ENABLED all closed, EXECUTOR_DRY_RUN enabled and CHAIN_ID=84532; output ECONOMIC_GATES_CLOSED=PASS. Relevant environment key names were supplied; no private signer key name was present. This is an operator-executed read-only root check; raw values and secrets were not requested or displayed."
+    },
+    "vercel": {
+      "status": "VERIFIED_INACTIVE",
+      "providerProof": "2026-11-11 UTC: Vercel API listed 10 READY deployments of deopt-v2-frontend and four READY deployments of historical deopt-frontend. Project API reports crons.definitions=[] for both. Current project has only DEOPT_BACKEND_HTTPS_ORIGIN and NEXT_PUBLIC_DEOPT_WALLET_READ_AUTH environment keys. Historical project keys are GITHUB_REPO, GITHUB_BRANCH, GITHUB_FILE_OPTIONS, GITHUB_TOKEN, RPC_137, RPC_80002 and NEXT_PUBLIC_WC_PROJECT_ID; no Base Sepolia signing key name. The source commits identified by Vercel for all 10 current deployments and all four historical deployments were checked for server API routes and transaction signing/broadcast APIs: none found. The old create-option route uses a public client and GitHub writes. Vercel deployment-file endpoint denied direct binary inspection; conclusions concern the deployments and source commits returned by the provider, not hypothetical unlisted projects or off-platform relayers. No environment values were decrypted."
+    },
+    "railway": {
+      "status": "VERIFIED_INACTIVE",
+      "evidenceKind": "operator_transmitted_official_Railway_ChatGPT_app_readout",
+      "providerCheckedAtDate": "2026-11-11",
+      "serviceState": "offline",
+      "activeDeploymentCount": 0,
+      "lastDeploymentStatus": "FAILED",
+      "lastDeploymentDate": "2026-07-12",
+      "sourceBranch": "main",
+      "providerProof": "Operator read the connected official Railway app on 2026-11-11. Account has one accessible workspace, Coriolan Morel's Projects. Project awake-ambition 5d110969-6d5a-4f78-ab01-60dc3efd55e3, production environment 9fa9cad6-cb27-43ad-b4ed-c8af4e416365, service deopt-v2-backend cf189720-3478-4955-8f4d-69e5c0adc37c. Service offline with no active deployment; last deployment FAILED on 2026-07-12. No public domain, TCP proxy, Cron, volume, pending changes, or environment variable name for signing/private key/RPC/Safe/broadcaster; only Railway system variable names. GitHub source coriom/deopt-v2-backend main remains linked. This is a provider readout relayed by the operator, not an independent Railway API call in this Codex session. No values or credentials were transmitted.",
+      "sourceLinkageRisk": "The GitHub main linkage may allow a future push or restart to create a new deployment; automatic deployment settings were not independently read. Recheck offline state and last deployment just before S2, and do not push or restart Railway as part of this gate."
+    }
+  },
+  "onchainPermissionBoundary": "At block 57289168, ProtocolTimelock executors(Safe)=true; executors(address(0)), executors(old deployer), and executors(known backend runtime) are false. Safe nonce45, threshold2/3, no modules, null guard. Role setters are onlyOwner and owner is Safe. V9 indexed three ExecutorSet events through nonce43; the only two subsequent Safe transactions are the canonical C02 S1 and MKT1 S1 queue receipts. This bounds independent Timelock execution but cannot prove that no remote party controls two Safe owner keys or holds off-service signatures.",
+  "conclusion": "KNOWN_REMOTE_EXECUTORS_VERIFIED_INACTIVE_AS_OF_2026_11_11_SAFE_SIGNER_RISK_REMAINS"
+}
