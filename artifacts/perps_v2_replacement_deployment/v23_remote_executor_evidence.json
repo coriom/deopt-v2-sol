@@ -1,0 +1,28 @@
+{
+  "schema": "deopt.perps.v23.remote_executor_inventory",
+  "checkedAtUnix": 1794378186,
+  "chainId": 84532,
+  "scope": "Known DeOpt infrastructure only; no wallet keys or environment values collected",
+  "providers": {
+    "vercel": {
+      "status": "PARTIAL",
+      "providerProof": "Vercel project API 2026-11-11: deopt-v2-frontend and deopt-frontend both have READY production deployments. Project metadata for both reports crons.definitions=[]; this establishes no configured Vercel Cron in either current project, but functions metadata was null and historical Preview Functions were not exhaustively enumerated. Current project environment names only DEOPT_BACKEND_HTTPS_ORIGIN and NEXT_PUBLIC_DEOPT_WALLET_READ_AUTH; old project environment names include GitHub and Polygon RPC settings, but no Base Sepolia signer name. Deployed old create-option API source uses a public client and writes GitHub data, not a chain transaction. Environment values were not read. Complete provider Functions inventory not obtained.",
+      "deploymentIds": [
+        "dpl_GoagrKVvHMek6U6dtfRGXB1QwGqo",
+        "dpl_VPtyktyXfAbaieSDxPmUUYwuF2MT"
+      ]
+    },
+    "railway": {
+      "status": "UNKNOWN",
+      "providerProof": "",
+      "reason": "Historical project 5d110969-6d5a-4f78-ab01-60dc3efd55e3; no authenticated Railway connector or CLI, browser shows Login/404. Need provider Services and Deployments list or deletion record."
+    },
+    "netcup": {
+      "status": "UNKNOWN",
+      "providerProof": "",
+      "reason": "SSH read-only reached deopt-vps on 2026-11-11; only DeOpt backup/watchdog timers visible without privilege. docker ps denied and sudo -n requires password. Need root Docker container list and scoped environment-key/process inventory."
+    }
+  },
+  "onchainPermissionBoundary": "ProtocolTimelock EXECUTOR_ROLE is not open to address(0); Safe 2/3 is the verified executor. This limits independent Timelock execution but does not prove all remote economic services inactive.",
+  "conclusion": "REMOTE_EXECUTOR_ISOLATION_NOT_VERIFIED"
+}
