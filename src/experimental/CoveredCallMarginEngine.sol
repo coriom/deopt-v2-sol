@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import {OptionProductRegistry} from "../OptionProductRegistry.sol";
@@ -32,6 +33,16 @@ contract CoveredCallMarginEngine is IMarginEngineTrade, ReentrancyGuard {
         uint256 quantity,
         uint256 premium,
         uint256 lockedUnderlying
+    );
+    /// @dev Emitted immediately before CoveredFill for the same fill, including zero-fee fills.
+    event PhysicalFeePaid(
+        uint256 indexed optionId,
+        address indexed buyer,
+        address indexed seller,
+        uint256 quantity,
+        uint256 buyerFee,
+        uint256 sellerFee,
+        address recipient
     );
     event PhysicalExercise(
         uint256 indexed optionId,
@@ -68,6 +79,9 @@ contract CoveredCallMarginEngine is IMarginEngineTrade, ReentrancyGuard {
     uint256 public immutable strikePerContract;
 
     address public matchingEngine;
+    address public feeRecipient;
+    uint32 public makerFeePpm;
+    uint32 public takerFeePpm;
     bool public paused = true;
     uint256 public totalLockedUnderlying;
     mapping(address => mapping(address => uint256)) public openLots;
@@ -119,6 +133,22 @@ contract CoveredCallMarginEngine is IMarginEngineTrade, ReentrancyGuard {
         matchingEngine = engine;
     }
 
+    /// @notice Local experimental fee schedule, frozen when the matcher is bound.
+    /// @dev Rates are fractions of the premium; no exercise fee or change to strike delivery.
+    function configureFees(address recipient, uint32 makerPpm, uint32 takerPpm) external {
+        if (msg.sender != owner || matchingEngine != address(0)) revert NotAuthorized();
+        // Reuse FeesManagerV2's positive-fee ceiling; rebates are not supported here.
+        if (
+            makerPpm > 1_000 || takerPpm > 1_000
+                || ((makerPpm != 0 || takerPpm != 0) && (recipient == address(0) || recipient == address(this)))
+        ) {
+            revert InvalidConfiguration();
+        }
+        feeRecipient = recipient;
+        makerFeePpm = makerPpm;
+        takerFeePpm = takerPpm;
+    }
+
     function setPaused(bool value) external {
         if (msg.sender != owner) revert NotAuthorized();
         paused = value;
@@ -135,6 +165,10 @@ contract CoveredCallMarginEngine is IMarginEngineTrade, ReentrancyGuard {
         }
         uint256 amount = uint256(t.quantity) * underlyingPerContract;
         uint256 premium = uint256(t.quantity) * uint256(t.price);
+        uint256 buyerFee = Math.mulDiv(premium, t.buyerIsMaker ? makerFeePpm : takerFeePpm, 1_000_000);
+        uint256 sellerFee = Math.mulDiv(premium, t.buyerIsMaker ? takerFeePpm : makerFeePpm, 1_000_000);
+        uint256 fees = buyerFee + sellerFee;
+        if (fees != 0 && (feeRecipient == t.buyer || feeRecipient == t.seller)) revert InvalidTrade();
         uint256 beforeBalance = underlying.balanceOf(address(this));
         uint256 sellerUnderlyingBefore = underlying.balanceOf(t.seller);
         underlying.safeTransferFrom(t.seller, address(this), amount);
@@ -142,12 +176,16 @@ contract CoveredCallMarginEngine is IMarginEngineTrade, ReentrancyGuard {
         if (sellerUnderlyingBefore - underlying.balanceOf(t.seller) != amount) revert Insolvent();
         uint256 sellerQuoteBefore = quote.balanceOf(t.seller);
         uint256 buyerQuoteBefore = quote.balanceOf(t.buyer);
-        quote.safeTransferFrom(t.buyer, t.seller, premium);
-        if (quote.balanceOf(t.seller) - sellerQuoteBefore != premium) revert Insolvent();
-        if (buyerQuoteBefore - quote.balanceOf(t.buyer) != premium) revert Insolvent();
+        uint256 recipientQuoteBefore = fees == 0 ? 0 : quote.balanceOf(feeRecipient);
+        quote.safeTransferFrom(t.buyer, t.seller, premium - sellerFee);
+        if (fees != 0) quote.safeTransferFrom(t.buyer, feeRecipient, fees);
+        if (quote.balanceOf(t.seller) - sellerQuoteBefore != premium - sellerFee) revert Insolvent();
+        if (buyerQuoteBefore - quote.balanceOf(t.buyer) != premium + buyerFee) revert Insolvent();
+        if (fees != 0 && quote.balanceOf(feeRecipient) - recipientQuoteBefore != fees) revert Insolvent();
         openLots[t.buyer][t.seller] += t.quantity;
         totalLockedUnderlying += amount;
         if (underlying.balanceOf(address(this)) < totalLockedUnderlying) revert Insolvent();
+        emit PhysicalFeePaid(optionId, t.buyer, t.seller, t.quantity, buyerFee, sellerFee, feeRecipient);
         emit CoveredFill(optionId, t.buyer, t.seller, t.quantity, premium, amount);
     }
 

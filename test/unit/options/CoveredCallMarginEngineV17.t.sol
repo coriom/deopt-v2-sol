@@ -130,6 +130,44 @@ contract CoveredCallMarginEngineV17Test is Test {
         _fill(nonce);
     }
 
+    function testV20PhysicalPremiumFeesAreTransferredAndFrozen() public {
+        address recipient = address(0xFEE);
+        engine =
+            new CoveredCallMarginEngine(address(this), address(registry), optionId, address(oracle), 1_500, 48 hours);
+        engine.configureFees(recipient, 50, 250);
+        matching = new OptionMatchingEngine(address(this), address(engine), address(registry));
+        matching.freezeConfiguration();
+        engine.bindMatchingEngine(address(matching));
+        engine.setPaused(false);
+        vm.prank(seller);
+        weth.approve(address(engine), type(uint256).max);
+        vm.prank(buyer);
+        usdc.approve(address(engine), type(uint256).max);
+
+        uint256 buyerBefore = usdc.balanceOf(buyer);
+        _fill(0);
+        assertEq(usdc.balanceOf(buyer), buyerBefore - 100_005_000);
+        assertEq(usdc.balanceOf(seller), 99_975_000);
+        assertEq(usdc.balanceOf(recipient), 30_000);
+        assertEq(weth.balanceOf(address(engine)), 1e18);
+        vm.expectRevert(CoveredCallMarginEngine.NotAuthorized.selector);
+        engine.configureFees(recipient, 0, 0);
+        vm.prank(buyer);
+        usdc.approve(address(engine), 100e6);
+        vm.expectRevert();
+        this.fillExternal(1); // The buyer needs premium plus the buyer fee, not premium alone.
+        assertEq(usdc.balanceOf(recipient), 30_000);
+        assertEq(usdc.balanceOf(seller), 99_975_000);
+        assertEq(weth.balanceOf(address(engine)), 1e18);
+        vm.prank(buyer);
+        usdc.approve(address(engine), type(uint256).max);
+        vm.warp(expiry);
+        vm.prank(buyer);
+        engine.exercise(seller, 1);
+        assertEq(usdc.balanceOf(recipient), 30_000);
+        assertEq(weth.balanceOf(buyer), 1e18);
+    }
+
     function testV17TwoCoveredFillsPhysicalDeliveryAtExtremeSpot() public {
         _fill(0);
         _fill(1);

@@ -83,6 +83,9 @@ contract OptionsCoveredLocalAnvilV18 is Script {
         uint256 optionId = registry.createSeries(address(weth), address(usdc), expiry, 2_250e8, true, true);
         CoveredCallMarginEngine engine =
             new CoveredCallMarginEngine(owner, address(registry), optionId, address(oracle), 1_500, 48 hours);
+        if (vm.envOr("OPTIONS_V20_NONZERO_FEES", false)) {
+            engine.configureFees(owner, 50, 250);
+        }
         OptionMatchingEngine matcher = new OptionMatchingEngine(owner, address(engine), address(registry));
         CoveredLocalTradeBatchV18 batch = new CoveredLocalTradeBatchV18();
         matcher.setExecutor(address(batch), true);
@@ -99,7 +102,10 @@ contract OptionsCoveredLocalAnvilV18 is Script {
         weth.approve(address(engine), 2e18);
         vm.stopBroadcast();
         vm.startBroadcast(BUYER_PK);
-        usdc.approve(address(engine), vm.envOr("OPTIONS_V19_DEPLOY_ONLY", false) ? 200e6 : 5_000e6);
+        uint256 localBuyerAllowance = vm.envOr("OPTIONS_V19_DEPLOY_ONLY", false)
+            ? (vm.envOr("OPTIONS_V20_NONZERO_FEES", false) ? 200_050_000 : 200e6)
+            : 5_000e6;
+        usdc.approve(address(engine), localBuyerAllowance);
         vm.stopBroadcast();
 
         if (vm.envOr("OPTIONS_V19_DEPLOY_ONLY", false)) {
