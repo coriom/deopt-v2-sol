@@ -184,6 +184,46 @@ contract CoveredCallMarginEngineV17Test is Test {
         fresh.bindMatchingEngine(address(ready));
     }
 
+    function testV23DeployUnboundThenBindApprovedInactiveSeries() public {
+        OptionProductRegistry isolated = new OptionProductRegistry(address(this));
+        CoveredCallMarginEngine fresh =
+            new CoveredCallMarginEngine(address(this), address(isolated), 0, address(oracle), 1_500, 48 hours);
+        OptionMatchingEngine ready = new OptionMatchingEngine(address(this), address(fresh), address(isolated));
+
+        assertTrue(fresh.paused());
+        assertFalse(fresh.seriesBound());
+        assertEq(address(fresh.underlying()), address(0));
+        assertEq(address(fresh.quote()), address(0));
+        assertEq(fresh.matchingEngine(), address(0));
+        assertEq(fresh.maxOpenContracts(), 0);
+        assertEq(isolated.totalSeries(), 0);
+        vm.expectRevert(CoveredCallMarginEngine.InvalidConfiguration.selector);
+        fresh.bindMatchingEngine(address(ready));
+        vm.expectRevert(OptionProductRegistry.UnknownSeries.selector);
+        fresh.bindSeries(optionId);
+
+        isolated.setSettlementAssetAllowed(address(usdc), true);
+        isolated.setUnderlyingConfig(
+            address(weth), OptionProductRegistry.UnderlyingConfig(address(oracle), 3_000, 3_000, 0, 2_000, true)
+        );
+        uint256 isolatedId = isolated.createSeries(address(weth), address(usdc), expiry, 2_250e8, true, true);
+        vm.expectRevert(CoveredCallMarginEngine.InvalidConfiguration.selector);
+        fresh.bindSeries(isolatedId);
+        isolated.setSeriesActive(isolatedId, false);
+        fresh.bindSeries(isolatedId);
+        assertTrue(fresh.seriesBound());
+        assertEq(fresh.optionId(), isolatedId);
+        assertEq(address(fresh.underlying()), address(weth));
+        assertEq(address(fresh.quote()), address(usdc));
+        assertEq(fresh.strikePerContract(), 2_250e6);
+        vm.expectRevert(CoveredCallMarginEngine.InvalidConfiguration.selector);
+        fresh.bindSeries(isolatedId);
+        fresh.configureExposureCaps(1, 1);
+        ready.freezeConfiguration();
+        fresh.bindMatchingEngine(address(ready));
+        assertTrue(fresh.paused());
+    }
+
     function testV20PhysicalPremiumFeesAreTransferredAndFrozen() public {
         address recipient = address(0xFEE);
         engine =

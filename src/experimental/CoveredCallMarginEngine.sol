@@ -70,14 +70,19 @@ contract CoveredCallMarginEngine is IMarginEngineTrade, ReentrancyGuard {
 
     address public immutable owner;
     OptionProductRegistry public immutable registry;
-    IERC20 public immutable underlying;
-    IERC20 public immutable quote;
+    IERC20 public underlying;
+    IERC20 public quote;
     address public immutable oracle;
     uint32 public immutable liquidationOracleMaxDelay;
     uint32 public immutable exerciseWindow;
-    uint256 public immutable optionId;
+    uint256 public optionId;
     uint256 public immutable underlyingPerContract;
-    uint256 public immutable strikePerContract;
+    uint256 public strikePerContract;
+    bool public seriesBound;
+
+    event SeriesBound(
+        uint256 indexed optionId, address indexed underlying, address indexed quote, uint256 strikePerContract
+    );
 
     address public matchingEngine;
     uint256 public maxOpenContracts;
@@ -105,8 +110,28 @@ contract CoveredCallMarginEngine is IMarginEngineTrade, ReentrancyGuard {
         ) {
             revert InvalidConfiguration();
         }
-        OptionProductRegistry.OptionSeries memory s = OptionProductRegistry(registry_).getSeries(optionId_);
-        if (!s.isCall || !s.isEuropean || s.contractSize1e8 != 1e8 || s.underlying == s.settlementAsset) {
+        owner = owner_;
+        registry = OptionProductRegistry(registry_);
+        oracle = oracle_;
+        liquidationOracleMaxDelay = maxDelay_;
+        exerciseWindow = exerciseWindow_;
+        underlyingPerContract = 1e18;
+        if (optionId_ != 0) _bindSeries(optionId_);
+    }
+
+    /// @notice Bind one approved, inactive series before any trading configuration.
+    /// @dev Allows a safe three-contract deployment before strike/expiry approval.
+    function bindSeries(uint256 optionId_) external {
+        if (msg.sender != owner) revert NotAuthorized();
+        if (!paused || matchingEngine != address(0) || totalOpenContracts != 0) revert InvalidConfiguration();
+        if (registry.getSeries(optionId_).isActive) revert InvalidConfiguration();
+        _bindSeries(optionId_);
+    }
+
+    function _bindSeries(uint256 optionId_) internal {
+        if (seriesBound || optionId_ == 0) revert InvalidConfiguration();
+        OptionProductRegistry.OptionSeries memory s = registry.getSeries(optionId_);
+        if (!s.exists || !s.isCall || !s.isEuropean || s.contractSize1e8 != 1e8 || s.underlying == s.settlementAsset) {
             revert InvalidConfiguration();
         }
         // This prototype deliberately supports only mWETH(18)/mUSDC(6).
@@ -115,22 +140,18 @@ contract CoveredCallMarginEngine is IMarginEngineTrade, ReentrancyGuard {
             IERC20Metadata(s.underlying).decimals() != 18 || IERC20Metadata(s.settlementAsset).decimals() != 6
                 || s.strike == 0 || s.strike % 100 != 0
         ) revert InvalidConfiguration();
-        owner = owner_;
-        registry = OptionProductRegistry(registry_);
         optionId = optionId_;
         underlying = IERC20(s.underlying);
         quote = IERC20(s.settlementAsset);
-        oracle = oracle_;
-        liquidationOracleMaxDelay = maxDelay_;
-        exerciseWindow = exerciseWindow_;
-        underlyingPerContract = 1e18;
         strikePerContract = uint256(s.strike) / 100;
+        seriesBound = true;
+        emit SeriesBound(optionId_, s.underlying, s.settlementAsset, strikePerContract);
     }
 
     /// @dev One-time binding avoids silently routing this reserve to a second matcher.
     function bindMatchingEngine(address engine) external {
         if (msg.sender != owner || engine == address(0) || matchingEngine != address(0)) revert NotAuthorized();
-        if (maxOpenContracts == 0 || maxWalletOpenContracts == 0) revert InvalidConfiguration();
+        if (!seriesBound || maxOpenContracts == 0 || maxWalletOpenContracts == 0) revert InvalidConfiguration();
         OptionMatchingEngine configured = OptionMatchingEngine(engine);
         if (
             !configured.configurationFrozen() || address(configured.marginEngine()) != address(this)
