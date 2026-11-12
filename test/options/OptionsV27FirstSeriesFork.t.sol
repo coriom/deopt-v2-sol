@@ -239,4 +239,34 @@ contract OptionsV27FirstSeriesFork is Test {
             assertTrue(tl.queuedTransactions(ids[i]));
         }
     }
+
+    function testIsolatedCreateCannotOpenEconomicExposure() public {
+        _executeV24Protections();
+        _queueCandidate(false);
+        vm.warp(eta);
+
+        // A disobedient Safe could execute these independent Timelock operations.
+        // The resulting ACTIVE series must still be economically unusable.
+        vm.startPrank(SAFE);
+        for (uint256 i; i < 4; ++i) {
+            tl.executeTransaction(REG, 0, inner[i], eta);
+        }
+        vm.stopPrank();
+
+        assertTrue(registry.getSeries(optionId).isActive);
+        assertTrue(tl.queuedTransactions(ids[4]));
+        assertTrue(matcher.paused());
+        assertTrue(engine.paused());
+        assertEq(engine.maxOpenContracts(), 0);
+        assertEq(engine.matchingEngine(), address(0));
+
+        // Even an executor authorized on this fork cannot enter the trade path.
+        vm.prank(TL);
+        matcher.setExecutor(address(this), true);
+        OptionMatchingEngine.OptionTrade memory trade;
+        vm.expectRevert(OptionMatchingEngine.PausedError.selector);
+        matcher.executeTrade(trade, bytes(""), bytes(""));
+        assertEq(engine.totalOpenContracts(), 0);
+        assertEq(engine.totalLockedUnderlying(), 0);
+    }
 }

@@ -1,0 +1,40 @@
+{
+  "status": "APPROVED_POLICY_ONLY",
+  "approvalSource": "Operator decision in this session",
+  "scope": "Closed beta on Base Sepolia chain 84532 only; no mainnet or public beta approval",
+  "approvedProposalSha256": "14c4200e42edd89d0feb2fef32189ed0feed3a77e770cc613763d4969fdef1e1",
+  "candidateV27PackageSha256": "79cf807c068f49e3de2b8284917ab736eea2a78e0a10db768c34b3f5c3b21027",
+  "atomicExecutionRule": {
+    "safeOperation": "one MultiSendCallOnly transaction",
+    "creationImmediatelyFollowedByDeactivation": true,
+    "failureOfDeactivationRevertsCreation": true,
+    "finalSeriesState": "INACTIVE",
+    "isolatedCreateSeriesForbiddenByPolicy": true,
+    "noEconomicOpeningDuringOrAfterTransaction": true
+  },
+  "residualSafeRisk": "Safe 2/3 can technically execute individual Timelock operations. This is prohibited by operator policy but is not prevented on-chain by the Timelock; accepted only for the Base Sepolia closed beta preparation.",
+  "localEvidence": {
+    "test": "test/options/OptionsV27FirstSeriesFork.t.sol",
+    "forkBlock": 57692769,
+    "targetedTestsPassed": 3,
+    "isolatedCreateFinding": "After simulated V24 protections, four separately executed V27 operations can leave an ACTIVE series, but the paused matcher rejects execution; the margin engine remains paused, unbound, with zero cap and zero open exposure.",
+    "limitation": "Fork signatures and Safe calls are simulated. A fresh canonical preflight is required before any real queue or execution."
+  },
+  "beforeAnyV27Queue": [
+    "All four Options V24 S2 protections executed after ETA and independently postflight-verified on the canonical chain",
+    "Current on-chain Registry, matcher and engine pauses and exposure caps verified",
+    "Fork proof that isolated creation remains economically inert under current on-chain pauses, zero caps and unbound matcher",
+    "Strike, expiry and other economic parameters requalified and separately approved where required",
+    "Fresh Safe and Timelock preflight, including owners, threshold, guard, modules, roles, bytecodes and current nonce",
+    "Recompute ETA, operation IDs, calldata, gas and SafeTxHash; candidate V27 values are not reusable without verification"
+  ],
+  "authorizationSeparation": [
+    "This approval records policy only",
+    "Git publication requires separate approval",
+    "Timelock queue requires separate approval",
+    "Atomic execution requires separate approval",
+    "Economic activation and first trade require separate approvals"
+  ],
+  "noGitPushAuthorized": true,
+  "noSignatureOrBroadcastAuthorized": true
+}
