@@ -1,0 +1,162 @@
+{
+  "version": "1.0",
+  "chainId": "84532",
+  "createdAt": 1794448914159,
+  "meta": {
+    "name": "DeOpt Options V24 execute safety-only",
+    "description": "Four Timelock calls; Safe MultiSendCallOnly, zero ETH, no series or trading activation. Unsigned conditional package.",
+    "txBuilderVersion": "1.18.0",
+    "createdFromSafeAddress": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+    "createdFromOwnerAddress": ""
+  },
+  "transactions": [
+    {
+      "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "value": "0",
+      "data": "0x06a41d0900000000000000000000000063de63912bb6743f72ea77847572503cc93b7d8000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006afaf04000000000000000000000000000000000000000000000000000000000000000048456cb5900000000000000000000000000000000000000000000000000000000",
+      "contractMethod": {
+        "name": "executeTransaction",
+        "payable": true,
+        "inputs": [
+          {
+            "name": "target",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "value",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "data",
+            "type": "bytes",
+            "internalType": "bytes"
+          },
+          {
+            "name": "eta",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      },
+      "contractInputsValues": {
+        "target": "0x63DE63912BB6743F72ea77847572503Cc93B7d80",
+        "value": "0",
+        "data": "0x8456cb59",
+        "eta": "1794830400"
+      }
+    },
+    {
+      "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "value": "0",
+      "data": "0x06a41d0900000000000000000000000063de63912bb6743f72ea77847572503cc93b7d8000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006afaf04000000000000000000000000000000000000000000000000000000000000000248a0dac4a000000000000000000000000a6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd4600000000000000000000000000000000000000000000000000000000",
+      "contractMethod": {
+        "name": "executeTransaction",
+        "payable": true,
+        "inputs": [
+          {
+            "name": "target",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "value",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "data",
+            "type": "bytes",
+            "internalType": "bytes"
+          },
+          {
+            "name": "eta",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      },
+      "contractInputsValues": {
+        "target": "0x63DE63912BB6743F72ea77847572503Cc93B7d80",
+        "value": "0",
+        "data": "0x8a0dac4a000000000000000000000000a6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+        "eta": "1794830400"
+      }
+    },
+    {
+      "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "value": "0",
+      "data": "0x06a41d09000000000000000000000000cb7bc539ed4a5771f3420f498002e0fc4ee1bd2700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006afaf04000000000000000000000000000000000000000000000000000000000000000248a0dac4a000000000000000000000000a6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd4600000000000000000000000000000000000000000000000000000000",
+      "contractMethod": {
+        "name": "executeTransaction",
+        "payable": true,
+        "inputs": [
+          {
+            "name": "target",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "value",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "data",
+            "type": "bytes",
+            "internalType": "bytes"
+          },
+          {
+            "name": "eta",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      },
+      "contractInputsValues": {
+        "target": "0xcb7bc539ed4A5771F3420f498002e0fc4eE1bD27",
+        "value": "0",
+        "data": "0x8a0dac4a000000000000000000000000a6b9bb5c7b26b33cfd28c6f5a79b3c527fddcd46",
+        "eta": "1794830400"
+      }
+    },
+    {
+      "to": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+      "value": "0",
+      "data": "0x06a41d09000000000000000000000000cb7bc539ed4a5771f3420f498002e0fc4ee1bd2700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000006afaf04000000000000000000000000000000000000000000000000000000000000000048456cb5900000000000000000000000000000000000000000000000000000000",
+      "contractMethod": {
+        "name": "executeTransaction",
+        "payable": true,
+        "inputs": [
+          {
+            "name": "target",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "value",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "data",
+            "type": "bytes",
+            "internalType": "bytes"
+          },
+          {
+            "name": "eta",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      },
+      "contractInputsValues": {
+        "target": "0xcb7bc539ed4A5771F3420f498002e0fc4eE1bD27",
+        "value": "0",
+        "data": "0x8456cb59",
+        "eta": "1794830400"
+      }
+    }
+  ]
+}
