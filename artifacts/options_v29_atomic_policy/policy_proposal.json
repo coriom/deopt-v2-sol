@@ -1,0 +1,63 @@
+{
+  "status": "PROPOSED_NOT_APPROVED",
+  "scope": "First dedicated physical ETH Call on Base Sepolia only",
+  "chainId": 84532,
+  "safe": "0xA6B9Bb5c7B26B33cfD28C6F5A79B3c527fDdcD46",
+  "timelock": "0xa67f8E8E673ce4bb2Fb563B0e6E9FA8F70E3b588",
+  "registry": "0xcb7bc539ed4A5771F3420f498002e0fc4eE1bD27",
+  "candidateV27PackageSha256": "79cf807c068f49e3de2b8284917ab736eea2a78e0a10db768c34b3f5c3b21027",
+  "candidateV27PackageIsExecutable": false,
+  "queuePolicy": {
+    "authorization": "separate operator approval after fresh preflight",
+    "safeTransactionCount": 1,
+    "operationCount": 5,
+    "operationLabelsInOrder": [
+      "REGISTRY_UNPAUSE",
+      "ETH_UNDERLYING_ENABLE",
+      "MUSDC_SETTLEMENT_ALLOW",
+      "CREATE_ETH_CALL",
+      "DEACTIVATE_ETH_CALL"
+    ],
+    "noSeriesCreatedByQueue": true
+  },
+  "executionPolicy": {
+    "authorization": "distinct operator approval after Timelock ETA and fresh preflight",
+    "safeTransactionCount": 1,
+    "safeOperation": "DELEGATECALL to MultiSendCallOnly",
+    "orderedCalls": [
+      "Timelock.executeTransaction(REGISTRY_UNPAUSE)",
+      "Timelock.executeTransaction(ETH_UNDERLYING_ENABLE)",
+      "Timelock.executeTransaction(MUSDC_SETTLEMENT_ALLOW)",
+      "Timelock.executeTransaction(CREATE_ETH_CALL)",
+      "Timelock.executeTransaction(DEACTIVATE_ETH_CALL)",
+      "Registry.pause()"
+    ],
+    "standaloneCreateSeriesSafeTransactionPermitted": false,
+    "standaloneTimelockExecutionPermitted": false,
+    "rollbackRequirement": "failure of deactivation or final pause reverts the entire Safe transaction"
+  },
+  "mandatoryPreflight": [
+    "V24 Options protections canonically executed and verified",
+    "Safe owners, threshold, modules, guard and nonce fresh after Perps operations",
+    "Timelock roles, minimum delay, ETA, operation IDs and calldata fresh",
+    "Registry has zero series; historical Registry and Vault unchanged",
+    "Registry, matcher and margin engine paused; exposure caps zero; matcher not bound",
+    "strike, expiry, token addresses and ETH oracle requalified",
+    "exact Safe batch re-simulated if calldata, gas fields, nonce or chain state change",
+    "no earlier standalone execution of any V27 operation"
+  ],
+  "mandatoryPostflight": [
+    "one physical series with expected composite identity and inactive status",
+    "Registry, matcher and margin engine paused; caps zero; no new positions or collateral movements",
+    "all five expected Timelock execution events and no extra call",
+    "historical Registry and Vault unchanged; Perps D4/D6 unchanged"
+  ],
+  "residualRisk": "On-chain Safe 2/3 can technically execute independent Timelock operations separately; this policy is an operator and signer rule, not an on-chain prohibition.",
+  "authorizationSeparation": [
+    "policy approval",
+    "queue transaction approval",
+    "atomic execution approval",
+    "economic activation approval"
+  ],
+  "noSignatureOrBroadcastAuthorized": true
+}
